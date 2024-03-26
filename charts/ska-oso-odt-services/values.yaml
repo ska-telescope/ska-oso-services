@@ -1,0 +1,43 @@
+# Default values for oet.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+minikube: true
+
+system: TM-mid
+telescope: SKA-mid
+subsystem: ska-oso-odt-services
+
+global:
+  minikube: true
+  cluster_domain: cluster.local
+
+rest:
+  component: rest
+  function: odt-services
+  domain: operations
+  logLevel: info
+  enabled: true
+  image:
+    registry: artefact.skao.int
+    image: ska-oso-odt-services
+    tag: ~ # Defaults to the chart appVersion if not set
+    pullPolicy: IfNotPresent
+  oda:
+    backendType: filesystem
+    url: ~ # Defaults to the ODA Kubernetes service address if not set
+  use_skuid: true
+  resources:
+    requests:
+      cpu:  100m
+      memory: 1024Mi
+    limits:
+      cpu:  1000m
+      memory: 1024Mi
+  ingress:
+    enabled: true
+
+nodeSelector: {}
+
+affinity: {}
+
+tolerations: []

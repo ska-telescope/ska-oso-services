@@ -1,0 +1,177 @@
+openapi: 3.0.0
+info:
+  title: Observation Design Tool Service API
+  description: 'This OpenAPI document defines the API for the Observation Design Tool (ODT) backend service'
+  license:
+    name: BSD-3-Clause
+    url: https://opensource.org/licenses/BSD-3-Clause
+  version: 1.0.0
+paths:
+  /sbds/create:
+    get:
+      summary: Create empty SBD
+      description: |
+        Returns a json SchedulingBlockDefinition with empty or generated fields,
+        to be populated and stored at a later point
+      operationId: ska_oso_odt_services.api.sbds_create
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+  /sbds/validate:
+    post:
+      summary: Validate an SBD
+      description: |
+        Validates the SchedulingBlockDefinition in the request body against the component definition
+        (eg required fields, allowed ranges) and more complex business logic in the controller method.
+      operationId: ska_oso_odt_services.api.sbds_validate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResponse'
+  /sbds:
+    post:
+      summary: Create a new SBDefinition
+      description: |
+        Creates a new SchedulingBlockDefinition in the underlying data store. The response
+        contains the entity as it exists in the data store, with an sbd_id and metadata populated.
+      operationId: ska_oso_odt_services.api.sbds_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+        "400":
+          description: Bad Request, validation of SBDefinition failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /sbds/{identifier}:
+    get:
+      summary: Get SB by identifier
+      description: |
+        Retrieves the SchedulingBlockDefinition with the given identifier from the
+        underlying datas store, if available
+      operationId: ska_oso_odt_services.api.sbds_get
+      parameters:
+      - name: identifier
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+        "404":
+          description: NotFound
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update an SBDefinition by identifier
+      description: |
+        Updates the SchedulingBlockDefinition with the given identifier
+        in the underlying data store to create a new version.
+      operationId: ska_oso_odt_services.api.sbds_put
+      parameters:
+      - name: identifier
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+        "400":
+          description: Bad Request, validation of SBDefinition failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: NotFound
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    ValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        messages:
+          type: array
+          items:
+            type: string
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        title:
+          type: string
+        detail:
+          type: string
+        traceback:
+          type: object
+          properties:
+            key:
+              type: string
+            type:
+              type: string
+            full_traceback:
+              type: string

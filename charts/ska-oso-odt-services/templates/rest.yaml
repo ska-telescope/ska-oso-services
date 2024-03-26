@@ -1,0 +1,98 @@
+{{ if .Values.rest.enabled }}
+{{ if .Values.rest.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "ska-oso-odt-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-oso-odt-services.labels" . | indent 4 }}
+    component: {{ .Values.rest.component }}
+    function: {{ .Values.rest.function }}
+    domain: {{ .Values.rest.domain }}
+    intent: production
+  annotations:
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /{{ .Release.Namespace }}/odt/api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ template "ska-oso-odt-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+                port:
+                  number: 5000
+{{ end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "ska-oso-odt-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-oso-odt-services.labels" . | indent 4 }}
+    component: {{ .Values.rest.component }}
+    function: {{ .Values.rest.function }}
+    domain: {{ .Values.rest.domain }}
+    intent: production
+spec:
+  ports:
+  - port: 5000
+  selector:
+    app: {{ template "ska-oso-odt-services.name" . }}
+    component: {{ .Values.rest.component }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "ska-oso-odt-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-oso-odt-services.labels" . | indent 4 }}
+    component: {{ .Values.rest.component }}
+    function: {{ .Values.rest.function }}
+    domain: {{ .Values.rest.domain }}
+    intent: production
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "ska-oso-odt-services.name" . }}
+      component: {{ .Values.rest.component }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        {{- include "ska-oso-odt-services.labels" . | indent 8 }}
+        component: {{ .Values.rest.component }}
+        function: {{ .Values.rest.function }}
+        domain: {{ .Values.rest.domain }}
+        intent: production
+    spec:
+      containers:
+      - name: odt-services
+        image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{$.Values.rest.image.tag | default $.Chart.AppVersion}}"
+        imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
+        command: [ "/bin/sh" ]
+        args: [ "-c", "poetry run gunicorn --chdir src --bind 0.0.0.0:5000 --logger-class=ska_oso_odt_services.wsgi.UniformLogger --log-level='{{ .Values.rest.logLevel }}' ska_oso_odt_services.wsgi:app" ]
+        envFrom:
+          - configMapRef:
+              name: {{ template "ska-oso-odt-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
+        ports:
+          - containerPort: 5000
+        resources:
+{{ toYaml .Values.rest.resources | indent 10 }}
+  {{- with .Values.nodeSelector }}
+nodeSelector:
+  {{ toYaml . | indent 8 }}
+  {{- end }}
+  {{- with .Values.affinity }}
+affinity:
+  {{ toYaml . | indent 8 }}
+  {{- end }}
+  {{- with .Values.tolerations }}
+tolerations:
+  {{ toYaml . | indent 8 }}
+  {{- end }}
+  {{ end }}

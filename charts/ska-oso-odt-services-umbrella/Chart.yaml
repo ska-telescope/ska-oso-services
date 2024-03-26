@@ -1,0 +1,18 @@
+apiVersion: v2
+name: ska-oso-odt-services-umbrella
+description: Helm umbrella chart for the ODT Services
+type: application
+version: 1.0.4
+appVersion: 1.0.4
+icon: https://www.skatelescope.org/wp-content/uploads/2016/07/09545_NEW_LOGO_2014.png
+dependencies:
+- name: ska-oso-odt-services
+  version: 1.0.4
+  repository: file://../ska-oso-odt-services
+
+# ODA is a dependency of ODT services. Include it for data persistence
+# The ODA umbrella chart includes ODA API, PostgreSQL database and SKUID
+- name: ska-db-oda-umbrella
+  version: 2.1.4
+  repository: https://artefact.skao.int/repository/helm-internal
+  condition: ska-db-oda.enabled

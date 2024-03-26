@@ -1,0 +1,41 @@
+Telescope:
+  type: string
+  enum:
+    - ska_mid
+    - ska_low
+    - MeerKAT
+
+PythonArguments:
+  type: object
+  properties:
+    args:
+      type: array
+      items:
+        oneOf:
+          - type: string
+          - type: integer
+    kwargs:
+      type: object
+
+Metadata:
+  required:
+    - version
+    - created_by
+    - created_on
+  type: object
+  properties:
+    version:
+      type: integer
+    created_by:
+      type: string
+      nullable: true
+    created_on:
+      type: string
+      format: date-time
+    last_modified_by:
+      type: string
+      nullable: true
+    last_modified_on:
+      type: string
+      nullable: true
+      format: date-time
