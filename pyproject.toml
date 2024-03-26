@@ -1,15 +1,15 @@
 [tool.poetry]
-name = "ska-oso-odt-services"
-version = "1.0.4"
-description = "SKA OSO Observation Design Tool backend services"
+name = "ska-oso-services"
+version = "0.0.0"
+description = "SKA OSO Services provides APIs for the PHT and ODT"
 authors = ["Team Buttons"]
 license = "BSD-3-Clause"
 readme = "README.md"
-repository = "https://gitlab.com/ska-telescope/oso/ska-oso-odt-services"
-documentation = "https://developer.skao.int/projects/ska-oso-odt-services/en/latest/index.html"
+repository = "https://gitlab.com/ska-telescope/oso/ska-oso-services"
+documentation = "https://developer.skao.int/projects/ska-oso-services/en/latest/index.html"
 keywords = ["SKA OSO"]
 packages = [
-    { include = "ska_oso_odt_services", from = "src" }
+    { include = "ska_oso_services", from = "src" }
 ]
 include = [
     { path = 'tests' }
@@ -73,7 +73,7 @@ data_file = ".coverage/.coverage"
 [tool.isort]
 profile = "black"
 line_length = 88
-skip = "src/ska_oso_odt_services/generated,src/ska_oso_odt_services/openapi/__submodules__"
+skip = "src/ska_oso_services/odt/generated,src/ska_oso_services/openapi/__submodules__"
 
 [tool.black]
 line-length = 88
@@ -92,8 +92,8 @@ extend-exclude = '''
     | buck-out
     | build
     | dist
-    | src/ska_oso_odt_services/generated
-    | src/ska_oso_odt_services/openapi/__submodules__
+    | src/ska_oso_services/odt/generated
+    | src/ska_oso_services/openapi/__submodules__
   )/
   | foo.py           # also separately exclude a file named foo.py in
                      # the root of the project

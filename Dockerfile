@@ -27,4 +27,4 @@ RUN poetry export --format requirements.txt --output poetry-requirements.txt --w
 
 USER tango
 
-CMD ["python3", "-m", "ska_oso_odt_services.wsgi"]
+CMD ["python3", "-m", "ska_oso_services.wsgi"]

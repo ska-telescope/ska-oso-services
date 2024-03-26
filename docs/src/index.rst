@@ -1,4 +1,4 @@
-SKA OSO Observation Design Tool Services
+SKA OSO Common Services
 ========================================
 
 The SKA OSO ODT is a tool currently under development which allows users to design observations for the SKA,
@@ -12,11 +12,16 @@ This project provides back-end web services for manipulating, validating and sto
 
 .. toctree::
   :maxdepth: 1
-  :caption: Table of Contents
+  :caption: Common
   :hidden:
 
   persistence
-  restapi
 
+.. toctree::
+  :maxdepth: 1
+  :caption: ODT
+  :hidden:
+
+  oda_rest_api
 
 

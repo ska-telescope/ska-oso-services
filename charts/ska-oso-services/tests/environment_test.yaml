@@ -1,0 +1,67 @@
+---
+suite: ska-oso-services-environment
+templates:
+  - environment.yaml
+tests:
+  - it: should contain only one document.
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should be of type ConfigMap and have the correct apiVersion, v1.
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - isAPIVersion:
+          of: v1
+
+  - it: should set ODA_BACKEND_TYPE from values.yaml
+    documentIndex: 0
+    set:
+      rest:
+        oda:
+          backendType: foo
+    asserts:
+      - equal:
+          path: data.ODA_BACKEND_TYPE
+          value:
+            foo
+
+  - it: should set ODA_URL from values.yaml
+    documentIndex: 0
+    set:
+      rest:
+        oda:
+          url: foo
+    asserts:
+      - equal:
+          path: data.ODA_URL
+          value:
+            foo
+
+  - it: should set SKUID_URL to default cluster domain if SKUID_URL is not set
+    documentIndex: 0
+    set:
+      rest:
+        skuid:
+          url:
+    asserts:
+      - equal:
+          path: data.SKUID_URL
+          value:
+            ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.cluster.local:9870
+
+  - it: should configure SKUID_URL using custom cluster domain when set
+    documentIndex: 0
+    set:
+      global:
+        cluster_domain: foo
+      rest:
+        skuid:
+          url:
+    asserts:
+      - equal:
+          path: data.SKUID_URL
+          value:
+            ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.foo:9870

@@ -7,7 +7,7 @@ The OSO Data Archive (ODA) contains ``Repository`` and ``UnitOfWork`` interfaces
 database access. There are different implementations of these interfaces, namely ``memory``, ``filesystem``, ``postgres`` and ``rest``.
 For more details, see the `ska-db-oda <https://developer.skao.int/projects/ska-db-oda/en/latest/index.html>`_ project.
 
-The important thing for the ODT Services is that the implementation can be configured at deploy time, by setting an environment variable through the Helm value:
+The important thing for the OSO Services is that the implementation can be configured at deploy time, by setting an environment variable through the Helm value:
 
 .. code-block:: yaml
 
@@ -18,12 +18,12 @@ The important thing for the ODT Services is that the implementation can be confi
         url:
       ...
 
-The ``filesystem`` implementation uses the filesystem of the ODT Services pod to persist data.
+The ``filesystem`` implementation uses the filesystem of the OSO Services pod to persist data.
 This means by default is does not persist past the lifetime of the pod. It is intended to be used as a simple development environment.
 Entities can also be manually added to a mounted filesystem and accessed through the API.
 
 Setting the value to ``rest`` will use an implementation which accesses a remote instance of the ODA REST Client.
-The ``url`` value must also be set to the URL for the API, eg ``http://ska-db-oda-rest-test:5000/ska-oso-odt-services/api/v1``.
+The ``url`` value must also be set to the URL for the API, eg ``http://ska-db-oda-rest-test:5000/ska-oso-services/odt/api/v1``.
 The pod will access the URL from within the Kubernetes cluster, so can use the ODA service address if they are deployed to the same namespace.
 
 The ``memory`` implementation serves a similar purpose to the filesystem, acting as an even more lightweight development environment.

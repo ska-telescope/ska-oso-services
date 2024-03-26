@@ -39,7 +39,7 @@ def load_string_from_file(filename):
         return json_data
 
 
-VALID_MID_SBDEFINITION_JSON = load_string_from_file("testfile_sample_mid_sb.json")
+VALID_MID_SBDEFINITION_JSON = load_string_from_file("odt/testfile_sample_mid_sb.json")
 valid_mid_sbdefinition = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)
 
 INVALID_MID_SBDEFINITION_JSON = CODEC.dumps(

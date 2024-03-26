@@ -1,6 +1,0 @@
-apiVersion: v2
-name: ska-oso-odt-services
-description: A Helm chart for deploying the Observation Design Tool Services on Kubernetes
-type: application
-version: 1.0.4
-appVersion: 1.0.4

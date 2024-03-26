@@ -2,12 +2,12 @@
 # CAR_OCI_REGISTRY_HOST, CAR_OCI_REGISTRY_USERNAME and PROJECT_NAME are combined to define
 # the Docker tag for this project. The definition below inherits the standard
 # value for CAR_OCI_REGISTRY_HOST (=artefact.skao.int) and overwrites
-# PROJECT_NAME to give a final Docker tag of artefact.skao.int/ska-oso-odt-services
+# PROJECT_NAME to give a final Docker tag of artefact.skao.int/ska-oso-services
 #
 CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
-PROJECT_NAME = ska-oso-odt-services
-KUBE_NAMESPACE ?= ska-oso-odt-services
+PROJECT_NAME = ska-oso-services
+KUBE_NAMESPACE ?= ska-oso-services
 RELEASE_NAME ?= test
 
 # Set sphinx documentation build to fail on warnings (as it is configured
@@ -15,7 +15,7 @@ RELEASE_NAME ?= test
 DOCS_SPHINXOPTS ?= -W --keep-going
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
-K8S_CHART = ska-oso-odt-services-umbrella
+K8S_CHART = ska-oso-services-umbrella
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 K8S_CHART_PARAMS += \
@@ -24,8 +24,8 @@ K8S_CHART_PARAMS += \
 # For the test, dev and integration environment, use the freshly built image in the GitLab registry
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')
 ifneq ($(ENV_CHECK),)
-K8S_CHART_PARAMS += --set ska-oso-odt-services.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
-	--set ska-oso-odt-services.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-odt-services
+K8S_CHART_PARAMS += --set ska-oso-services.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
+	--set ska-oso-services.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-services
 endif
 
 # For the staging environment, make k8s-install-chart-car will pull the chart from CAR so we do not need to
@@ -61,17 +61,17 @@ PYTHON_TEST_FILE = tests/unit/
 # include your own private variables for custom deployment configuration
 -include PrivateRules.mak
 
-REST_POD_NAME=$(shell kubectl get pods -o name -n $(KUBE_NAMESPACE) -l app=ska-oso-odt-services,component=rest | cut -c 5-)
+REST_POD_NAME=$(shell kubectl get pods -o name -n $(KUBE_NAMESPACE) -l app=ska-oso-services,component=rest | cut -c 5-)
 
 # install helm plugin from https://github.com/helm-unittest/helm-unittest.git
 k8s-chart-test:
 	mkdir -p charts/build; \
-	helm unittest charts/ska-oso-odt-services/ --with-subchart \
+	helm unittest charts/ska-oso-services/ --with-subchart \
 		--output-type JUnit --output-file charts/build/chart_template_tests.xml
 
 k8s-pre-test:
 	kubectl exec $(REST_POD_NAME) -n $(KUBE_NAMESPACE) -- mkdir -p /var/lib/oda/sbd/sbd-1234
-	kubectl cp tests/unit/testfile_sample_mid_sb.json $(KUBE_NAMESPACE)/$(REST_POD_NAME):/var/lib/oda/sbd/sbd-1234/1.json
+	kubectl cp tests/unit/odt/testfile_sample_mid_sb.json $(KUBE_NAMESPACE)/$(REST_POD_NAME):/var/lib/oda/sbd/sbd-1234/1.json
 
 k8s-post-test:
 	kubectl -n $(KUBE_NAMESPACE) exec $(REST_POD_NAME) -- rm -r /var/lib/oda/sbd/
@@ -107,12 +107,12 @@ models:  ## generate models from OpenAPI spec
 #	find ./src/ska_oso_odt_services/generated/models/*.py -exec sed -i "" 's/from generated/from ska_oso_odt_services.generated/' {} +
 
 dev-up: K8S_CHART_PARAMS = \
-	--set ska-oso-odt-services.rest.image.tag=$(VERSION) \
-	--set ska-oso-odt-services.rest.ingress.enabled=true
+	--set ska-oso-services.rest.image.tag=$(VERSION) \
+	--set ska-oso-services.rest.ingress.enabled=true
 dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment
 
 dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deployment
 
-# The docs build fails unless the ska-oso-odt-services package is installed locally as importlib.metadata.version requires it.
+# The docs build fails unless the ska-oso-services package is installed locally as importlib.metadata.version requires it.
 docs-pre-build:
 	poetry install --only-root
