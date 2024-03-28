@@ -22,6 +22,6 @@ This project provides back-end web services for manipulating, validating and sto
   :caption: ODT
   :hidden:
 
-  oda_rest_api
+  odt_rest_api
 
 

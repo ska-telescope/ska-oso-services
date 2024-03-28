@@ -10,7 +10,7 @@ scheduling blocks.
 To clone this repository, run
 
 ```
-git clone --recurse-submodules git@gitlab.com:ska-telescope/oso/ska-oso-odt-services.git
+git clone --recurse-submodules git@gitlab.com:ska-telescope/oso/ska-oso-services.git
 ```
 
 To refresh the GitLab Submodule, execute below commands:
@@ -105,15 +105,10 @@ value of `SKUID_URL` automatically. To run the ODT backend without connecting to
 
 [![Documentation Status](https://readthedocs.org/projects/ska-telescope-ska-oso-odt-services/badge/?version=latest)](https://developer.skao.int/projects/ska-oso-odt-services/en/latest/?badge=latest)
 
-Documentation can be found in the ``docs`` folder. To build docs, install the
-documentation specific requirements:
+Further documentation, including a ``User Guide`` can be found in the 
+``docs`` folder, or on [ReadTheDocs](https://developer.skao.int/projects/ska-ost-senscalc/en/latest/?badge=latest). 
 
-```
-pip3 install sphinx sphinx-rtd-theme recommonmark sphinxcontrib-openapi mistune==0.8.4
-```
-
-and build the documentation (will be built in docs/build folder) with
-
-```
-make docs-build html
-```
+To build the html version of the documentation, start 
+from the root directory and first install the dependency using 
+``poetry install --only docs`` and then type ``make docs-build html``. Read the documentation by pointing your browser
+at ``docs/build/html/index.html``.
