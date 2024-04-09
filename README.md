@@ -103,10 +103,7 @@ value of `SKUID_URL` automatically. To run the ODT backend without connecting to
 
 # Documentation
 
-[![Documentation Status](https://readthedocs.org/projects/ska-telescope-ska-oso-odt-services/badge/?version=latest)](https://developer.skao.int/projects/ska-oso-odt-services/en/latest/?badge=latest)
-
-Further documentation, including a ``User Guide`` can be found in the 
-``docs`` folder, or on [ReadTheDocs](https://developer.skao.int/projects/ska-ost-senscalc/en/latest/?badge=latest). 
+[![Documentation Status](https://readthedocs.org/projects/ska-telescope-ska-oso-services/badge/?version=latest)](https://developer.skao.int/projects/ska-oso-services/en/latest/?badge=latest)
 
 To build the html version of the documentation, start 
 from the root directory and first install the dependency using 

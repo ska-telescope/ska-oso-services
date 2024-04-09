@@ -19,8 +19,8 @@ from tests.unit.util import (
     valid_mid_sbdefinition,
 )
 
-ODT_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
-SBDS_API_URL = f"/ska-oso-services/odt/api/v{ODT_MAJOR_VERSION}/sbds"
+OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
+SBDS_API_URL = f"/ska-oso-services/odt/api/v{OSO_SERVICES_MAJOR_VERSION}/sbds"
 
 
 @mock.patch("ska_oso_services.odt.api.oda")

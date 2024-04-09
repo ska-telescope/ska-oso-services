@@ -12,10 +12,10 @@ from ska_db_oda.rest.flask_oda import FlaskODA
 from ska_oso_services.odt.codec import CustomJSONEncoder
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
-ODT_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
+OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 # The base path includes the namespace which is known at runtime
 # to avoid clashes in deployments, for example in CICD
-API_PATH = f"/{KUBE_NAMESPACE}/odt/api/v{ODT_MAJOR_VERSION}"
+API_PATH = f"/{KUBE_NAMESPACE}/odt/api/v{OSO_SERVICES_MAJOR_VERSION}"
 
 oda = FlaskODA()
 
