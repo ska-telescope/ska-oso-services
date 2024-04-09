@@ -51,17 +51,22 @@ PYTHON_LINE_LENGTH = 88
 
 # Set the k8s test command run inside the testing pod to only run the component
 # tests (no k8s pod deployment required for unit tests)
-K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/component | tee pytest.stdout
+K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the component tests
 PYTHON_TEST_FILE = tests/unit/
+
+# Variables used by the xray make targets
+XRAY_TEST_RESULT_FILE = build/reports/report.xml
+XRAY_EXTRA_OPTS = -t pytest
+XRAY_EXECUTION_CONFIG_FILE ?= tests/xray-config.json
 
 # include makefile to pick up the standard Make targets from the submodule
 -include .make/base.mk
 -include .make/python.mk
 -include .make/oci.mk
 -include .make/k8s.mk
-
+-include .make/xray.mk
 -include .make/helm.mk
 
 # include your own private variables for custom deployment configuration
