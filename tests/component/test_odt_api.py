@@ -10,6 +10,7 @@ import os
 from http import HTTPStatus
 from importlib.metadata import version
 
+import pytest
 import requests
 
 from ska_oso_services.odt import codec as mcodec
@@ -61,6 +62,7 @@ def test_sbd_validate():
     assert result["messages"] == []
 
 
+@pytest.mark.xray("XTP-34548")
 def test_sbd_post_then_get():
     """
     Test that an entity POSTed to /sbds can then be retrieved

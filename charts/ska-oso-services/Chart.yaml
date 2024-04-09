@@ -4,3 +4,4 @@ description: A Helm chart for deploying the OSO Services on Kubernetes
 type: application
 version: 0.0.0
 appVersion: 0.0.0
+dependencies: []

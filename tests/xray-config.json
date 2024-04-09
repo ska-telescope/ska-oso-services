@@ -1,0 +1,74 @@
+{
+  "test_plans": [
+    {
+      "select_from_tag": {
+        "default": "XTP-34550"
+      }
+    }
+  ],
+  "name": {
+    "env": "CI_COMMIT_BRANCH",
+    "maps_to": {
+      "default": "branch execution",
+      "main": "main branch execution"
+    }
+  },
+  "chart_info": {
+    "env": "DEPLOYMENT_CONFIGURATION",
+    "maps_to": {
+      "default": "charts/ska-oso-odt-services/Chart.yaml"
+    }
+  },
+  "test_report": "build/report.xml",
+  "jira_url": "https://jira.skatelescope.org",
+  "project": {
+    "id": "XTP",
+    "issuetype_id": 12345,
+    "customfield_mapping": {
+      "start_date": "",
+      "end_date": "",
+      "test_plans": "",
+      "test_environments": ""
+    }
+  },
+  "description": "Test execution results as generated from git@gitlab.com:ska-telescope/oso/ska-oso-odt-services\n",
+  "test_environments": [
+    {
+      "env": "TEST_ENV",
+      "maps_to": {
+        "default": "STFC-CI",
+        "ITF-LOW": "ITF-LOW",
+        "PSI-MID-MDA": "PSI-MID-MDA",
+        "dev": "dev-testing",
+        "PSI-LOW-TOPIC": "PSI-LOW-TOPIC",
+        "ITF-MID": "ITF-MID",
+        "PSI-LOW": "PSI-LOW"
+      }
+    }
+  ],
+  "labels": [
+    {
+      "env": "CI_COMMIT_BRANCH",
+      "maps_to": {
+        "default": "branch",
+        "main": "main",
+        "master": "master"
+      }
+    }
+  ],
+  "versions": [
+    {
+      "env": "CI_COMMIT_BRANCH",
+      "maps_to": {
+        "default": "",
+        "main": "PI16",
+        "master": "PI16"
+      }
+    }
+  ],
+  "environment_variables": [
+    "CI_JOB_URL",
+    "CI_COMMIT_TITLE",
+    "CI_JOB_STARTED_AT"
+  ]
+}
