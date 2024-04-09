@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-oso-services.labels" . | indent 4 }}
+    component:  {{ template "ska-oso-services.name" . }}
+    domain: environment
+    function: ska-oso-services-environment
+    intent: production
+data:
+  KUBE_NAMESPACE: {{ .Release.Namespace }}
+  ODA_BACKEND_TYPE: {{ .Values.rest.oda.backendType }}
+  {{- if .Values.rest.oda.url }}
+  ODA_URL: {{ .Values.rest.oda.url }}
+  {{ else }}
+  ODA_URL: http://ska-db-oda-rest-{{ .Release.Name }}:5000/{{ .Release.Namespace }}/oda/api/v2
+  {{ end }}
+
+  SKUID_URL: ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.{{ .Values.global.cluster_domain }}:9870
+  {{- if not .Values.rest.use_skuid }}
+  FAKE_SKUID: "true"
+  {{ end }}

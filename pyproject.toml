@@ -1,0 +1,109 @@
+[tool.poetry]
+name = "ska-oso-services"
+version = "0.0.0"
+description = "SKA OSO Services provides APIs for the PHT and ODT"
+authors = ["Team Buttons"]
+license = "BSD-3-Clause"
+readme = "README.md"
+repository = "https://gitlab.com/ska-telescope/oso/ska-oso-services"
+documentation = "https://developer.skao.int/projects/ska-oso-services/en/latest/index.html"
+keywords = ["SKA OSO"]
+packages = [
+    { include = "ska_oso_services", from = "src" }
+]
+include = [
+    { path = 'tests' }
+]
+classifiers = [
+    'Development Status :: 2 - Pre-Alpha',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: BSD License',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.7',
+]
+
+[[tool.poetry.source]]
+name = 'ska-nexus'
+url = 'https://artefact.skao.int/repository/pypi-internal/simple'
+default = false
+secondary = false
+
+[[tool.poetry.source]]
+name = "PyPI-public"
+url = 'https://pypi.org/simple'
+
+[tool.poetry.dependencies]
+python = "^3.10"
+connexion = {extras = ["swagger-ui"], version = "^2.14.0"}
+python-dateutil = "^2.8.2"
+gunicorn = "^20.1.0"
+ska-ser-logging = "^0.4.1"
+ska-ser-skuid = "^3.3.3"
+ska-db-oda = "^2.1.4"
+ska-oso-pdm = "^11.1.1"
+prance = {version = "^23.6.21.0", extras = ["osv"]}
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.1.1"
+pytest-cov = "^3.0.0"
+pytest-forked = "^1.4.0"
+pytest-json-report = "^1.5.0"
+black = "^23.12.1"
+pycodestyle = "^2.8.0"
+isort = "^5.10.1"
+pylint-junit = "^0.3.2"
+flake8 = "^7.0.0"
+deepdiff = "^5.8.1"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinxcontrib-openapi= "^0.7.0"
+myst-parser = "^1.0.0"
+ska-ser-sphinx-theme = "^0.1.2"
+
+[tool.coverage.run]
+parallel = true
+branch = true
+data_file = ".coverage/.coverage"
+
+[tool.isort]
+profile = "black"
+line_length = 88
+skip = "src/ska_oso_services/odt/generated,src/ska_oso_services/openapi/__submodules__"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+extend-exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | src/ska_oso_services/odt/generated
+    | src/ska_oso_services/openapi/__submodules__
+  )/
+  | foo.py           # also separately exclude a file named foo.py in
+                     # the root of the project
+)
+'''
+
+[tool.pylint]
+disable = "C,R,W3101,W0511"
+ignore = "ska-oso-pdm,generated"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

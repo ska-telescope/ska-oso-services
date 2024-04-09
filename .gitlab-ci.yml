@@ -1,0 +1,114 @@
+# This YAML file defines the CICD pipeline which will run on Gitlab. The pipeline is made up of a series of stages,
+# each of which contain a number of jobs. Most of the jobs are defined by the centrally managed
+# templates https://gitlab.com/ska-telescope/templates-repository. In this file we overwrite parts of some
+# of the jobs, and can define our own. For more info see https://docs.gitlab.com/ee/ci/yaml/index.html
+
+# GitLab CI in conjunction with GitLab Runner can use Docker Engine to test and build any application.
+# Docker, when used with GitLab CI, runs each job in a separate and isolated container using the predefined image that is set up in .gitlab-ci.yml.
+# In this case we use the latest python docker image to build and test this project.
+image: $SKA_K8S_TOOLS_DOCKER_BUILDER_IMAGE
+
+default:
+  tags:
+    - k8srunner
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+  - build
+  - test
+  - deploy # this is the name of the dev environment stage in the ST template
+  - cleanup
+  - lint
+  - publish
+  - integration
+  - staging
+  - pages
+  - scan
+
+.info_script: &info_script
+    - |-
+      echo "Status of pods in $KUBE_NAMESPACE namespace:"
+      kubectl get pods -n $KUBE_NAMESPACE -o jsonpath="{range .items[*]}{'Pod: '}{.metadata.name}:{'\n'}{'\t'}{'Image: '}{.spec.containers[*].image}{'\n'}{'\t'}{'Status: '}{.status.phase}{'\n'}{end}{'\n'}"
+      echo "Address to connect to the deployment of the ODT API: "
+      echo "  https://k8s.stfc.skao.int/$KUBE_NAMESPACE/odt/api/v0"
+      echo "Address to connect to the Swagger UI for the deployment: "
+      echo "  https://k8s.stfc.skao.int/$KUBE_NAMESPACE/odt/api/v0/ui/"
+
+# Currently, the dev template uses ci-dev-$CI_PROJECT_NAME which means only one branch can be deployed at a time, so we overwrite this
+.dev_env: &dev_env
+  variables:
+    KUBE_NAMESPACE: "dev-$CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG"
+  environment:
+    name: "dev-$CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG"
+
+info-dev-environment:
+  <<: *dev_env
+  script:
+    - *info_script
+
+info-integration:
+  script:
+    - *info_script
+
+info-staging:
+  script:
+    - *info_script
+
+deploy-dev-environment:
+  <<: *dev_env
+
+test-dev-environment:
+  <<: *dev_env
+
+stop-dev-environment:
+  <<: *dev_env
+
+test-chart-templates:
+  stage: test
+  variables:
+    MINIKUBE: "false"
+  tags:
+  - k8srunner
+  image: $SKA_K8S_TOOLS_DEPLOY_IMAGE
+  script:
+    - helm plugin install https://github.com/helm-unittest/helm-unittest.git
+    - make k8s-chart-test
+    - mkdir -p ./build/reports
+    - mv charts/build/chart_template_tests.xml ./build/reports/chart_template_tests.xml
+  artifacts:
+    name: "$CI_PROJECT_NAME-$CI_JOB_ID"
+    paths:
+      - "build/"
+    reports:
+      junit: build/reports/chart_template_tests.xml
+
+include:
+  # Python
+  - project: "ska-telescope/templates-repository"
+    file: "gitlab-ci/includes/python.gitlab-ci.yml"
+  # OCI
+  - project: "ska-telescope/templates-repository"
+    file: "gitlab-ci/includes/oci-image.gitlab-ci.yml"
+  # Helm Chart linting and Publish
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/helm-chart.gitlab-ci.yml'
+  # Docs pages
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/docs.gitlab-ci.yml'
+  # .post step finalisers eg: badges
+  - project: "ska-telescope/templates-repository"
+    file: "gitlab-ci/includes/finaliser.gitlab-ci.yml"
+  # change log
+  - project: "ska-telescope/templates-repository"
+    file: "gitlab-ci/includes/changelog.gitlab-ci.yml"
+  # release notes
+  - project: 'ska-telescope/templates-repository'
+    file: "gitlab-ci/includes/release.gitlab-ci.yml"
+  # k8s steps
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/k8s.gitlab-ci.yml'
+  # deploy steps
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/deploy.gitlab-ci.yml'

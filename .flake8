@@ -1,0 +1,5 @@
+[flake8]
+max-line-length = 88
+select = C,E,F,W,B,B950
+extend-ignore = F401, E402, W503
+exclude = src/ska_oso_services/odt/generated,src/ska_oso_services/openapi/__submodules__

@@ -1,0 +1,6 @@
+[submodule ".make"]
+	path = .make
+	url = https://gitlab.com/ska-telescope/sdi/ska-cicd-makefile.git
+[submodule "src/ska_oso_services/openapi/__submodules__/ska-oso-pdm"]
+	path = src/ska_oso_services/openapi/__submodules__/ska-oso-pdm
+	url = https://gitlab.com/ska-telescope/oso/ska-oso-pdm.git
