@@ -17,10 +17,10 @@ from ska_oso_services.odt import codec as mcodec
 
 from ..unit.util import (
     CODEC,
+    SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
     VALID_MID_SBDEFINITION_JSON,
+    TestDataFactory,
     assert_json_is_equal,
-    sbd_without_id_or_metadata,
-    sbdefinition,
 )
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
@@ -70,7 +70,7 @@ def test_sbd_post_then_get():
     """
     post_response = requests.post(
         f"{ODT_URL}/sbds",
-        data=sbd_without_id_or_metadata,
+        data=SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
         headers={"Content-type": "application/json"},
     )
 
@@ -100,7 +100,7 @@ def test_sbd_post_then_put():
     """
     post_response = requests.post(
         f"{ODT_URL}/sbds",
-        data=sbd_without_id_or_metadata,
+        data=SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
         headers={"Content-type": "application/json"},
     )
 
@@ -112,7 +112,7 @@ def test_sbd_post_then_put():
     )
 
     sbd_id = post_response.json()["sbd_id"]
-    sbd_to_update = CODEC.dumps(sbdefinition(sbd_id=sbd_id))
+    sbd_to_update = CODEC.dumps(TestDataFactory.sbdefinition(sbd_id=sbd_id))
     put_response = requests.put(
         f"{ODT_URL}/sbds/{sbd_id}",
         data=sbd_to_update,
@@ -169,7 +169,7 @@ def test_sbd_put_not_found():
 #     """
 #
 #     response = requests.post(
-#         f"{ODT_URL}/sbds/sbi-mvp01-20200325-00001",
+#         f"{ODT_URL}/sbds/sbd-mvp01-20200325-00001",
 #         data=INVALID_MID_SBDEFINITION_JSON,
 #         headers={"Content-type": "application/json"},
 #     )

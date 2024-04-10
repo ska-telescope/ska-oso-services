@@ -1,6 +1,6 @@
 {
   "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
-  "sbd_id": "sbi-mvp01-20200325-00001",
+  "sbd_id": "sbd-mvp01-20200325-00001",
   "telescope": "ska_mid",
   "metadata": {
     "version": 1,
@@ -336,7 +336,7 @@
       {
         "pb_id": "pb-mvp01-20200325-00001",
         "sbi_ids": [
-          "sbi-mvp01-20200325-00001"
+          "sbd-mvp01-20200325-00001"
         ],
         "script": {
           "version": "0.1.0",
@@ -348,7 +348,7 @@
       {
         "pb_id": "pb-mvp01-20200325-00002",
         "sbi_ids": [
-          "sbi-mvp01-20200325-00001"
+          "sbd-mvp01-20200325-00001"
         ],
         "script": {
           "version": "0.1.0",
@@ -360,7 +360,7 @@
       {
         "pb_id": "pb-mvp01-20200325-00003",
         "sbi_ids": [
-          "sbi-mvp01-20200325-00001"
+          "sbd-mvp01-20200325-00001"
         ],
         "script": {
           "version": "0.1.0",
@@ -380,7 +380,7 @@
       {
         "pb_id": "pb-mvp01-20200325-00004",
         "sbi_ids": [
-          "sbi-mvp01-20200325-00001"
+          "sbd-mvp01-20200325-00001"
         ],
         "script": {
           "version": "0.1.0",
