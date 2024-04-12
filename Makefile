@@ -82,7 +82,7 @@ k8s-chart-test:
 
 k8s-pre-test:
 	kubectl exec $(REST_POD_NAME) -n $(KUBE_NAMESPACE) -- mkdir -p /var/lib/oda/sbd/sbd-1234
-	kubectl cp tests/unit/odt/testfile_sample_mid_sb.json $(KUBE_NAMESPACE)/$(REST_POD_NAME):/var/lib/oda/sbd/sbd-1234/1.json
+	kubectl cp tests/unit/files/testfile_sample_mid_sb.json $(KUBE_NAMESPACE)/$(REST_POD_NAME):/var/lib/oda/sbd/sbd-1234/1.json
 
 k8s-post-test:
 	kubectl -n $(KUBE_NAMESPACE) exec $(REST_POD_NAME) -- rm -r /var/lib/oda/sbd/

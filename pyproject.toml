@@ -43,6 +43,7 @@ ska-ser-skuid = "^3.3.3"
 ska-db-oda = "^2.1.4"
 ska-oso-pdm = "^11.1.1"
 prance = {version = "^23.6.21.0", extras = ["osv"]}
+pydantic = "2.6.4"
 
 
 [tool.poetry.group.dev.dependencies]

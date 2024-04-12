@@ -7,10 +7,9 @@ from datetime import datetime
 from typing import Optional
 
 from deepdiff import DeepDiff
-from ska_db_oda.domain import set_identifier
+from ska_db_oda.domain import CODEC, set_identifier
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition, SBDefinitionID
 from ska_oso_pdm.generated.models.project import Project
-from ska_oso_pdm.schemas import CODEC
 
 
 def assert_json_is_equal(json_a, json_b, exclude_paths=None):
@@ -86,3 +85,5 @@ SBDEFINITION_WITHOUT_ID_JSON = CODEC.dumps(TestDataFactory.sbdefinition(sbd_id=N
 SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON = CODEC.dumps(
     TestDataFactory.sbdefinition(sbd_id=None, without_metadata=True)
 )
+
+VALID_PROJECT_WITHOUT_JSON = CODEC.dumps(TestDataFactory.project(prj_id=None))

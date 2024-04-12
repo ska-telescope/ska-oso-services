@@ -146,6 +146,162 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /prjs:
+    post:
+      summary: Create a new Project
+      description: |
+        Creates a new Project in the underlying data store. The response
+        contains the entity as it exists in the data store, with an sbd_id and metadata populated.
+      operationId: ska_oso_services.odt.api.prjs.prjs_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './prj-openapi-v1.yaml#/Project'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './prj-openapi-v1.yaml#/Project'
+        "400":
+          description: Bad Request, validation of Project failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /prjs/{identifier}:
+    get:
+      summary: Get Project by identifier
+      description: |
+        Retrieves the Project with the given identifier from the
+        underlying datas store, if available
+      operationId: ska_oso_services.odt.api.prjs.prjs_get
+      parameters:
+      - name: identifier
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './prj-openapi-v1.yaml#/Project'
+        "404":
+          description: NotFound
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update a Project by identifier
+      description: |
+        Updates the Project with the given identifier
+        in the underlying data store to create a new version.
+      operationId: ska_oso_services.odt.api.prjs.prjs_put
+      parameters:
+      - name: identifier
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './prj-openapi-v1.yaml#/Project'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './prj-openapi-v1.yaml#/Project'
+        "400":
+          description: Bad Request, validation of Project failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResponse'
+        "404":
+          description: NotFound
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /prjs/{prj_id}/{obs_block_id}/sbds:
+    post:
+      summary: Create a new, empty SBDefinition linked
+      description: |
+        Creates an empty . The response
+        contains the entity as it exists in the data store, with an sbd_id and metadata populated.
+      operationId: ska_oso_services.odt.api.prjs.prjs_sbds_post
+      parameters:
+        - name: prj_id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: obs_block_id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          description: The Observing Block in which to create the SBDefinition.
+          schema:
+            type: integer
+#      requestBody:
+#        content:
+#          application/json: {}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+        "400":
+          description: Bad Request, validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResponse'
+        "404":
+          description: NotFound
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     ValidationResponse:

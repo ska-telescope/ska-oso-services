@@ -137,7 +137,8 @@ def test_sbd_get_not_found():
     assert response.json() == {
         "status": HTTPStatus.NOT_FOUND,
         "title": "Not Found",
-        "detail": "SBDefinition with identifier 123 not found in repository",
+        "detail": "Identifier 123 not found in repository",
+        "traceback": None,
     }
     assert response.status_code == HTTPStatus.NOT_FOUND
 
@@ -153,7 +154,8 @@ def test_sbd_put_not_found():
     assert response.json() == {
         "status": HTTPStatus.NOT_FOUND,
         "title": "Not Found",
-        "detail": "SBDefinition with identifier 123 not found in repository",
+        "detail": "Identifier 123 not found in repository",
+        "traceback": None,
     }
     assert response.status_code == HTTPStatus.NOT_FOUND
 

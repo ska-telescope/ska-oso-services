@@ -65,7 +65,11 @@ def error_handler(api_fn: Callable[[str], Response]) -> Callable[[str], Response
 
 def error_response(err: Exception) -> Response:
     """
-    Creates a general sever error response, without exposing internals to client
+    Creates a general sever error response, with the error details formatted to help
+    debugging.
+
+    Before going live, we should remove the traceback and not expose the internals
+    to the client, but for now it is useful for developers.
 
     :return: HTTP response server error
     """
