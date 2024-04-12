@@ -8,8 +8,7 @@ from typing import Any, Dict
 import prance
 from connexion import App
 from ska_db_oda.rest.flask_oda import FlaskODA
-
-from ska_oso_services.odt.codec import CustomJSONEncoder
+from ska_oso_pdm.generated.encoder import JSONEncoder
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
@@ -58,7 +57,7 @@ def create_app(open_api_spec=None) -> App:
 
     connexion = App(__name__, specification_dir="openapi/")
 
-    connexion.app.json_encoder = CustomJSONEncoder
+    connexion.app.json_encoder = JSONEncoder
 
     def set_default_headers_on_response(response):
         response.headers["Access-Control-Allow-Origin"] = "*"
