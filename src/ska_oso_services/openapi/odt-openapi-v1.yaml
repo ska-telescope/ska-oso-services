@@ -13,7 +13,7 @@ paths:
       description: |
         Returns a json SchedulingBlockDefinition with empty or generated fields,
         to be populated and stored at a later point
-      operationId: ska_oso_services.odt.api.sbds_create
+      operationId: ska_oso_services.odt.api.sbds.sbds_create
       responses:
         "200":
           description: OK
@@ -27,7 +27,7 @@ paths:
       description: |
         Validates the SchedulingBlockDefinition in the request body against the component definition
         (eg required fields, allowed ranges) and more complex business logic in the controller method.
-      operationId: ska_oso_services.odt.api.sbds_validate
+      operationId: ska_oso_services.odt.api.sbds.sbds_validate
       requestBody:
         content:
           application/json:
@@ -47,7 +47,7 @@ paths:
       description: |
         Creates a new SchedulingBlockDefinition in the underlying data store. The response
         contains the entity as it exists in the data store, with an sbd_id and metadata populated.
-      operationId: ska_oso_services.odt.api.sbds_post
+      operationId: ska_oso_services.odt.api.sbds.sbds_post
       requestBody:
         content:
           application/json:
@@ -79,7 +79,7 @@ paths:
       description: |
         Retrieves the SchedulingBlockDefinition with the given identifier from the
         underlying datas store, if available
-      operationId: ska_oso_services.odt.api.sbds_get
+      operationId: ska_oso_services.odt.api.sbds.sbds_get
       parameters:
       - name: identifier
         in: path
@@ -106,7 +106,7 @@ paths:
       description: |
         Updates the SchedulingBlockDefinition with the given identifier
         in the underlying data store to create a new version.
-      operationId: ska_oso_services.odt.api.sbds_put
+      operationId: ska_oso_services.odt.api.sbds.sbds_put
       parameters:
       - name: identifier
         in: path

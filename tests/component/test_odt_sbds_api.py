@@ -13,8 +13,6 @@ from importlib.metadata import version
 import pytest
 import requests
 
-from ska_oso_services.odt import codec as mcodec
-
 from ..unit.util import (
     CODEC,
     SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
@@ -41,8 +39,7 @@ def test_sbd_create():
     response = requests.get(f"{ODT_URL}/sbds/create")
     assert response.status_code == HTTPStatus.OK
 
-    sbd = mcodec.decode(json.dumps(response.json()))
-    assert sbd.interface
+    assert response.json()["interface"] == "https://schema.skao.int/ska-oso-pdm-sbd/0.1"
 
 
 def test_sbd_validate():
@@ -59,7 +56,7 @@ def test_sbd_validate():
 
     result = json.loads(response.content)
     assert result["valid"]
-    assert result["messages"] == []
+    assert result["messages"] == {}
 
 
 @pytest.mark.xray("XTP-34548")
