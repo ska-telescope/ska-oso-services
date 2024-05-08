@@ -20,7 +20,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+                # TODO the OAS3.1 specs with jsonschema aren't supported by Connexion. To be solved in BTN-XXX
+                type: object
+#                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
   /sbds/validate:
     post:
       summary: Validate an SBD
@@ -32,7 +34,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+              type: object
+#              $ref: './sbd-openapi-v1.yaml#/SBDefinition'
         required: true
       responses:
         "200":
@@ -52,7 +55,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+              type: object
+#              $ref: './sbd-openapi-v1.yaml#/SBDefinition'
         required: true
       responses:
         "200":
@@ -60,13 +64,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+                type: object
+#                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
         "400":
           description: Bad Request, validation of SBDefinition failed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidationResponse'
+                type: object
+#                $ref: '#/components/schemas/ValidationResponse'
         "500":
           description: Internal Server Error
           content:
@@ -94,7 +100,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+                type: object
+#                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
         "404":
           description: NotFound
           content:
@@ -119,7 +126,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+              type: object
+#              $ref: './sbd-openapi-v1.yaml#/SBDefinition'
         required: true
       responses:
         "200":
@@ -127,7 +135,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+                type: object
+#                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
         "400":
           description: Bad Request, validation of SBDefinition failed
           content:
@@ -157,7 +166,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './prj-openapi-v1.yaml#/Project'
+              type: object
+#              $ref: './prj-openapi-v1.yaml#/Project'
         required: true
       responses:
         "200":
@@ -165,7 +175,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './prj-openapi-v1.yaml#/Project'
+                type: object
+#                $ref: './prj-openapi-v1.yaml#/Project'
         "400":
           description: Bad Request, validation of Project failed
           content:
@@ -199,7 +210,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './prj-openapi-v1.yaml#/Project'
+                type: object
+#                $ref: './prj-openapi-v1.yaml#/Project'
         "404":
           description: NotFound
           content:
@@ -224,7 +236,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './prj-openapi-v1.yaml#/Project'
+              type: object
+#              $ref: './prj-openapi-v1.yaml#/Project'
         required: true
       responses:
         "200":
@@ -232,7 +245,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './prj-openapi-v1.yaml#/Project'
+                type: object
+#                $ref: './prj-openapi-v1.yaml#/Project'
         "400":
           description: Bad Request, validation of Project failed
           content:
@@ -271,9 +285,9 @@ paths:
           required: true
           style: simple
           explode: false
-          description: The Observing Block in which to create the SBDefinition.
+          description: The Observing Block in which to create the SBDefinition, in the format 'ob-X'.
           schema:
-            type: integer
+            type: string
 #      requestBody:
 #        content:
 #          application/json: {}
@@ -283,7 +297,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
+                type: object
+#                $ref: './sbd-openapi-v1.yaml#/SBDefinition'
         "400":
           description: Bad Request, validation failed
           content:

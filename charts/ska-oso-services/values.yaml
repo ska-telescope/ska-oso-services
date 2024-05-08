@@ -26,6 +26,8 @@ rest:
     backendType: filesystem
     url: ~ # Defaults to the ODA Kubernetes service address if not set
   use_skuid: true
+  skuid:
+    url:
   resources:
     requests:
       cpu:  100m

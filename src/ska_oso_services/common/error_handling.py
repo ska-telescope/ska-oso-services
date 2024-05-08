@@ -4,7 +4,7 @@ from functools import wraps
 from http import HTTPStatus
 from typing import Callable, Tuple, Union
 
-from ska_oso_pdm.generated.models.sb_definition import SBDefinition
+from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common.model import (
     ErrorResponse,
@@ -12,7 +12,6 @@ from ska_oso_services.common.model import (
     ValidationResponse,
 )
 
-# TODO after BTN-1618 can use the parent model type
 Response = Tuple[Union[SBDefinition, ValidationResponse, ErrorResponse], int]
 
 LOGGER = logging.getLogger(__name__)
@@ -77,9 +76,9 @@ def error_response(err: Exception) -> Response:
     response_body = ErrorResponse(
         status=HTTPStatus.INTERNAL_SERVER_ERROR,
         title="Internal Server Error",
-        detail=str(err.args),
+        detail=repr(err),
         traceback=ErrorResponseTraceback(
-            key=err.args[0],
+            key="Internal Server Error",
             type=str(type(err)),
             full_traceback=traceback.format_exc(),
         ),

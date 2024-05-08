@@ -1,6 +1,6 @@
 import json
 
-from ska_oso_pdm.entities.dish.dish_configuration import ReceiverBand
+from ska_oso_pdm.sb_definition.dish.dish_configuration import ReceiverBand
 
 from ska_oso_services.odt.validation import (
     _validate_csp_and_dish_combination,
@@ -16,14 +16,13 @@ def test_valid_sbd_returns_no_messages():
 
 
 def test_sbd_deserialise_error():
-    result = validate_sbd(json.dumps({"i am": "not a valid sbd"}))
+    result = validate_sbd(json.dumps({"telescope": "not a valid telescope"}))
 
-    assert result == {
-        "deserialisation_error": (
-            "{'interface': ['Missing data for required field.'], "
-            "'telescope': ['Missing data for required field.']}"
-        )
-    }
+    assert (
+        "Input should be 'ska_mid', 'ska_low' or 'MeerKAT' "
+        "[type=enum, input_value='not a valid telescope', input_type=str]"
+        in result["deserialisation_error"]
+    )
 
 
 def test_config_not_present_error():
@@ -32,8 +31,8 @@ def test_config_not_present_error():
     # dish config specified in scan definition must be present in SB
     fake_dish_conf_id = "dish config abc"
     fake_csp_conf_id = "csp config abc"
-    invalid_sbd.scan_definitions[0].dish_configuration_id = fake_dish_conf_id
-    invalid_sbd.scan_definitions[0].csp_configuration_id = fake_csp_conf_id
+    invalid_sbd.scan_definitions[0].dish_configuration_ref = fake_dish_conf_id
+    invalid_sbd.scan_definitions[0].csp_configuration_ref = fake_csp_conf_id
 
     result = _validate_csp_and_dish_combination(invalid_sbd)
 

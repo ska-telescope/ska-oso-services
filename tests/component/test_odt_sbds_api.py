@@ -20,14 +20,7 @@ from ..unit.util import (
     TestDataFactory,
     assert_json_is_equal,
 )
-
-KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
-OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
-ODT_URL = os.getenv(
-    "ODT_URL",
-    "http://ska-oso-services-rest-test:5000"
-    f"/{KUBE_NAMESPACE}/odt/api/v{OSO_SERVICES_MAJOR_VERSION}",
-)
+from . import ODT_URL
 
 
 def test_sbd_create():
@@ -71,7 +64,7 @@ def test_sbd_post_then_get():
         headers={"Content-type": "application/json"},
     )
 
-    assert post_response.status_code == HTTPStatus.OK
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
         VALID_MID_SBDEFINITION_JSON,
@@ -83,7 +76,7 @@ def test_sbd_post_then_get():
 
     # Assert the ODT can get the SBD, ignoring the metadata as it contains
     # timestamps and is the responsibility of the ODA
-    assert get_response.status_code == HTTPStatus.OK
+    assert get_response.status_code == HTTPStatus.OK, get_response.content
     assert_json_is_equal(
         get_response.content,
         VALID_MID_SBDEFINITION_JSON,
@@ -101,7 +94,7 @@ def test_sbd_post_then_put():
         headers={"Content-type": "application/json"},
     )
 
-    assert post_response.status_code == HTTPStatus.OK
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
         VALID_MID_SBDEFINITION_JSON,
@@ -117,7 +110,7 @@ def test_sbd_post_then_put():
     )
     # Assert the ODT can get the SBD, ignoring the metadata as it contains
     # timestamps and is the responsibility of the ODA
-    assert put_response.status_code == HTTPStatus.OK
+    assert put_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         put_response.content,
         VALID_MID_SBDEFINITION_JSON,

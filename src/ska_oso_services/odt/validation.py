@@ -14,10 +14,9 @@ They are then all applied to the SBDefinition and the results combined.
 import logging
 from typing import Tuple, Union
 
-from marshmallow.exceptions import ValidationError
-from ska_oso_pdm.entities.common.sb_definition import SBDefinition
-from ska_oso_pdm.entities.dish.dish_configuration import ReceiverBand
-from ska_oso_pdm.schemas import CODEC as MARSHMALLOW_CODEC
+from ska_oso_pdm.openapi import CODEC
+from ska_oso_pdm.sb_definition import SBDefinition
+from ska_oso_pdm.sb_definition.dish.dish_configuration import ReceiverBand
 
 from ska_oso_services.common.model import ErrorResponse, ValidationResponse
 
@@ -36,30 +35,29 @@ def _validate_csp_and_dish_combination(sbd: SBDefinition) -> dict[str, str]:
         dish_config = None
         csp_config = None
 
-        if scan_def.dish_configuration_id not in dish_configs.keys():
+        if scan_def.dish_configuration_ref not in dish_configs.keys():
             messages[f"dish_config_not_in_sb_{scan_def.scan_definition_id}"] = (
-                f"Dish configuration '{scan_def.dish_configuration_id}' defined "
+                f"Dish configuration '{scan_def.dish_configuration_ref}' defined "
                 f"in scan definition '{scan_def.scan_definition_id}' does not "
                 "exist in the SB"
             )
         else:
-            dish_config = dish_configs[scan_def.dish_configuration_id]
+            dish_config = dish_configs[scan_def.dish_configuration_ref]
 
-        if scan_def.csp_configuration_id not in csp_configs.keys():
+        if scan_def.csp_configuration_ref not in csp_configs.keys():
             messages[f"csp_config_not_in_sb_{scan_def.scan_definition_id}"] = (
-                f"CSP configuration '{scan_def.csp_configuration_id}' defined "
+                f"CSP configuration '{scan_def.csp_configuration_ref}' defined "
                 f"in scan definition '{scan_def.scan_definition_id}' does not "
                 "exist in the SB"
             )
         else:
-            csp_config = csp_configs[scan_def.csp_configuration_id]
+            csp_config = csp_configs[scan_def.csp_configuration_ref]
 
         if dish_config and csp_config:
-            if (
-                csp_config.common_config.band_5_tuning
-                and dish_config.receiver_band
-                not in [ReceiverBand.BAND_5A, ReceiverBand.BAND_5B]
-            ):
+            if csp_config.common.band_5_tuning and dish_config.receiver_band not in [
+                ReceiverBand.BAND_5A,
+                ReceiverBand.BAND_5B,
+            ]:
                 messages[
                     f"csp_and_dish_band_mismatch_{scan_def.scan_definition_id}"
                 ] = (
@@ -86,8 +84,8 @@ def validate_sbd(sbd_str: str) -> dict[str, str]:
         each with a unique key which should identify which part of the entity is invalid
     """
     try:
-        sbd = MARSHMALLOW_CODEC.loads(SBDefinition, sbd_str)
-    except (ValidationError, ValueError) as err:
+        sbd = CODEC.loads(SBDefinition, sbd_str)
+    except ValueError as err:
         return {"deserialisation_error": str(err)}
 
     return {

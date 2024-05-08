@@ -9,17 +9,12 @@ import logging
 from http import HTTPStatus
 from os import getenv
 
-from ska_oso_pdm.entities.common import sb_definition as pdm
-from ska_oso_pdm.generated.models.sb_definition import SBDefinition
 from ska_oso_pdm.openapi import CODEC as OPENAPI_CODEC
+from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services import oda
 from ska_oso_services.common.error_handling import Response, error_handler
 from ska_oso_services.common.model import ErrorResponse, ValidationResponse
-from ska_oso_services.odt.adapter import (
-    generated_model_from_pdm,
-    pdm_from_generated_model,
-)
 from ska_oso_services.odt.validation import validate_sbd
 
 LOGGER = logging.getLogger(__name__)
@@ -42,10 +37,9 @@ def sbds_create() -> Response:
         which the Connexion will wrap in a response
     """
     # Create the empty SBD using defaults
-    pdm_sbd = pdm.SBDefinition()
+    sbd = SBDefinition()
 
-    model_sbd = generated_model_from_pdm(pdm_sbd)
-    return model_sbd, HTTPStatus.OK
+    return sbd, HTTPStatus.OK
 
 
 @error_handler
@@ -81,7 +75,7 @@ def sbds_get(identifier: str) -> Response:
     LOGGER.debug("GET SBD sbd_id: %s", identifier)
     with oda.uow as uow:
         sbd = uow.sbds.get(identifier)
-    return generated_model_from_pdm(sbd), HTTPStatus.OK
+    return sbd, HTTPStatus.OK
 
 
 @error_handler
@@ -105,10 +99,10 @@ def sbds_post(body: dict) -> Response:
             HTTPStatus.BAD_REQUEST,
         )
 
-    model_sbd = OPENAPI_CODEC.loads(SBDefinition, json.dumps(body))
+    sbd = OPENAPI_CODEC.loads(SBDefinition, json.dumps(body))
 
     # Ensure the identifier is None so the ODA doesn't try to perform an update
-    if model_sbd.sbd_id is not None:
+    if sbd.sbd_id is not None:
         return (
             ErrorResponse(
                 status=HTTPStatus.BAD_REQUEST,
@@ -124,7 +118,6 @@ def sbds_post(body: dict) -> Response:
         )
 
     try:
-        sbd: SBDefinition = pdm_from_generated_model(model_sbd)
         with oda.uow as uow:
             updated_sbd = uow.sbds.add(sbd)
             uow.commit()
@@ -135,7 +128,7 @@ def sbds_post(body: dict) -> Response:
             if ODA_BACKEND_TYPE == "rest":
                 updated_sbd = uow.sbds.get(updated_sbd.sbd_id)
         return (
-            generated_model_from_pdm(updated_sbd),
+            updated_sbd,
             HTTPStatus.OK,
         )
     except ValueError as err:
@@ -167,8 +160,8 @@ def sbds_put(body: dict, identifier: str) -> Response:
     if not validation_resp.valid:
         return validation_resp, HTTPStatus.BAD_REQUEST
 
-    model_sbd = OPENAPI_CODEC.loads(SBDefinition, json.dumps(body))
-    if model_sbd.sbd_id != identifier:
+    sbd = OPENAPI_CODEC.loads(SBDefinition, json.dumps(body))
+    if sbd.sbd_id != identifier:
         return (
             ErrorResponse(
                 status=HTTPStatus.UNPROCESSABLE_ENTITY,
@@ -182,7 +175,6 @@ def sbds_put(body: dict, identifier: str) -> Response:
         )
 
     try:
-        sbd: SBDefinition = pdm_from_generated_model(model_sbd)
         with oda.uow as uow:
             if identifier not in uow.sbds:
                 raise KeyError(
@@ -197,7 +189,7 @@ def sbds_put(body: dict, identifier: str) -> Response:
             if ODA_BACKEND_TYPE == "rest":
                 updated_sbd = uow.sbds.get(updated_sbd.sbd_id)
 
-        return generated_model_from_pdm(updated_sbd), HTTPStatus.OK
+        return updated_sbd, HTTPStatus.OK
     except ValueError as err:
         LOGGER.exception("ValueError when adding SBDefinition to the ODA")
         return (

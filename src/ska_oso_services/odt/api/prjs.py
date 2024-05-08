@@ -9,18 +9,21 @@ import logging
 from http import HTTPStatus
 from os import getenv
 
-from ska_oso_pdm.entities.common.sb_definition import SBDefinition, TelescopeType
-from ska_oso_pdm.generated.models.project import Author, ObservingProgramme, Project
+from ska_oso_pdm._shared import TelescopeType
 from ska_oso_pdm.openapi import CODEC as OPENAPI_CODEC
+from ska_oso_pdm.project import Author, ObservingBlock, Project
+from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services import oda
 from ska_oso_services.common.error_handling import Response, error_handler
 from ska_oso_services.common.model import ErrorResponse
-from ska_oso_services.odt.adapter import generated_model_from_pdm
 
 LOGGER = logging.getLogger(__name__)
 
 ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
+
+# For PI22, we are only supporting a single ObservingBlock in the Project, so hard code the id
+OBS_BLOCK_ID = "ob-1"
 
 
 @error_handler
@@ -57,9 +60,8 @@ def prjs_post(body: dict) -> Response:
     LOGGER.debug("POST PRJ")
 
     prj = OPENAPI_CODEC.loads(Project, json.dumps(body))
-    # TODO (BTN-1618) this will change as defaults are handled differently
-    if prj.obs_programmes is None:
-        prj.obs_programmes = [ObservingProgramme(sbd_ids=[])]
+    if prj.obs_blocks is None or len(prj.obs_blocks) == 0:
+        prj.obs_blocks = [ObservingBlock(obs_block_id=OBS_BLOCK_ID, sbd_ids=[])]
     if prj.author is None:
         prj.author = Author(pis=[], cois=[])
 
@@ -161,19 +163,18 @@ def prjs_put(body: dict, identifier: str) -> Response:
 
 
 @error_handler
-def prjs_sbds_post(prj_id: str, obs_block_id: int):
+def prjs_sbds_post(prj_id: str, obs_block_id: str):
     """ """
     # As of PI22, we only support a single observing block. Later, we will
     # support adding to different observing blocks with the relevant validation
-    # TODO After BTN-1618 this will be an id format
-    if obs_block_id != 0:
+    if obs_block_id != OBS_BLOCK_ID:
         return (
             ErrorResponse(
                 status=HTTPStatus.BAD_REQUEST,
                 title="Validation Failed",
                 detail=(
                     "Currently only a single Observing Block is supported, "
-                    "so obs_block_id must be 0."
+                    f"so obs_block_id must be '{OBS_BLOCK_ID}'."
                 ),
             ),
             HTTPStatus.BAD_REQUEST,
@@ -183,17 +184,15 @@ def prjs_sbds_post(prj_id: str, obs_block_id: int):
         prj = uow.prjs.get(prj_id)
         sbd = uow.sbds.add(
             SBDefinition(
-                telescope=TelescopeType.MID,
+                telescope=TelescopeType.SKA_MID,
                 interface="https://schema.skao.int/ska-oso-pdm-sbd/0.1",
             )
         )
-        if prj.obs_programmes is None or len(prj.obs_programmes) == 0:
-            prj.obs_programmes = [
-                ObservingProgramme(name="ObservingBlock 1", sbd_ids=[])
-            ]
+        if prj.obs_blocks is None or len(prj.obs_blocks) == 0:
+            prj.obs_blocks = [ObservingBlock(name="ObservingBlock 1", sbd_ids=[])]
 
-        prj.obs_programmes[0].sbd_ids.append(sbd.sbd_id)
+        prj.obs_blocks[0].sbd_ids.append(sbd.sbd_id)
         uow.prjs.add(prj)
         uow.commit()
 
-    return generated_model_from_pdm(sbd), HTTPStatus.OK
+    return sbd, HTTPStatus.OK

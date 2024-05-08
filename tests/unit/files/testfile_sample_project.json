@@ -1,6 +1,7 @@
 {
   "interface": "https://schema.skao.int/ska-oso-pdm-prj/0.1",
   "prj_id": "prj-mvp01-20220923-00001",
+  "name": "SKA Mid Project",
   "telescope": "ska_mid",
   "metadata": {
     "version": 1,
@@ -13,9 +14,10 @@
      "pis": ["John Lennon"],
      "cois": ["Ringo Starr", "George Harrison"]
   },
-  "obs_programmes": [
+  "obs_blocks": [
      {
-        "name": "Programme 1",
+        "obs_block_id": "ob-1",
+        "name": "Block 1",
         "sbd_ids": [
            "sbd-mvp01-20220923-00001",
            "sbd-mvp01-20220923-00002",
@@ -23,7 +25,8 @@
         ]
      },
      {
-        "name": "Programme 2",
+        "obs_block_id": "ob-2",
+        "name": "Block 2",
         "sbd_ids": [
            "sbd-mvp01-20220923-00004",
            "sbd-mvp01-20220923-00005",

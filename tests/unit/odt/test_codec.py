@@ -2,8 +2,8 @@
 Tests for the encoding and decoding of the requests/responses to model objects
 """
 
-from ska_oso_pdm.generated.models.sb_definition import SBDefinition
-from ska_oso_pdm.openapi import CODEC as OPENAPI_CODEC
+from ska_oso_pdm.openapi import CODEC
+from ska_oso_pdm.sb_definition import SBDefinition
 
 from tests.unit.util import VALID_MID_SBDEFINITION_JSON, assert_json_is_equal
 
@@ -14,9 +14,9 @@ def test_mid_sbd_codec():
     string into the model then encoding it back to a string
     """
     # Decode string into model object
-    model = OPENAPI_CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)
+    model = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)
 
     # Encode model back into json
-    result = OPENAPI_CODEC.dumps(model)
+    result = CODEC.dumps(model)
 
     assert_json_is_equal(result, VALID_MID_SBDEFINITION_JSON)

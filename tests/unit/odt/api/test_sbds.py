@@ -81,14 +81,14 @@ class TestSBDefinitionAPI:
         when ODA responds with an error
         """
         uow_mock = mock.MagicMock()
-        uow_mock.sbds.get.side_effect = Exception("test error")
+        uow_mock.sbds.get.side_effect = Exception("test", "error")
         mock_oda.uow.__enter__.return_value = uow_mock
 
         result = client.get(f"{SBDS_API_URL}/sbd-1234")
 
         assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
         assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "('test error',)"
+        assert result.json["detail"] == "Exception('test', 'error')"
         assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
@@ -221,7 +221,7 @@ class TestSBDefinitionAPI:
 
         assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
         assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "('test error',)"
+        assert result.json["detail"] == "OSError('test error')"
         assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
@@ -336,5 +336,5 @@ class TestSBDefinitionAPI:
 
         assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
         assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "('test error',)"
+        assert result.json["detail"] == "OSError('test error')"
         assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR

@@ -4,6 +4,8 @@ Component level tests for ska-oso-ost-services.
 These will run from a test pod inside a kubernetes cluster, making requests
 to a deployment of ska-oso-ost-services in the same cluster
 """
+import json
+
 # pylint: disable=missing-timeout
 from http import HTTPStatus
 
@@ -26,14 +28,16 @@ def test_sbd_created_and_linked_to_project():
     # Create an empty Project
     prj_post_response = requests.post(
         f"{ODT_URL}/prjs",
+        data=json.dumps({"telescope": "ska_mid"}),
+        headers={"Content-type": "application/json"},
     )
 
-    assert prj_post_response.status_code == HTTPStatus.OK
+    assert prj_post_response.status_code == HTTPStatus.OK, prj_post_response.content
     prj_id = prj_post_response.json()["prj_id"]
 
     # Create an SBDefinition in that Project in the first observing block
     sbd_post_response = requests.post(
-        f"{ODT_URL}/prjs/{prj_id}/0/sbds",
+        f"{ODT_URL}/prjs/{prj_id}/ob-1/sbds",
     )
     assert sbd_post_response.status_code == HTTPStatus.OK
     sbd_id = sbd_post_response.json()["sbd_id"]
@@ -41,7 +45,7 @@ def test_sbd_created_and_linked_to_project():
     # Check the SBDefinition is linked to Project
     get_prj_response = requests.get(f"{ODT_URL}/prjs/{prj_id}")
     assert get_prj_response.status_code == HTTPStatus.OK
-    assert get_prj_response.json()["obs_programmes"][0]["sbd_ids"][0] == sbd_id
+    assert get_prj_response.json()["obs_blocks"][0]["sbd_ids"][0] == sbd_id
 
 
 def test_prj_post_then_get():

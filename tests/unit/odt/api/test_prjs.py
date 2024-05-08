@@ -2,12 +2,12 @@
 Unit tests for ska_oso_services.api
 """
 
+import json
 from http import HTTPStatus
 from importlib.metadata import version
 from unittest import mock
 
-from ska_oso_pdm.openapi import CODEC as OPENAPI_CODEC
-from ska_oso_pdm.schemas import CODEC as MARSHMALLOW_CODEC
+from ska_oso_pdm.openapi import CODEC
 
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
@@ -29,7 +29,7 @@ class TestProjectGet:
 
         result = client.get(f"{PRJS_API_URL}/prj-1234")
 
-        assert_json_is_equal(result.text, OPENAPI_CODEC.dumps(project))
+        assert_json_is_equal(result.text, CODEC.dumps(project))
         assert result.status_code == HTTPStatus.OK
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
@@ -58,14 +58,14 @@ class TestProjectGet:
         when ODA responds with an error
         """
         uow_mock = mock.MagicMock()
-        uow_mock.prjs.get.side_effect = Exception("test error")
+        uow_mock.prjs.get.side_effect = Exception("test", "error")
         mock_oda.uow.__enter__.return_value = uow_mock
 
         result = client.get(f"{PRJS_API_URL}/prj-1234")
 
         assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
         assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "('test error',)"
+        assert result.json["detail"] == "Exception('test', 'error')"
         assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
@@ -83,18 +83,18 @@ class TestProjectPost:
 
         result = client.post(
             f"{PRJS_API_URL}",
-            data=OPENAPI_CODEC.dumps(TestDataFactory.project(prj_id=None)),
+            data=CODEC.dumps(TestDataFactory.project(prj_id=None)),
             headers={"Content-type": "application/json"},
         )
 
         assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, OPENAPI_CODEC.dumps(created_project))
+        assert_json_is_equal(result.text, CODEC.dumps(created_project))
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
-    def test_prjs_post_with_no_body(self, mock_oda, client):
+    def test_prjs_post_with_minimum_body(self, mock_oda, client):
         """
-        Check the prjs_post method returns an empty project with a
-        single observing block if no request body is included
+        Check the prjs_post method returns an 'empty' project with a
+        single observing block if a request body with only the valid fields is sent
         """
         uow_mock = mock.MagicMock()
         created_project = TestDataFactory.project()
@@ -104,13 +104,15 @@ class TestProjectPost:
 
         result = client.post(
             f"{PRJS_API_URL}",
+            data=json.dumps({"telescope": "ska_mid"}),
+            headers={"Content-type": "application/json"},
         )
 
         assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, OPENAPI_CODEC.dumps(created_project))
+        assert_json_is_equal(result.text, CODEC.dumps(created_project))
         # Check that the persisted value has an empty observing block
         args, _ = uow_mock.prjs.add.call_args
-        assert len(args[0].obs_programmes) == 1
+        assert len(args[0].obs_blocks) == 1
 
     def test_prjs_post_given_prj_id_raises_error(self, client):
         """
@@ -120,7 +122,7 @@ class TestProjectPost:
 
         result = client.post(
             f"{PRJS_API_URL}",
-            data=OPENAPI_CODEC.dumps(TestDataFactory.project()),
+            data=CODEC.dumps(TestDataFactory.project()),
             headers={"Content-type": "application/json"},
         )
 
@@ -170,13 +172,13 @@ class TestProjectPost:
 
         result = client.post(
             f"{PRJS_API_URL}",
-            data=OPENAPI_CODEC.dumps(TestDataFactory.project(prj_id=None)),
+            data=CODEC.dumps(TestDataFactory.project(prj_id=None)),
             headers={"Content-type": "application/json"},
         )
 
         assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
         assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "('test error',)"
+        assert result.json["detail"] == "OSError('test error')"
         assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
@@ -195,12 +197,12 @@ class TestProjectPut:
 
         result = client.put(
             f"{PRJS_API_URL}/{project.prj_id}",
-            data=OPENAPI_CODEC.dumps(project),
+            data=CODEC.dumps(project),
             headers={"Content-type": "application/json"},
         )
 
         assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, OPENAPI_CODEC.dumps(project))
+        assert_json_is_equal(result.text, CODEC.dumps(project))
 
     def test_prjs_put_wrong_identifier(self, client):
         """
@@ -209,7 +211,7 @@ class TestProjectPut:
         """
         result = client.put(
             f"{PRJS_API_URL}/00000",
-            data=OPENAPI_CODEC.dumps(TestDataFactory.project()),
+            data=CODEC.dumps(TestDataFactory.project()),
             headers={"Content-type": "application/json"},
         )
 
@@ -254,7 +256,7 @@ class TestProjectPut:
         project = TestDataFactory.project(prj_id="prj-999")
         result = client.put(
             f"{PRJS_API_URL}/{project.prj_id}",
-            data=OPENAPI_CODEC.dumps(project),
+            data=CODEC.dumps(project),
             headers={"Content-type": "application/json"},
         )
 
@@ -276,13 +278,13 @@ class TestProjectPut:
         project = TestDataFactory.project()
         result = client.put(
             f"{PRJS_API_URL}/{project.prj_id}",
-            data=OPENAPI_CODEC.dumps(project),
+            data=CODEC.dumps(project),
             headers={"Content-type": "application/json"},
         )
 
         assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
         assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "('test error',)"
+        assert result.json["detail"] == "OSError('test error')"
         assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
@@ -297,7 +299,7 @@ class TestProjectAddSBDefinition:
         mock_oda.uow.__enter__.return_value = uow_mock
 
         result = client.post(
-            f"{PRJS_API_URL}/prj-999/0/sbds",
+            f"{PRJS_API_URL}/prj-999/ob-1/sbds",
         )
 
         assert result.status_code == HTTPStatus.NOT_FOUND
@@ -321,7 +323,7 @@ class TestProjectAddSBDefinition:
         assert result.json["title"] == "Validation Failed"
         assert result.json["detail"] == (
             "Currently only a single Observing Block is supported, "
-            "so obs_block_id must be 0."
+            "so obs_block_id must be 'ob-1'."
         )
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
@@ -332,12 +334,12 @@ class TestProjectAddSBDefinition:
         mock_oda.uow.__enter__.return_value = uow_mock
 
         result = client.post(
-            f"{PRJS_API_URL}/prj-123/0/sbds",
+            f"{PRJS_API_URL}/prj-123/ob-1/sbds",
         )
 
         assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
         assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "('test error',)"
+        assert result.json["detail"] == "OSError('test error')"
         assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
@@ -351,10 +353,10 @@ class TestProjectAddSBDefinition:
         mock_oda.uow.__enter__.return_value = uow_mock
 
         result = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/0/sbds",
+            f"{PRJS_API_URL}/{project.prj_id}/ob-1/sbds",
         )
 
         assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, MARSHMALLOW_CODEC.dumps(sbd))
+        assert_json_is_equal(result.text, CODEC.dumps(sbd))
         args, _ = uow_mock.prjs.add.call_args
-        assert sbd.sbd_id in args[0].obs_programmes[0].sbd_ids
+        assert sbd.sbd_id in args[0].obs_blocks[0].sbd_ids
