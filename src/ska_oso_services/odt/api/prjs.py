@@ -10,7 +10,6 @@ from http import HTTPStatus
 from os import getenv
 
 from ska_oso_pdm._shared import TelescopeType
-from ska_oso_pdm.openapi import CODEC as OPENAPI_CODEC
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
@@ -22,7 +21,8 @@ LOGGER = logging.getLogger(__name__)
 
 ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
 
-# For PI22, we are only supporting a single ObservingBlock in the Project, so hard code the id
+# For PI22, we are only supporting a single ObservingBlock in the
+# Project, so hard code the id
 OBS_BLOCK_ID = "ob-1"
 
 
@@ -59,7 +59,7 @@ def prjs_post(body: dict) -> Response:
     """
     LOGGER.debug("POST PRJ")
 
-    prj = OPENAPI_CODEC.loads(Project, json.dumps(body))
+    prj = Project.model_validate_json(json.dumps(body))
     if prj.obs_blocks is None or len(prj.obs_blocks) == 0:
         prj.obs_blocks = [ObservingBlock(obs_block_id=OBS_BLOCK_ID, sbd_ids=[])]
     if prj.author is None:
@@ -119,7 +119,7 @@ def prjs_put(body: dict, identifier: str) -> Response:
     """
     LOGGER.debug("POST PRJS prj_id: %s", identifier)
 
-    prj = OPENAPI_CODEC.loads(Project, json.dumps(body))
+    prj = Project.model_validate_json(json.dumps(body))
 
     if prj.prj_id != identifier:
         return (

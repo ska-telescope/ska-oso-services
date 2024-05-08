@@ -9,7 +9,6 @@ import logging
 from http import HTTPStatus
 from os import getenv
 
-from ska_oso_pdm.openapi import CODEC as OPENAPI_CODEC
 from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services import oda
@@ -99,7 +98,7 @@ def sbds_post(body: dict) -> Response:
             HTTPStatus.BAD_REQUEST,
         )
 
-    sbd = OPENAPI_CODEC.loads(SBDefinition, json.dumps(body))
+    sbd = SBDefinition.model_validate_json(json.dumps(body))
 
     # Ensure the identifier is None so the ODA doesn't try to perform an update
     if sbd.sbd_id is not None:
@@ -160,7 +159,7 @@ def sbds_put(body: dict, identifier: str) -> Response:
     if not validation_resp.valid:
         return validation_resp, HTTPStatus.BAD_REQUEST
 
-    sbd = OPENAPI_CODEC.loads(SBDefinition, json.dumps(body))
+    sbd = SBDefinition.model_validate_json(json.dumps(body))
     if sbd.sbd_id != identifier:
         return (
             ErrorResponse(

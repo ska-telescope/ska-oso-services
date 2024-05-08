@@ -12,7 +12,6 @@ from http import HTTPStatus
 import requests
 
 from ..unit.util import (
-    CODEC,
     VALID_PROJECT_WITHOUT_JSON,
     TestDataFactory,
     assert_json_is_equal,
@@ -98,7 +97,7 @@ def test_prj_post_then_put():
     )
 
     prj_id = post_response.json()["prj_id"]
-    prj_to_update = CODEC.dumps(TestDataFactory.project(prj_id=prj_id))
+    prj_to_update = TestDataFactory.project(prj_id=prj_id).model_dump_json()
     put_response = requests.put(
         f"{ODT_URL}/prjs/{prj_id}",
         data=prj_to_update,

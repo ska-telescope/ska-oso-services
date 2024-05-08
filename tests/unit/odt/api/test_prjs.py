@@ -7,8 +7,6 @@ from http import HTTPStatus
 from importlib.metadata import version
 from unittest import mock
 
-from ska_oso_pdm.openapi import CODEC
-
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
@@ -29,7 +27,7 @@ class TestProjectGet:
 
         result = client.get(f"{PRJS_API_URL}/prj-1234")
 
-        assert_json_is_equal(result.text, CODEC.dumps(project))
+        assert_json_is_equal(result.text, project.model_dump_json())
         assert result.status_code == HTTPStatus.OK
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
@@ -83,12 +81,12 @@ class TestProjectPost:
 
         result = client.post(
             f"{PRJS_API_URL}",
-            data=CODEC.dumps(TestDataFactory.project(prj_id=None)),
+            data=TestDataFactory.project(prj_id=None).model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
         assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, CODEC.dumps(created_project))
+        assert_json_is_equal(result.text, created_project.model_dump_json())
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
     def test_prjs_post_with_minimum_body(self, mock_oda, client):
@@ -109,7 +107,7 @@ class TestProjectPost:
         )
 
         assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, CODEC.dumps(created_project))
+        assert_json_is_equal(result.text, created_project.model_dump_json())
         # Check that the persisted value has an empty observing block
         args, _ = uow_mock.prjs.add.call_args
         assert len(args[0].obs_blocks) == 1
@@ -122,7 +120,7 @@ class TestProjectPost:
 
         result = client.post(
             f"{PRJS_API_URL}",
-            data=CODEC.dumps(TestDataFactory.project()),
+            data=TestDataFactory.project().model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
@@ -172,7 +170,7 @@ class TestProjectPost:
 
         result = client.post(
             f"{PRJS_API_URL}",
-            data=CODEC.dumps(TestDataFactory.project(prj_id=None)),
+            data=TestDataFactory.project(prj_id=None).model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
@@ -197,12 +195,12 @@ class TestProjectPut:
 
         result = client.put(
             f"{PRJS_API_URL}/{project.prj_id}",
-            data=CODEC.dumps(project),
+            data=project.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
         assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, CODEC.dumps(project))
+        assert_json_is_equal(result.text, project.model_dump_json())
 
     def test_prjs_put_wrong_identifier(self, client):
         """
@@ -211,7 +209,7 @@ class TestProjectPut:
         """
         result = client.put(
             f"{PRJS_API_URL}/00000",
-            data=CODEC.dumps(TestDataFactory.project()),
+            data=TestDataFactory.project().model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
@@ -256,7 +254,7 @@ class TestProjectPut:
         project = TestDataFactory.project(prj_id="prj-999")
         result = client.put(
             f"{PRJS_API_URL}/{project.prj_id}",
-            data=CODEC.dumps(project),
+            data=project.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
@@ -278,7 +276,7 @@ class TestProjectPut:
         project = TestDataFactory.project()
         result = client.put(
             f"{PRJS_API_URL}/{project.prj_id}",
-            data=CODEC.dumps(project),
+            data=project.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
@@ -357,6 +355,6 @@ class TestProjectAddSBDefinition:
         )
 
         assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, CODEC.dumps(sbd))
+        assert_json_is_equal(result.text, sbd.model_dump_json())
         args, _ = uow_mock.prjs.add.call_args
         assert sbd.sbd_id in args[0].obs_blocks[0].sbd_ids

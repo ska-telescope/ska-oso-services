@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Optional
 
 from deepdiff import DeepDiff
-from ska_db_oda.domain import CODEC, set_identifier
+from ska_db_oda.domain import set_identifier
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
@@ -49,8 +49,8 @@ class TestDataFactory:
         created_on: Optional[datetime] = None,
         without_metadata: bool = False,
     ) -> SBDefinition:
-        sbd = CODEC.loads(
-            SBDefinition, load_string_from_file("files/testfile_sample_mid_sb.json")
+        sbd = SBDefinition.model_validate_json(
+            load_string_from_file("files/testfile_sample_mid_sb.json")
         )
         set_identifier(sbd, sbd_id)
 
@@ -70,8 +70,8 @@ class TestDataFactory:
         prj_id: Optional[str] = "prj-mvp01-20220923-00001",
         version: Optional[int] = None,
     ) -> Project:
-        prj = CODEC.loads(
-            Project, load_string_from_file("files/testfile_sample_project.json")
+        prj = Project.model_validate_json(
+            load_string_from_file("files/testfile_sample_project.json")
         )
         set_identifier(prj, prj_id)
         if version:
@@ -80,10 +80,12 @@ class TestDataFactory:
         return prj
 
 
-VALID_MID_SBDEFINITION_JSON = CODEC.dumps(TestDataFactory.sbdefinition())
-SBDEFINITION_WITHOUT_ID_JSON = CODEC.dumps(TestDataFactory.sbdefinition(sbd_id=None))
-SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON = CODEC.dumps(
-    TestDataFactory.sbdefinition(sbd_id=None, without_metadata=True)
-)
+VALID_MID_SBDEFINITION_JSON = TestDataFactory.sbdefinition().model_dump_json()
+SBDEFINITION_WITHOUT_ID_JSON = TestDataFactory.sbdefinition(
+    sbd_id=None
+).model_dump_json()
+SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON = TestDataFactory.sbdefinition(
+    sbd_id=None, without_metadata=True
+).model_dump_json()
 
-VALID_PROJECT_WITHOUT_JSON = CODEC.dumps(TestDataFactory.project(prj_id=None))
+VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(prj_id=None).model_dump_json()

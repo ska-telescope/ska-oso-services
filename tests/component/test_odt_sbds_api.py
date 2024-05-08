@@ -6,15 +6,12 @@ to a deployment of ska-oso-ost-services in the same cluster
 """
 # pylint: disable=missing-timeout
 import json
-import os
 from http import HTTPStatus
-from importlib.metadata import version
 
 import pytest
 import requests
 
 from ..unit.util import (
-    CODEC,
     SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
     VALID_MID_SBDEFINITION_JSON,
     TestDataFactory,
@@ -102,7 +99,7 @@ def test_sbd_post_then_put():
     )
 
     sbd_id = post_response.json()["sbd_id"]
-    sbd_to_update = CODEC.dumps(TestDataFactory.sbdefinition(sbd_id=sbd_id))
+    sbd_to_update = TestDataFactory.sbdefinition(sbd_id=sbd_id).model_dump_json()
     put_response = requests.put(
         f"{ODT_URL}/sbds/{sbd_id}",
         data=sbd_to_update,
