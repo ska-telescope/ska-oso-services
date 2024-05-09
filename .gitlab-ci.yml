@@ -47,6 +47,8 @@ info-dev-environment:
   <<: *dev_env
   script:
     - *info_script
+  needs:
+    - oci-image-build
 
 info-integration:
   script:
@@ -58,6 +60,8 @@ info-staging:
 
 deploy-dev-environment:
   <<: *dev_env
+  needs:
+    - oci-image-build
 
 test-dev-environment:
   <<: *dev_env
