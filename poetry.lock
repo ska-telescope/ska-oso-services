@@ -2225,13 +2225,13 @@ reference = "PyPI-public"
 
 [[package]]
 name = "ska-db-oda"
-version = "3.0.1"
+version = "3.0.2"
 description = "SKA Database OSO Data Archive"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "ska_db_oda-3.0.1-py3-none-any.whl", hash = "sha256:19570b4c8feaead1347bce7acaf402f7246d162eeea9a3a75ddfaa4ab8b3133a"},
-    {file = "ska_db_oda-3.0.1.tar.gz", hash = "sha256:6822c581619d9274926a045c56094270d44e50e78443305cabb09795ca160bd8"},
+    {file = "ska_db_oda-3.0.2-py3-none-any.whl", hash = "sha256:1fdfac5d635b1456700d893054d306a3a07ae035c81a9e1895849571f2431b9b"},
+    {file = "ska_db_oda-3.0.2.tar.gz", hash = "sha256:39dc08a1d3703d5d7b49a6ad27f06a8c34a56840ae8535ecaa46518186299f31"},
 ]
 
 [package.dependencies]
@@ -2746,4 +2746,4 @@ reference = "PyPI-public"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "5743d47c8164192b97210252a9845364637d174d3110667d557e88cf860a8029"
+content-hash = "7047cea4c7d7b19c0bbd268743d4e3c16a6c5b2fc68728af11a0063570f743d4"

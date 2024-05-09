@@ -68,6 +68,8 @@ test-dev-environment:
 
 stop-dev-environment:
   <<: *dev_env
+  needs:
+    - oci-image-build
 
 test-chart-templates:
   stage: test
