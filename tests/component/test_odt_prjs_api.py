@@ -39,7 +39,7 @@ def test_sbd_created_and_linked_to_project():
         f"{ODT_URL}/prjs/{prj_id}/ob-1/sbds",
     )
     assert sbd_post_response.status_code == HTTPStatus.OK
-    sbd_id = sbd_post_response.json()["sbd_id"]
+    sbd_id = sbd_post_response.json()["sbd"]["sbd_id"]
 
     # Check the SBDefinition is linked to Project
     get_prj_response = requests.get(f"{ODT_URL}/prjs/{prj_id}")

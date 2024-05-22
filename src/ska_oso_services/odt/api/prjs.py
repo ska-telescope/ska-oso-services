@@ -164,35 +164,47 @@ def prjs_put(body: dict, identifier: str) -> Response:
 
 @error_handler
 def prjs_sbds_post(prj_id: str, obs_block_id: str):
-    """ """
-    # As of PI22, we only support a single observing block. Later, we will
-    # support adding to different observing blocks with the relevant validation
-    if obs_block_id != OBS_BLOCK_ID:
-        return (
-            ErrorResponse(
-                status=HTTPStatus.BAD_REQUEST,
-                title="Validation Failed",
-                detail=(
-                    "Currently only a single Observing Block is supported, "
-                    f"so obs_block_id must be '{OBS_BLOCK_ID}'."
-                ),
-            ),
-            HTTPStatus.BAD_REQUEST,
-        )
+    """
+    Function that a POST /prjs/{prj_id}/obs_block_id/sbd request is routed to.
 
+    Creates an SBDefinition and links this in the Project.
+
+    The returned response body is an object with the Project and SBDefinition
+    as they exist in the ODA.
+
+    :param prj_id: Identifier of the Project to create the SBDefinition in
+    :param obs_block_id: The observing block within the Project the SBDefinition
+        should be in
+    :return: a tuple of an Project or error response and an HTTP status,
+        which the Connexion will wrap in a response
+    """
     with oda.uow as uow:
         prj = uow.prjs.get(prj_id)
+        try:
+            obs_block = next(
+                obs_block
+                for obs_block in prj.obs_blocks
+                if obs_block.obs_block_id == obs_block_id
+            )
+        except StopIteration:
+            return (
+                ErrorResponse(
+                    status=HTTPStatus.NOT_FOUND,
+                    title="Not Found",
+                    detail=f"Observing Block '{obs_block_id}' not found in Project",
+                ),
+                HTTPStatus.NOT_FOUND,
+            )
+
         sbd = uow.sbds.add(
             SBDefinition(
                 telescope=TelescopeType.SKA_MID,
                 interface="https://schema.skao.int/ska-oso-pdm-sbd/0.1",
             )
         )
-        if prj.obs_blocks is None or len(prj.obs_blocks) == 0:
-            prj.obs_blocks = [ObservingBlock(name="ObservingBlock 1", sbd_ids=[])]
-
-        prj.obs_blocks[0].sbd_ids.append(sbd.sbd_id)
+        obs_block.sbd_ids.append(sbd.sbd_id)
+        # Persist the change to the obs_block above
         uow.prjs.add(prj)
         uow.commit()
 
-    return sbd, HTTPStatus.OK
+    return {"sbd": sbd, "prj": prj}, HTTPStatus.OK

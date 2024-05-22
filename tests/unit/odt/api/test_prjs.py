@@ -7,6 +7,8 @@ from http import HTTPStatus
 from importlib.metadata import version
 from unittest import mock
 
+from ska_oso_pdm.project import ObservingBlock
+
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
@@ -304,25 +306,21 @@ class TestProjectAddSBDefinition:
         assert result.json["title"] == "Not Found"
         assert result.json["detail"] == "Identifier prj-999 not found in repository"
 
-    def test_prjs_post_sbd_with_body_returns_error(self):
-        # TODO do i need this
-        pass
+    @mock.patch("ska_oso_services.odt.api.prjs.oda")
+    def test_prjs_post_sbd_obs_block_id_not_found(self, mock_oda, client):
+        uow_mock = mock.MagicMock()
+        project = TestDataFactory.project()
+        project.obs_blocks = []
+        uow_mock.prjs.get.return_value = project
+        mock_oda.uow.__enter__.return_value = uow_mock
 
-    def test_prjs_post_sbd_with_wrong_obs_block_id(self, client):
-        """
-        This is a temporary measure - as of PI22 we are just
-        supporting a single observing block
-        """
         result = client.post(
-            f"{PRJS_API_URL}/prj-123/7/sbds",
+            f"{PRJS_API_URL}/{project.prj_id}/ob-1/sbds",
         )
 
-        assert result.status_code == HTTPStatus.BAD_REQUEST
-        assert result.json["title"] == "Validation Failed"
-        assert result.json["detail"] == (
-            "Currently only a single Observing Block is supported, "
-            "so obs_block_id must be 'ob-1'."
-        )
+        assert result.status_code == HTTPStatus.NOT_FOUND
+        assert result.json["title"] == "Not Found"
+        assert result.json["detail"] == "Observing Block 'ob-1' not found in Project"
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
     def test_prjs_post_sbd_oda_error(self, mock_oda, client):
@@ -344,6 +342,8 @@ class TestProjectAddSBDefinition:
     def test_prjs_post_sbd_success(self, mock_oda, client):
         uow_mock = mock.MagicMock()
         project = TestDataFactory.project()
+        obs_block_id = "ob-1"
+        project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
         sbd = TestDataFactory.sbdefinition()
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
@@ -351,10 +351,16 @@ class TestProjectAddSBDefinition:
         mock_oda.uow.__enter__.return_value = uow_mock
 
         result = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/ob-1/sbds",
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/sbds",
         )
 
         assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, sbd.model_dump_json())
+
+        expected_response = {
+            "sbd": json.loads(sbd.model_dump_json()),
+            "prj": json.loads(project.model_dump_json()),
+        }
+        assert expected_response == result.json
+
         args, _ = uow_mock.prjs.add.call_args
         assert sbd.sbd_id in args[0].obs_blocks[0].sbd_ids
