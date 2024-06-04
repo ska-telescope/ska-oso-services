@@ -3,11 +3,13 @@ Utility functions to be used in tests
 """
 import json
 import os.path
+from datetime import datetime
 from typing import Optional
 
 from deepdiff import DeepDiff
-from ska_oso_pdm.entities.common.sb_definition import SBDefinition, SBDefinitionID
-from ska_oso_pdm.schemas import CODEC
+from ska_db_oda.domain import set_identifier
+from ska_oso_pdm.project import Project
+from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
 
 def assert_json_is_equal(json_a, json_b, exclude_paths=None):
@@ -39,34 +41,51 @@ def load_string_from_file(filename):
         return json_data
 
 
-VALID_MID_SBDEFINITION_JSON = load_string_from_file("odt/testfile_sample_mid_sb.json")
-valid_mid_sbdefinition = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)
+class TestDataFactory:
+    @staticmethod
+    def sbdefinition(
+        sbd_id: Optional[SBDefinitionID] = "sbd-mvp01-20200325-00001",
+        version: Optional[int] = None,
+        created_on: Optional[datetime] = None,
+        without_metadata: bool = False,
+    ) -> SBDefinition:
+        sbd = SBDefinition.model_validate_json(
+            load_string_from_file("files/testfile_sample_mid_sb.json")
+        )
+        set_identifier(sbd, sbd_id)
 
-INVALID_MID_SBDEFINITION_JSON = CODEC.dumps(
-    SBDefinition(sbd_id="sbi-mvp01-20200325-00001")
-)
+        if without_metadata:
+            sbd.metadata = None
+            return sbd
+
+        if version:
+            sbd.metadata.version = version
+        if created_on:
+            sbd.metadata.created_on = created_on
+
+        return sbd
+
+    @staticmethod
+    def project(
+        prj_id: Optional[str] = "prj-mvp01-20220923-00001",
+        version: Optional[int] = None,
+    ) -> Project:
+        prj = Project.model_validate_json(
+            load_string_from_file("files/testfile_sample_project.json")
+        )
+        set_identifier(prj, prj_id)
+        if version:
+            prj.metadata.version = version
+
+        return prj
 
 
-def sbdefinition(
-    sbd_id: Optional[SBDefinitionID] = "sbi-mvp01-20200325-00001",
-    version: Optional[int] = None,
-) -> SBDefinition:
-    sbd = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)
-    sbd.sbd_id = sbd_id
-    if version:
-        sbd.metadata.version = version
+VALID_MID_SBDEFINITION_JSON = TestDataFactory.sbdefinition().model_dump_json()
+SBDEFINITION_WITHOUT_ID_JSON = TestDataFactory.sbdefinition(
+    sbd_id=None
+).model_dump_json()
+SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON = TestDataFactory.sbdefinition(
+    sbd_id=None, without_metadata=True
+).model_dump_json()
 
-    return sbd
-
-
-def sbdefinition_without_metadata(
-    sbd_id: Optional[SBDefinitionID] = "sbi-mvp01-20200325-00001",
-) -> SBDefinition:
-    sbd = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)
-    sbd.sbd_id = sbd_id
-    sbd.metadata = None
-    return sbd
-
-
-sbd_without_id = CODEC.dumps(sbdefinition(sbd_id=None))
-sbd_without_id_or_metadata = CODEC.dumps(sbdefinition_without_metadata(sbd_id=None))
+VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(prj_id=None).model_dump_json()

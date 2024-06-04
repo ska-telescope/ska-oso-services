@@ -6,78 +6,19 @@ Connexion maps the function name to the operationId in the OpenAPI document path
 
 import json
 import logging
-import traceback
-from functools import wraps
 from http import HTTPStatus
 from os import getenv
-from typing import Callable, Tuple, Union
 
-from ska_oso_pdm.entities.common import sb_definition as pdm
-from ska_oso_pdm.generated.models.sb_definition import SBDefinition
-from ska_oso_pdm.openapi import CODEC as OPENAPI_CODEC
+from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services import oda
-from ska_oso_services.odt.adapter import (
-    generated_model_from_pdm,
-    pdm_from_generated_model,
-)
-from ska_oso_services.odt.generated.models.error_response import ErrorResponse
-from ska_oso_services.odt.generated.models.error_response_traceback import (
-    ErrorResponseTraceback,
-)
-from ska_oso_services.odt.generated.models.validation_response import ValidationResponse
+from ska_oso_services.common.error_handling import Response, error_handler
+from ska_oso_services.common.model import ErrorResponse, ValidationResponse
 from ska_oso_services.odt.validation import validate_sbd
-
-Response = Tuple[Union[SBDefinition, ValidationResponse, ErrorResponse], int]
 
 LOGGER = logging.getLogger(__name__)
 
 ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
-
-
-def error_handler(api_fn: Callable[[str], Response]) -> Callable[[str], Response]:
-    """
-    A decorator function to catch general errors and wrap in the correct HTTP response,
-    otherwise Flask just returns a generic error messgae which isn't very useful.
-
-    :param api_fn: A function which an HTTP request is mapped
-        to and returns an HTTP response
-    """
-
-    @wraps(api_fn)
-    def wrapper(*args, **kwargs):
-        try:
-            return api_fn(*args, **kwargs)
-        except KeyError as err:
-            # TODO there is a risk that the KeyError is not from the
-            #  ODA not being able to find the entity. After BTN-1502 the
-            #  ODA should raise its own exceptions which we can catch here
-            is_not_found_in_oda = any(
-                "not found" in str(arg).lower() for arg in err.args
-            )
-            if is_not_found_in_oda:
-                return (
-                    ErrorResponse(
-                        status=HTTPStatus.NOT_FOUND,
-                        title="Not Found",
-                        detail=(
-                            "SBDefinition with identifier"
-                            f" {next(iter(kwargs.values()))} not found in repository"
-                        ),
-                    ),
-                    HTTPStatus.NOT_FOUND,
-                )
-            else:
-                LOGGER.exception(
-                    "KeyError raised by api function call, but not due to the "
-                    "sbd_id not being found in the ODA."
-                )
-                return error_response(err)
-        except Exception as err:  # pylint: disable=broad-except
-            LOGGER.exception("Error caught by general error handler.")
-            return error_response(err)
-
-    return wrapper
 
 
 @error_handler
@@ -95,10 +36,9 @@ def sbds_create() -> Response:
         which the Connexion will wrap in a response
     """
     # Create the empty SBD using defaults
-    pdm_sbd = pdm.SBDefinition()
+    sbd = SBDefinition()
 
-    model_sbd = generated_model_from_pdm(pdm_sbd)
-    return model_sbd, HTTPStatus.OK
+    return sbd, HTTPStatus.OK
 
 
 @error_handler
@@ -134,7 +74,7 @@ def sbds_get(identifier: str) -> Response:
     LOGGER.debug("GET SBD sbd_id: %s", identifier)
     with oda.uow as uow:
         sbd = uow.sbds.get(identifier)
-    return generated_model_from_pdm(sbd), HTTPStatus.OK
+    return sbd, HTTPStatus.OK
 
 
 @error_handler
@@ -154,20 +94,14 @@ def sbds_post(body: dict) -> Response:
     validation_resp = validate(body)
     if not validation_resp.valid:
         return (
-            ErrorResponse(
-                status=HTTPStatus.BAD_REQUEST,
-                title="Validation Failed",
-                detail=(
-                    f"SBD validation failed: '{'; '.join(validation_resp.messages)}'"
-                ),
-            ),
+            validation_resp,
             HTTPStatus.BAD_REQUEST,
         )
 
-    model_sbd = OPENAPI_CODEC.loads(SBDefinition, json.dumps(body))
+    sbd = SBDefinition.model_validate_json(json.dumps(body))
 
     # Ensure the identifier is None so the ODA doesn't try to perform an update
-    if model_sbd.sbd_id is not None:
+    if sbd.sbd_id is not None:
         return (
             ErrorResponse(
                 status=HTTPStatus.BAD_REQUEST,
@@ -183,7 +117,6 @@ def sbds_post(body: dict) -> Response:
         )
 
     try:
-        sbd: SBDefinition = pdm_from_generated_model(model_sbd)
         with oda.uow as uow:
             updated_sbd = uow.sbds.add(sbd)
             uow.commit()
@@ -194,7 +127,7 @@ def sbds_post(body: dict) -> Response:
             if ODA_BACKEND_TYPE == "rest":
                 updated_sbd = uow.sbds.get(updated_sbd.sbd_id)
         return (
-            generated_model_from_pdm(updated_sbd),
+            updated_sbd,
             HTTPStatus.OK,
         )
     except ValueError as err:
@@ -224,19 +157,10 @@ def sbds_put(body: dict, identifier: str) -> Response:
     LOGGER.debug("POST SBD sbd_id: %s", identifier)
     validation_resp = validate(body)
     if not validation_resp.valid:
-        return (
-            ErrorResponse(
-                status=HTTPStatus.BAD_REQUEST,
-                title="Validation Failed",
-                detail=(
-                    f"SBD validation failed: '{'; '.join(validation_resp.messages)}'"
-                ),
-            ),
-            HTTPStatus.BAD_REQUEST,
-        )
+        return validation_resp, HTTPStatus.BAD_REQUEST
 
-    model_sbd = OPENAPI_CODEC.loads(SBDefinition, json.dumps(body))
-    if model_sbd.sbd_id != identifier:
+    sbd = SBDefinition.model_validate_json(json.dumps(body))
+    if sbd.sbd_id != identifier:
         return (
             ErrorResponse(
                 status=HTTPStatus.UNPROCESSABLE_ENTITY,
@@ -250,7 +174,6 @@ def sbds_put(body: dict, identifier: str) -> Response:
         )
 
     try:
-        sbd: SBDefinition = pdm_from_generated_model(model_sbd)
         with oda.uow as uow:
             if identifier not in uow.sbds:
                 raise KeyError(
@@ -265,7 +188,7 @@ def sbds_put(body: dict, identifier: str) -> Response:
             if ODA_BACKEND_TYPE == "rest":
                 updated_sbd = uow.sbds.get(updated_sbd.sbd_id)
 
-        return generated_model_from_pdm(updated_sbd), HTTPStatus.OK
+        return updated_sbd, HTTPStatus.OK
     except ValueError as err:
         LOGGER.exception("ValueError when adding SBDefinition to the ODA")
         return (
@@ -285,27 +208,6 @@ def validate(sbd: dict) -> ValidationResponse:
     """
     validate_result = validate_sbd(json.dumps(sbd))
 
-    valid = not bool(validate_result["validation_errors"])
+    valid = not bool(validate_result)
 
-    return ValidationResponse(valid, validate_result["validation_errors"])
-
-
-def error_response(err: Exception) -> Response:
-    """
-    Creates a general sever error response, without exposing internals to client
-
-    :return: HTTP response server error
-    """
-    LOGGER.exception("Exception occurred while executing API function")
-    response_body = ErrorResponse(
-        status=HTTPStatus.INTERNAL_SERVER_ERROR,
-        title="Internal Server Error",
-        detail=str(err.args),
-        traceback=ErrorResponseTraceback(
-            key=err.args[0],
-            type=str(type(err)),
-            full_traceback=traceback.format_exc(),
-        ),
-    )
-
-    return response_body, HTTPStatus.INTERNAL_SERVER_ERROR
+    return ValidationResponse(valid, validate_result)

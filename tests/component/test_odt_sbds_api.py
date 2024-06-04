@@ -6,30 +6,18 @@ to a deployment of ska-oso-ost-services in the same cluster
 """
 # pylint: disable=missing-timeout
 import json
-import os
 from http import HTTPStatus
-from importlib.metadata import version
 
 import pytest
 import requests
 
-from ska_oso_services.odt import codec as mcodec
-
 from ..unit.util import (
-    CODEC,
+    SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
     VALID_MID_SBDEFINITION_JSON,
+    TestDataFactory,
     assert_json_is_equal,
-    sbd_without_id_or_metadata,
-    sbdefinition,
 )
-
-KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
-OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
-ODT_URL = os.getenv(
-    "ODT_URL",
-    "http://ska-oso-services-rest-test:5000"
-    f"/{KUBE_NAMESPACE}/odt/api/v{OSO_SERVICES_MAJOR_VERSION}",
-)
+from . import ODT_URL
 
 
 def test_sbd_create():
@@ -41,8 +29,7 @@ def test_sbd_create():
     response = requests.get(f"{ODT_URL}/sbds/create")
     assert response.status_code == HTTPStatus.OK
 
-    sbd = mcodec.decode(json.dumps(response.json()))
-    assert sbd.interface
+    assert response.json()["interface"] == "https://schema.skao.int/ska-oso-pdm-sbd/0.1"
 
 
 def test_sbd_validate():
@@ -59,7 +46,7 @@ def test_sbd_validate():
 
     result = json.loads(response.content)
     assert result["valid"]
-    assert result["messages"] == []
+    assert result["messages"] == {}
 
 
 @pytest.mark.xray("XTP-34548")
@@ -70,11 +57,11 @@ def test_sbd_post_then_get():
     """
     post_response = requests.post(
         f"{ODT_URL}/sbds",
-        data=sbd_without_id_or_metadata,
+        data=SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
         headers={"Content-type": "application/json"},
     )
 
-    assert post_response.status_code == HTTPStatus.OK
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
         VALID_MID_SBDEFINITION_JSON,
@@ -86,7 +73,7 @@ def test_sbd_post_then_get():
 
     # Assert the ODT can get the SBD, ignoring the metadata as it contains
     # timestamps and is the responsibility of the ODA
-    assert get_response.status_code == HTTPStatus.OK
+    assert get_response.status_code == HTTPStatus.OK, get_response.content
     assert_json_is_equal(
         get_response.content,
         VALID_MID_SBDEFINITION_JSON,
@@ -100,11 +87,11 @@ def test_sbd_post_then_put():
     """
     post_response = requests.post(
         f"{ODT_URL}/sbds",
-        data=sbd_without_id_or_metadata,
+        data=SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
         headers={"Content-type": "application/json"},
     )
 
-    assert post_response.status_code == HTTPStatus.OK
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
         VALID_MID_SBDEFINITION_JSON,
@@ -112,7 +99,7 @@ def test_sbd_post_then_put():
     )
 
     sbd_id = post_response.json()["sbd_id"]
-    sbd_to_update = CODEC.dumps(sbdefinition(sbd_id=sbd_id))
+    sbd_to_update = TestDataFactory.sbdefinition(sbd_id=sbd_id).model_dump_json()
     put_response = requests.put(
         f"{ODT_URL}/sbds/{sbd_id}",
         data=sbd_to_update,
@@ -120,7 +107,7 @@ def test_sbd_post_then_put():
     )
     # Assert the ODT can get the SBD, ignoring the metadata as it contains
     # timestamps and is the responsibility of the ODA
-    assert put_response.status_code == HTTPStatus.OK
+    assert put_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         put_response.content,
         VALID_MID_SBDEFINITION_JSON,
@@ -140,7 +127,8 @@ def test_sbd_get_not_found():
     assert response.json() == {
         "status": HTTPStatus.NOT_FOUND,
         "title": "Not Found",
-        "detail": "SBDefinition with identifier 123 not found in repository",
+        "detail": "Identifier 123 not found in repository",
+        "traceback": None,
     }
     assert response.status_code == HTTPStatus.NOT_FOUND
 
@@ -156,7 +144,8 @@ def test_sbd_put_not_found():
     assert response.json() == {
         "status": HTTPStatus.NOT_FOUND,
         "title": "Not Found",
-        "detail": "SBDefinition with identifier 123 not found in repository",
+        "detail": "Identifier 123 not found in repository",
+        "traceback": None,
     }
     assert response.status_code == HTTPStatus.NOT_FOUND
 
@@ -169,7 +158,7 @@ def test_sbd_put_not_found():
 #     """
 #
 #     response = requests.post(
-#         f"{ODT_URL}/sbds/sbi-mvp01-20200325-00001",
+#         f"{ODT_URL}/sbds/sbd-mvp01-20200325-00001",
 #         data=INVALID_MID_SBDEFINITION_JSON,
 #         headers={"Content-type": "application/json"},
 #     )

@@ -1,0 +1,37 @@
+{
+  "interface": "https://schema.skao.int/ska-oso-pdm-prj/0.1",
+  "prj_id": "prj-mvp01-20220923-00001",
+  "name": "SKA Mid Project",
+  "telescope": "ska_mid",
+  "metadata": {
+    "version": 1,
+    "created_by": "DefaultUser",
+    "created_on": "2022-03-28T15:43:53.971548+00:00",
+    "last_modified_on": "2022-03-28T15:43:53.971548+00:00",
+    "last_modified_by": "DefaultUser"
+  },
+  "author": {
+     "pis": ["John Lennon"],
+     "cois": ["Ringo Starr", "George Harrison"]
+  },
+  "obs_blocks": [
+     {
+        "obs_block_id": "ob-1",
+        "name": "Block 1",
+        "sbd_ids": [
+           "sbd-mvp01-20220923-00001",
+           "sbd-mvp01-20220923-00002",
+           "sbd-mvp01-20220923-00003"
+        ]
+     },
+     {
+        "obs_block_id": "ob-2",
+        "name": "Block 2",
+        "sbd_ids": [
+           "sbd-mvp01-20220923-00004",
+           "sbd-mvp01-20220923-00005",
+           "sbd-mvp01-20220923-00006"
+        ]
+     }
+  ]
+}

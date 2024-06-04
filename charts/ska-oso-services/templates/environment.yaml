@@ -15,10 +15,13 @@ data:
   {{- if .Values.rest.oda.url }}
   ODA_URL: {{ .Values.rest.oda.url }}
   {{ else }}
-  ODA_URL: http://ska-db-oda-rest-{{ .Release.Name }}:5000/{{ .Release.Namespace }}/oda/api/v2
+  ODA_URL: http://ska-db-oda-rest-{{ .Release.Name }}:5000/{{ .Release.Namespace }}/oda/api/v3
   {{ end }}
-
+  {{ if .Values.rest.skuid.url }}
+  SKUID_URL: {{ .Values.rest.skuid.url }}
+  {{ else }}
   SKUID_URL: ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.{{ .Values.global.cluster_domain }}:9870
+  {{ end }}
   {{- if not .Values.rest.use_skuid }}
   FAKE_SKUID: "true"
   {{ end }}
