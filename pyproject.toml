@@ -44,6 +44,7 @@ ska-db-oda = "3.0.2"
 ska-oso-pdm = "12.0.1"
 prance = {version = "^23.6.21.0", extras = ["osv"]}
 pydantic = "2.7.1"
+sentry-sdk = {extras = ["flask"], version = "^2.5.1"}
 
 
 [tool.poetry.group.dev.dependencies]
