@@ -26,37 +26,35 @@ classifiers = [
 [[tool.poetry.source]]
 name = 'ska-nexus'
 url = 'https://artefact.skao.int/repository/pypi-internal/simple'
-default = false
-secondary = false
+priority = "supplemental"
 
 [[tool.poetry.source]]
-name = "PyPI-public"
-url = 'https://pypi.org/simple'
+name = "PyPI"
+priority = "primary"
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
-connexion = {extras = ["swagger-ui"], version = "^2.14.0"}
 python-dateutil = "^2.8.2"
-gunicorn = "^20.1.0"
 ska-ser-logging = "^0.4.1"
 ska-ser-skuid = "^3.3.3"
 ska-db-oda = "3.0.2"
 ska-oso-pdm = "12.0.1"
-prance = {version = "^23.6.21.0", extras = ["osv"]}
 pydantic = "2.7.1"
+fastapi = "^0.111.0"
 
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.1.1"
-pytest-cov = "^3.0.0"
-pytest-forked = "^1.4.0"
+pytest = "^8.2.2"
+pytest-cov = "^5.0.0"
+pytest-forked = "^1.6.0"
 pytest-json-report = "^1.5.0"
-black = "^23.12.1"
+black = "^24.0.0"
 pycodestyle = "^2.8.0"
 isort = "^5.10.1"
 pylint-junit = "^0.3.2"
 flake8 = "^7.0.0"
-deepdiff = "^5.8.1"
+deepdiff = "^7.0.0"
 
 [tool.poetry.group.docs]
 optional = true
