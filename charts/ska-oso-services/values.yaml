@@ -23,7 +23,7 @@ rest:
     tag: ~ # Defaults to the chart appVersion if not set
     pullPolicy: IfNotPresent
   oda:
-    backendType: filesystem
+    backendType: postgres
     url: ~ # Defaults to the ODA Kubernetes service address if not set
   use_skuid: true
   skuid:
