@@ -15,7 +15,7 @@ data:
   {{- if .Values.rest.oda.url }}
   ODA_URL: {{ .Values.rest.oda.url }}
   {{ else }}
-  ODA_URL: http://ska-db-oda-rest-{{ .Release.Name }}:5000/{{ .Release.Namespace }}/oda/api/v3
+  ODA_URL: http://ska-db-oda-rest-{{ .Release.Name }}:5000/{{ .Release.Namespace }}/oda/api/v5
   {{ end }}
   {{ if .Values.rest.skuid.url }}
   SKUID_URL: {{ .Values.rest.skuid.url }}
