@@ -4,11 +4,12 @@ ska_oso_services
 import os
 from importlib.metadata import version
 from typing import Any, Dict
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-import prance
-from connexion import App
 from ska_db_oda.rest import PdmJsonEncoder
 from ska_db_oda.rest.flask_oda import FlaskODA
+
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
@@ -18,18 +19,6 @@ API_PATH = f"/{KUBE_NAMESPACE}/odt/api/v{OSO_SERVICES_MAJOR_VERSION}"
 
 oda = FlaskODA()
 
-
-def resolve_openapi_spec() -> Dict[str, Any]:
-    """
-    Resolves the $ref in the OpenAPI spec before it is used by Connexion,
-    as Connexion can't parse them.
-    See https://github.com/spec-first/connexion/issues/967
-    """
-    cwd, _ = os.path.split(__file__)
-    path = os.path.join(cwd, "./openapi/odt-openapi-v1.yaml")
-    parser = prance.ResolvingParser(path, lazy=True, strict=True)
-    parser.parse()
-    return parser.specification
 
 
 class CustomRequestBodyValidator:  # pylint: disable=too-few-public-methods
@@ -52,20 +41,16 @@ def create_app(open_api_spec=None) -> App:
     Create the Connexion application with required config
     """
 
-    if open_api_spec is None:
-        open_api_spec = resolve_openapi_spec()
+    app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    return app
 
-    connexion = App(__name__, specification_dir="openapi/")
-
-    connexion.app.json_encoder = PdmJsonEncoder
-
-    def set_default_headers_on_response(response):
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "*"
-        return response
-
-    connexion.app.after_request(set_default_headers_on_response)
 
     validator_map = {
         "body": CustomRequestBodyValidator,

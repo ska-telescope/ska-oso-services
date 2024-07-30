@@ -1,13 +1,12 @@
 """
 These functions map to the API paths, with the returned value being the API response
-
-Connexion maps the function name to the operationId in the OpenAPI document path
 """
 
 import json
 import logging
 from http import HTTPStatus
 from os import getenv
+from fastapi import APIRouter
 
 from ska_oso_pdm._shared import TelescopeType
 from ska_oso_pdm.project import Author, ObservingBlock, Project
@@ -25,8 +24,10 @@ ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
 # Project, so hard code the id
 OBS_BLOCK_ID = "ob-1"
 
+router = APIRouter()
 
-@error_handler
+
+@router.get("/prjs/{identifier}", tags=["projects"])
 def prjs_get(identifier: str) -> Response:
     """
     Function that a GET /prjs/{identifier} request is routed to.
@@ -40,12 +41,10 @@ def prjs_get(identifier: str) -> Response:
     """
     LOGGER.debug("GET PRJS prj_id: %s", identifier)
     with oda.uow as uow:
-        prj = uow.prjs.get(identifier)
-    return prj, HTTPStatus.OK
+        return uow.prjs.get(identifier)
 
-
-@error_handler
-def prjs_post(body: dict) -> Response:
+@router.post("/prjs", tags=["projects"])
+def prjs_post(body: Project) -> Response:
     """
     Function that a POST /prjs request is routed to.
 
@@ -60,7 +59,7 @@ def prjs_post(body: dict) -> Response:
     LOGGER.debug("POST PRJ")
 
     prj = Project.model_validate_json(json.dumps(body))
-    if prj.obs_blocks is None or len(prj.obs_blocks) == 0:
+    if not prj.obs_blocks:
         prj.obs_blocks = [ObservingBlock(obs_block_id=OBS_BLOCK_ID, sbd_ids=[])]
     if prj.author is None:
         prj.author = Author(pis=[], cois=[])
@@ -104,7 +103,7 @@ def prjs_post(body: dict) -> Response:
         )
 
 
-@error_handler
+@router.get("/prjs/{identifier}", tags=["projects"])
 def prjs_put(body: dict, identifier: str) -> Response:
     """
     Function that a PUT /prjs/{identifier} request is routed to.
@@ -162,7 +161,7 @@ def prjs_put(body: dict, identifier: str) -> Response:
         )
 
 
-@error_handler
+@router.post("/prjs/{prj_id}/{obs_block_id}/sbd ", tags=["projects"])
 def prjs_sbds_post(prj_id: str, obs_block_id: str):
     """
     Function that a POST /prjs/{prj_id}/obs_block_id/sbd request is routed to.
