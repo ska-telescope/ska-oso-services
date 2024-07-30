@@ -13,7 +13,6 @@ from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.error_handling import Response, error_handler
 from ska_oso_services.common.model import ErrorResponse
 
 LOGGER = logging.getLogger(__name__)

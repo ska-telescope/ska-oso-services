@@ -48,5 +48,5 @@ def create_app() -> FastAPI:
         allow_credentials=True,
     )
     app.include_router(projects_router)
-    app.exception_handler(KeyError)()
+    app.exception_handler(KeyError)(oda_not_found_handler)
     return app

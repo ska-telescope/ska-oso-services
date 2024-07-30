@@ -44,8 +44,8 @@ class TestProjectGet:
 
         result = client.get(f"{PRJS_API_URL}/prj-1234")
 
-        assert result.json == {
-            "status": HTTPStatus.NOT_FOUND,
+        assert result.json() == {
+            "status": "404: Not Found",
             "title": "Not Found",
             "detail": "Identifier prj-1234 not found in repository",
             "traceback": None,
@@ -62,12 +62,13 @@ class TestProjectGet:
         uow_mock.prjs.get.side_effect = Exception("test", "error")
         mock_oda.uow.__enter__.return_value = uow_mock
 
-        result = client.get(f"{PRJS_API_URL}/prj-1234")
+        response = client.get(f"{PRJS_API_URL}/prj-1234")
+        result = response.json()
 
-        assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-        assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "Exception('test', 'error')"
-        assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert result["status"] == "500: Internal Server Error"
+        assert result["title"] == "Internal Server Error"
+        assert result["detail"] == "Exception('test', 'error')"
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 class TestProjectPost:

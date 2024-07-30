@@ -4,7 +4,8 @@ from functools import wraps
 from http import HTTPStatus
 from typing import Tuple, Union
 
-from fastapi import JSONResponse, Request
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common.model import (
@@ -32,8 +33,10 @@ async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse
         return JSONResponse(
             status_code=HTTPStatus.NOT_FOUND,
             content=dict(
-                title="Not found",
+                status=f"{HTTPStatus.NOT_FOUND.value}: {HTTPStatus.NOT_FOUND.phrase}",
+                title=HTTPStatus.NOT_FOUND.phrase,
                 detail=f"Identifier {identifier} not found in repository",
+                traceback=None,
             ),
         )
     else:
@@ -44,10 +47,11 @@ async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse
         return JSONResponse(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             content=dict(
-                title="Internal Server Error",
+                status=f"{HTTPStatus.INTERNAL_SERVER_ERROR.value}: {HTTPStatus.INTERNAL_SERVER_ERROR.phrase}",
+                title=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
                 detail=repr(err),
                 traceback=ErrorResponseTraceback(
-                    key="Internal Server Error",
+                    key=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
                     type=str(type(err)),
                     full_traceback=traceback.format_exc(),
                 ),
