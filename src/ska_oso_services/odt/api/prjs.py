@@ -28,7 +28,7 @@ router = APIRouter(prefix="/prjs", tags=["projects"])
 
 
 @router.get("/{identifier}")
-def prjs_get(identifier: str) -> Response:
+def prjs_get(identifier: str) -> Project:
     """
     Function that a GET /prjs/{identifier} request is routed to.
 
@@ -40,13 +40,12 @@ def prjs_get(identifier: str) -> Response:
         HTTP status, which the Connexion will wrap in a response
     """
     LOGGER.debug("GET PRJS prj_id: %s", identifier)
-    breakpoint()
     with oda.uow as uow:
         return uow.prjs.get(identifier)
 
 
 @router.post("/")
-def prjs_post(body: Project) -> Response:
+def prjs_post(body: Project) -> Project:
     """
     Function that a POST /prjs request is routed to.
 
@@ -104,7 +103,7 @@ def prjs_post(body: Project) -> Response:
 
 
 @router.get("/{identifier}")
-def prjs_put(body: dict, identifier: str) -> Response:
+def prjs_put(body: dict, identifier: str) -> Project:
     """
     Function that a PUT /prjs/{identifier} request is routed to.
 

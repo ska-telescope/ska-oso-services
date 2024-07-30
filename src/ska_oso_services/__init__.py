@@ -9,7 +9,7 @@ from typing import Any, Dict
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from ska_oso_services.common import oda
+from ska_oso_services.common import oda, oda_not_found_handler
 from ska_oso_services.odt.api.prjs import router as projects_router
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
@@ -48,19 +48,5 @@ def create_app() -> FastAPI:
         allow_credentials=True,
     )
     app.include_router(projects_router)
+    app.exception_handler(KeyError)()
     return app
-
-    validator_map = {
-        "body": CustomRequestBodyValidator,
-    }
-    connexion.add_api(
-        open_api_spec,
-        arguments={"title": "OpenAPI ODT"},
-        base_path=API_PATH,
-        pythonic_params=True,
-        validator_map=validator_map,
-    )
-
-    oda.init_app(connexion.app)
-
-    return connexion
