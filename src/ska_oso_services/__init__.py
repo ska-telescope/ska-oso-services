@@ -1,24 +1,22 @@
 """
 ska_oso_services
 """
+
 import os
 from importlib.metadata import version
 from typing import Any, Dict
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from ska_db_oda.rest import PdmJsonEncoder
-from ska_db_oda.rest.flask_oda import FlaskODA
-
+from ska_oso_services.common import oda
+from ska_oso_services.odt.api.prjs import router as projects_router
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 # The base path includes the namespace which is known at runtime
 # to avoid clashes in deployments, for example in CICD
 API_PATH = f"/{KUBE_NAMESPACE}/odt/api/v{OSO_SERVICES_MAJOR_VERSION}"
-
-oda = FlaskODA()
-
 
 
 class CustomRequestBodyValidator:  # pylint: disable=too-few-public-methods
@@ -36,7 +34,7 @@ class CustomRequestBodyValidator:  # pylint: disable=too-few-public-methods
         return function
 
 
-def create_app(open_api_spec=None) -> App:
+def create_app() -> FastAPI:
     """
     Create the Connexion application with required config
     """
@@ -44,13 +42,13 @@ def create_app(open_api_spec=None) -> App:
     app = FastAPI()
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
-        allow_credentials=True,
+        allow_origins=["*"],
         allow_methods=["*"],
         allow_headers=["*"],
+        allow_credentials=True,
     )
+    app.include_router(projects_router)
     return app
-
 
     validator_map = {
         "body": CustomRequestBodyValidator,

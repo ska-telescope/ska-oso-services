@@ -42,6 +42,7 @@ stages:
     KUBE_NAMESPACE: "dev-$CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG"
   environment:
     name: "dev-$CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG"
+    deployment_tier: "development"
 
 info-dev-environment:
   <<: *dev_env

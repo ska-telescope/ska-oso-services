@@ -1,6 +1,7 @@
 """
 Utility functions to be used in tests
 """
+
 import json
 import os.path
 from datetime import datetime

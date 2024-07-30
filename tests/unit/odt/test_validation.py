@@ -50,9 +50,9 @@ def test_config_not_present_error():
 
 def test_band_5_tuning():
     invalid_sbd = TestDataFactory.sbdefinition()
-    invalid_sbd.dish_configurations[
-        0
-    ].receiver_band = ReceiverBand.BAND_1  # Not Band 5a
+    invalid_sbd.dish_configurations[0].receiver_band = (
+        ReceiverBand.BAND_1
+    )  # Not Band 5a
 
     result = _validate_csp_and_dish_combination(invalid_sbd)
 

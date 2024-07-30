@@ -6,13 +6,13 @@ import json
 import logging
 from http import HTTPStatus
 from os import getenv
-from fastapi import APIRouter
 
+from fastapi import APIRouter, HTTPException
 from ska_oso_pdm._shared import TelescopeType
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
-from ska_oso_services import oda
+from ska_oso_services.common import oda
 from ska_oso_services.common.error_handling import Response, error_handler
 from ska_oso_services.common.model import ErrorResponse
 
@@ -24,10 +24,10 @@ ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
 # Project, so hard code the id
 OBS_BLOCK_ID = "ob-1"
 
-router = APIRouter()
+router = APIRouter(prefix="/prjs", tags=["projects"])
 
 
-@router.get("/prjs/{identifier}", tags=["projects"])
+@router.get("/{identifier}")
 def prjs_get(identifier: str) -> Response:
     """
     Function that a GET /prjs/{identifier} request is routed to.
@@ -40,10 +40,12 @@ def prjs_get(identifier: str) -> Response:
         HTTP status, which the Connexion will wrap in a response
     """
     LOGGER.debug("GET PRJS prj_id: %s", identifier)
+    breakpoint()
     with oda.uow as uow:
         return uow.prjs.get(identifier)
 
-@router.post("/prjs", tags=["projects"])
+
+@router.post("/")
 def prjs_post(body: Project) -> Response:
     """
     Function that a POST /prjs request is routed to.
@@ -66,6 +68,7 @@ def prjs_post(body: Project) -> Response:
 
     # Ensure the identifier is None so the ODA doesn't try to perform an update
     if prj.prj_id is not None:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST)
         return (
             ErrorResponse(
                 status=HTTPStatus.BAD_REQUEST,
@@ -90,20 +93,17 @@ def prjs_post(body: Project) -> Response:
             # So to display the metadata in the UI we need to do the extra fetch.
             if ODA_BACKEND_TYPE == "rest":
                 updated_prj = uow.prjs.get(updated_prj.prj_id)
-        return updated_prj, HTTPStatus.OK
+        return updated_prj
     except ValueError as err:
         LOGGER.exception("ValueError when adding Project to the ODA")
-        return (
-            ErrorResponse(
-                status=HTTPStatus.BAD_REQUEST,
-                title="Validation Failed",
-                detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
-            ),
-            HTTPStatus.BAD_REQUEST,
-        )
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            title="Validation Failed",
+            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
+        ) from err
 
 
-@router.get("/prjs/{identifier}", tags=["projects"])
+@router.get("/{identifier}")
 def prjs_put(body: dict, identifier: str) -> Response:
     """
     Function that a PUT /prjs/{identifier} request is routed to.
@@ -121,18 +121,14 @@ def prjs_put(body: dict, identifier: str) -> Response:
     prj = Project.model_validate_json(json.dumps(body))
 
     if prj.prj_id != identifier:
-        return (
-            ErrorResponse(
-                status=HTTPStatus.UNPROCESSABLE_ENTITY,
-                title="Unprocessable Entity, mismatched IDs",
-                detail=(
-                    "There is a mismatch between the prj_id in the path for "
-                    "the endpoint and in the JSON payload"
-                ),
+        raise HTTPException(
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            title="Unprocessable Entity, mismatched IDs",
+            detail=(
+                "There is a mismatch between the prj_id in the path for "
+                "the endpoint and in the JSON payload"
             ),
-            HTTPStatus.UNPROCESSABLE_ENTITY,
         )
-
     try:
         with oda.uow as uow:
             if identifier not in uow.prjs:
@@ -150,18 +146,14 @@ def prjs_put(body: dict, identifier: str) -> Response:
 
         return updated_prjs, HTTPStatus.OK
     except ValueError as err:
-        LOGGER.exception("ValueError when adding Project to the ODA")
-        return (
-            ErrorResponse(
-                status=HTTPStatus.BAD_REQUEST,
-                title="Validation Failed",
-                detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
-            ),
-            HTTPStatus.BAD_REQUEST,
-        )
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            title="Validation Failed",
+            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
+        ) from err
 
 
-@router.post("/prjs/{prj_id}/{obs_block_id}/sbd ", tags=["projects"])
+@router.post("/{prj_id}/{obs_block_id}/sbd")
 def prjs_sbds_post(prj_id: str, obs_block_id: str):
     """
     Function that a POST /prjs/{prj_id}/obs_block_id/sbd request is routed to.

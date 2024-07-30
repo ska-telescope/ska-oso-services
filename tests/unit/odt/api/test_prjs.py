@@ -12,7 +12,8 @@ from ska_oso_pdm.project import ObservingBlock
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
-BASE_API_URL = f"/ska-oso-services/odt/api/v{OSO_SERVICES_MAJOR_VERSION}"
+# BASE_API_URL = f"/ska-oso-services/odt/api/v{OSO_SERVICES_MAJOR_VERSION}"
+BASE_API_URL = ""
 PRJS_API_URL = f"{BASE_API_URL}/prjs"
 
 
