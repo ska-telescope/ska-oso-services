@@ -13,7 +13,7 @@ from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.model import ErrorResponse
+from ska_oso_services.common.error_handling import ErrorDetails
 
 LOGGER = logging.getLogger(__name__)
 
@@ -67,7 +67,8 @@ def prjs_post(prj: Project) -> Project:
     if prj.prj_id is not None:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail=dict(
+            detail=ErrorDetails(
+                status=HTTPStatus.BAD_REQUEST,
                 title="Validation Failed",
                 message=(
                     "prj_id given in the body of the POST request. Identifier"
@@ -92,9 +93,11 @@ def prjs_post(prj: Project) -> Project:
     except ValueError as err:
         LOGGER.exception("ValueError when adding Project to the ODA")
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            title="Validation Failed",
-            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
+            details=ErrorDetails(
+                status_code=HTTPStatus.BAD_REQUEST,
+                title="Validation Failed",
+                message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
+            )
         ) from err
 
 

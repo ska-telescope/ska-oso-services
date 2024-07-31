@@ -1,22 +1,28 @@
 import logging
 import traceback
-from functools import wraps
 from http import HTTPStatus
-from typing import Tuple, Union
+from typing import Optional
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from ska_oso_pdm.sb_definition import SBDefinition
 
-from ska_oso_services.common.model import (
-    ErrorResponse,
-    ErrorResponseTraceback,
-    ValidationResponse,
-)
-
-Response = Tuple[Union[SBDefinition, ValidationResponse, ErrorResponse], int]
+from ska_oso_services.common.model import ErrorDetails, ErrorResponseTraceback
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _make_response(
+    status: HTTPStatus, message: str, traceback: Optional[ErrorResponseTraceback] = None
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status,
+        content={
+            "detail": ErrorDetails(
+                status=status, title=status.phrase, message=message, traceback=traceback
+            ).model_dump(exclude_none=True)
+        },
+    )
 
 
 async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse:
@@ -30,15 +36,9 @@ async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse
     is_not_found_in_oda = any("not found" in str(arg).lower() for arg in err.args)
     if is_not_found_in_oda:
         identifier = request.path_params.get("identifier", "")
-        return JSONResponse(
-            status_code=HTTPStatus.NOT_FOUND,
-            content={
-                "detail": dict(
-                    status=f"{HTTPStatus.NOT_FOUND.value}: {HTTPStatus.NOT_FOUND.phrase}",
-                    title=HTTPStatus.NOT_FOUND.phrase,
-                    message=f"Identifier {identifier} not found in repository",
-                )
-            },
+        return _make_response(
+            HTTPStatus.NOT_FOUND,
+            message=f"Identifier {identifier} not found in repository",
         )
     else:
         LOGGER.exception(
@@ -58,16 +58,12 @@ async def dangerous_internal_server_handler(
     This is a 'DANGEROUS' handler because it exposes internal implementation details to
     clients. Do not use in production systems!
     """
-    return JSONResponse(
-        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-        content=dict(
-            status=f"{HTTPStatus.INTERNAL_SERVER_ERROR.value}: {HTTPStatus.INTERNAL_SERVER_ERROR.phrase}",
-            title=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
-            detail=repr(err),
-            traceback=ErrorResponseTraceback(
-                key=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
-                type=str(type(err)),
-                full_traceback=traceback.format_exc(),
-            ),
+    return _make_response(
+        HTTPStatus.INTERNAL_SERVER_ERROR,
+        message=repr(err),
+        traceback=ErrorResponseTraceback(
+            key=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
+            type=str(type(err)),
+            full_traceback=traceback.format_exc(),
         ),
     )
