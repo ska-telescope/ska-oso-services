@@ -13,7 +13,7 @@ def test_app():  # pylint: disable=redefined-outer-name
     """
     Fixture to configure a test app instance
     """
-    yield create_app()
+    return create_app(debug=True)
 
 
 @pytest.fixture()

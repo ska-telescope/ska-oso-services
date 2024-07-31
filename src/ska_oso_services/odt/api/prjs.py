@@ -44,7 +44,7 @@ def prjs_get(identifier: str) -> Project:
 
 
 @router.post("/")
-def prjs_post(body: Project) -> Project:
+def prjs_post(prj: Project) -> Project:
     """
     Function that a POST /prjs request is routed to.
 
@@ -58,7 +58,6 @@ def prjs_post(body: Project) -> Project:
     """
     LOGGER.debug("POST PRJ")
 
-    prj = Project.model_validate_json(json.dumps(body))
     if not prj.obs_blocks:
         prj.obs_blocks = [ObservingBlock(obs_block_id=OBS_BLOCK_ID, sbd_ids=[])]
     if prj.author is None:
@@ -66,19 +65,16 @@ def prjs_post(body: Project) -> Project:
 
     # Ensure the identifier is None so the ODA doesn't try to perform an update
     if prj.prj_id is not None:
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST)
-        return (
-            ErrorResponse(
-                status=HTTPStatus.BAD_REQUEST,
-                title="Validation Failed",
-                detail=(
-                    "prj_id given in the body of the POST request. Identifier"
-                    " generation for new entities is the responsibility of the ODA,"
-                    " which will fetch them from SKUID, so they should not be given in"
-                    " this request."
-                ),
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            status=HTTPStatus.BAD_REQUEST.phrase,
+            title="Validation Failed",
+            detail=(
+                "prj_id given in the body of the POST request. Identifier"
+                " generation for new entities is the responsibility of the ODA,"
+                " which will fetch them from SKUID, so they should not be given in"
+                " this request."
             ),
-            HTTPStatus.BAD_REQUEST,
         )
 
     try:
