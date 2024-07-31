@@ -59,7 +59,7 @@ class TestProjectGet:
         when ODA responds with an error
         """
         uow_mock = mock.MagicMock()
-        uow_mock.prjs.get.side_effect = Exception("test", "error")
+        uow_mock.prjs.get.side_effect = ValueError("Something bad!")
         mock_oda.uow.__enter__.return_value = uow_mock
 
         response = client.get(f"{PRJS_API_URL}/prj-1234")
@@ -67,7 +67,7 @@ class TestProjectGet:
 
         assert result["status"] == "500: Internal Server Error"
         assert result["title"] == "Internal Server Error"
-        assert result["detail"] == "Exception('test', 'error')"
+        assert result["detail"] == "ValueError('Something bad!')"
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 

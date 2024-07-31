@@ -9,7 +9,7 @@ from typing import Any, Dict
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from ska_oso_services.common import oda, oda_not_found_handler
+from ska_oso_services.common import oda, oda_not_found_handler, dangerous_internal_server_handler
 from ska_oso_services.odt.api.prjs import router as projects_router
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
@@ -34,12 +34,12 @@ class CustomRequestBodyValidator:  # pylint: disable=too-few-public-methods
         return function
 
 
-def create_app() -> FastAPI:
+def create_app(debug=False) -> FastAPI:
     """
     Create the Connexion application with required config
     """
 
-    app = FastAPI()
+    app = FastAPI(debug=False)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -49,4 +49,6 @@ def create_app() -> FastAPI:
     )
     app.include_router(projects_router)
     app.exception_handler(KeyError)(oda_not_found_handler)
+    if debug:
+        app.exception_handler(Exception)(dangerous_internal_server_handler)
     return app

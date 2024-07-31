@@ -44,7 +44,19 @@ async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse
             "KeyError raised by api function call, but not due to the "
             "sbd_id not being found in the ODA."
         )
-        return JSONResponse(
+        raise
+        return await dangerous_internal_server_handler(request, err)
+
+
+async def dangerous_internal_server_handler(request: Request, err: Exception) -> JSONResponse:
+    """
+    A custom handler function that returns a verbose HTTP 500 response containing
+    detailed traceback information.
+
+    This is a 'DANGEROUS' handler because it exposes internal implementation details to
+    clients. Do not use in production systems!
+    """
+    return JSONResponse(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             content=dict(
                 status=f"{HTTPStatus.INTERNAL_SERVER_ERROR.value}: {HTTPStatus.INTERNAL_SERVER_ERROR.phrase}",
