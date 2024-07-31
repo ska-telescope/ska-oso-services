@@ -13,7 +13,11 @@ from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.error_handling import ErrorDetails
+from ska_oso_services.common.error_handling import (
+    BadRequestError,
+    NotFoundError,
+    UnprocessableEntityError,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -65,17 +69,13 @@ def prjs_post(prj: Project) -> Project:
 
     # Ensure the identifier is None so the ODA doesn't try to perform an update
     if prj.prj_id is not None:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail=ErrorDetails(
-                status=HTTPStatus.BAD_REQUEST,
-                title="Validation Failed",
-                message=(
-                    "prj_id given in the body of the POST request. Identifier"
-                    " generation for new entities is the responsibility of the ODA,"
-                    " which will fetch them from SKUID, so they should not be given in"
-                    " this request."
-                ),
+        raise BadRequestError(
+            title="Validation Failed",
+            message=(
+                "prj_id given in the body of the POST request. Identifier"
+                " generation for new entities is the responsibility of the ODA,"
+                " which will fetch them from SKUID, so they should not be given in"
+                " this request."
             ),
         )
 
@@ -92,12 +92,9 @@ def prjs_post(prj: Project) -> Project:
         return updated_prj
     except ValueError as err:
         LOGGER.exception("ValueError when adding Project to the ODA")
-        raise HTTPException(
-            details=ErrorDetails(
-                status_code=HTTPStatus.BAD_REQUEST,
-                title="Validation Failed",
-                message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
-            )
+        raise BadRequestError(
+            title="Validation Failed",
+            message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
         ) from err
 
 
@@ -117,10 +114,9 @@ def prjs_put(prj: Project, identifier: str) -> Project:
     LOGGER.debug("PUT PRJS prj_id: %s", identifier)
 
     if prj.prj_id != identifier:
-        raise HTTPException(
-            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+        raise UnprocessableEntityError(
             title="Unprocessable Entity, mismatched IDs",
-            detail=(
+            message=(
                 "There is a mismatch between the prj_id in the path for "
                 "the endpoint and in the JSON payload"
             ),
@@ -142,10 +138,9 @@ def prjs_put(prj: Project, identifier: str) -> Project:
 
         return updated_prj
     except ValueError as err:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
+        raise BadRequestError(
             title="Validation Failed",
-            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
+            message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
         ) from err
 
 
@@ -179,13 +174,8 @@ def prjs_sbds_post(prj_id: str, obs_block_id: str) -> PrjSBDLinkResponse:
                 if obs_block.obs_block_id == obs_block_id
             )
         except StopIteration:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail=dict(
-                    status=HTTPStatus.NOT_FOUND.phrase,
-                    title="Not Found",
-                    detail=f"Observing Block '{obs_block_id}' not found in Project",
-                ),
+            raise NotFoundError(
+                message=f"Observing Block '{obs_block_id}' not found in Project"
             )
 
         sbd = uow.sbds.add(

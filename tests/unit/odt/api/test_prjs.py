@@ -49,12 +49,11 @@ class TestProjectGet:
             "detail": {
                 "title": "Not Found",
                 "message": "Identifier prj-1234 not found in repository",
-                "status": "404: Not Found",
+                "status": HTTPStatus.NOT_FOUND,
             }
         }
         assert result.status_code == HTTPStatus.NOT_FOUND
 
-    @pytest.mark.xfail
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
     def test_prjs_get_error(self, mock_oda, client):
         """
@@ -65,13 +64,16 @@ class TestProjectGet:
         uow_mock.prjs.get.side_effect = ValueError("Something bad!")
         mock_oda.uow.__enter__.return_value = uow_mock
 
-        response = client.get(f"{PRJS_API_URL}/prj-1234")
-        result = response.json()
+        # Middleware re-raises exceptions to make visible to tests and servers:
+        # https://github.com/encode/starlette/blob/master/starlette/middleware/errors.py#L186
+        with pytest.raises(ValueError):
+            response = client.get(f"{PRJS_API_URL}/prj-1234")
+            result = response.json()
 
-        assert result["status"] == "500: Internal Server Error"
-        assert result["title"] == "Internal Server Error"
-        assert result["detail"] == "ValueError('Something bad!')"
-        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert result["title"] == "Internal Server Error"
+            assert result["detail"] == "ValueError('Something bad!')"
+            assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 class TestProjectPost:
@@ -134,6 +136,7 @@ class TestProjectPost:
         assert result.status_code == HTTPStatus.BAD_REQUEST
         assert result.json() == {
             "detail": {
+                "status": HTTPStatus.BAD_REQUEST,
                 "title": "Validation Failed",
                 "message": (
                     "prj_id given in the body of the POST request. Identifier generation"

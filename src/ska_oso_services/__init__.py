@@ -38,12 +38,12 @@ class CustomRequestBodyValidator:  # pylint: disable=too-few-public-methods
         return function
 
 
-def create_app(debug=False) -> FastAPI:
+def create_app(production=True) -> FastAPI:
     """
     Create the Connexion application with required config
     """
 
-    app = FastAPI(debug=False)
+    app = FastAPI()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -53,6 +53,6 @@ def create_app(debug=False) -> FastAPI:
     )
     app.include_router(projects_router)
     app.exception_handler(KeyError)(oda_not_found_handler)
-    if debug:
+    if not production:
         app.exception_handler(Exception)(dangerous_internal_server_handler)
     return app

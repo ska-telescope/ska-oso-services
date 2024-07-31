@@ -3,7 +3,7 @@ import traceback
 from http import HTTPStatus
 from typing import Optional
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from ska_oso_pdm.sb_definition import SBDefinition
 
@@ -12,16 +12,61 @@ from ska_oso_services.common.model import ErrorDetails, ErrorResponseTraceback
 LOGGER = logging.getLogger(__name__)
 
 
+def error_details(
+    status: HTTPStatus,
+    title: str,
+    message: str,
+    traceback: Optional[ErrorResponseTraceback],
+):
+    return ErrorDetails(
+        status=status, title=title, message=message, traceback=traceback
+    ).model_dump(mode="json", exclude_none=True)
+
+
+class BadRequestError(HTTPException):
+    """Custom class to ensure our errors are formatted consistently"""
+
+    code = HTTPStatus.BAD_REQUEST
+
+    def __init__(
+        self,
+        message=None,
+        title=None,
+        status_code=None,
+        traceback=None,
+    ):
+        message = message or self.code.description
+        title = title or self.code.phrase
+        status_code = status_code or self.code
+        detail = error_details(
+            status=status_code,
+            title=title,
+            message=message,
+            traceback=traceback,
+        )
+        super().__init__(status_code=status_code, detail=detail)
+
+
+class UnprocessableEntityError(BadRequestError):
+    code = HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+class NotFoundError(BadRequestError):
+    code = HTTPStatus.NOT_FOUND
+
+
 def _make_response(
     status: HTTPStatus, message: str, traceback: Optional[ErrorResponseTraceback] = None
 ) -> JSONResponse:
+    """
+    Utility helper to generate a JSONResponse to be returned by custom error handlers.
+    """
+    details = error_details(
+        status, title=status.phrase, message=message, traceback=traceback
+    )
     return JSONResponse(
         status_code=status,
-        content={
-            "detail": ErrorDetails(
-                status=status, title=status.phrase, message=message, traceback=traceback
-            ).model_dump(exclude_none=True)
-        },
+        content={"detail": details},
     )
 
 
