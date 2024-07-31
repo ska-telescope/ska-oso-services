@@ -178,16 +178,20 @@ class TestProjectPost:
         uow_mock.prjs.add.side_effect = IOError("test error")
         mock_oda.uow.__enter__.return_value = uow_mock
 
-        result = client.post(
-            f"{PRJS_API_URL}",
-            data=TestDataFactory.project(prj_id=None).model_dump_json(),
-            headers={"Content-type": "application/json"},
-        )
+        # Middleware re-raises exceptions to make visible to tests and servers:
+        # https://github.com/encode/starlette/blob/master/starlette/middleware/errors.py#L186
+        with pytest.raises(IOError):
+            response = client.post(
+                f"{PRJS_API_URL}",
+                data=TestDataFactory.project(prj_id=None).model_dump_json(),
+                headers={"Content-type": "application/json"},
+            )
+            result = response.json()
 
-        assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-        assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "OSError('test error')"
-        assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert result["title"] == "Internal Server Error"
+            assert result["message"] == "OSError('test error')"
+            assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 class TestProjectPut:
