@@ -227,12 +227,11 @@ class TestProjectPut:
             headers={"Content-type": "application/json"},
         )
 
-        assert result.json == {
+        assert result.json()["detail"] == {
             "status": HTTPStatus.UNPROCESSABLE_ENTITY,
             "title": "Unprocessable Entity, mismatched IDs",
-            "detail": "There is a mismatch between the prj_id in the "
+            "message": "There is a mismatch between the prj_id in the "
             "path for the endpoint and in the JSON payload",
-            "traceback": None,
         }
         assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
@@ -266,15 +265,16 @@ class TestProjectPut:
         mock_oda.uow.__enter__.return_value = uow_mock
 
         project = TestDataFactory.project(prj_id="prj-999")
-        result = client.put(
+        resp = client.put(
             f"{PRJS_API_URL}/{project.prj_id}",
             data=project.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
+        result = resp.json()["detail"]
 
-        assert result.status_code == HTTPStatus.NOT_FOUND
-        assert result.json["title"] == "Not Found"
-        assert result.json["detail"] == "Identifier prj-999 not found in repository"
+        assert resp.status_code == HTTPStatus.NOT_FOUND
+        assert result["title"] == "Not Found"
+        assert result["message"] == "Identifier prj-999 not found in repository"
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
     def test_prjs_put_oda_error(self, mock_oda, client):
@@ -288,16 +288,19 @@ class TestProjectPut:
         mock_oda.uow.__enter__.return_value = uow_mock
 
         project = TestDataFactory.project()
-        result = client.put(
-            f"{PRJS_API_URL}/{project.prj_id}",
-            data=project.model_dump_json(),
-            headers={"Content-type": "application/json"},
-        )
 
-        assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-        assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "OSError('test error')"
-        assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+        with pytest.raises(IOError):
+            resp = client.put(
+                f"{PRJS_API_URL}/{project.prj_id}",
+                data=project.model_dump_json(),
+                headers={"Content-type": "application/json"},
+            )
+            result = resp.json()["detail"]
+
+            assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert result["title"] == "Internal Server Error"
+            assert result["message"] == "OSError('test error')"
+            assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 class TestProjectAddSBDefinition:
@@ -310,13 +313,14 @@ class TestProjectAddSBDefinition:
         )
         mock_oda.uow.__enter__.return_value = uow_mock
 
-        result = client.post(
+        resp = client.post(
             f"{PRJS_API_URL}/prj-999/ob-1/sbds",
         )
+        result = resp.json()["detail"]
 
-        assert result.status_code == HTTPStatus.NOT_FOUND
-        assert result.json["title"] == "Not Found"
-        assert result.json["detail"] == "Identifier prj-999 not found in repository"
+        assert resp.status_code == HTTPStatus.NOT_FOUND
+        assert result["title"] == "Not Found"
+        assert result["message"] == "Identifier prj-999 not found in repository"
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
     def test_prjs_post_sbd_obs_block_id_not_found(self, mock_oda, client):
@@ -326,13 +330,14 @@ class TestProjectAddSBDefinition:
         uow_mock.prjs.get.return_value = project
         mock_oda.uow.__enter__.return_value = uow_mock
 
-        result = client.post(
+        resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/ob-1/sbds",
         )
+        result = resp.json()["detail"]
 
-        assert result.status_code == HTTPStatus.NOT_FOUND
-        assert result.json["title"] == "Not Found"
-        assert result.json["detail"] == "Observing Block 'ob-1' not found in Project"
+        assert resp.status_code == HTTPStatus.NOT_FOUND
+        assert result["title"] == "Not Found"
+        assert result["message"] == "Observing Block 'ob-1' not found in Project"
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
     def test_prjs_post_sbd_oda_error(self, mock_oda, client):
@@ -341,14 +346,16 @@ class TestProjectAddSBDefinition:
         uow_mock.prjs.get.side_effect = IOError("test error")
         mock_oda.uow.__enter__.return_value = uow_mock
 
-        result = client.post(
-            f"{PRJS_API_URL}/prj-123/ob-1/sbds",
-        )
+        with pytest.raises(IOError):
+            resp = client.post(
+                f"{PRJS_API_URL}/prj-123/ob-1/sbds",
+            )
+            result = resp.json()["detail"]
 
-        assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-        assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "OSError('test error')"
-        assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert result["title"] == "Internal Server Error"
+            assert result["detail"] == "OSError('test error')"
+            assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
     def test_prjs_post_sbd_success(self, mock_oda, client):
@@ -362,17 +369,17 @@ class TestProjectAddSBDefinition:
         uow_mock.prjs.add.return_value = project
         mock_oda.uow.__enter__.return_value = uow_mock
 
-        result = client.post(
+        resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/sbds",
         )
 
-        assert result.status_code == HTTPStatus.OK
+        assert resp.status_code == HTTPStatus.OK
 
         expected_response = {
-            "sbd": json.loads(sbd.model_dump_json()),
-            "prj": json.loads(project.model_dump_json()),
+            "sbd": sbd.model_dump(mode="json"),
+            "prj": project.model_dump(mode="json"),
         }
-        assert expected_response == result.json
+        assert expected_response == resp.json()
 
         args, _ = uow_mock.prjs.add.call_args
         assert sbd.sbd_id in args[0].obs_blocks[0].sbd_ids

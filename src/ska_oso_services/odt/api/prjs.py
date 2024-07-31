@@ -98,7 +98,7 @@ def prjs_post(prj: Project) -> Project:
         ) from err
 
 
-@router.get("/{identifier}")
+@router.put("/{identifier}")
 def prjs_put(prj: Project, identifier: str) -> Project:
     """
     Function that a PUT /prjs/{identifier} request is routed to.
@@ -149,7 +149,7 @@ class PrjSBDLinkResponse(BaseModel):
     prj: Project
 
 
-@router.post("/{prj_id}/{obs_block_id}/sbd")
+@router.post("/{prj_id}/{obs_block_id}/sbds")
 def prjs_sbds_post(prj_id: str, obs_block_id: str) -> PrjSBDLinkResponse:
     """
     Function that a POST /prjs/{prj_id}/obs_block_id/sbd request is routed to.

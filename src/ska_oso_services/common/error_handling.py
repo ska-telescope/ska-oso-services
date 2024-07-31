@@ -30,10 +30,10 @@ class BadRequestError(HTTPException):
 
     def __init__(
         self,
-        message=None,
-        title=None,
-        status_code=None,
-        traceback=None,
+        message: Optional[str] = None,
+        title: Optional[str] = None,
+        status_code: Optional[int] = None,
+        traceback: Optional[ErrorResponseTraceback] = None,
     ):
         message = message or self.code.description
         title = title or self.code.phrase
@@ -80,11 +80,12 @@ async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse
     #  ODA should raise its own exceptions which we can catch here
     is_not_found_in_oda = any("not found" in str(arg).lower() for arg in err.args)
     if is_not_found_in_oda:
-        identifier = request.path_params.get("identifier", "")
-        return _make_response(
-            HTTPStatus.NOT_FOUND,
-            message=f"Identifier {identifier} not found in repository",
-        )
+        # TODO make ODA exceptions more consistent:
+        if identifier := request.path_params.get("identifier"):
+            message = f"Identifier {identifier} not found in repository"
+        else:
+            message = err.args[0]
+        return _make_response(HTTPStatus.NOT_FOUND, message=message)
     else:
         LOGGER.exception(
             "KeyError raised by api function call, but not due to the "
