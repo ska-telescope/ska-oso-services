@@ -32,23 +32,25 @@ async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse
         identifier = request.path_params.get("identifier", "")
         return JSONResponse(
             status_code=HTTPStatus.NOT_FOUND,
-            content=dict(
-                status=f"{HTTPStatus.NOT_FOUND.value}: {HTTPStatus.NOT_FOUND.phrase}",
-                title=HTTPStatus.NOT_FOUND.phrase,
-                detail=f"Identifier {identifier} not found in repository",
-                traceback=None,
-            ),
+            content={
+                "detail": dict(
+                    status=f"{HTTPStatus.NOT_FOUND.value}: {HTTPStatus.NOT_FOUND.phrase}",
+                    title=HTTPStatus.NOT_FOUND.phrase,
+                    message=f"Identifier {identifier} not found in repository",
+                )
+            },
         )
     else:
         LOGGER.exception(
             "KeyError raised by api function call, but not due to the "
             "sbd_id not being found in the ODA."
         )
-        raise
         return await dangerous_internal_server_handler(request, err)
 
 
-async def dangerous_internal_server_handler(request: Request, err: Exception) -> JSONResponse:
+async def dangerous_internal_server_handler(
+    request: Request, err: Exception
+) -> JSONResponse:
     """
     A custom handler function that returns a verbose HTTP 500 response containing
     detailed traceback information.
@@ -57,15 +59,15 @@ async def dangerous_internal_server_handler(request: Request, err: Exception) ->
     clients. Do not use in production systems!
     """
     return JSONResponse(
-            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            content=dict(
-                status=f"{HTTPStatus.INTERNAL_SERVER_ERROR.value}: {HTTPStatus.INTERNAL_SERVER_ERROR.phrase}",
-                title=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
-                detail=repr(err),
-                traceback=ErrorResponseTraceback(
-                    key=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
-                    type=str(type(err)),
-                    full_traceback=traceback.format_exc(),
-                ),
+        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+        content=dict(
+            status=f"{HTTPStatus.INTERNAL_SERVER_ERROR.value}: {HTTPStatus.INTERNAL_SERVER_ERROR.phrase}",
+            title=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
+            detail=repr(err),
+            traceback=ErrorResponseTraceback(
+                key=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
+                type=str(type(err)),
+                full_traceback=traceback.format_exc(),
             ),
-        )
+        ),
+    )

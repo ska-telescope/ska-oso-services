@@ -2,12 +2,12 @@
 These functions map to the API paths, with the returned value being the API response
 """
 
-import json
 import logging
 from http import HTTPStatus
 from os import getenv
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 from ska_oso_pdm._shared import TelescopeType
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
@@ -67,13 +67,14 @@ def prjs_post(prj: Project) -> Project:
     if prj.prj_id is not None:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            status=HTTPStatus.BAD_REQUEST.phrase,
-            title="Validation Failed",
-            detail=(
-                "prj_id given in the body of the POST request. Identifier"
-                " generation for new entities is the responsibility of the ODA,"
-                " which will fetch them from SKUID, so they should not be given in"
-                " this request."
+            detail=dict(
+                title="Validation Failed",
+                message=(
+                    "prj_id given in the body of the POST request. Identifier"
+                    " generation for new entities is the responsibility of the ODA,"
+                    " which will fetch them from SKUID, so they should not be given in"
+                    " this request."
+                ),
             ),
         )
 
@@ -98,7 +99,7 @@ def prjs_post(prj: Project) -> Project:
 
 
 @router.get("/{identifier}")
-def prjs_put(body: dict, identifier: str) -> Project:
+def prjs_put(prj: Project, identifier: str) -> Project:
     """
     Function that a PUT /prjs/{identifier} request is routed to.
 
@@ -110,9 +111,7 @@ def prjs_put(body: dict, identifier: str) -> Project:
     :return: a tuple of an Project or error response and an HTTP status,
         which the Connexion will wrap in a response
     """
-    LOGGER.debug("POST PRJS prj_id: %s", identifier)
-
-    prj = Project.model_validate_json(json.dumps(body))
+    LOGGER.debug("PUT PRJS prj_id: %s", identifier)
 
     if prj.prj_id != identifier:
         raise HTTPException(
@@ -136,9 +135,9 @@ def prjs_put(body: dict, identifier: str) -> Project:
             # sent to the server until the commit.
             # So to display the metadata in the UI we need to do the extra fetch.
             if ODA_BACKEND_TYPE == "rest":
-                updated_prjs = uow.prjs.get(updated_prjs.prj_id)
+                updated_prj = uow.prjs.get(updated_prjs.prj_id)
 
-        return updated_prjs, HTTPStatus.OK
+        return updated_prj
     except ValueError as err:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -147,8 +146,13 @@ def prjs_put(body: dict, identifier: str) -> Project:
         ) from err
 
 
+class PrjSBDLinkResponse(BaseModel):
+    sbd: SBDefinition
+    prj: Project
+
+
 @router.post("/{prj_id}/{obs_block_id}/sbd")
-def prjs_sbds_post(prj_id: str, obs_block_id: str):
+def prjs_sbds_post(prj_id: str, obs_block_id: str) -> PrjSBDLinkResponse:
     """
     Function that a POST /prjs/{prj_id}/obs_block_id/sbd request is routed to.
 
@@ -172,13 +176,13 @@ def prjs_sbds_post(prj_id: str, obs_block_id: str):
                 if obs_block.obs_block_id == obs_block_id
             )
         except StopIteration:
-            return (
-                ErrorResponse(
-                    status=HTTPStatus.NOT_FOUND,
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail=dict(
+                    status=HTTPStatus.NOT_FOUND.phrase,
                     title="Not Found",
                     detail=f"Observing Block '{obs_block_id}' not found in Project",
                 ),
-                HTTPStatus.NOT_FOUND,
             )
 
         sbd = uow.sbds.add(
@@ -192,4 +196,4 @@ def prjs_sbds_post(prj_id: str, obs_block_id: str):
         uow.prjs.add(prj)
         uow.commit()
 
-    return {"sbd": sbd, "prj": prj}, HTTPStatus.OK
+    return {"sbd": sbd, "prj": prj}

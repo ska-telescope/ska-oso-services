@@ -9,7 +9,11 @@ from typing import Any, Dict
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from ska_oso_services.common import oda, oda_not_found_handler, dangerous_internal_server_handler
+from ska_oso_services.common import (
+    dangerous_internal_server_handler,
+    oda,
+    oda_not_found_handler,
+)
 from ska_oso_services.odt.api.prjs import router as projects_router
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
