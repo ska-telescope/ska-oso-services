@@ -3,10 +3,9 @@ These functions map to the API paths, with the returned value being the API resp
 """
 
 import logging
-from http import HTTPStatus
 from os import getenv
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 from ska_oso_pdm._shared import TelescopeType
 from ska_oso_pdm.project import Author, ObservingBlock, Project

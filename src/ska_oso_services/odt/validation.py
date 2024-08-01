@@ -17,10 +17,6 @@ from typing import Tuple, Union
 from ska_oso_pdm.sb_definition import SBDefinition
 from ska_oso_pdm.sb_definition.dish.dish_configuration import ReceiverBand
 
-from ska_oso_services.common.model import ErrorResponse, ValidationResponse
-
-Response = Tuple[Union[SBDefinition, ValidationResponse, ErrorResponse], int]
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -71,7 +67,7 @@ def _validate_csp_and_dish_combination(sbd: SBDefinition) -> dict[str, str]:
 VALIDATION_FNS = [_validate_csp_and_dish_combination]
 
 
-def validate_sbd(sbd_str: str) -> dict[str, str]:
+def validate_sbd(sbd: SBDefinition) -> dict[str, str]:
     """
     Top level validation function for an SBDefinition.
 
@@ -82,11 +78,6 @@ def validate_sbd(sbd_str: str) -> dict[str, str]:
     :return: a dictionary with individual validation error mesages,
         each with a unique key which should identify which part of the entity is invalid
     """
-    try:
-        sbd = SBDefinition.model_validate_json(sbd_str)
-    except ValueError as err:
-        return {"deserialisation_error": str(err)}
-
     return {
         error_key: error_description
         for single_validation_result in [fn(sbd) for fn in VALIDATION_FNS]
