@@ -1,5 +1,6 @@
-import json
+from unittest import mock
 
+from ska_oso_pdm.sb_definition import SBDefinition
 from ska_oso_pdm.sb_definition.dish.dish_configuration import ReceiverBand
 
 from ska_oso_services.odt.validation import (
@@ -10,19 +11,22 @@ from tests.unit.util import VALID_MID_SBDEFINITION_JSON, TestDataFactory
 
 
 def test_valid_sbd_returns_no_messages():
-    result = validate_sbd(VALID_MID_SBDEFINITION_JSON)
-
+    sbd = SBDefinition.model_validate_json(VALID_MID_SBDEFINITION_JSON)
+    result = validate_sbd(sbd)
     assert result == {}
 
 
-def test_sbd_deserialise_error():
-    result = validate_sbd(json.dumps({"telescope": "not a valid telescope"}))
-
-    assert (
-        "Input should be 'ska_mid', 'ska_low' or 'MeerKAT' "
-        "[type=enum, input_value='not a valid telescope', input_type=str]"
-        in result["deserialisation_error"]
-    )
+def test_validate_runs_functions():
+    fakes = [
+        mock.Mock(return_value={"result1": "bad1"}),
+        mock.Mock(return_value={"result2": "bad2"}),
+    ]
+    with mock.patch("ska_oso_services.odt.validation.VALIDATION_FNS", fakes):
+        fake_sbd = mock.Mock()
+        result = validate_sbd(fake_sbd)
+    for fn in fakes:
+        fn.assert_called_once_with(fake_sbd)
+    assert result == {"result1": "bad1", "result2": "bad2"}
 
 
 def test_config_not_present_error():
