@@ -12,12 +12,12 @@ from os import getenv
 from fastapi import APIRouter, HTTPException
 from ska_oso_pdm.sb_definition import SBDefinition
 
-from ska_oso_services import oda
 from ska_oso_services.common.error_handling import (
     BadRequestError,
     UnprocessableEntityError,
 )
 from ska_oso_services.common.model import ValidationResponse
+from ska_oso_services.common.oda import oda
 from ska_oso_services.odt.validation import validate_sbd
 
 LOGGER = logging.getLogger(__name__)

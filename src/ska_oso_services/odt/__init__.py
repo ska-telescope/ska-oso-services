@@ -1,3 +1,4 @@
+import os
 from importlib.metadata import version
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
@@ -10,6 +11,6 @@ from fastapi import APIRouter
 
 from ska_oso_services.odt.api import prjs, sbds
 
-router = APIRouter(prefix=API_PREFIX, tags=['ODT'])
+router = APIRouter(prefix=API_PREFIX, tags=["ODT"])
 router.include_router(prjs.router)
 router.include_router(sbds.router)
