@@ -15,6 +15,7 @@ from ska_oso_services.common import (
     oda_not_found_handler,
 )
 from ska_oso_services.odt.api.prjs import router as projects_router
+from ska_oso_services.odt.api.sbds import router as sbds_router
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
@@ -52,6 +53,7 @@ def create_app(production=True) -> FastAPI:
         allow_credentials=True,
     )
     app.include_router(projects_router)
+    app.include_router(sbds_router)
     app.exception_handler(KeyError)(oda_not_found_handler)
     if not production:
         app.exception_handler(Exception)(dangerous_internal_server_handler)

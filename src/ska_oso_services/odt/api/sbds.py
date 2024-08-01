@@ -27,7 +27,7 @@ ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
 router = APIRouter(prefix="/sbds", tags=["SBDs"])
 
 
-@router.post("/create")
+@router.get("/create")
 def sbds_create() -> SBDefinition:
     """
     Function that a GET /sbds/create request is routed to.
@@ -93,7 +93,10 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
     LOGGER.debug("POST SBD")
     validation_resp = validate(sbd)
     if not validation_resp.valid:
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=validation_resp)
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=validation_resp.model_dump(mode="json"),
+        )
 
     # Ensure the identifier is None so the ODA doesn't try to perform an update
     if sbd.sbd_id is not None:
@@ -127,9 +130,7 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
         return updated_sbd
 
 
-router.put("/{identifier}")
-
-
+@router.put("/{identifier}")
 def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
     """
     Function that a PUT /sbds/{identifier} request is routed to.
@@ -144,7 +145,10 @@ def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
     LOGGER.debug("POST SBD sbd_id: %s", identifier)
     validation_resp = validate(sbd)
     if not validation_resp.valid:
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=validation_resp)
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=validation_resp.model_dump(mode="json"),
+        )
 
     if sbd.sbd_id != identifier:
         raise UnprocessableEntityError(
@@ -187,4 +191,4 @@ def validate(sbd: SBDefinition) -> ValidationResponse:
 
     valid = not bool(validate_result)
 
-    return ValidationResponse(valid, validate_result)
+    return ValidationResponse(valid=valid, messages=validate_result)
