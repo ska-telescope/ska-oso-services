@@ -3,6 +3,7 @@ Unit tests for ska_oso_services.api
 """
 
 from http import HTTPStatus
+from importlib.metadata import version
 from unittest import mock
 
 import pytest
@@ -15,7 +16,9 @@ from tests.unit.util import (
     assert_json_is_equal,
 )
 
-SBDS_API_URL = f"/sbds"
+OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
+BASE_API_URL = f"/ska-oso-services/odt/api/v{OSO_SERVICES_MAJOR_VERSION}"
+SBDS_API_URL = f"{BASE_API_URL}/sbds"
 
 
 class TestSBDefinitionAPI:

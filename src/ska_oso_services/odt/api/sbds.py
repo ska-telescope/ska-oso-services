@@ -30,17 +30,11 @@ router = APIRouter(prefix="/sbds", tags=["SBDs"])
 @router.get(
     "/create",
     summary="Create empty SBD",
-    description=" Returns a json SchedulingBlockDefinition with empty or generated fields, to be populated and stored at a later point",
 )
 def sbds_create() -> SBDefinition:
     """
-    Function that a GET /sbds/create request is routed to.
-
-    Creates an 'empty' SBDefinition in the ODA, which just has default fields populated,
-    and returns this to be populated and stored at a later point.
-
-    The ODA handles the fetching of the ID from SKUID and the
-    metadata when the SBDefinition is eventually stored.
+    Returns a json SchedulingBlockDefinition with empty or generated fields,
+    to be populated and stored at a later point
     """
     # Create the empty SBD using defaults
     return SBDefinition()
@@ -49,39 +43,23 @@ def sbds_create() -> SBDefinition:
 @router.post(
     "/validate",
     summary="Validate an SBD",
-    description="Validates the SchedulingBlockDefinition in the request body against the component definition (eg required fields, allowed ranges) and more complex business logic in the controller method.",
 )
 def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
     """
-    Function that a POST /sbds/validate request is routed to.
-
-    Validates the SBDefinition in the request body against the
-    component definition (eg required fields, allowed ranges) and more complex
-    astronomy logic in the validation layer.
-
-    :param sbd: PDM object SBDefinition
-    :return: a ValidationResponse
+    Validates the SchedulingBlockDefinition in the request body against the
+    component definition (eg required fields, allowed ranges) and more
+    complex business logic in the controller method.
     """
     validation_resp = validate(sbd)
 
     return validation_resp
 
 
-@router.get(
-    "/{identifier}",
-    summary="Get SBD by identifier",
-    description="Retrieves the SchedulingBlockDefinition with the given identifier from the underlying datas store, if available",
-)
+@router.get("/{identifier}", summary="Get SBD by identifier")
 def sbds_get(identifier: str) -> SBDefinition:
     """
-    Function that a GET /sbds/{identifier} request is routed to.
-
-    Retrieves the SBDefinition with the given identifier from the
-    underlying data store, if available
-
-    :param identifier: identifier of the SBDefinition
-    :return: a tuple of an SBDefinition (or ErrorResponse if not found) and a
-        HTTP status, which the Connexion will wrap in a response
+    Retrieves the SchedulingBlockDefinition with the given identifier
+    from the underlying datas store, if available.
     """
     LOGGER.debug("GET SBD sbd_id: %s", identifier)
     with oda.uow as uow:
@@ -92,19 +70,12 @@ def sbds_get(identifier: str) -> SBDefinition:
 @router.post(
     "/",
     summary="Create a new SBDefinition",
-    description="Creates a new SchedulingBlockDefinition in the underlying data store. The response contains the entity as it exists in the data store, with an sbd_id and metadata populated.",
 )
 def sbds_post(sbd: SBDefinition) -> SBDefinition:
     """
-    Function that a POST /sbds request is routed to.
-
-    Validates then stores the SBDefinition in the underlying data store.
-
-    The ODA is responsible for populating the sbd_id and metadata
-
-    :param identifier: identifier of the SBDefinition
-    :return: a tuple of an SBDefinition as it exists in the ODA or error
-        response and a HTTP status, which the Connexion will wrap in a response
+    Creates a new SchedulingBlockDefinition in the underlying data store.
+    The response contains the entity as it exists in the data store, with an
+    sbd_id and metadata populated.
     """
     LOGGER.debug("POST SBD")
     validation_resp = validate(sbd)
@@ -149,18 +120,11 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
 @router.put(
     "/{identifier}",
     summary="Update an SBDefinition by identifier",
-    description="Updates the SchedulingBlockDefinition with the given identifier in the underlying data store to create a new version.",
 )
 def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
     """
-    Function that a PUT /sbds/{identifier} request is routed to.
-
-    Validates then stores the SBDefinition with the given identifier
-    in the underlying data store.
-
-    :param identifier: identifier of the SBDefinition
-    :return: a tuple of an SBDefinition or error response and a HTTP status,
-        which the Connexion will wrap in a response
+    Updates the SchedulingBlockDefinition with the given identifier
+    in the underlying data store to create a new version.
     """
     LOGGER.debug("POST SBD sbd_id: %s", identifier)
     validation_resp = validate(sbd)

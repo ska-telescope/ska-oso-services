@@ -13,8 +13,7 @@ from ska_oso_pdm.project import ObservingBlock
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
-# BASE_API_URL = f"/ska-oso-services/odt/api/v{OSO_SERVICES_MAJOR_VERSION}"
-BASE_API_URL = ""
+BASE_API_URL = f"/ska-oso-services/odt/api/v{OSO_SERVICES_MAJOR_VERSION}"
 PRJS_API_URL = f"{BASE_API_URL}/prjs"
 
 
@@ -139,9 +138,10 @@ class TestProjectPost:
                 "status": HTTPStatus.BAD_REQUEST,
                 "title": "Validation Failed",
                 "message": (
-                    "prj_id given in the body of the POST request. Identifier generation"
-                    " for new entities is the responsibility of the ODA, which will fetch"
-                    " them from SKUID, so they should not be given in this request."
+                    "prj_id given in the body of the POST request. Identifier"
+                    " generation for new entities is the responsibility of "
+                    " the ODA, which will fetch them from SKUID, so they"
+                    " should not be given in this request."
                 ),
             }
         }

@@ -32,18 +32,11 @@ router = APIRouter(prefix="/prjs", tags=["projects"])
 @router.get(
     "/{identifier}",
     summary="Get Project by identifier",
-    description="Retrieves the Project with the given identifier from the underlying datas store, if available",
 )
 def prjs_get(identifier: str) -> Project:
     """
-    Function that a GET /prjs/{identifier} request is routed to.
-
-    Retrieves the Project with the given identifier from the
-    underlying data store, if available
-
-    :param identifier: identifier of the Project
-    :return: a tuple of a Project (or ErrorResponse if not found) and an
-        HTTP status, which the Connexion will wrap in a response
+    Retrieves the Project with the given identifier from the underlying
+    data store, if available
     """
     LOGGER.debug("GET PRJS prj_id: %s", identifier)
     with oda.uow as uow:
@@ -53,19 +46,12 @@ def prjs_get(identifier: str) -> Project:
 @router.post(
     "/",
     summary="Create a new Project",
-    description="Creates a new Project in the underlying data store. The response contains the entity as it exists in the data store, with an sbd_id and metadata populated.",
 )
 def prjs_post(prj: Project) -> Project:
     """
-    Function that a POST /prjs request is routed to.
-
-    Validates then stores the Project in the underlying data store.
-
-    The ODA is responsible for populating the sbd_id and metadata
-
-    :param body: json request body as a dict
-    :return: a tuple of a Porject as it exists in the ODA or error
-        response and an HTTP status, which the Connexion will wrap in a response
+    Creates a new Project in the underlying data store. The response
+    contains the entity as it exists in the data store, with
+    a prj_id and metadata populated.
     """
     LOGGER.debug("POST PRJ")
 
@@ -108,19 +94,11 @@ def prjs_post(prj: Project) -> Project:
 @router.put(
     "/{identifier}",
     summary="Update a Project by identifier",
-    description="Updates the Project with the given identifier in the underlying data store to create a new version.",
 )
 def prjs_put(prj: Project, identifier: str) -> Project:
     """
-    Function that a PUT /prjs/{identifier} request is routed to.
-
-    Validates then stores the Project with the given identifier
-    in the underlying data store.
-
-    :param body: json request body as a dict
-    :param identifier: identifier of the Project
-    :return: a tuple of an Project or error response and an HTTP status,
-        which the Connexion will wrap in a response
+    Updates the Project with the given identifier in the underlying
+    data store to create a new version.
     """
     LOGGER.debug("PUT PRJS prj_id: %s", identifier)
 
@@ -163,22 +141,12 @@ class PrjSBDLinkResponse(BaseModel):
 @router.post(
     "/{prj_id}/{obs_block_id}/sbds",
     summary="Create a new, empty SBDefinition linked to a project",
-    description="Creates an empty SBDefintiion linked to the given project. The response contains the entity as it exists in the data store, with an sbd_id and metadata populated.",
 )
 def prjs_sbds_post(prj_id: str, obs_block_id: str) -> PrjSBDLinkResponse:
     """
-    Function that a POST /prjs/{prj_id}/obs_block_id/sbd request is routed to.
-
-    Creates an SBDefinition and links this in the Project.
-
-    The returned response body is an object with the Project and SBDefinition
-    as they exist in the ODA.
-
-    :param prj_id: Identifier of the Project to create the SBDefinition in
-    :param obs_block_id: The observing block within the Project the SBDefinition
-        should be in
-    :return: a tuple of an Project or error response and an HTTP status,
-        which the Connexion will wrap in a response
+    Creates an empty SBDefintiion linked to the given project.
+    The response contains the entity as it exists in the data store,
+    with an sbd_id and metadata populated.
     """
     with oda.uow as uow:
         prj = uow.prjs.get(prj_id)
