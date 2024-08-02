@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 from ska_oso_services import create_app
 
 
-@pytest.fixture()
-def test_app() -> FastAPI:
+@pytest.fixture(name="test_app")
+def test_app_fixture() -> FastAPI:
     """
     Fixture to configure a test app instance
     """

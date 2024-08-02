@@ -1,11 +1,10 @@
 import logging
-import traceback
 from http import HTTPStatus
+from traceback import format_exc
 from typing import Optional
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
-from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common.model import ErrorDetails, ErrorResponseTraceback
 
@@ -94,9 +93,7 @@ async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse
         return await dangerous_internal_server_handler(request, err)
 
 
-async def dangerous_internal_server_handler(
-    request: Request, err: Exception
-) -> JSONResponse:
+async def dangerous_internal_server_handler(_: Request, err: Exception) -> JSONResponse:
     """
     A custom handler function that returns a verbose HTTP 500 response containing
     detailed traceback information.
@@ -110,6 +107,6 @@ async def dangerous_internal_server_handler(
         traceback=ErrorResponseTraceback(
             key=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
             type=str(type(err)),
-            full_traceback=traceback.format_exc(),
+            full_traceback=format_exc(),
         ),
     )

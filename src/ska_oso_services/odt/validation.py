@@ -12,7 +12,6 @@ They are then all applied to the SBDefinition and the results combined.
 """
 
 import logging
-from typing import Tuple, Union
 
 from ska_oso_pdm.sb_definition import SBDefinition
 from ska_oso_pdm.sb_definition.dish.dish_configuration import ReceiverBand

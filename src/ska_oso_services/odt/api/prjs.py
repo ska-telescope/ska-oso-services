@@ -124,13 +124,13 @@ def prjs_put(prj: Project, identifier: str) -> Project:
             # So to display the metadata in the UI we need to do the extra fetch.
             if ODA_BACKEND_TYPE == "rest":
                 updated_prj = uow.prjs.get(updated_prjs.prj_id)
-
-        return updated_prj
     except ValueError as err:
         raise BadRequestError(
             title="Validation Failed",
             message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
         ) from err
+    else:
+        return updated_prj  # pylint: disable=possibly-used-before-assignment
 
 
 class PrjSBDLinkResponse(BaseModel):
@@ -157,6 +157,7 @@ def prjs_sbds_post(prj_id: str, obs_block_id: str) -> PrjSBDLinkResponse:
                 if obs_block.obs_block_id == obs_block_id
             )
         except StopIteration:
+            # pylint: disable=raise-missing-from
             raise NotFoundError(
                 message=f"Observing Block '{obs_block_id}' not found in Project"
             )

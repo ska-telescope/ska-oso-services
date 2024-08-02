@@ -2,16 +2,12 @@
 ska_oso_services app.py
 """
 
-import os
-from typing import Any, Dict
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ska_oso_services import odt
 from ska_oso_services.common import (
     dangerous_internal_server_handler,
-    oda,
     oda_not_found_handler,
 )
 
@@ -38,4 +34,4 @@ def create_app(production=True) -> FastAPI:
     return app
 
 
-app = create_app()
+main = create_app()

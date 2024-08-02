@@ -4,7 +4,6 @@ These functions map to the API paths, with the returned value being the API resp
 Connexion maps the function name to the operationId in the OpenAPI document path
 """
 
-import json
 import logging
 from http import HTTPStatus
 from os import getenv
@@ -112,7 +111,7 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
         raise BadRequestError(
             title="Validation Failed",
             message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
-        )
+        ) from err
     else:
         return updated_sbd
 
@@ -161,8 +160,8 @@ def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
         LOGGER.exception("ValueError when adding SBDefinition to the ODA")
         raise BadRequestError(
             title="Validation Failed",
-            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
-        )
+            message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
+        ) from err
     else:
         return updated_sbd
 
