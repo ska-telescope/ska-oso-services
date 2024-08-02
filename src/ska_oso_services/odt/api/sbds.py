@@ -27,7 +27,11 @@ ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
 router = APIRouter(prefix="/sbds", tags=["SBDs"])
 
 
-@router.get("/create")
+@router.get(
+    "/create",
+    summary="Create empty SBD",
+    description=" Returns a json SchedulingBlockDefinition with empty or generated fields, to be populated and stored at a later point",
+)
 def sbds_create() -> SBDefinition:
     """
     Function that a GET /sbds/create request is routed to.
@@ -42,7 +46,11 @@ def sbds_create() -> SBDefinition:
     return SBDefinition()
 
 
-@router.post("/validate")
+@router.post(
+    "/validate",
+    summary="Validate an SBD",
+    description="Validates the SchedulingBlockDefinition in the request body against the component definition (eg required fields, allowed ranges) and more complex business logic in the controller method.",
+)
 def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
     """
     Function that a POST /sbds/validate request is routed to.
@@ -59,7 +67,11 @@ def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
     return validation_resp
 
 
-@router.get("/{identifier}")
+@router.get(
+    "/{identifier}",
+    summary="Get SBD by identifier",
+    description="Retrieves the SchedulingBlockDefinition with the given identifier from the underlying datas store, if available",
+)
 def sbds_get(identifier: str) -> SBDefinition:
     """
     Function that a GET /sbds/{identifier} request is routed to.
@@ -77,7 +89,11 @@ def sbds_get(identifier: str) -> SBDefinition:
     return sbd
 
 
-@router.post("/")
+@router.post(
+    "/",
+    summary="Create a new SBDefinition",
+    description="Creates a new SchedulingBlockDefinition in the underlying data store. The response contains the entity as it exists in the data store, with an sbd_id and metadata populated.",
+)
 def sbds_post(sbd: SBDefinition) -> SBDefinition:
     """
     Function that a POST /sbds request is routed to.
@@ -130,7 +146,11 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
         return updated_sbd
 
 
-@router.put("/{identifier}")
+@router.put(
+    "/{identifier}",
+    summary="Update an SBDefinition by identifier",
+    description="Updates the SchedulingBlockDefinition with the given identifier in the underlying data store to create a new version.",
+)
 def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
     """
     Function that a PUT /sbds/{identifier} request is routed to.

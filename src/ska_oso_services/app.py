@@ -36,3 +36,6 @@ def create_app(production=True) -> FastAPI:
     if not production:
         app.exception_handler(Exception)(dangerous_internal_server_handler)
     return app
+
+
+app = create_app()

@@ -29,7 +29,11 @@ OBS_BLOCK_ID = "ob-1"
 router = APIRouter(prefix="/prjs", tags=["projects"])
 
 
-@router.get("/{identifier}")
+@router.get(
+    "/{identifier}",
+    summary="Get Project by identifier",
+    description="Retrieves the Project with the given identifier from the underlying datas store, if available",
+)
 def prjs_get(identifier: str) -> Project:
     """
     Function that a GET /prjs/{identifier} request is routed to.
@@ -46,7 +50,11 @@ def prjs_get(identifier: str) -> Project:
         return uow.prjs.get(identifier)
 
 
-@router.post("/")
+@router.post(
+    "/",
+    summary="Create a new Project",
+    description="Creates a new Project in the underlying data store. The response contains the entity as it exists in the data store, with an sbd_id and metadata populated.",
+)
 def prjs_post(prj: Project) -> Project:
     """
     Function that a POST /prjs request is routed to.
@@ -97,7 +105,11 @@ def prjs_post(prj: Project) -> Project:
         ) from err
 
 
-@router.put("/{identifier}")
+@router.put(
+    "/{identifier}",
+    summary="Update a Project by identifier",
+    description="Updates the Project with the given identifier in the underlying data store to create a new version.",
+)
 def prjs_put(prj: Project, identifier: str) -> Project:
     """
     Function that a PUT /prjs/{identifier} request is routed to.
@@ -148,7 +160,11 @@ class PrjSBDLinkResponse(BaseModel):
     prj: Project
 
 
-@router.post("/{prj_id}/{obs_block_id}/sbds")
+@router.post(
+    "/{prj_id}/{obs_block_id}/sbds",
+    summary="Create a new, empty SBDefinition linked to a project",
+    description="Creates an empty SBDefintiion linked to the given project. The response contains the entity as it exists in the data store, with an sbd_id and metadata populated.",
+)
 def prjs_sbds_post(prj_id: str, obs_block_id: str) -> PrjSBDLinkResponse:
     """
     Function that a POST /prjs/{prj_id}/obs_block_id/sbd request is routed to.
