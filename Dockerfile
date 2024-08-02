@@ -5,8 +5,8 @@
 
 
 ## The builder image, used to build the virtual environment
-ARG BUILD_IMAGE="python:3.11-bullseye"
-ARG RUNTIME_BASE_IMAGE="python:3.11-slim-bullseye"
+ARG BUILD_IMAGE="python:3.10-bullseye"
+ARG RUNTIME_BASE_IMAGE="python:3.10-slim-bullseye"
 
 FROM $BUILD_IMAGE AS buildenv
 
