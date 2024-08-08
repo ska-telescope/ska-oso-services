@@ -139,7 +139,7 @@ class TestProjectPost:
                 "title": "Validation Failed",
                 "message": (
                     "prj_id given in the body of the POST request. Identifier"
-                    " generation for new entities is the responsibility of "
+                    " generation for new entities is the responsibility of"
                     " the ODA, which will fetch them from SKUID, so they"
                     " should not be given in this request."
                 ),
