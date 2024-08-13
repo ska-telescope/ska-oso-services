@@ -4,6 +4,11 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+0.2.0
+*****
+
+* Updated ODA to v6.0.0 which no longer supports REST Repository. Added config to ska-oso-services to enable direct Postgres connection.
+
 0.1.0
 
 *****

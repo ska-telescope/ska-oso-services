@@ -1,13 +1,14 @@
 """
 Utility functions to be used in tests
 """
+
 import json
 import os.path
 from datetime import datetime
 from typing import Optional
 
 from deepdiff import DeepDiff
-from ska_db_oda.domain import set_identifier
+from ska_db_oda.persistence.domain import set_identifier
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 

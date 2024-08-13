@@ -7,7 +7,6 @@ Connexion maps the function name to the operationId in the OpenAPI document path
 import json
 import logging
 from http import HTTPStatus
-from os import getenv
 
 from ska_oso_pdm._shared import TelescopeType
 from ska_oso_pdm.project import Author, ObservingBlock, Project
@@ -18,8 +17,6 @@ from ska_oso_services.common.error_handling import Response, error_handler
 from ska_oso_services.common.model import ErrorResponse
 
 LOGGER = logging.getLogger(__name__)
-
-ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
 
 # For PI22, we are only supporting a single ObservingBlock in the
 # Project, so hard code the id
@@ -85,12 +82,6 @@ def prjs_post(body: dict) -> Response:
         with oda.uow as uow:
             updated_prj = uow.prjs.add(prj)
             uow.commit()
-            # Unlike the other implementations, the RestRepository.add does
-            # not return the entity with its metadata updated, as it is not
-            # sent to the server until the commit.
-            # So to display the metadata in the UI we need to do the extra fetch.
-            if ODA_BACKEND_TYPE == "rest":
-                updated_prj = uow.prjs.get(updated_prj.prj_id)
         return updated_prj, HTTPStatus.OK
     except ValueError as err:
         LOGGER.exception("ValueError when adding Project to the ODA")
@@ -142,12 +133,6 @@ def prjs_put(body: dict, identifier: str) -> Response:
                 )
             updated_prjs = uow.prjs.add(prj)
             uow.commit()
-            # Unlike the other implementations, the RestRepository.add does
-            # not return the entity with its metadata updated, as it is not
-            # sent to the server until the commit.
-            # So to display the metadata in the UI we need to do the extra fetch.
-            if ODA_BACKEND_TYPE == "rest":
-                updated_prjs = uow.prjs.get(updated_prjs.prj_id)
 
         return updated_prjs, HTTPStatus.OK
     except ValueError as err:

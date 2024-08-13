@@ -7,7 +7,6 @@ Connexion maps the function name to the operationId in the OpenAPI document path
 import json
 import logging
 from http import HTTPStatus
-from os import getenv
 
 from ska_oso_pdm.sb_definition import SBDefinition
 
@@ -17,8 +16,6 @@ from ska_oso_services.common.model import ErrorResponse, ValidationResponse
 from ska_oso_services.odt.validation import validate_sbd
 
 LOGGER = logging.getLogger(__name__)
-
-ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
 
 
 @error_handler
@@ -120,12 +117,6 @@ def sbds_post(body: dict) -> Response:
         with oda.uow as uow:
             updated_sbd = uow.sbds.add(sbd)
             uow.commit()
-            # Unlike the other implementations, the RestRepository.add does
-            # not return the entity with its metadata updated, as it is not
-            # sent to the server until the commit.
-            # So to display the metadata in the UI we need to do the extra fetch.
-            if ODA_BACKEND_TYPE == "rest":
-                updated_sbd = uow.sbds.get(updated_sbd.sbd_id)
         return (
             updated_sbd,
             HTTPStatus.OK,
@@ -181,12 +172,6 @@ def sbds_put(body: dict, identifier: str) -> Response:
                 )
             updated_sbd = uow.sbds.add(sbd)
             uow.commit()
-            # Unlike the other implementations, the RestRepository.add does
-            # not return the entity with its metadata updated, as it is not
-            # sent to the server until the commit.
-            # So to display the metadata in the UI we need to do the extra fetch.
-            if ODA_BACKEND_TYPE == "rest":
-                updated_sbd = uow.sbds.get(updated_sbd.sbd_id)
 
         return updated_sbd, HTTPStatus.OK
     except ValueError as err:

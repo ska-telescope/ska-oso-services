@@ -1,6 +1,7 @@
 """
 Entry point for application
 """
+
 import logging
 
 from gunicorn import glogging

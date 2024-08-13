@@ -4,6 +4,7 @@ Component level tests for ska-oso-ost-services.
 These will run from a test pod inside a kubernetes cluster, making requests
 to a deployment of ska-oso-ost-services in the same cluster
 """
+
 # pylint: disable=missing-timeout
 import json
 from http import HTTPStatus
