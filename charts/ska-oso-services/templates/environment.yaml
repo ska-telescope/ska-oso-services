@@ -12,10 +12,16 @@ metadata:
 data:
   KUBE_NAMESPACE: {{ .Release.Namespace }}
   ODA_BACKEND_TYPE: {{ .Values.rest.oda.backendType }}
-  {{- if .Values.rest.oda.url }}
-  ODA_URL: {{ .Values.rest.oda.url }}
-  {{ else }}
-  ODA_URL: http://ska-db-oda-rest-{{ .Release.Name }}:5000/{{ .Release.Namespace }}/oda/api/v3
+  POSTGRES_HOST: {{ if .Values.rest.oda.postgres.host }} {{ .Values.rest.oda.postgres.host }} {{ else }} {{ .Release.Name }}-postgresql {{ end }}
+  ADMIN_POSTGRES_PASSWORD: {{ .Values.rest.oda.postgres.password }}
+  {{ if .Values.rest.oda.postgres.port }}
+  POSTGRES_PORT: {{ .Values.rest.oda.postgres.port | quote }}
+  {{ end }}
+  {{ if .Values.rest.oda.postgres.db.name }}
+  POSTGRES_DB_NAME: {{ .Values.rest.oda.postgres.db.name }}
+  {{ end }}
+  {{ if .Values.rest.oda.postgres.user }}
+  ADMIN_POSTGRES_USER: {{ .Values.rest.oda.postgres.user }}
   {{ end }}
   {{ if .Values.rest.skuid.url }}
   SKUID_URL: {{ .Values.rest.skuid.url }}
