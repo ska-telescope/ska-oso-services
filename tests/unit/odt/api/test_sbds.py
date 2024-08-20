@@ -22,6 +22,17 @@ SBDS_API_URL = f"{BASE_API_URL}/sbds"
 
 
 class TestSBDefinitionAPI:
+    def server_error(self, response):
+        detail = response.json()["detail"]
+        assert detail["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert detail["title"] == "Internal Server Error"
+        assert detail["message"] == "ValueError('test', 'error')"
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+
+    def service_not_allowed(self, response):
+        assert response.json()["detail"] == "Method Not Allowed"
+        assert response.status_code == HTTPStatus.METHOD_NOT_ALLOWED
+
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
     def test_sbds_create(self, mock_oda, client):
         """
@@ -57,6 +68,18 @@ class TestSBDefinitionAPI:
         assert response.status_code == HTTPStatus.OK
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
+    def test_sbds_get_without_identifier(self, mock_oda, client):
+        """
+        Check the sbds_get method returns the Not Found error when identifier not in ODA
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.sbds.get.side_effect = KeyError("method not allowed")
+        mock_oda.uow.__enter__.return_value = uow_mock
+
+        response = client.get(f"{SBDS_API_URL}")
+        self.service_not_allowed(response)
+
+    @mock.patch("ska_oso_services.odt.api.sbds.oda")
     def test_sbds_get_not_found_sbd(self, mock_oda, client):
         """
         Check the sbds_get method returns the Not Found error when identifier not in ODA
@@ -86,12 +109,7 @@ class TestSBDefinitionAPI:
 
         with pytest.raises(ValueError):
             response = client.get(f"{SBDS_API_URL}/sbd-1234")
-            detail = response.json()["detail"]
-
-            assert detail["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-            assert detail["title"] == "Internal Server Error"
-            assert detail["message"] == "ValueError('test', 'error')"
-            assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            self.server_error(response)
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_validate_valid_sbd(self, mock_validate, client):
@@ -213,13 +231,7 @@ class TestSBDefinitionAPI:
                 data=SBDEFINITION_WITHOUT_ID_JSON,
                 headers={"Content-type": "application/json"},
             )
-
-            detail = response.json()["detail"]
-
-            assert detail["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-            assert detail["title"] == "Internal Server Error"
-            assert detail["message"] == "OSError('test error')"
-            assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            self.server_error(response)
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
@@ -266,6 +278,20 @@ class TestSBDefinitionAPI:
             ),
         }
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
+    def test_sbds_put_without_identifier_no_allowed(self, mock_validate, client):
+        """
+        Check the sbds_put method returns the validation error in a response
+        """
+        mock_validate.return_value = {"validation_errors": "method not allowed"}
+
+        response = client.put(
+            f"{SBDS_API_URL}",
+            data=VALID_MID_SBDEFINITION_JSON,
+            headers={"Content-type": "application/json"},
+        )
+        self.service_not_allowed(response)
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_sbds_put_value_error(self, mock_validate, client):
@@ -331,9 +357,4 @@ class TestSBDefinitionAPI:
                 data=VALID_MID_SBDEFINITION_JSON,
                 headers={"Content-type": "application/json"},
             )
-            detail = response.json()["detail"]
-
-            assert detail["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-            assert detail["title"] == "Internal Server Error"
-            assert detail["detail"] == "OSError('test error')"
-            assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            self.server_error(response)

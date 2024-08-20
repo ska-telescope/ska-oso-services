@@ -18,6 +18,13 @@ PRJS_API_URL = f"{BASE_API_URL}/prjs"
 
 
 class TestProjectGet:
+    def server_error(self, response):
+        detail = response.json()["detail"]
+        assert detail["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert detail["title"] == "Internal Server Error"
+        assert detail["message"] == "ValueError('test', 'error')"
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
     def test_prjs_get_existing_prj(self, mock_oda, client):
         """
@@ -67,12 +74,7 @@ class TestProjectGet:
         # https://github.com/encode/starlette/blob/master/starlette/middleware/errors.py#L186
         with pytest.raises(ValueError):
             response = client.get(f"{PRJS_API_URL}/prj-1234")
-            result = response.json()
-
-            assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-            assert result["title"] == "Internal Server Error"
-            assert result["detail"] == "ValueError('Something bad!')"
-            assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            self.server_error(response)
 
 
 class TestProjectPost:
@@ -186,12 +188,7 @@ class TestProjectPost:
                 data=TestDataFactory.project(prj_id=None).model_dump_json(),
                 headers={"Content-type": "application/json"},
             )
-            result = response.json()
-
-            assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-            assert result["title"] == "Internal Server Error"
-            assert result["message"] == "OSError('test error')"
-            assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            self.server_error(response)
 
 
 class TestProjectPut:
@@ -290,18 +287,12 @@ class TestProjectPut:
         project = TestDataFactory.project()
 
         with pytest.raises(IOError):
-            resp = client.put(
+            response = client.put(
                 f"{PRJS_API_URL}/{project.prj_id}",
                 data=project.model_dump_json(),
                 headers={"Content-type": "application/json"},
             )
-            result = resp.json()["detail"]
-
-            assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-            assert result["title"] == "Internal Server Error"
-            assert result["message"] == "OSError('test error')"
-            assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
-
+            self.server_error(response)
 
 class TestProjectAddSBDefinition:
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
@@ -347,15 +338,10 @@ class TestProjectAddSBDefinition:
         mock_oda.uow.__enter__.return_value = uow_mock
 
         with pytest.raises(IOError):
-            resp = client.post(
+            response = client.post(
                 f"{PRJS_API_URL}/prj-123/ob-1/sbds",
             )
-            result = resp.json()["detail"]
-
-            assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-            assert result["title"] == "Internal Server Error"
-            assert result["detail"] == "OSError('test error')"
-            assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            self.server_error(response)
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
     def test_prjs_post_sbd_success(self, mock_oda, client):
