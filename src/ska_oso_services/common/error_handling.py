@@ -14,11 +14,11 @@ LOGGER = logging.getLogger(__name__)
 def error_details(
     status: HTTPStatus,
     title: str,
-    message: str,
+    detail: str,
     traceback: Optional[ErrorResponseTraceback],
 ):
     return ErrorDetails(
-        status=status, title=title, message=message, traceback=traceback
+        status=status, title=title, detail=detail, traceback=traceback
     ).model_dump(mode="json", exclude_none=True)
 
 
@@ -29,39 +29,37 @@ class BadRequestError(HTTPException):
 
     def __init__(
         self,
-        message: Optional[str] = None,
-        title: Optional[str] = None,
+        detail: Optional[str] = None,
         status_code: Optional[int] = None,
-        traceback: Optional[ErrorResponseTraceback] = None,
     ):
-        message = message or self.code.description
-        title = title or self.code.phrase
         status_code = status_code or self.code
-        detail = error_details(
-            status=status_code,
-            title=title,
-            message=message,
-            traceback=traceback,
-        )
+        detail = detail or self.code.description
+
         super().__init__(status_code=status_code, detail=detail)
 
 
 class UnprocessableEntityError(BadRequestError):
     code = HTTPStatus.UNPROCESSABLE_ENTITY
 
+    def __init__(self, detail: Optional[str] = None):
+        super().__init__(detail=detail)
+
 
 class NotFoundError(BadRequestError):
     code = HTTPStatus.NOT_FOUND
 
+    def __init__(self, detail: Optional[str] = None):
+        super().__init__(detail=detail)
+
 
 def _make_response(
-    status: HTTPStatus, message: str, traceback: Optional[ErrorResponseTraceback] = None
+    status: HTTPStatus, detail: str, traceback: Optional[ErrorResponseTraceback] = None
 ) -> JSONResponse:
     """
     Utility helper to generate a JSONResponse to be returned by custom error handlers.
     """
     details = error_details(
-        status, title=status.phrase, message=message, traceback=traceback
+        status, title=status.phrase, detail=detail, traceback=traceback
     )
     return JSONResponse(
         status_code=status,
@@ -81,10 +79,10 @@ async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse
     if is_not_found_in_oda:
         # TODO make ODA exceptions more consistent:
         if identifier := request.path_params.get("identifier"):
-            message = f"Identifier {identifier} not found in repository"
+            detail = f"Identifier {identifier} not found in repository"
         else:
-            message = err.args[0]
-        return _make_response(HTTPStatus.NOT_FOUND, message=message)
+            detail = err.args[0]
+        raise NotFoundError(detail=detail)
     else:
         LOGGER.exception(
             "KeyError raised by api function call, but not due to the "
@@ -103,7 +101,7 @@ async def dangerous_internal_server_handler(_: Request, err: Exception) -> JSONR
     """
     return _make_response(
         HTTPStatus.INTERNAL_SERVER_ERROR,
-        message=repr(err),
+        detail=repr(err),
         traceback=ErrorResponseTraceback(
             key=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
             type=str(type(err)),

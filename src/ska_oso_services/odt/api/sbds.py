@@ -6,7 +6,6 @@ Connexion maps the function name to the operationId in the OpenAPI document path
 
 import logging
 from http import HTTPStatus
-from os import getenv
 
 from fastapi import APIRouter, HTTPException
 from ska_oso_pdm.sb_definition import SBDefinition
@@ -21,9 +20,7 @@ from ska_oso_services.odt.validation import validate_sbd
 
 LOGGER = logging.getLogger(__name__)
 
-ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
-
-router = APIRouter(prefix="/sbds", tags=["SBDs"])
+router = APIRouter(prefix="/sbds")
 
 
 @router.get(
@@ -61,7 +58,7 @@ def sbds_get(identifier: str) -> SBDefinition:
     from the underlying datas store, if available.
     """
     LOGGER.debug("GET SBD sbd_id: %s", identifier)
-    with oda.uow as uow:
+    with oda as uow:
         sbd = uow.sbds.get(identifier)
     return sbd
 
@@ -87,8 +84,7 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
     # Ensure the identifier is None so the ODA doesn't try to perform an update
     if sbd.sbd_id is not None:
         raise BadRequestError(
-            title="Validation Failed",
-            message=(
+            detail=(
                 "sbd_id given in the body of the POST request. Identifier"
                 " generation for new entities is the responsibility of the ODA,"
                 " which will fetch them from SKUID, so they should not be given in"
@@ -97,23 +93,15 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
         )
 
     try:
-        with oda.uow as uow:
+        with oda as uow:
             updated_sbd = uow.sbds.add(sbd)
             uow.commit()
-            # Unlike the other implementations, the RestRepository.add does
-            # not return the entity with its metadata updated, as it is not
-            # sent to the server until the commit.
-            # So to display the metadata in the UI we need to do the extra fetch.
-            if ODA_BACKEND_TYPE == "rest":
-                updated_sbd = uow.sbds.get(updated_sbd.sbd_id)
+        return updated_sbd
     except ValueError as err:
         LOGGER.exception("ValueError when adding SBDefinition to the ODA")
         raise BadRequestError(
-            title="Validation Failed",
-            message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
+            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
         ) from err
-    else:
-        return updated_sbd
 
 
 @router.put(
@@ -135,35 +123,26 @@ def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
 
     if sbd.sbd_id != identifier:
         raise UnprocessableEntityError(
-            title="Unprocessable Entity, mismatched SBD IDs",
-            message=(
+            detail=(
                 "There is a mismatch between the SBD ID for the endpoint and the "
                 "JSON payload"
             ),
         )
 
     try:
-        with oda.uow as uow:
+        with oda as uow:
             if identifier not in uow.sbds:
                 raise KeyError(
                     f"Not found. The requested sbd_id {identifier} could not be found."
                 )
             updated_sbd = uow.sbds.add(sbd)
             uow.commit()
-            # Unlike the other implementations, the RestRepository.add does
-            # not return the entity with its metadata updated, as it is not
-            # sent to the server until the commit.
-            # So to display the metadata in the UI we need to do the extra fetch.
-            if ODA_BACKEND_TYPE == "rest":
-                updated_sbd = uow.sbds.get(updated_sbd.sbd_id)
+        return updated_sbd
     except ValueError as err:
         LOGGER.exception("ValueError when adding SBDefinition to the ODA")
         raise BadRequestError(
-            title="Validation Failed",
-            message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
+            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
         ) from err
-    else:
-        return updated_sbd
 
 
 def validate(sbd: SBDefinition) -> ValidationResponse:

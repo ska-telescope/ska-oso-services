@@ -5,12 +5,10 @@
 
 
 ## The builder image, used to build the virtual environment
-ARG BUILD_IMAGE="python:3.10-bullseye"
-ARG RUNTIME_BASE_IMAGE="python:3.10-slim-bullseye"
+ARG BUILD_IMAGE="artefact.skao.int/ska-cicd-k8s-tools-build-deploy:0.12.0"
+ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-cicd-k8s-tools-build-deploy:0.12.0"
 
 FROM $BUILD_IMAGE AS buildenv
-
-RUN pip install "poetry>=1.8.2,<2"
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \

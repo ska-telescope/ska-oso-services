@@ -25,5 +25,5 @@ class ErrorResponseTraceback(AppModel):
 class ErrorDetails(AppModel):
     status: int
     title: str
-    message: str
+    detail: str
     traceback: Optional[ErrorResponseTraceback] = None

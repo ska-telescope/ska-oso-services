@@ -3,7 +3,6 @@ These functions map to the API paths, with the returned value being the API resp
 """
 
 import logging
-from os import getenv
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -20,13 +19,11 @@ from ska_oso_services.common.error_handling import (
 
 LOGGER = logging.getLogger(__name__)
 
-ODA_BACKEND_TYPE = getenv("ODA_BACKEND_TYPE", "rest")
-
 # For PI22, we are only supporting a single ObservingBlock in the
 # Project, so hard code the id
 OBS_BLOCK_ID = "ob-1"
 
-router = APIRouter(prefix="/prjs", tags=["projects"])
+router = APIRouter(prefix="/prjs")
 
 
 @router.get(
@@ -39,7 +36,7 @@ def prjs_get(identifier: str) -> Project:
     data store, if available
     """
     LOGGER.debug("GET PRJS prj_id: %s", identifier)
-    with oda.uow as uow:
+    with oda as uow:
         return uow.prjs.get(identifier)
 
 
@@ -63,8 +60,7 @@ def prjs_post(prj: Project) -> Project:
     # Ensure the identifier is None so the ODA doesn't try to perform an update
     if prj.prj_id is not None:
         raise BadRequestError(
-            title="Validation Failed",
-            message=(
+            detail=(
                 "prj_id given in the body of the POST request. Identifier"
                 " generation for new entities is the responsibility of the ODA,"
                 " which will fetch them from SKUID, so they should not be given in"
@@ -73,21 +69,14 @@ def prjs_post(prj: Project) -> Project:
         )
 
     try:
-        with oda.uow as uow:
+        with oda as uow:
             updated_prj = uow.prjs.add(prj)
             uow.commit()
-            # Unlike the other implementations, the RestRepository.add does
-            # not return the entity with its metadata updated, as it is not
-            # sent to the server until the commit.
-            # So to display the metadata in the UI we need to do the extra fetch.
-            if ODA_BACKEND_TYPE == "rest":
-                updated_prj = uow.prjs.get(updated_prj.prj_id)
         return updated_prj
     except ValueError as err:
         LOGGER.exception("ValueError when adding Project to the ODA")
         raise BadRequestError(
-            title="Validation Failed",
-            message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
+            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
         ) from err
 
 
@@ -104,33 +93,25 @@ def prjs_put(prj: Project, identifier: str) -> Project:
 
     if prj.prj_id != identifier:
         raise UnprocessableEntityError(
-            title="Unprocessable Entity, mismatched IDs",
-            message=(
+            detail=(
                 "There is a mismatch between the prj_id in the path for "
                 "the endpoint and in the JSON payload"
             ),
         )
     try:
-        with oda.uow as uow:
+        with oda as uow:
             if identifier not in uow.prjs:
                 raise KeyError(
                     f"Not found. The requested prj_id {identifier} could not be found."
                 )
             updated_prjs = uow.prjs.add(prj)
             uow.commit()
-            # Unlike the other implementations, the RestRepository.add does
-            # not return the entity with its metadata updated, as it is not
-            # sent to the server until the commit.
-            # So to display the metadata in the UI we need to do the extra fetch.
-            if ODA_BACKEND_TYPE == "rest":
-                updated_prj = uow.prjs.get(updated_prjs.prj_id)
+
+        return updated_prjs
     except ValueError as err:
         raise BadRequestError(
-            title="Validation Failed",
-            message=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
+            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
         ) from err
-    else:
-        return updated_prj  # pylint: disable=possibly-used-before-assignment
 
 
 class PrjSBDLinkResponse(BaseModel):
@@ -148,7 +129,7 @@ def prjs_sbds_post(prj_id: str, obs_block_id: str) -> PrjSBDLinkResponse:
     The response contains the entity as it exists in the data store,
     with an sbd_id and metadata populated.
     """
-    with oda.uow as uow:
+    with oda as uow:
         prj = uow.prjs.get(prj_id)
         try:
             obs_block = next(
@@ -159,7 +140,7 @@ def prjs_sbds_post(prj_id: str, obs_block_id: str) -> PrjSBDLinkResponse:
         except StopIteration:
             # pylint: disable=raise-missing-from
             raise NotFoundError(
-                message=f"Observing Block '{obs_block_id}' not found in Project"
+                detail=f"Observing Block '{obs_block_id}' not found in Project"
             )
 
         sbd = uow.sbds.add(

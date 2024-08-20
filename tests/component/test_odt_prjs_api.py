@@ -123,13 +123,10 @@ def test_prj_get_not_found():
 
     response = requests.get(f"{ODT_URL}/prjs/123")
 
-    assert response.json() == {
-        "status": HTTPStatus.NOT_FOUND,
-        "title": "Not Found",
-        "detail": "Identifier 123 not found in repository",
-        "traceback": None,
-    }
     assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {
+        "detail": "Identifier 123 not found in repository",
+    }
 
 
 def test_prj_put_not_found():
@@ -140,10 +137,7 @@ def test_prj_put_not_found():
 
     response = requests.get(f"{ODT_URL}/prjs/123")
 
-    assert response.json() == {
-        "status": HTTPStatus.NOT_FOUND,
-        "title": "Not Found",
-        "detail": "Identifier 123 not found in repository",
-        "traceback": None,
-    }
     assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {
+        "detail": "Identifier 123 not found in repository",
+    }
