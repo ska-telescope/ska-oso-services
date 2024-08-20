@@ -294,6 +294,7 @@ class TestProjectPut:
             )
             self.server_error(response)
 
+
 class TestProjectAddSBDefinition:
     @mock.patch("ska_oso_services.odt.api.prjs.oda")
     def test_prjs_post_sbd_prj_id_not_found(self, mock_oda, client):
