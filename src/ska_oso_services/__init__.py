@@ -1,6 +1,7 @@
 """
 ska_oso_services
 """
+
 import os
 from importlib.metadata import version
 from typing import Any, Dict
@@ -11,7 +12,8 @@ from ska_db_oda.rest import PdmJsonEncoder
 from ska_db_oda.rest.flask_oda import FlaskODA
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
-OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
+# TODO find better way than hard coding this
+OSO_SERVICES_MAJOR_VERSION = 0  # version("ska-oso-services").split(".")[0]
 # The base path includes the namespace which is known at runtime
 # to avoid clashes in deployments, for example in CICD
 API_PATH = f"/{KUBE_NAMESPACE}/odt/api/v{OSO_SERVICES_MAJOR_VERSION}"

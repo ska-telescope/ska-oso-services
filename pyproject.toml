@@ -26,12 +26,16 @@ classifiers = [
 [[tool.poetry.source]]
 name = 'ska-nexus'
 url = 'https://artefact.skao.int/repository/pypi-internal/simple'
-default = false
-secondary = false
+priority = 'supplemental'
 
 [[tool.poetry.source]]
-name = "PyPI-public"
-url = 'https://pypi.org/simple'
+name = 'PyPI'
+priority = 'primary'
+
+# Uncomment this and the line below to include a non-released ODA version
+#[[tool.poetry.source]]
+#name = "gitlab-ska-db-oda"
+#url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -39,9 +43,8 @@ connexion = {extras = ["swagger-ui"], version = "^2.14.0"}
 python-dateutil = "^2.8.2"
 gunicorn = "^20.1.0"
 ska-ser-logging = "^0.4.1"
-ska-ser-skuid = "^3.3.3"
-ska-db-oda = "3.0.2"
-ska-oso-pdm = "12.0.1"
+ska-db-oda = "6.0.0"
+# ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
 prance = {version = "^23.6.21.0", extras = ["osv"]}
 pydantic = "2.7.1"
 
@@ -56,7 +59,7 @@ pycodestyle = "^2.8.0"
 isort = "^5.10.1"
 pylint-junit = "^0.3.2"
 flake8 = "^7.0.0"
-deepdiff = "^5.8.1"
+deepdiff = "^7.0.0"
 
 [tool.poetry.group.docs]
 optional = true

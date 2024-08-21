@@ -1,6 +1,7 @@
 """
 pytest fixtures to be used by unit tests
 """
+
 import pytest
 
 from ska_oso_services import create_app, resolve_openapi_spec

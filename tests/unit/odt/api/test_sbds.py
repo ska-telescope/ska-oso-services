@@ -1,6 +1,7 @@
 """
 Unit tests for ska_oso_services.api
 """
+
 from dataclasses import asdict
 from http import HTTPStatus
 from importlib.metadata import version
