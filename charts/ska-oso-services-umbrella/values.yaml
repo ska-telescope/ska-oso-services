@@ -8,7 +8,8 @@ ska-oso-services:
 
 ska-db-oda-umbrella:
   ska-db-oda:
-    enabled: false # Disabled by default as ska-oso-services does not use the ska-db-oda REST server. Would be useful to enable for demos and testing.
+    rest:
+      enabled: false # Disabled by default as ska-oso-services does not use the ska-db-oda REST server. Would be useful to enable for demos and testing.
   postgresql:
     enabled: true
   pgadmin4:

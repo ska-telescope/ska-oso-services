@@ -53,3 +53,82 @@ tests:
           path: data.SKUID_URL
           value:
             ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.foo:9870
+
+  - it: should set POSTGRES_HOST to default host if the values.yaml is not set
+    documentIndex: 0
+    set:
+      rest:
+        oda:
+          postgres:
+            host:
+    asserts:
+      - equal:
+          path: data.POSTGRES_HOST
+          value:
+            RELEASE-NAME-postgresql
+
+  - it: should set POSTGRES_HOST using the values.yaml when set
+    documentIndex: 0
+    set:
+      rest:
+        oda:
+          postgres:
+            host: foo
+    asserts:
+      - equal:
+          path: data.POSTGRES_HOST
+          value:
+            foo
+
+  - it: should set ADMIN_POSTGRES_USER using the values.yaml when set
+    documentIndex: 0
+    set:
+      rest:
+        oda:
+          postgres:
+            user: foo
+    asserts:
+      - equal:
+          path: data.ADMIN_POSTGRES_USER
+          value:
+            foo
+
+  - it: should set ADMIN_POSTGRES_PASSWORD using the values.yaml when set
+    documentIndex: 0
+    set:
+      rest:
+        oda:
+          postgres:
+            password: foo
+    asserts:
+      - equal:
+          path: data.ADMIN_POSTGRES_PASSWORD
+          value:
+            foo
+
+  - it: should set POSTGRES_DB_NAME using the values.yaml when set
+    documentIndex: 0
+    set:
+      rest:
+        oda:
+          postgres:
+            db:
+              name: foo
+    asserts:
+      - equal:
+          path: data.POSTGRES_DB_NAME
+          value:
+            foo
+
+  - it: should set POSTGRES_PORT using the values.yaml when set
+    documentIndex: 0
+    set:
+      rest:
+        oda:
+          postgres:
+            port: foo
+    asserts:
+      - equal:
+          path: data.POSTGRES_PORT
+          value:
+            foo
