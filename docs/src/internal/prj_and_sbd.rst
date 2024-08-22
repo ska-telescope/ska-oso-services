@@ -1,3 +1,5 @@
+.. _prj_and_sbd:
+
 Creating Projects and SBDefinitions
 =====================================
 

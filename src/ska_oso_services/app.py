@@ -8,11 +8,11 @@ from importlib.metadata import version
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from ska_oso_services import odt
 from ska_oso_services.common import (
     dangerous_internal_server_handler,
     oda_not_found_handler,
 )
-from ska_oso_services.odt import api as odt
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
@@ -25,9 +25,7 @@ def create_app(production=True) -> FastAPI:
     """
     Create the Connexion application with required config
     """
-    app = FastAPI(
-        openapi_url=f"{API_PREFIX}/openapi.json", docs_url=f"{API_PREFIX}/docs"
-    )
+    app = FastAPI(openapi_url=f"{API_PREFIX}/openapi.json", docs_url=f"{API_PREFIX}/ui")
 
     app.add_middleware(
         CORSMiddleware,
