@@ -22,7 +22,7 @@ from . import ODT_URL
 
 def test_sbd_created_and_linked_to_project():
     """
-    Test that an entity sent to POST /prjs creates an emtpy project, then a request
+    Test that an entity sent to POST /prjs creates an empty project, then a request
     to POST /prjs/<prj_id>/<obs_block_id>/sbds adds an SBDefinition to that Project
     """
     # Create an empty Project

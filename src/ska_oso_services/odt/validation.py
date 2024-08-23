@@ -74,7 +74,7 @@ def validate_sbd(sbd: SBDefinition) -> dict[str, str]:
     flattens the results into a single dictionary
 
     :param sbd: SBDefinition, a Pydantic model from the PDM.
-    :return: a dictionary with individual validation error mesages,
+    :return: a dictionary with individual validation error messages,
         each with a unique key which should identify which part of the entity is invalid
     """
     return {

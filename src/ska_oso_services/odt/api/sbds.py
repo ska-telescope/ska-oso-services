@@ -55,7 +55,7 @@ def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
 def sbds_get(identifier: str) -> SBDefinition:
     """
     Retrieves the SchedulingBlockDefinition with the given identifier
-    from the underlying datas store, if available.
+    from the underlying data store, if available.
     """
     LOGGER.debug("GET SBD sbd_id: %s", identifier)
     with oda as uow:
