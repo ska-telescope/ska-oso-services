@@ -125,13 +125,10 @@ def test_sbd_get_not_found():
 
     response = requests.get(f"{ODT_URL}/sbds/123")
 
-    assert response.json() == {
-        "status": HTTPStatus.NOT_FOUND,
-        "title": "Not Found",
-        "detail": "Identifier 123 not found in repository",
-        "traceback": None,
-    }
     assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {
+        "detail": "Identifier 123 not found in repository",
+    }
 
 
 def test_sbd_put_not_found():
@@ -142,31 +139,28 @@ def test_sbd_put_not_found():
 
     response = requests.get(f"{ODT_URL}/sbds/123")
 
-    assert response.json() == {
-        "status": HTTPStatus.NOT_FOUND,
-        "title": "Not Found",
-        "detail": "Identifier 123 not found in repository",
-        "traceback": None,
-    }
     assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {
+        "detail": "Identifier 123 not found in repository",
+    }
 
 
-# TODO temporarily disable until OpenAPI validation fixed #pylint: disable=fixme
-# def test_sbd_post_validation_error():
-#     """
-#     Test that the POST /sbds/{identifier} path returns the correct error response
-#     when an invalid SBDefinition is sent
-#     """
-#
-#     response = requests.post(
-#         f"{ODT_URL}/sbds/sbd-mvp01-20200325-00001",
-#         data=INVALID_MID_SBDEFINITION_JSON,
-#         headers={"Content-type": "application/json"},
-#     )
-#
-#     assert response.status_code == HTTPStatus.BAD_REQUEST
-#
-#     result = json.loads(response.content)
-#
-#     assert result["title"] == "Bad Request"
-#     assert result["detail"] == "'telescope' is a required property"
+def test_sbd_put_validation_error():
+    """
+    Test that the PUT /sbds/{identifier} path with an invalid SBDefinition
+    returns a FastAPI generated validation error response
+    """
+
+    response = requests.put(
+        f"{ODT_URL}/sbds/sbd-mvp01-20200325-00001",
+        data="""{"telescope": "not_a_telescope"}""",
+        headers={"Content-type": "application/json"},
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    result = response.json()
+
+    assert (
+        result["detail"][0]["msg"]
+        == "Input should be 'ska_mid', 'ska_low' or 'MeerKAT'"
+    )

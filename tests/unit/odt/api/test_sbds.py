@@ -2,10 +2,10 @@
 Unit tests for ska_oso_services.api
 """
 
-from dataclasses import asdict
 from http import HTTPStatus
-from importlib.metadata import version
 from unittest import mock
+
+import pytest
 
 from ska_oso_services.common.model import ValidationResponse
 from tests.unit.util import (
@@ -15,9 +15,9 @@ from tests.unit.util import (
     assert_json_is_equal,
 )
 
-OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
-BASE_API_URL = f"/ska-oso-services/odt/api/v{OSO_SERVICES_MAJOR_VERSION}"
-SBDS_API_URL = f"{BASE_API_URL}/sbds"
+from .conftest import ODT_BASE_API_URL
+
+SBDS_API_URL = f"{ODT_BASE_API_URL}/sbds"
 
 
 class TestSBDefinitionAPI:
@@ -32,11 +32,10 @@ class TestSBDefinitionAPI:
         response = client.get(f"{SBDS_API_URL}/create")
 
         assert response.status_code == HTTPStatus.OK
+        result = response.json()
 
         # assert defaults are all set correctly
-        assert (
-            response.json["interface"] == "https://schema.skao.int/ska-oso-pdm-sbd/0.1"
-        )
+        assert result["interface"] == "https://schema.skao.int/ska-oso-pdm-sbd/0.1"
 
         # No ODA interactions expected for a create operation
         mock_oda.add.assert_not_called()
@@ -49,12 +48,12 @@ class TestSBDefinitionAPI:
         """
         uow_mock = mock.MagicMock()
         uow_mock.sbds.get.return_value = TestDataFactory.sbdefinition()
-        mock_oda.uow.__enter__.return_value = uow_mock
+        mock_oda.__enter__.return_value = uow_mock
 
-        result = client.get(f"{SBDS_API_URL}/sbd-1234")
+        response = client.get(f"{SBDS_API_URL}/sbd-1234")
 
-        assert_json_is_equal(result.text, VALID_MID_SBDEFINITION_JSON)
-        assert result.status_code == HTTPStatus.OK
+        assert_json_is_equal(response.text, VALID_MID_SBDEFINITION_JSON)
+        assert response.status_code == HTTPStatus.OK
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
     def test_sbds_get_not_found_sbd(self, mock_oda, client):
@@ -63,17 +62,14 @@ class TestSBDefinitionAPI:
         """
         uow_mock = mock.MagicMock()
         uow_mock.sbds.get.side_effect = KeyError("not found")
-        mock_oda.uow.__enter__.return_value = uow_mock
+        mock_oda.__enter__.return_value = uow_mock
 
-        result = client.get(f"{SBDS_API_URL}/sbd-1234")
+        response = client.get(f"{SBDS_API_URL}/sbd-1234")
 
-        assert result.json == {
-            "status": HTTPStatus.NOT_FOUND,
-            "title": "Not Found",
-            "detail": "Identifier sbd-1234 not found in repository",
-            "traceback": None,
+        assert response.json() == {
+            "detail": "Identifier sbd-1234 not found in repository"
         }
-        assert result.status_code == HTTPStatus.NOT_FOUND
+        assert response.status_code == HTTPStatus.NOT_FOUND
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
     def test_sbds_get_error(self, mock_oda, client):
@@ -82,15 +78,17 @@ class TestSBDefinitionAPI:
         when ODA responds with an error
         """
         uow_mock = mock.MagicMock()
-        uow_mock.sbds.get.side_effect = Exception("test", "error")
-        mock_oda.uow.__enter__.return_value = uow_mock
+        uow_mock.sbds.get.side_effect = ValueError("test", "error")
+        mock_oda.__enter__.return_value = uow_mock
 
-        result = client.get(f"{SBDS_API_URL}/sbd-1234")
+        with pytest.raises(ValueError):
+            response = client.get(f"{SBDS_API_URL}/sbd-1234")
+            detail = response.json()["detail"]
 
-        assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-        assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "Exception('test', 'error')"
-        assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert detail["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert detail["title"] == "Internal Server Error"
+            assert detail["message"] == "ValueError('test', 'error')"
+            assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_validate_valid_sbd(self, mock_validate, client):
@@ -99,19 +97,14 @@ class TestSBDefinitionAPI:
         validation layer and creates the correct response
         """
         mock_validate.return_value = {}
-        result = client.post(
+        response = client.post(
             f"{SBDS_API_URL}/validate",
             data=VALID_MID_SBDEFINITION_JSON,
             headers={"Content-type": "application/json"},
         )
 
-        assert result.json == asdict(
-            ValidationResponse(
-                True,
-                {},
-            )
-        )
-        assert result.status_code == HTTPStatus.OK
+        assert response.json() == {"valid": True, "messages": {}}
+        assert response.status_code == HTTPStatus.OK
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_validate_invalid_sbd(self, mock_validate, client):
@@ -123,18 +116,16 @@ class TestSBDefinitionAPI:
             "validation_error": "some validation error message"
         }
 
-        result = client.post(
+        response = client.post(
             f"{SBDS_API_URL}/validate",
             data=VALID_MID_SBDEFINITION_JSON,
             headers={"Content-type": "application/json"},
         )
-
-        assert result.json == asdict(
-            ValidationResponse(
-                False, {"validation_error": "some validation error message"}
-            )
+        assert response.status_code == HTTPStatus.OK
+        expected = ValidationResponse(
+            valid=False, messages={"validation_error": "some validation error message"}
         )
-        assert result.status_code == HTTPStatus.OK
+        assert response.json() == expected.model_dump(mode="json")
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
@@ -146,16 +137,16 @@ class TestSBDefinitionAPI:
         uow_mock = mock.MagicMock()
         uow_mock.sbds.add.return_value = TestDataFactory.sbdefinition()
         uow_mock.sbds.get.return_value = TestDataFactory.sbdefinition()
-        mock_oda.uow.__enter__.return_value = uow_mock
+        mock_oda.__enter__.return_value = uow_mock
 
-        result = client.post(
+        response = client.post(
             f"{SBDS_API_URL}",
             data=SBDEFINITION_WITHOUT_ID_JSON,
             headers={"Content-type": "application/json"},
         )
 
-        assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, VALID_MID_SBDEFINITION_JSON)
+        assert response.status_code == HTTPStatus.OK
+        assert_json_is_equal(response.text, VALID_MID_SBDEFINITION_JSON)
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_sbds_post_given_sbd_id_raises_error(self, mock_validate, client):
@@ -165,22 +156,19 @@ class TestSBDefinitionAPI:
         """
         mock_validate.return_value = {}
 
-        result = client.post(
+        response = client.post(
             f"{SBDS_API_URL}",
             data=VALID_MID_SBDEFINITION_JSON,
             headers={"Content-type": "application/json"},
         )
 
-        assert result.status_code == HTTPStatus.BAD_REQUEST
-        assert result.json == {
-            "status": HTTPStatus.BAD_REQUEST,
-            "title": "Validation Failed",
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert response.json() == {
             "detail": (
                 "sbd_id given in the body of the POST request. Identifier generation"
                 " for new entities is the responsibility of the ODA, which will fetch"
                 " them from SKUID, so they should not be given in this request."
-            ),
-            "traceback": None,
+            )
         }
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
@@ -190,17 +178,19 @@ class TestSBDefinitionAPI:
         """
         mock_validate.return_value = {"validation_errors": "some validation error"}
 
-        result = client.post(
+        response = client.post(
             f"{SBDS_API_URL}",
             data=SBDEFINITION_WITHOUT_ID_JSON,
             headers={"Content-type": "application/json"},
         )
 
-        assert result.json == {
-            "valid": False,
-            "messages": {"validation_errors": "some validation error"},
+        assert response.json() == {
+            "detail": {
+                "valid": False,
+                "messages": {"validation_errors": "some validation error"},
+            }
         }
-        assert result.status_code == HTTPStatus.BAD_REQUEST
+        assert response.status_code == HTTPStatus.BAD_REQUEST
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
@@ -212,18 +202,17 @@ class TestSBDefinitionAPI:
         mock_validate.return_value = {}
         uow_mock = mock.MagicMock()
         uow_mock.sbds.add.side_effect = IOError("test error")
-        mock_oda.uow.__enter__.return_value = uow_mock
+        mock_oda.__enter__.return_value = uow_mock
 
-        result = client.post(
-            f"{SBDS_API_URL}",
-            data=SBDEFINITION_WITHOUT_ID_JSON,
-            headers={"Content-type": "application/json"},
-        )
+        with pytest.raises(IOError):
+            response = client.post(
+                f"{SBDS_API_URL}",
+                data=SBDEFINITION_WITHOUT_ID_JSON,
+                headers={"Content-type": "application/json"},
+            )
 
-        assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-        assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "OSError('test error')"
-        assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert response.json() == {"detail": "OSError('test error')"}
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
@@ -236,16 +225,16 @@ class TestSBDefinitionAPI:
         uow_mock.sbds.__contains__.return_value = True
         uow_mock.sbds.add.return_value = TestDataFactory.sbdefinition()
         uow_mock.sbds.get.return_value = TestDataFactory.sbdefinition()
-        mock_oda.uow.__enter__.return_value = uow_mock
+        mock_oda.__enter__.return_value = uow_mock
 
-        result = client.put(
+        response = client.put(
             f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
             data=VALID_MID_SBDEFINITION_JSON,
             headers={"Content-type": "application/json"},
         )
 
-        assert_json_is_equal(result.text, VALID_MID_SBDEFINITION_JSON)
-        assert result.status_code == HTTPStatus.OK
+        assert response.status_code == HTTPStatus.OK
+        assert_json_is_equal(response.text, VALID_MID_SBDEFINITION_JSON)
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_sbds_put_wrong_identifier(self, mock_validate, client):
@@ -255,22 +244,19 @@ class TestSBDefinitionAPI:
         """
         mock_validate.return_value = {}
 
-        result = client.put(
+        response = client.put(
             f"{SBDS_API_URL}/00000",
             data=VALID_MID_SBDEFINITION_JSON,
             headers={"Content-type": "application/json"},
         )
 
-        assert result.json == {
-            "status": HTTPStatus.UNPROCESSABLE_ENTITY,
-            "title": "Unprocessable Entity, mismatched SBD IDs",
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert response.json() == {
             "detail": (
                 "There is a mismatch between the SBD "
                 "ID for the endpoint and the JSON payload"
-            ),
-            "traceback": None,
+            )
         }
-        assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_sbds_put_value_error(self, mock_validate, client):
@@ -279,17 +265,19 @@ class TestSBDefinitionAPI:
         """
         mock_validate.return_value = {"validation_errors": "some validation error"}
 
-        result = client.put(
+        response = client.put(
             f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
             data=VALID_MID_SBDEFINITION_JSON,
             headers={"Content-type": "application/json"},
         )
 
-        assert result.json == {
-            "valid": False,
-            "messages": {"validation_errors": "some validation error"},
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert response.json() == {
+            "detail": {
+                "valid": False,
+                "messages": {"validation_errors": "some validation error"},
+            }
         }
-        assert result.status_code == HTTPStatus.BAD_REQUEST
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
@@ -301,20 +289,18 @@ class TestSBDefinitionAPI:
         mock_validate.return_value = {}
         uow_mock = mock.MagicMock()
         uow_mock.sbds.__contains__.return_value = False
-        mock_oda.uow.__enter__.return_value = uow_mock
+        mock_oda.__enter__.return_value = uow_mock
 
-        result = client.put(
+        response = client.put(
             f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
             data=VALID_MID_SBDEFINITION_JSON,
             headers={"Content-type": "application/json"},
         )
 
-        assert result.status_code == HTTPStatus.NOT_FOUND
-        assert result.json["title"] == "Not Found"
-        assert (
-            result.json["detail"]
-            == "Identifier sbd-mvp01-20200325-00001 not found in repository"
-        )
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert response.json() == {
+            "detail": "Identifier sbd-mvp01-20200325-00001 not found in repository"
+        }
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
@@ -327,15 +313,14 @@ class TestSBDefinitionAPI:
         uow_mock = mock.MagicMock()
         uow_mock.sbds.__contains__.return_value = True
         uow_mock.sbds.add.side_effect = IOError("test error")
-        mock_oda.uow.__enter__.return_value = uow_mock
+        mock_oda.__enter__.return_value = uow_mock
 
-        result = client.put(
-            f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
-            data=VALID_MID_SBDEFINITION_JSON,
-            headers={"Content-type": "application/json"},
-        )
+        with pytest.raises(IOError):
+            response = client.put(
+                f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
+                data=VALID_MID_SBDEFINITION_JSON,
+                headers={"Content-type": "application/json"},
+            )
 
-        assert result.json["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
-        assert result.json["title"] == "Internal Server Error"
-        assert result.json["detail"] == "OSError('test error')"
-        assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+            assert response.json() == {"detail": "OSError('test error')"}

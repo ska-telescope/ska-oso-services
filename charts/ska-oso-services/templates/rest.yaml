@@ -17,7 +17,7 @@ spec:
   rules:
     - http:
         paths:
-          - path: /{{ .Release.Namespace }}/odt/api
+          - path: /{{ .Release.Namespace }}/oso/api
             pathType: Prefix
             backend:
               service:
@@ -74,8 +74,7 @@ spec:
       - name: oso-services
         image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{$.Values.rest.image.tag | default $.Chart.AppVersion}}"
         imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
-        command: [ "/bin/sh" ]
-        args: [ "-c", "poetry run gunicorn --chdir src --bind 0.0.0.0:5000 --logger-class=ska_oso_services.wsgi.UniformLogger --log-level='{{ .Values.rest.logLevel }}' ska_oso_services.wsgi:app" ]
+        # Command set in the Docker image
         envFrom:
           - configMapRef:
               name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
