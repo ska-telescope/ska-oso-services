@@ -2,11 +2,13 @@
 ska_oso_services app.py
 """
 
+import logging
 import os
 from importlib.metadata import version
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from ska_ser_logging import configure_logging
 
 from ska_oso_services import odt
 from ska_oso_services.common import (
@@ -20,11 +22,19 @@ OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 # to avoid clashes in deployments, for example in CICD
 API_PREFIX = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
 
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+PRODUCTION = os.getenv("PRODUCTION", "false").lower() == "true"
 
-def create_app(production=True) -> FastAPI:
+LOGGER = logging.getLogger(__name__)
+
+
+def create_app(production=PRODUCTION) -> FastAPI:
     """
     Create the Connexion application with required config
     """
+    configure_logging(level=LOG_LEVEL)
+    LOGGER.info("Creating FastAPI app")
+
     app = FastAPI(openapi_url=f"{API_PREFIX}/openapi.json", docs_url=f"{API_PREFIX}/ui")
 
     app.add_middleware(

@@ -10,6 +10,8 @@ metadata:
     function: ska-oso-services-environment
     intent: production
 data:
+  PRODUCTION: {{ .Values.rest.production | quote }}
+  LOG_LEVEL: {{ .Values.rest.logLevel }}
   KUBE_NAMESPACE: {{ .Release.Namespace }}
   ODA_BACKEND_TYPE: {{ .Values.rest.oda.backendType }}
   POSTGRES_HOST: {{ if .Values.rest.oda.postgres.host }} {{ .Values.rest.oda.postgres.host }} {{ else }} {{ .Release.Name }}-postgresql {{ end }}

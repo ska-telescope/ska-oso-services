@@ -43,7 +43,7 @@ python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
 ska-db-oda = "6.0.0"
 # ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
-pydantic = "2.7.1"
+pydantic = "^2.7"
 fastapi = "^0.111.0"
 
 
