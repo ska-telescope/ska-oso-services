@@ -20,14 +20,6 @@ from ska_oso_pdm.sb_definition.dish.dish_configuration import ReceiverBand
 LOGGER = logging.getLogger(__name__)
 
 
-def _validate_sbd_by_telescope(sbd: SBDefinition) -> dict[str, str]:
-    return (
-        _validate_csp_and_dish_combination(sbd)
-        if sbd.telescope == TelescopeType.SKA_MID
-        else _validate_csp(sbd)
-    )
-
-
 def _validate_csp_and_dish_combination(sbd: SBDefinition) -> dict[str, str]:
     # band_5_tuning should not be present in csp_configuration if dish_configuration
     # receiver band is not 5a or 5b
@@ -86,7 +78,9 @@ def _validate_csp(sbd: SBDefinition) -> dict[str, str]:
     return messages
 
 
-VALIDATION_FNS = [_validate_sbd_by_telescope]
+MID_VALIDATION_FNS = [_validate_csp_and_dish_combination]
+LOW_VALIDATION_FNS = [_validate_csp]
+COMMON_VALIDATION_FNS = []
 
 
 def validate_sbd(sbd: SBDefinition) -> dict[str, str]:
@@ -100,8 +94,17 @@ def validate_sbd(sbd: SBDefinition) -> dict[str, str]:
     :return: a dictionary with individual validation error messages,
         each with a unique key which should identify which part of the entity is invalid
     """
+    if isinstance(sbd.telescope, TelescopeType):
+        validation_fns = (
+            MID_VALIDATION_FNS + COMMON_VALIDATION_FNS
+            if sbd.telescope == TelescopeType.SKA_MID
+            else LOW_VALIDATION_FNS + COMMON_VALIDATION_FNS
+        )
+    else:
+        validation_fns = MID_VALIDATION_FNS
+
     return {
         error_key: error_description
-        for single_validation_result in [fn(sbd) for fn in VALIDATION_FNS]
+        for single_validation_result in [fn(sbd) for fn in validation_fns]
         for error_key, error_description in single_validation_result.items()
     }

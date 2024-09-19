@@ -32,7 +32,7 @@ def test_validate_runs_functions():
         mock.Mock(return_value={"result1": "bad1"}),
         mock.Mock(return_value={"result2": "bad2"}),
     ]
-    with mock.patch("ska_oso_services.odt.validation.VALIDATION_FNS", fakes):
+    with mock.patch("ska_oso_services.odt.validation.MID_VALIDATION_FNS", fakes):
         fake_sbd = mock.Mock()
         result = validate_sbd(fake_sbd)
     for fn in fakes:
