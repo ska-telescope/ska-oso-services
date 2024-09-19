@@ -67,6 +67,29 @@ class TestDataFactory:
         return sbd
 
     @staticmethod
+    def lowsbdefinition(
+        sbd_id: Optional[SBDefinitionID] = "sbi-mvp01-20200325-00001",
+        version: Optional[int] = None,
+        created_on: Optional[datetime] = None,
+        without_metadata: bool = False,
+    ) -> SBDefinition:
+        sbd = SBDefinition.model_validate_json(
+            load_string_from_file("files/testfile_sample_low_sb.json")
+        )
+        set_identifier(sbd, sbd_id)
+
+        if without_metadata:
+            sbd.metadata = None
+            return sbd
+
+        if version:
+            sbd.metadata.version = version
+        if created_on:
+            sbd.metadata.created_on = created_on
+
+        return sbd
+
+    @staticmethod
     def project(
         prj_id: Optional[str] = "prj-mvp01-20220923-00001",
         version: Optional[int] = None,
@@ -82,6 +105,7 @@ class TestDataFactory:
 
 
 VALID_MID_SBDEFINITION_JSON = TestDataFactory.sbdefinition().model_dump_json()
+VALID_LOW_SBDEFINITION_JSON = TestDataFactory.lowsbdefinition().model_dump_json()
 SBDEFINITION_WITHOUT_ID_JSON = TestDataFactory.sbdefinition(
     sbd_id=None
 ).model_dump_json()

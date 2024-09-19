@@ -13,10 +13,19 @@ They are then all applied to the SBDefinition and the results combined.
 
 import logging
 
+from ska_oso_pdm._shared import TelescopeType
 from ska_oso_pdm.sb_definition import SBDefinition
 from ska_oso_pdm.sb_definition.dish.dish_configuration import ReceiverBand
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _validate_sbd_by_telescope(sbd: SBDefinition) -> dict[str, str]:
+    return (
+        _validate_csp_and_dish_combination(sbd)
+        if sbd.telescope == TelescopeType.SKA_MID
+        else _validate_csp(sbd)
+    )
 
 
 def _validate_csp_and_dish_combination(sbd: SBDefinition) -> dict[str, str]:
@@ -63,7 +72,21 @@ def _validate_csp_and_dish_combination(sbd: SBDefinition) -> dict[str, str]:
     return messages
 
 
-VALIDATION_FNS = [_validate_csp_and_dish_combination]
+def _validate_csp(sbd: SBDefinition) -> dict[str, str]:
+    messages = {}
+    csp_configs = {csp.config_id: csp for csp in sbd.csp_configurations}
+    for scan_def in sbd.scan_definitions:
+        if scan_def.csp_configuration_ref not in csp_configs.keys():
+            messages[f"csp_config_not_in_sb_{scan_def.scan_definition_id}"] = (
+                f"CSP configuration '{scan_def.csp_configuration_ref}' defined "
+                f"in scan definition '{scan_def.scan_definition_id}' does not "
+                "exist in the SB"
+            )
+
+    return messages
+
+
+VALIDATION_FNS = [_validate_sbd_by_telescope]
 
 
 def validate_sbd(sbd: SBDefinition) -> dict[str, str]:
