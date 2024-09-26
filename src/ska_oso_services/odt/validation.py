@@ -13,7 +13,7 @@ They are then all applied to the SBDefinition and the results combined.
 
 import logging
 
-from ska_oso_pdm._shared import TelescopeType
+from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.sb_definition import SBDefinition
 from ska_oso_pdm.sb_definition.dish.dish_configuration import ReceiverBand
 

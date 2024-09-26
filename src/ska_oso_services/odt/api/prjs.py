@@ -6,7 +6,7 @@ import logging
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from ska_oso_pdm._shared import TelescopeType
+from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
