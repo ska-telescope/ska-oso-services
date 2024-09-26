@@ -1,0 +1,475 @@
+{
+  "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
+  "sbd_id": "sbi-mvp01-20200325-00001",
+  "telescope": "ska_low",
+  "metadata": {
+    "version": 1,
+    "created_by": "Liz Bartlett",
+    "created_on": "2022-03-28T15:43:53.971548Z",
+    "last_modified_on": "2024-07-15T21:55:09.654185Z"
+  },
+  "activities": {
+    "allocate": {
+      "function_args": {
+        "init": {
+          "args": [
+            "posarg1",
+            "posarg2"
+          ],
+          "kwargs": {
+            "argname": "argval"
+          }
+        },
+        "main": {
+          "args": [
+            "posarg1",
+            "posarg2"
+          ],
+          "kwargs": {
+            "argname": "argval"
+          }
+        }
+      },
+      "kind": "filesystem",
+      "path": "/path/to/allocatescript.py"
+    },
+    "observe": {
+      "function_args": {
+        "init": {
+          "args": [
+            "posarg1",
+            "posarg2"
+          ],
+          "kwargs": {
+            "argname": "argval"
+          }
+        },
+        "main": {
+          "args": [
+            "posarg1",
+            "posarg2"
+          ],
+          "kwargs": {
+            "argname": "argval"
+          }
+        }
+      },
+      "kind": "git",
+      "repo": "https://gitlab.com/script_repo/operational_scripts",
+      "path": "/relative/path/to/scriptinsiderepo.py",
+      "branch": "main",
+      "commit": "d234c257dadd18b3edcd990b8194c6ad94fc278a"
+    }
+  },
+  "targets": [
+    {
+      "target_id": "47 Tuc",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0.0,
+            "offset_y_arcsec": 0.0
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "equatorial",
+        "ra": "00:24:05.359",
+        "dec": "-72:04:53.20",
+        "reference_frame": "icrs",
+        "unit": [
+          "hourangle",
+          "deg"
+        ]
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": -17.2,
+          "unit": "km / s"
+        },
+        "definition": "OPTICAL",
+        "reference_frame": "BARYCENTRIC",
+        "redshift": 0.0
+      },
+      "tied_array_beams": {
+        "pst_beams": [
+          {
+            "beam_id": 1,
+            "beam_coordinate": {
+              "target_id": "PSR J0024-7204R",
+              "reference_frame": "icrs",
+              "ra_str": "00:24:05.670",
+              "dec_str": "-72:04:52.62",
+              "pm_ra": 4.8,
+              "pm_dec": -3.3,
+              "parallax": 0.0
+            },
+            "stn_weights": [1.0, 1.0]
+          },
+          {
+            "beam_id": 2,
+            "beam_coordinate": {
+              "target_id": "PSR J0024-7204W",
+              "reference_frame": "icrs",
+              "ra_str": "00:24:06.0580",
+              "dec_str": "-72:04:49.088",
+              "pm_ra": 6.1,
+              "pm_dec": -2.6,
+              "parallax": 0.0
+            },
+            "stn_weights": [1.0, 1.0]
+          }
+        ]
+      }
+    }
+  ],
+  "mccs_allocation": {
+    "mccs_config_id": "mccs config 123",
+    "configuration": "AA0.5",
+    "subarray_beams": [
+    {
+        "subarray_beam_id": 1,
+        "number_of_channels": 96,
+        "apertures": [
+        {
+            "station_id": 344,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+        },
+        {
+            "station_id": 349,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+        }
+        ]
+    }
+    ]
+},
+  "csp_configurations": [
+    {
+      "common": {},
+      "config_id": "csp-mvp01-20220329-00001",
+      "lowcbf": {
+        "correlation_spws": [
+          {
+            "spw_id": 1,
+            "logical_fsp_ids": [
+              0,
+              1
+            ],
+            "zoom_factor": 0,
+            "centre_frequency": 199.609375e6,
+            "number_of_channels": 96,
+            "integration_time_ms": 849
+          }
+        ]
+      }
+    }
+  ],
+  "sdp_configuration": {
+    "execution_block": {
+      "eb_id": "eb-mvp01-20200325-00001",
+      "max_length": 100.0,
+      "context": {
+        "foo": "bar",
+        "baz": 123
+      },
+      "beams": [
+        {
+          "beam_id": "vis0",
+          "function": "visibilities"
+        },
+        {
+          "beam_id": "pst1",
+          "timing_beam_id": 1,
+          "function": "pulsar timing"
+        },
+        {
+          "beam_id": "pst2",
+          "timing_beam_id": 2,
+          "function": "pulsar timing"
+        }
+      ],
+      "scan_types": [
+        {
+          "scan_type_id": ".default",
+          "beams": [
+            {
+              "beam_ref": "vis0",
+              "channels_ref": "vis_channels",
+              "polarisations_ref": "all"
+            },
+            {
+              "beam_ref": "pst1",
+              "field_ref": "47 Tuc",
+              "channels_ref": "pulsar_channels",
+              "polarisations_ref": "all"
+            },
+            {
+              "beam_ref": "pst2",
+              "field_ref": "47 Tuc",
+              "channels_ref": "pulsar_channels",
+              "polarisations_ref": "all"
+            }
+          ]
+        },
+        {
+          "scan_type_id": ".default",
+          "derive_from": ".default",
+          "beams": [
+            {
+              "beam_ref": "vis0",
+              "field_ref": "47 Tuc"
+            }
+          ]
+        }
+      ],
+      "channels": [
+        {
+          "channels_id": "vis_channels",
+          "spectral_windows": [
+            {
+              "spectral_window_id": "fsp_1_channels",
+              "count": 744,
+              "start": 0,
+              "stride": 2,
+              "freq_min": 350000000,
+              "freq_max": 368000000,
+              "link_map": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  200,
+                  1
+                ],
+                [
+                  744,
+                  2
+                ],
+                [
+                  944,
+                  3
+                ]
+              ]
+            },
+            {
+              "spectral_window_id": "fsp_2_channels",
+              "count": 14880,
+              "start": 2000,
+              "stride": 1,
+              "freq_min": 360000000,
+              "freq_max": 368000000,
+              "link_map": [
+                [
+                  2000,
+                  4
+                ],
+                [
+                  2200,
+                  5
+                ]
+              ]
+            },
+            {
+              "spectral_window_id": "zoom_window_1",
+              "count": 14880,
+              "start": 4000,
+              "stride": 1,
+              "freq_min": 360000000,
+              "freq_max": 361000000,
+              "link_map": [
+                [
+                  4000,
+                  6
+                ],
+                [
+                  4200,
+                  7
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "channels_id": "pulsar_channels",
+          "spectral_windows": [
+            {
+              "spectral_window_id": "pulsar_fsp_channels",
+              "count": 744,
+              "start": 0,
+              "freq_min": 350000000,
+              "freq_max": 368000000
+            }
+          ]
+        }
+      ],
+      "polarisations": [
+        {
+          "polarisations_id": "all",
+          "corr_type": [
+            "XX",
+            "XY",
+            "YY",
+            "YX"
+          ]
+        }
+      ]
+    },
+    "processing_blocks": [
+      {
+        "pb_id": "pb-mvp01-20200325-00001",
+        "sbi_refs": [
+          "sbi-mvp01-20200325-00001"
+        ],
+        "script": {
+          "version": "0.1.0",
+          "name": "vis_receive",
+          "kind": "realtime"
+        }
+      },
+      {
+        "pb_id": "pb-mvp01-20200325-00002",
+        "sbi_refs": [
+          "sbi-mvp01-20200325-00001"
+        ],
+        "script": {
+          "version": "0.1.0",
+          "name": "test_realtime",
+          "kind": "realtime"
+        }
+      },
+      {
+        "pb_id": "pb-mvp01-20200325-00003",
+        "sbi_refs": [
+          "sbi-mvp01-20200325-00001"
+        ],
+        "script": {
+          "version": "0.1.0",
+          "name": "ical",
+          "kind": "batch"
+        },
+        "dependencies": [
+          {
+            "pb_ref": "pb-mvp01-20200325-00001",
+            "kind": [
+              "visibilities"
+            ]
+          }
+        ]
+      },
+      {
+        "pb_id": "pb-mvp01-20200325-00004",
+        "sbi_refs": [
+          "sbi-mvp01-20200325-00001"
+        ],
+        "script": {
+          "version": "0.1.0",
+          "name": "dpreb",
+          "kind": "batch"
+        },
+        "dependencies": [
+          {
+            "pb_ref": "pb-mvp01-20200325-00003",
+            "kind": [
+              "calibration"
+            ]
+          }
+        ]
+      }
+    ],
+    "resources": {
+      "csp_links": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "receptors": [
+        "FS4",
+        "FS8",
+        "FS16",
+        "FS17",
+        "FS22",
+        "FS23",
+        "FS30",
+        "FS31",
+        "FS32",
+        "FS33",
+        "FS36",
+        "FS52",
+        "FS56",
+        "FS57",
+        "FS59",
+        "FS62",
+        "FS66",
+        "FS69",
+        "FS70",
+        "FS72",
+        "FS73",
+        "FS78",
+        "FS80",
+        "FS88",
+        "FS89",
+        "FS90",
+        "FS91",
+        "FS98",
+        "FS108",
+        "FS111",
+        "FS132",
+        "FS144",
+        "FS146",
+        "FS158",
+        "FS165",
+        "FS167",
+        "FS176",
+        "FS183",
+        "FS193",
+        "FS200",
+        "FS345",
+        "FS346",
+        "FS347",
+        "FS348",
+        "FS349",
+        "FS350",
+        "FS351",
+        "FS352",
+        "FS353",
+        "FS354",
+        "FS355",
+        "FS356",
+        "FS429",
+        "FS430",
+        "FS431",
+        "FS432",
+        "FS433",
+        "FS434",
+        "FS465",
+        "FS466",
+        "FS467",
+        "FS468",
+        "FS469",
+        "FS470"
+      ],
+      "receive_nodes": 10
+    }
+  },
+  "scan_definitions": [
+    {
+      "scan_definition_id": "science",
+      "target_ref": "47 Tuc",
+      "mccs_configuration_ref": "mccs config 123",
+      "csp_configuration_ref": "csp-mvp01-20220329-00001",
+      "scan_duration_ms": 64000,
+      "scan_intent": "Science",
+      "pointing_correction": "MAINTAIN",
+      "scan_type_ref": "science1"
+    }
+  ],
+  "scan_sequence": [
+    "science"
+  ]
+}

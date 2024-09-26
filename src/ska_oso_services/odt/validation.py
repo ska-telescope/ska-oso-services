@@ -13,6 +13,7 @@ They are then all applied to the SBDefinition and the results combined.
 
 import logging
 
+from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.sb_definition import SBDefinition
 from ska_oso_pdm.sb_definition.dish.dish_configuration import ReceiverBand
 
@@ -63,7 +64,23 @@ def _validate_csp_and_dish_combination(sbd: SBDefinition) -> dict[str, str]:
     return messages
 
 
-VALIDATION_FNS = [_validate_csp_and_dish_combination]
+def _validate_csp(sbd: SBDefinition) -> dict[str, str]:
+    messages = {}
+    csp_configs = {csp.config_id: csp for csp in sbd.csp_configurations}
+    for scan_def in sbd.scan_definitions:
+        if scan_def.csp_configuration_ref not in csp_configs.keys():
+            messages[f"csp_config_not_in_sb_{scan_def.scan_definition_id}"] = (
+                f"CSP configuration '{scan_def.csp_configuration_ref}' defined "
+                f"in scan definition '{scan_def.scan_definition_id}' does not "
+                "exist in the SB"
+            )
+
+    return messages
+
+
+MID_VALIDATION_FNS = [_validate_csp_and_dish_combination]
+LOW_VALIDATION_FNS = [_validate_csp]
+COMMON_VALIDATION_FNS = []
 
 
 def validate_sbd(sbd: SBDefinition) -> dict[str, str]:
@@ -77,8 +94,17 @@ def validate_sbd(sbd: SBDefinition) -> dict[str, str]:
     :return: a dictionary with individual validation error messages,
         each with a unique key which should identify which part of the entity is invalid
     """
+    if isinstance(sbd.telescope, TelescopeType):
+        validation_fns = (
+            MID_VALIDATION_FNS + COMMON_VALIDATION_FNS
+            if sbd.telescope == TelescopeType.SKA_MID
+            else LOW_VALIDATION_FNS + COMMON_VALIDATION_FNS
+        )
+    else:
+        validation_fns = MID_VALIDATION_FNS
+
     return {
         error_key: error_description
-        for single_validation_result in [fn(sbd) for fn in VALIDATION_FNS]
+        for single_validation_result in [fn(sbd) for fn in validation_fns]
         for error_key, error_description in single_validation_result.items()
     }

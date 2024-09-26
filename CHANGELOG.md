@@ -4,6 +4,10 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+**********
+* Updated - Saving a Low SB using ODT services no longer causes dish validation error
+
 0.2.0
 
 ***********
