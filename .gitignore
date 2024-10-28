@@ -19,6 +19,7 @@ docs/_build
 docs/apidocs
 
 venv
+.venv
 
 # ide
 .idea
@@ -37,3 +38,6 @@ MANIFEST.skao.int%
 *.tgz
 
 PrivateRules.mak
+
+.project
+.pydevproject

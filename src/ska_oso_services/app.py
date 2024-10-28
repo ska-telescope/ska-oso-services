@@ -2,6 +2,7 @@
 ska_oso_services app.py
 """
 
+import ast
 import logging
 import os
 from importlib.metadata import version
@@ -23,7 +24,7 @@ OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 API_PREFIX = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-PRODUCTION = os.getenv("PRODUCTION", "false").lower() == "true"
+PRODUCTION = ast.literal_eval(os.getenv("PRODUCTION", "false"))
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,9 +34,10 @@ def create_app(production=PRODUCTION) -> FastAPI:
     Create the Connexion application with required config
     """
     configure_logging(level=LOG_LEVEL)
-    LOGGER.info("Creating FastAPI app")
+    LOGGER.info("Creating OSO Services FastAPI app")
 
-    app = FastAPI(openapi_url=f"{API_PREFIX}/openapi.json", docs_url=f"{API_PREFIX}/ui")
+    app = FastAPI(
+        openapi_url=f"{API_PREFIX}/openapi.json", docs_url=f"{API_PREFIX}/ui")
 
     app.add_middleware(
         CORSMiddleware,
@@ -56,3 +58,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 
 main = create_app()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(main, host="localhost", port=8000)
