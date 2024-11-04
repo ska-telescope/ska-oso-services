@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from ska_ser_logging import configure_logging
 
-from ska_oso_services import odt
+from ska_oso_services import odt, pht
 from ska_oso_services.common import (
     dangerous_internal_server_handler,
     oda_not_found_handler,
@@ -24,7 +24,8 @@ OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 API_PREFIX = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-PRODUCTION = ast.literal_eval(os.getenv("PRODUCTION", "false"))
+PRODUCTION = ast.literal_eval(
+    os.getenv("PRODUCTION", "false").capitalize())
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
     # Assemble the constituent APIs:
     app.include_router(odt.router, prefix=API_PREFIX)
-    # app.include_router(pht.router)...
+    app.include_router(pht.router, prefix=API_PREFIX)
     app.exception_handler(KeyError)(oda_not_found_handler)
 
     if not production:

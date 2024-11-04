@@ -20,7 +20,7 @@ classifiers = [
     'License :: OSI Approved :: BSD License',
     'Natural Language :: English',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.10',
 ]
 
 [[tool.poetry.source]]
@@ -41,10 +41,12 @@ priority = "primary"
 python = "^3.10"
 python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
-ska-db-oda = "6.0.0"
+ska-db-oda = "6.2.1"
 # ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
 pydantic = "^2.7"
 fastapi = "^0.111.0"
+astroquery = "^0.4.7"
+boto3 = "^1.35.54"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -57,7 +59,7 @@ pycodestyle = "^2.8.0"
 isort = "^5.10.1"
 pylint-junit = "^0.3.2"
 flake8 = "^7.0.0"
-deepdiff = "^7.0.0"
+deepdiff = "^8.0.1"
 
 [tool.poetry.group.docs]
 optional = true

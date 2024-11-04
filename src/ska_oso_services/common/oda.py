@@ -5,6 +5,6 @@ from ska_db_oda.persistence.unitofwork.postgresunitofwork import PostgresUnitOfW
 
 oda = (
     FilesystemUnitOfWork()
-    if getenv("ODA_BACKEND_TYPE", "filesystem") == "filesystem"
+    if getenv("ODA_BACKEND_TYPE", "filesystem") != "filesystem"
     else PostgresUnitOfWork()
 )
