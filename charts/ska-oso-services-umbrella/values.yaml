@@ -9,10 +9,11 @@ ska-oso-services:
 ska-db-oda-umbrella:
   enabled: true
   ska-db-oda:
+    enabled: true
     secretProvider:
       enabled: true
     rest:
-      enabled: false # Disabled by default as ska-oso-services does not use the ska-db-oda REST server. Would be useful to enable for demos and testing.
+      enabled: true # ska-oso-services doesn't need the rest server, however the way the secret provider is set up means it needs to be deployed.
   postgresql:
     enabled: true
   pgadmin4:
