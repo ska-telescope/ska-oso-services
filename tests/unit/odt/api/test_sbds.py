@@ -21,8 +21,8 @@ SBDS_API_URL = f"{ODT_BASE_API_URL}/sbds"
 
 
 class TestSBDefinitionAPI:
-    @mock.patch("ska_oso_services.odt.api.sbds.oda")
-    def test_sbds_create(self, mock_oda, client):
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
+    def test_sbds_create(self, mock_uow, client):
         """
         Confirm that a call to /sbd/create
          - returns an empty SBD with an SBD ID and valid metadata
@@ -38,31 +38,31 @@ class TestSBDefinitionAPI:
         assert result["interface"] == "https://schema.skao.int/ska-oso-pdm-sbd/0.1"
 
         # No ODA interactions expected for a create operation
-        mock_oda.add.assert_not_called()
-        mock_oda.get.assert_not_called()
+        mock_uow.add.assert_not_called()
+        mock_uow.get.assert_not_called()
 
-    @mock.patch("ska_oso_services.odt.api.sbds.oda")
-    def test_sbds_get_existing_sbd(self, mock_oda, client):
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
+    def test_sbds_get_existing_sbd(self, mock_uow, client):
         """
         Check the sbds_get method returns the expected SBD and status code
         """
         uow_mock = mock.MagicMock()
         uow_mock.sbds.get.return_value = TestDataFactory.sbdefinition()
-        mock_oda.__enter__.return_value = uow_mock
+        mock_uow().__enter__.return_value = uow_mock
 
         response = client.get(f"{SBDS_API_URL}/sbd-1234")
 
         assert_json_is_equal(response.text, VALID_MID_SBDEFINITION_JSON)
         assert response.status_code == HTTPStatus.OK
 
-    @mock.patch("ska_oso_services.odt.api.sbds.oda")
-    def test_sbds_get_not_found_sbd(self, mock_oda, client):
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
+    def test_sbds_get_not_found_sbd(self, mock_uow, client):
         """
         Check the sbds_get method returns the Not Found error when identifier not in ODA
         """
         uow_mock = mock.MagicMock()
-        uow_mock.sbds.get.side_effect = KeyError("not found")
-        mock_oda.__enter__.return_value = uow_mock
+        uow_mock.sbds.get.side_effect = KeyError("could not be found")
+        mock_uow().__enter__.return_value = uow_mock
 
         response = client.get(f"{SBDS_API_URL}/sbd-1234")
 
@@ -71,15 +71,15 @@ class TestSBDefinitionAPI:
         }
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    @mock.patch("ska_oso_services.odt.api.sbds.oda")
-    def test_sbds_get_error(self, mock_oda, client):
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
+    def test_sbds_get_error(self, mock_uow, client):
         """
         Check the sbds_get method returns a formatted error
         when ODA responds with an error
         """
         uow_mock = mock.MagicMock()
         uow_mock.sbds.get.side_effect = ValueError("test", "error")
-        mock_oda.__enter__.return_value = uow_mock
+        mock_uow().__enter__.return_value = uow_mock
 
         with pytest.raises(ValueError):
             response = client.get(f"{SBDS_API_URL}/sbd-1234")
@@ -127,9 +127,9 @@ class TestSBDefinitionAPI:
         )
         assert response.json() == expected.model_dump(mode="json")
 
-    @mock.patch("ska_oso_services.odt.api.sbds.oda")
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
-    def test_sbds_post_success(self, mock_validate, mock_oda, client):
+    def test_sbds_post_success(self, mock_validate, mock_uow, client):
         """
         Check the sbds_post method returns the expected response
         """
@@ -137,7 +137,7 @@ class TestSBDefinitionAPI:
         uow_mock = mock.MagicMock()
         uow_mock.sbds.add.return_value = TestDataFactory.sbdefinition()
         uow_mock.sbds.get.return_value = TestDataFactory.sbdefinition()
-        mock_oda.__enter__.return_value = uow_mock
+        mock_uow().__enter__.return_value = uow_mock
 
         response = client.post(
             f"{SBDS_API_URL}",
@@ -192,9 +192,9 @@ class TestSBDefinitionAPI:
         }
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-    @mock.patch("ska_oso_services.odt.api.sbds.oda")
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
-    def test_sbds_post_oda_error(self, mock_validate, mock_oda, client):
+    def test_sbds_post_oda_error(self, mock_validate, mock_uow, client):
         """
         Check the sbds_post method returns the expected error response
         from an error in the ODA
@@ -202,7 +202,7 @@ class TestSBDefinitionAPI:
         mock_validate.return_value = {}
         uow_mock = mock.MagicMock()
         uow_mock.sbds.add.side_effect = IOError("test error")
-        mock_oda.__enter__.return_value = uow_mock
+        mock_uow().__enter__.return_value = uow_mock
 
         with pytest.raises(IOError):
             response = client.post(
@@ -214,9 +214,9 @@ class TestSBDefinitionAPI:
             assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
             assert response.json() == {"detail": "OSError('test error')"}
 
-    @mock.patch("ska_oso_services.odt.api.sbds.oda")
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
-    def test_sbds_put_success(self, mock_validate, mock_oda, client):
+    def test_sbds_put_success(self, mock_validate, mock_uow, client):
         """
         Check the sbds_put method returns the expected response
         """
@@ -225,7 +225,7 @@ class TestSBDefinitionAPI:
         uow_mock.sbds.__contains__.return_value = True
         uow_mock.sbds.add.return_value = TestDataFactory.sbdefinition()
         uow_mock.sbds.get.return_value = TestDataFactory.sbdefinition()
-        mock_oda.__enter__.return_value = uow_mock
+        mock_uow().__enter__.return_value = uow_mock
 
         response = client.put(
             f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
@@ -279,9 +279,9 @@ class TestSBDefinitionAPI:
             }
         }
 
-    @mock.patch("ska_oso_services.odt.api.sbds.oda")
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
-    def test_sbds_put_not_found(self, mock_validate, mock_oda, client):
+    def test_sbds_put_not_found(self, mock_validate, mock_uow, client):
         """
         Check the sbds_put method returns the expected error response
         when the identifier is not found in the ODA.
@@ -289,7 +289,7 @@ class TestSBDefinitionAPI:
         mock_validate.return_value = {}
         uow_mock = mock.MagicMock()
         uow_mock.sbds.__contains__.return_value = False
-        mock_oda.__enter__.return_value = uow_mock
+        mock_uow().__enter__.return_value = uow_mock
 
         response = client.put(
             f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
@@ -302,9 +302,9 @@ class TestSBDefinitionAPI:
             "detail": "Identifier sbd-mvp01-20200325-00001 not found in repository"
         }
 
-    @mock.patch("ska_oso_services.odt.api.sbds.oda")
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
-    def test_sbds_put_oda_error(self, mock_validate, mock_oda, client):
+    def test_sbds_put_oda_error(self, mock_validate, mock_uow, client):
         """
         Check the sbds_put method returns the expected error response
         from an error in the ODA
@@ -313,7 +313,7 @@ class TestSBDefinitionAPI:
         uow_mock = mock.MagicMock()
         uow_mock.sbds.__contains__.return_value = True
         uow_mock.sbds.add.side_effect = IOError("test error")
-        mock_oda.__enter__.return_value = uow_mock
+        mock_uow().__enter__.return_value = uow_mock
 
         with pytest.raises(IOError):
             response = client.put(

@@ -13,6 +13,7 @@ from ska_ser_logging import configure_logging
 from ska_oso_services import odt
 from ska_oso_services.common import (
     dangerous_internal_server_handler,
+    oda,
     oda_not_found_handler,
 )
 
@@ -56,3 +57,4 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 
 main = create_app()
+oda.init_app(main)

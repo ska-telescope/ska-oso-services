@@ -75,9 +75,10 @@ async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse
     # TODO there is a risk that the KeyError is not from the
     #  ODA not being able to find the entity. After BTN-1502 the
     #  ODA should raise its own exceptions which we can catch here
-    is_not_found_in_oda = any("not found" in str(arg).lower() for arg in err.args)
+    is_not_found_in_oda = any(
+        "could not be found" in str(arg).lower() for arg in err.args
+    )
     if is_not_found_in_oda:
-        # TODO make ODA exceptions more consistent:
         if identifier := request.path_params.get("identifier"):
             detail = f"Identifier {identifier} not found in repository"
         else:
