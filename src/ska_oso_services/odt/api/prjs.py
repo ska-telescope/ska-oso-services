@@ -36,7 +36,7 @@ def prjs_get(identifier: str) -> Project:
     data store, if available
     """
     LOGGER.debug("GET PRJS prj_id: %s", identifier)
-    with oda as uow:
+    with oda.uow() as uow:
         return uow.prjs.get(identifier)
 
 
@@ -69,7 +69,7 @@ def prjs_post(prj: Project) -> Project:
         )
 
     try:
-        with oda as uow:
+        with oda.uow() as uow:
             updated_prj = uow.prjs.add(prj)
             uow.commit()
         return updated_prj
@@ -99,7 +99,7 @@ def prjs_put(prj: Project, identifier: str) -> Project:
             ),
         )
     try:
-        with oda as uow:
+        with oda.uow() as uow:
             if identifier not in uow.prjs:
                 raise KeyError(
                     f"Not found. The requested prj_id {identifier} could not be found."
@@ -120,17 +120,17 @@ class PrjSBDLinkResponse(BaseModel):
 
 
 @router.post(
-    "/{prj_id}/{obs_block_id}/sbds",
+    "/{identifier}/{obs_block_id}/sbds",
     summary="Create a new, empty SBDefinition linked to a project",
 )
-def prjs_sbds_post(prj_id: str, obs_block_id: str) -> PrjSBDLinkResponse:
+def prjs_sbds_post(identifier: str, obs_block_id: str) -> PrjSBDLinkResponse:
     """
     Creates an empty SBDefintiion linked to the given project.
     The response contains the entity as it exists in the data store,
     with an sbd_id and metadata populated.
     """
-    with oda as uow:
-        prj = uow.prjs.get(prj_id)
+    with oda.uow() as uow:
+        prj = uow.prjs.get(identifier)
         try:
             obs_block = next(
                 obs_block

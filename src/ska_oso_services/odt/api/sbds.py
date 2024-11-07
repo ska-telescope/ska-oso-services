@@ -10,12 +10,12 @@ from http import HTTPStatus
 from fastapi import APIRouter, HTTPException
 from ska_oso_pdm.sb_definition import SBDefinition
 
+from ska_oso_services.common import oda
 from ska_oso_services.common.error_handling import (
     BadRequestError,
     UnprocessableEntityError,
 )
 from ska_oso_services.common.model import ValidationResponse
-from ska_oso_services.common.oda import oda
 from ska_oso_services.odt.validation import validate_sbd
 
 LOGGER = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ def sbds_get(identifier: str) -> SBDefinition:
     from the underlying data store, if available.
     """
     LOGGER.debug("GET SBD sbd_id: %s", identifier)
-    with oda as uow:
+    with oda.uow() as uow:
         sbd = uow.sbds.get(identifier)
     return sbd
 
@@ -93,7 +93,7 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
         )
 
     try:
-        with oda as uow:
+        with oda.uow() as uow:
             updated_sbd = uow.sbds.add(sbd)
             uow.commit()
         return updated_sbd
@@ -130,7 +130,7 @@ def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
         )
 
     try:
-        with oda as uow:
+        with oda.uow() as uow:
             if identifier not in uow.sbds:
                 raise KeyError(
                     f"Not found. The requested sbd_id {identifier} could not be found."
