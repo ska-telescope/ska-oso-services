@@ -1,0 +1,18 @@
+{
+    "status": "Draft",
+    "proposal_info": {
+        "proposal_type": {},
+        "investigator": [
+            {
+                "investigator_id": "1",
+                "first_name": "Van Loo",
+                "last_name": "Cheng",
+                "email": "ask.lop@map.com",
+                "country": "Lagoon",
+                "organization": "University of Free Town",
+                "for_phd": false,
+                "principal_investigator": true
+            }
+        ]
+    }
+}

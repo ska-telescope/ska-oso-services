@@ -1,0 +1,114 @@
+{
+    "investigators": [
+      "1",
+      "2"
+    ],
+    "metadata": {
+      "created_by": "DefaultUser",
+      "created_on": "2024-02-15T20:17:12.517689+00:00",
+      "last_modified_by": "DefaultUser",
+      "last_modified_on": "2024-02-15T20:17:49.553236+00:00",
+      "version": 2
+    },
+    "proposal_info": {
+      "abstract": "",
+      "cycle": "SKA_5000_2023",
+      "investigators": [
+        {
+          "email": "ask.lop@map.com",
+          "first_name": "Van Loo",
+          "for_phd": false,
+          "investigator_id": 1,
+          "last_name": "Cheng",
+          "organization": "University of Free Town",
+          "principal_investigator": true
+        },
+        {
+          "email": "ask.lop@map.com",
+          "first_name": "Van Loo",
+          "for_phd": false,
+          "investigator_id": 2,
+          "last_name": "Cheng",
+          "organization": "University of Free Town",
+          "principal_investigator": true
+        }
+      ],
+      "proposal_type": {
+        "main_type": null,
+        "sub_type": "Long term proposal"
+      },
+      "science_category": "Cosmology",
+      "science_programmes": [
+        {
+          "array": "MID",
+          "linked_sources": [
+            "Target 1",
+            "Target 3"
+          ],
+          "observation_type": "Continuum",
+          "subarray": "AA0.5"
+        },
+        {
+          "array": "MID",
+          "linked_sources": [
+            "Target 3"
+          ],
+          "observation_type": "Zoom",
+          "subarray": "AA1"
+        },
+        {
+          "array": "LOW",
+          "linked_sources": [],
+          "observation_type": "Zoom",
+          "subarray": "AA1"
+        },
+        {
+          "array": "LOW",
+          "linked_sources": [],
+          "observation_type": "Continuum",
+          "subarray": "AA2"
+        },
+        {
+          "array": "LOW",
+          "linked_sources": [],
+          "observation_type": "Zoom",
+          "subarray": "AA2 (core only"
+        }
+      ],
+      "targets": [
+        {
+          "declination": 0.0,
+          "declination_unit": "deg",
+          "name": "Target 1",
+          "right_ascension": 15.0,
+          "right_ascension_unit": "deg",
+          "velocity": 82.48,
+          "velocity_unit": "km/s"
+        },
+        {
+          "declination": -10.0,
+          "declination_unit": "deg",
+          "name": "Target 2",
+          "right_ascension": 45.0,
+          "right_ascension_unit": "deg",
+          "velocity": 82.48,
+          "velocity_unit": "km/s"
+        },
+        {
+          "declination": -10.0,
+          "declination_unit": "deg",
+          "name": "Target 3",
+          "right_ascension": 82.5,
+          "right_ascension_unit": "deg",
+          "velocity": 82.48,
+          "velocity_unit": "km/s"
+        }
+      ],
+      "title": "MOCK PROPOSAL"
+    },
+    "prsl_id": "prsl-t0001-20240215-00004",
+    "status": "draft",
+    "submitted_by": null,
+    "submitted_on": null
+  }
+  

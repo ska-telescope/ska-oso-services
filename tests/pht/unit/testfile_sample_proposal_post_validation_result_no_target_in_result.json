@@ -1,0 +1,7 @@
+{
+    "result": false,
+    "validation_errors": [
+      "Observation Set mid-001 has no Targets linked in Results"
+    ]
+  }
+  
