@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 
+0.3.1
+**********
+* Remove validation of dish config from mid
+
 0.3.0
 **********
 * Updated - Saving a Low SB using ODT services no longer causes dish validation error
