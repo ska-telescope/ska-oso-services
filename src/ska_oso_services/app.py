@@ -14,6 +14,7 @@ from ska_ser_logging import configure_logging
 from ska_oso_services import odt, pht
 from ska_oso_services.common import (
     dangerous_internal_server_handler,
+    oda,
     oda_not_found_handler,
 )
 
@@ -59,7 +60,11 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 
 main = create_app()
+<<<<<<< HEAD
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(main, host="localhost", port=8000)
+=======
+oda.init_app(main)
+>>>>>>> main

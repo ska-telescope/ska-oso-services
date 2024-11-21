@@ -6,7 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+0.3.0
+**********
 * Updated - Saving a Low SB using ODT services no longer causes dish validation error
+* Updated ODA to v6.1.0 which brings in PDM v15.4.0
 
 0.2.0
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska-oso-services"
-version = "0.2.0"
+version = "0.3.0"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
 authors = ["Team Buttons"]
 license = "BSD-3-Clause"
@@ -41,13 +41,17 @@ priority = "primary"
 python = "^3.10"
 python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
+<<<<<<< HEAD
 ska-db-oda = "6.2.1"
+=======
+# PDM dependency is pulled in via the ODA rather than being explicitly set here
+ska-db-oda = "6.1.0" # Pinned to 6.1.0 as 6.2.0 brings in breaking PDM v16 we are not yet ready for
+>>>>>>> main
 # ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
 pydantic = "^2.7"
 fastapi = "^0.111.0"
 astroquery = "^0.4.7"
 boto3 = "^1.35.54"
-
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
