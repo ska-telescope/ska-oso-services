@@ -54,7 +54,7 @@ PYTHON_LINE_LENGTH = 88
 K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the component tests
-PYTHON_TEST_FILE = tests/unit/
+PYTHON_TEST_FILE = tests/odt/unit/ tests/pht/unit/
 
 # Variables used by the xray make targets
 XRAY_TEST_RESULT_FILE = build/reports/report.xml
