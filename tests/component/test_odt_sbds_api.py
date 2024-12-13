@@ -65,7 +65,7 @@ def test_sbd_post_then_get():
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
-        VALID_MID_SBDEFINITION_JSON,
+        SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
         exclude_paths=["root['metadata']", "root['sbd_id']"],
     )
 
@@ -77,7 +77,7 @@ def test_sbd_post_then_get():
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     assert_json_is_equal(
         get_response.content,
-        VALID_MID_SBDEFINITION_JSON,
+        SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
         exclude_paths=["root['metadata']", "root['sbd_id']"],
     )
 
@@ -95,7 +95,7 @@ def test_sbd_post_then_put():
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
-        VALID_MID_SBDEFINITION_JSON,
+        SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
         exclude_paths=["root['metadata']", "root['sbd_id']"],
     )
 
@@ -111,7 +111,7 @@ def test_sbd_post_then_put():
     assert put_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         put_response.content,
-        VALID_MID_SBDEFINITION_JSON,
+        sbd_to_update,
         exclude_paths=["root['metadata']", "root['sbd_id']"],
     )
     assert put_response.json()["metadata"]["version"] == 2

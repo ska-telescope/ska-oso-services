@@ -5,10 +5,10 @@ Utility functions to be used in tests
 import json
 import os.path
 from datetime import datetime
-from typing import Optional
 
 from deepdiff import DeepDiff
 from ska_db_oda.persistence.domain import set_identifier
+from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
@@ -45,61 +45,57 @@ def load_string_from_file(filename):
 class TestDataFactory:
     @staticmethod
     def sbdefinition(
-        sbd_id: Optional[SBDefinitionID] = "sbd-mvp01-20200325-00001",
-        version: Optional[int] = None,
-        created_on: Optional[datetime] = None,
+        sbd_id: SBDefinitionID = "sbd-mvp01-20200325-00001",
+        version: int = 1,
+        created_on: datetime = datetime.fromisoformat(
+            "2022-03-28T15:43:53.971548+00:00"
+        ),
         without_metadata: bool = False,
     ) -> SBDefinition:
-        sbd = SBDefinition.model_validate_json(
-            load_string_from_file("files/testfile_sample_mid_sb.json")
-        )
+        sbd = mid_imaging_sb()
         set_identifier(sbd, sbd_id)
 
         if without_metadata:
             sbd.metadata = None
             return sbd
 
-        if version:
-            sbd.metadata.version = version
-        if created_on:
-            sbd.metadata.created_on = created_on
+        sbd.metadata.version = version
+        sbd.metadata.created_on = created_on
 
         return sbd
 
     @staticmethod
     def lowsbdefinition(
-        sbd_id: Optional[SBDefinitionID] = "sbi-mvp01-20200325-00001",
-        version: Optional[int] = None,
-        created_on: Optional[datetime] = None,
+        sbd_id: SBDefinitionID = "sbd-mvp01-20200325-00001",
+        version: int = 1,
+        created_on: datetime = datetime.fromisoformat(
+            "2022-03-28T15:43:53.971548+00:00"
+        ),
         without_metadata: bool = False,
     ) -> SBDefinition:
-        sbd = SBDefinition.model_validate_json(
-            load_string_from_file("files/testfile_sample_low_sb.json")
-        )
+        sbd = low_imaging_sb()
         set_identifier(sbd, sbd_id)
 
         if without_metadata:
             sbd.metadata = None
             return sbd
 
-        if version:
-            sbd.metadata.version = version
-        if created_on:
-            sbd.metadata.created_on = created_on
+        sbd.metadata.version = version
+        sbd.metadata.created_on = created_on
 
         return sbd
 
     @staticmethod
     def project(
-        prj_id: Optional[str] = "prj-mvp01-20220923-00001",
-        version: Optional[int] = None,
+        prj_id: str = "prj-mvp01-20220923-00001",
+        version: int = 1,
     ) -> Project:
         prj = Project.model_validate_json(
             load_string_from_file("files/testfile_sample_project.json")
         )
+
         set_identifier(prj, prj_id)
-        if version:
-            prj.metadata.version = version
+        prj.metadata.version = version
 
         return prj
 
