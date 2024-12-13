@@ -21,10 +21,14 @@ POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 K8S_CHART_PARAMS += \
   --set ska-db-oda-umbrella.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST)
 
- # Set cluster_domain to minikube default (cluster.local) in local development
-# (CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline)
+# CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline, so these variables are set for a local deployment
+# Set cluster_domain to minikube default (cluster.local) in local development
 ifeq ($(CI_ENVIRONMENT_SLUG),)
-K8S_CHART_PARAMS += --set global.cluster_domain="cluster.local"
+ODA_LOCAL_PASSWORD=localpassword
+K8S_CHART_PARAMS += \
+  --set global.cluster_domain="cluster.local" \
+  --set ska-db-oda-umbrella.ska-db-oda.secretProvider.enabled=false \
+  --set ska-oso-services.rest.oda.postgres.password=$(ODA_LOCAL_PASSWORD)
 endif
 
 # For the test, dev and integration environment, use the freshly built image in the GitLab registry
