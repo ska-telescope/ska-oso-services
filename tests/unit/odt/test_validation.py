@@ -35,33 +35,37 @@ def test_validate_runs_functions():
     assert result == {"result1": "bad1", "result2": "bad2"}
 
 
-def test_config_not_present_error():
+def test_mid_config_not_present_error():
     invalid_sbd = TestDataFactory.sbdefinition()
 
-    fake_csp_conf_id = "csp config abc"
+    fake_csp_conf_id = "csp-configuration-12345"
     invalid_sbd.scan_definitions[0].csp_configuration_ref = fake_csp_conf_id
+    fake_scan_definition_id = "scan-definition-09876"
+    invalid_sbd.scan_definitions[0].scan_definition_id = fake_scan_definition_id
 
     result = _validate_csp(invalid_sbd)
 
     assert result == {
-        "csp_config_not_in_sb_calibrator scan": (
-            "CSP configuration 'csp config abc' defined in scan definition"
-            " 'calibrator scan' does not exist in the SB"
-        ),
+        f"csp_config_not_in_sb_{fake_scan_definition_id}": (
+            f"CSP configuration '{fake_csp_conf_id}' defined in scan definition "
+            f"'{fake_scan_definition_id}' does not exist in the SB"
+        )
     }
 
 
 def test_low_config_not_present_error():
     invalid_sbd = TestDataFactory.lowsbdefinition()
 
-    fake_csp_conf_id = "csp config abc"
+    fake_csp_conf_id = "csp-configuration-12345"
     invalid_sbd.scan_definitions[0].csp_configuration_ref = fake_csp_conf_id
+    fake_scan_definition_id = "scan-definition-09876"
+    invalid_sbd.scan_definitions[0].scan_definition_id = fake_scan_definition_id
 
     result = _validate_csp(invalid_sbd)
 
     assert result == {
-        "csp_config_not_in_sb_science": (
-            "CSP configuration 'csp config abc' defined in scan definition"
-            " 'science' does not exist in the SB"
-        ),
+        f"csp_config_not_in_sb_{fake_scan_definition_id}": (
+            f"CSP configuration '{fake_csp_conf_id}' defined in scan definition "
+            f"'{fake_scan_definition_id}' does not exist in the SB"
+        )
     }
