@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+
+0.4.0-rc
+**********
 * Update to ODA v7.0.0 with PDM v17.0.0
 
 0.3.1
