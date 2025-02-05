@@ -46,6 +46,7 @@ ska-db-oda = "^7.2.0"
 # ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
 pydantic = "^2.7"
 fastapi = "^0.111.0"
+ska-ost-osd = "^2.3.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
