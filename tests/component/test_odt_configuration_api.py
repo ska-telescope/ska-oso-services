@@ -19,4 +19,4 @@ def test_configuration_get():
     """
 
     response = requests.get(f"{ODT_URL}/sbds/create")
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.OK, response.json()

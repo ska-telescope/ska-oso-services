@@ -12,6 +12,7 @@ from ska_ser_logging import configure_logging
 
 from ska_oso_services import odt
 from ska_oso_services.common import (
+    api,
     dangerous_internal_server_handler,
     oda,
     oda_not_found_handler,
@@ -47,6 +48,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
     )
 
     # Assemble the constituent APIs:
+    app.include_router(api.common_router, prefix=API_PREFIX)
     app.include_router(odt.router, prefix=API_PREFIX)
     # app.include_router(pht.router)...
     app.exception_handler(KeyError)(oda_not_found_handler)

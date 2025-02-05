@@ -9,9 +9,8 @@ from unittest import mock
 import pytest
 from ska_oso_pdm.project import ObservingBlock
 
+from tests.unit.conftest import ODT_BASE_API_URL
 from tests.unit.util import TestDataFactory, assert_json_is_equal
-
-from .conftest import ODT_BASE_API_URL
 
 PRJS_API_URL = f"{ODT_BASE_API_URL}/prjs"
 

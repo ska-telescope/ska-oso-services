@@ -11,7 +11,8 @@ from fastapi.testclient import TestClient
 from ska_oso_services import create_app
 
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
-ODT_BASE_API_URL = f"/ska-oso-services/oso/api/v{OSO_SERVICES_MAJOR_VERSION}/odt"
+APP_BASE_API_URL = f"/ska-oso-services/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
+ODT_BASE_API_URL = f"{APP_BASE_API_URL}/odt"
 
 
 @pytest.fixture(name="test_app")

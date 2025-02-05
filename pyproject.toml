@@ -47,6 +47,7 @@ ska-db-oda = "^7.2.0"
 pydantic = "^2.7"
 fastapi = "^0.111.0"
 ska-ost-osd = "^2.3.1"
+astroquery = "0.4.7"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
