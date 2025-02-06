@@ -21,7 +21,7 @@ from ska_oso_services.common.utils.coordinates import (
     get_coordinates,
     round_coord_to_3_decimal_places,
 )
-from src.ska_oso_services.common.error_handling import BadRequestError, NotFoundError
+from ska_oso_services.common.error_handling import BadRequestError, NotFoundError
 
 LOGGER = logging.getLogger(__name__)
 
