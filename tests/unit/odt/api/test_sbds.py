@@ -8,14 +8,13 @@ from unittest import mock
 import pytest
 
 from ska_oso_services.common.model import ValidationResponse
+from tests.unit.conftest import ODT_BASE_API_URL
 from tests.unit.util import (
     SBDEFINITION_WITHOUT_ID_JSON,
     VALID_MID_SBDEFINITION_JSON,
     TestDataFactory,
     assert_json_is_equal,
 )
-
-from .conftest import ODT_BASE_API_URL
 
 SBDS_API_URL = f"{ODT_BASE_API_URL}/sbds"
 
