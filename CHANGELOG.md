@@ -6,7 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-
+* New API endpoint: Added /configuration to fetch static information from the OSD and return in a format required by the ODT UI
+* New API endpoint: Copy the /coordinates end point from the PHT to resolve target coordinates
 
 0.4.0-rc
 **********
