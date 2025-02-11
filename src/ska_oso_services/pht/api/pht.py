@@ -72,7 +72,7 @@ def get_proposal(proposal_id: str) -> Proposal:
     """
 
     LOGGER.debug(f"GET PROPOSAL prsl_id: {proposal_id}", proposal_id)
-    with oda as uow:
+    with oda.uow() as uow:
         try:
             return uow.prsls.get(proposal_id)
         except KeyError:
