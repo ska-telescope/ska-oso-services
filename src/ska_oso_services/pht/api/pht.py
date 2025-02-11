@@ -45,7 +45,7 @@ def create_proposal(prsl: dict) -> str:
     LOGGER.debug("POST PROPOSAL create")
 
     transform_body = transform_create_proposal(prsl)
-    if prsl.sbd_id is not None:
+    if prsl.prsl_id is not None:
         raise BadRequestError(
             detail=(
                 "prsl_id given in the body of the POST request. Identifier"
