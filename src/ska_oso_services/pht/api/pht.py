@@ -105,14 +105,14 @@ def update_proposal(proposal_id: str, body: dict) -> Proposal:
         raise BadRequestError("Proposal_id does not match the one in the body")
 
     # Make sure it actually exists
-    with oda as uow:
+    with oda.uow() as uow:
         try:
             uow.prsls.get(proposal_id)
         except KeyError:
             raise NotFoundError(f"Could not find proposal: {proposal_id}")
 
     # Adding it will update it.
-    with oda as uow:
+    with oda.uow() as uow:
         uow.prsls.add(prsl)
         uow.commit()
         updated_prsl = uow.prsls.get(proposal_id)
@@ -134,7 +134,7 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
     """
 
     LOGGER.debug(f"GET PROPOSAL LIST query for the user: {user_id}")
-    with oda as uow:
+    with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
         proposals = uow.prsls.query(query_param)
         return proposals
