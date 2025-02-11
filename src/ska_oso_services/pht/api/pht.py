@@ -25,13 +25,13 @@ from ska_oso_services.common.error_handling import BadRequestError, NotFoundErro
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/pht")
+router = APIRouter(prefix="")
 
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "SMTP_PASSWORD")
 
 
-@router.post("/proposals", summary="Create a proposal")
-def create_proposal(body: dict) -> str:
+@router.post("/proposals", summary="Create a new proposal")
+def create_proposal(prsl: dict) -> str:
     """
     Function that requests to POST /proposals are mapped to
 
@@ -44,7 +44,16 @@ def create_proposal(body: dict) -> str:
     """
     LOGGER.debug("POST PROPOSAL create")
 
-    transform_body = transform_create_proposal(body)
+    transform_body = transform_create_proposal(prsl)
+    if prsl.sbd_id is not None:
+        raise BadRequestError(
+            detail=(
+                "prsl_id given in the body of the POST request. Identifier"
+                " generation for new entities is the responsibility of the ODA,"
+                " which will fetch them from SKUID, so they should not be given in"
+                " this request."
+            ),
+        )
 
     try:
         # Make sure it still conforms?
@@ -52,12 +61,13 @@ def create_proposal(body: dict) -> str:
     except ValidationError as e:
         raise BadRequestError(str(e))
 
-    with oda as uow:
+    with oda.uow() as uow:
         updated_prsl = uow.prsls.add(prsl)
         uow.commit()
         return updated_prsl.prsl_id
+    
 
-
+    
 @router.get("/proposals/{proposal_id}", summary="Get the existing proposal")
 def get_proposal(proposal_id: str) -> Proposal:
     """
