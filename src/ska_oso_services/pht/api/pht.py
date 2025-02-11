@@ -45,16 +45,6 @@ def create_proposal(proposal: dict) -> str:
     LOGGER.debug("POST PROPOSAL create")
 
     transform_body = transform_create_proposal(proposal)
-    if proposal.prsl_id is not None:
-        raise BadRequestError(
-            detail=(
-                "prsl_id given in the body of the POST request. Identifier"
-                " generation for new entities is the responsibility of the ODA,"
-                " which will fetch them from SKUID, so they should not be given in"
-                " this request."
-            ),
-        )
-
     try:
         # Make sure it still conforms?
         prsl = Proposal.model_validate(transform_body)
