@@ -31,7 +31,7 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "SMTP_PASSWORD")
 
 
 @router.post("/proposals", summary="Create a new proposal")
-def create_proposal(prsl: dict) -> str:
+def create_proposal(proposal: dict) -> str:
     """
     Function that requests to POST /proposals are mapped to
 
@@ -44,8 +44,8 @@ def create_proposal(prsl: dict) -> str:
     """
     LOGGER.debug("POST PROPOSAL create")
 
-    transform_body = transform_create_proposal(prsl)
-    if prsl.prsl_id is not None:
+    transform_body = transform_create_proposal(proposal)
+    if proposal.prsl_id is not None:
         raise BadRequestError(
             detail=(
                 "prsl_id given in the body of the POST request. Identifier"
