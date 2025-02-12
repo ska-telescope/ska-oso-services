@@ -27,17 +27,15 @@ def test_empty_sbd_created_and_linked_to_project():
     adds that SBDefinition to the Project
     """
     # Create an empty Project
-    prj_post_response = requests.post(
-        f"{ODT_URL}/prjs",
-        headers={"Content-type": "application/json"},
-    )
+    prj_post_response = requests.post(f"{ODT_URL}/prjs")
 
     assert prj_post_response.status_code == HTTPStatus.OK, prj_post_response.content
     prj_id = prj_post_response.json()["prj_id"]
+    obs_block_id = prj_post_response.json()["obs_blocks"][0]["obs_block_id"]
 
     # Create an SBDefinition in that Project in the first observing block
     sbd_post_response = requests.post(
-        f"{ODT_URL}/prjs/{prj_id}/ob-1/sbds",
+        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/sbds",
         data=json.dumps({"telescope": "ska_mid"}),
         headers={"Content-type": "application/json"},
     )
@@ -65,10 +63,11 @@ def test_sbd_created_and_linked_to_project():
 
     assert prj_post_response.status_code == HTTPStatus.OK, prj_post_response.content
     prj_id = prj_post_response.json()["prj_id"]
+    obs_block_id = prj_post_response.json()["obs_blocks"][0]["obs_block_id"]
 
     # Create an SBDefinition in that Project in the first observing block
     sbd_post_response = requests.post(
-        f"{ODT_URL}/prjs/{prj_id}/ob-1/sbds",
+        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/sbds",
         data=json.dumps({"telescope": "ska_mid"}),
         headers={"Content-type": "application/json"},
     )

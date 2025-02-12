@@ -2,7 +2,6 @@
 Unit tests for ska_oso_services.api
 """
 
-import json
 from http import HTTPStatus
 from unittest import mock
 
@@ -101,11 +100,7 @@ class TestProjectPost:
         uow_mock.prjs.get.return_value = created_project
         mock_uow().__enter__.return_value = uow_mock
 
-        result = client.post(
-            f"{PRJS_API_URL}",
-            data=json.dumps({"telescope": "ska_mid"}),
-            headers={"Content-type": "application/json"},
-        )
+        result = client.post(f"{PRJS_API_URL}")
 
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, created_project.model_dump_json())
