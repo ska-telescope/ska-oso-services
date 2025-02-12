@@ -8,6 +8,7 @@ Unreleased
 **********
 * New API endpoint: Added /configuration to fetch static information from the OSD and return in a format required by the ODT UI
 * New API endpoint: Copy the /coordinates end point from the PHT to resolve target coordinates
+* Added a request body to /api/v0/odt/prjs/{identifier}/{obs_block_id}/sbds so can add some SBDefintion data in same request
 
 0.4.0-rc
 **********

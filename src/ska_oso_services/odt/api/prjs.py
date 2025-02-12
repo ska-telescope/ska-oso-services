@@ -3,6 +3,7 @@ These functions map to the API paths, with the returned value being the API resp
 """
 
 import logging
+from typing import Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -21,7 +22,12 @@ LOGGER = logging.getLogger(__name__)
 
 # For PI22, we are only supporting a single ObservingBlock in the
 # Project, so hard code the id
-OBS_BLOCK_ID = "ob-1"
+OBS_BLOCK_ID = "observing-block-17906"
+
+DEFAULT_SB_DEFINITION = SBDefinition(
+    telescope=TelescopeType.SKA_MID,
+    interface="https://schema.skao.int/ska-oso-pdm-sbd/0.1",
+)
 
 router = APIRouter(prefix="/prjs")
 
@@ -121,13 +127,17 @@ class PrjSBDLinkResponse(BaseModel):
 
 @router.post(
     "/{identifier}/{obs_block_id}/sbds",
-    summary="Create a new, empty SBDefinition linked to a project",
+    summary="Create a new SBDefinition linked to a project",
 )
-def prjs_sbds_post(identifier: str, obs_block_id: str) -> PrjSBDLinkResponse:
+def prjs_sbds_post(
+    identifier: str, obs_block_id: str, sbd: Optional[SBDefinition] = None
+) -> PrjSBDLinkResponse:
     """
-    Creates an empty SBDefintiion linked to the given project.
+    Creates an SBDefintiion linked to the given project.
     The response contains the entity as it exists in the data store,
     with an sbd_id and metadata populated.
+
+    If no request body is passed, a default 'empty' SBDefinition will be created.
     """
     with oda.uow() as uow:
         prj = uow.prjs.get(identifier)
@@ -142,13 +152,8 @@ def prjs_sbds_post(identifier: str, obs_block_id: str) -> PrjSBDLinkResponse:
             raise NotFoundError(
                 detail=f"Observing Block '{obs_block_id}' not found in Project"
             )
-
-        sbd = uow.sbds.add(
-            SBDefinition(
-                telescope=TelescopeType.SKA_MID,
-                interface="https://schema.skao.int/ska-oso-pdm-sbd/0.1",
-            )
-        )
+        sbd_to_save = sbd if sbd is not None else DEFAULT_SB_DEFINITION
+        sbd = uow.sbds.add(sbd_to_save)
         obs_block.sbd_ids.append(sbd.sbd_id)
         # Persist the change to the obs_block above
         uow.prjs.add(prj)
