@@ -6,13 +6,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+0.4.0
+**********
+* Update to ODA v7.2.0 with PDM v17.1.2
 * New API endpoint: Added /configuration to fetch static information from the OSD and return in a format required by the ODT UI
 * New API endpoint: Copy the /coordinates end point from the PHT to resolve target coordinates
 * Added a request body to /api/v0/odt/prjs/{identifier}/{obs_block_id}/sbds so can add some SBDefintion data in same request
-
-0.4.0-rc
-**********
-* Update to ODA v7.0.0 with PDM v17.0.0
 
 0.3.1
 **********
