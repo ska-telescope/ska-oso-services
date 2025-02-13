@@ -18,7 +18,7 @@ from ska_oso_services.common.model import AppModel
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/coordinates", tags=["Endpoints related to coordintes"])
+router = APIRouter(prefix="/coordinates")
 
 
 class ReferenceFrame(str, Enum):

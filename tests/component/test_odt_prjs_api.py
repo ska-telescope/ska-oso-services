@@ -20,24 +20,56 @@ from ..unit.util import (
 from . import ODT_URL
 
 
+def test_empty_sbd_created_and_linked_to_project():
+    """
+    Test that an entity sent to POST /prjs creates an empty project, then a request
+    to POST /prjs/<prj_id>/<obs_block_id>/sbds with an SBDefinition in the request body
+    adds that SBDefinition to the Project
+    """
+    # Create an empty Project
+    prj_post_response = requests.post(f"{ODT_URL}/prjs")
+
+    assert prj_post_response.status_code == HTTPStatus.OK, prj_post_response.content
+    prj_id = prj_post_response.json()["prj_id"]
+    obs_block_id = prj_post_response.json()["obs_blocks"][0]["obs_block_id"]
+
+    # Create an SBDefinition in that Project in the first observing block
+    sbd_post_response = requests.post(
+        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/sbds",
+        data=json.dumps({"telescope": "ska_mid"}),
+        headers={"Content-type": "application/json"},
+    )
+    assert sbd_post_response.status_code == HTTPStatus.OK
+    assert sbd_post_response.json()["sbd"]["telescope"] == "ska_mid"
+
+    sbd_id = sbd_post_response.json()["sbd"]["sbd_id"]
+    # Check the SBDefinition is linked to Project
+    get_prj_response = requests.get(f"{ODT_URL}/prjs/{prj_id}")
+    assert get_prj_response.status_code == HTTPStatus.OK
+    assert get_prj_response.json()["obs_blocks"][0]["sbd_ids"][0] == sbd_id
+
+
 def test_sbd_created_and_linked_to_project():
     """
     Test that an entity sent to POST /prjs creates an empty project, then a request
-    to POST /prjs/<prj_id>/<obs_block_id>/sbds adds an SBDefinition to that Project
+    to POST /prjs/<prj_id>/<obs_block_id>/sbds without a request body adds
+    an empty SBDefinition to that Project
     """
     # Create an empty Project
     prj_post_response = requests.post(
         f"{ODT_URL}/prjs",
-        data=json.dumps({"telescope": "ska_mid"}),
         headers={"Content-type": "application/json"},
     )
 
     assert prj_post_response.status_code == HTTPStatus.OK, prj_post_response.content
     prj_id = prj_post_response.json()["prj_id"]
+    obs_block_id = prj_post_response.json()["obs_blocks"][0]["obs_block_id"]
 
     # Create an SBDefinition in that Project in the first observing block
     sbd_post_response = requests.post(
-        f"{ODT_URL}/prjs/{prj_id}/ob-1/sbds",
+        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/sbds",
+        data=json.dumps({"telescope": "ska_mid"}),
+        headers={"Content-type": "application/json"},
     )
     assert sbd_post_response.status_code == HTTPStatus.OK
     sbd_id = sbd_post_response.json()["sbd"]["sbd_id"]

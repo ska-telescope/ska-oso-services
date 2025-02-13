@@ -42,6 +42,7 @@ python = "^3.10"
 python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
 # PDM dependency is pulled in via the ODA rather than being explicitly set here
+# If updating this, also remember to update the Helm dependency in the umbrella chart
 ska-db-oda = "^7.2.0"
 # ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
 pydantic = "^2.7"

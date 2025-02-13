@@ -3,6 +3,7 @@ These functions map to the API paths, with the returned value being the API resp
 """
 
 import logging
+from typing import Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -19,9 +20,21 @@ from ska_oso_services.common.error_handling import (
 
 LOGGER = logging.getLogger(__name__)
 
-# For PI22, we are only supporting a single ObservingBlock in the
-# Project, so hard code the id
-OBS_BLOCK_ID = "ob-1"
+DEFAULT_OBSERVING_BLOCK = ObservingBlock(
+    obs_block_id="observing-block-12345", sbd_ids=[]
+)
+
+DEFAULT_AUTHOR = Author(pis=[], cois=[])
+
+DEFAULT_PROJECT = Project(
+    obs_blocks=[DEFAULT_OBSERVING_BLOCK.model_copy(deep=True)],
+    author=DEFAULT_AUTHOR.model_copy(deep=True),
+)
+
+DEFAULT_SB_DEFINITION = SBDefinition(
+    telescope=TelescopeType.SKA_MID,
+    interface="https://schema.skao.int/ska-oso-pdm-sbd/0.1",
+)
 
 router = APIRouter(prefix="/prjs")
 
@@ -44,19 +57,20 @@ def prjs_get(identifier: str) -> Project:
     "/",
     summary="Create a new Project",
 )
-def prjs_post(prj: Project) -> Project:
+def prjs_post(prj: Optional[Project] = None) -> Project:
     """
     Creates a new Project in the underlying data store. The response
     contains the entity as it exists in the data store, with
     a prj_id and metadata populated.
     """
     LOGGER.debug("POST PRJ")
-
-    if not prj.obs_blocks:
-        prj.obs_blocks = [ObservingBlock(obs_block_id=OBS_BLOCK_ID, sbd_ids=[])]
-    if prj.author is None:
-        prj.author = Author(pis=[], cois=[])
-
+    if prj is None:
+        prj = DEFAULT_PROJECT.model_copy(deep=True)
+    else:
+        if not prj.obs_blocks:
+            prj.obs_blocks = [DEFAULT_OBSERVING_BLOCK.model_copy(deep=True)]
+        if prj.author is None:
+            prj.author = DEFAULT_AUTHOR.model_copy(deep=True)
     # Ensure the identifier is None so the ODA doesn't try to perform an update
     if prj.prj_id is not None:
         raise BadRequestError(
@@ -121,13 +135,17 @@ class PrjSBDLinkResponse(BaseModel):
 
 @router.post(
     "/{identifier}/{obs_block_id}/sbds",
-    summary="Create a new, empty SBDefinition linked to a project",
+    summary="Create a new SBDefinition linked to a project",
 )
-def prjs_sbds_post(identifier: str, obs_block_id: str) -> PrjSBDLinkResponse:
+def prjs_sbds_post(
+    identifier: str, obs_block_id: str, sbd: Optional[SBDefinition] = None
+) -> PrjSBDLinkResponse:
     """
-    Creates an empty SBDefintiion linked to the given project.
+    Creates an SBDefintiion linked to the given project.
     The response contains the entity as it exists in the data store,
     with an sbd_id and metadata populated.
+
+    If no request body is passed, a default 'empty' SBDefinition will be created.
     """
     with oda.uow() as uow:
         prj = uow.prjs.get(identifier)
@@ -142,13 +160,10 @@ def prjs_sbds_post(identifier: str, obs_block_id: str) -> PrjSBDLinkResponse:
             raise NotFoundError(
                 detail=f"Observing Block '{obs_block_id}' not found in Project"
             )
-
-        sbd = uow.sbds.add(
-            SBDefinition(
-                telescope=TelescopeType.SKA_MID,
-                interface="https://schema.skao.int/ska-oso-pdm-sbd/0.1",
-            )
+        sbd_to_save = (
+            sbd if sbd is not None else DEFAULT_SB_DEFINITION.model_copy(deep=True)
         )
+        sbd = uow.sbds.add(sbd_to_save)
         obs_block.sbd_ids.append(sbd.sbd_id)
         # Persist the change to the obs_block above
         uow.prjs.add(prj)
