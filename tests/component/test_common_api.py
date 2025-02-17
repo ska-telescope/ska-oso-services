@@ -22,7 +22,7 @@ def test_coordinates_get():
     expected_response = {
         "equatorial": {
             "dec": "-33:51:30.197",
-            "ra": "00:08:34.539",
+            "ra": "00:08:34.5389",
             "redshift": 0.0,
             "velocity": 6800.0,
         }

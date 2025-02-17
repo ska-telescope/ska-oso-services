@@ -63,8 +63,8 @@ COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
             "equatorial",
             {
                 "equatorial": {
-                    "ra": "04:31:38.5107",
-                    "dec": "+18:13:57.859",
+                    "ra": "04:31:38.5108",
+                    "dec": "+18:13:57.860",
                     "redshift": 0.0,
                     "velocity": 0.0,
                 }

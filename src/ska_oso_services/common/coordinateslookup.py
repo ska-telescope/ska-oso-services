@@ -130,7 +130,7 @@ def get_coordinates(object_name: str) -> Equatorial:
     """
     Query celestial coordinates for a given object name in either the
     SIMBAD or the NED databases of astronomical sources. We search SIMBAD
-    first as this contains more objects - only then is NED searched.
+    and if the source is not found, try NED.
     The function returns the Right Ascension (RA) and Declination (Dec)
     in the hour-minute-second (HMS) and degree-minute-second (DMS) format
     respectively.
