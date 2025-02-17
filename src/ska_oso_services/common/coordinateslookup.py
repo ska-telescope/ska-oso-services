@@ -3,7 +3,6 @@
 import astropy.units as u
 from astropy.constants import c as speed_of_light
 from astropy.coordinates import Angle, SkyCoord
-from astroquery.exceptions import RemoteServiceError
 from astroquery.ipac.ned import Ned
 from astroquery.simbad import Simbad
 
@@ -161,20 +160,17 @@ def get_coordinates(object_name: str) -> Equatorial:
             velocity = result_table_simbad["RVZ_RADVEL"]
     else:
         # If not found in SIMBAD, search in NED
-        try:
-            result_table_ned = Ned.query_object(object_name)
-            ra = result_table_ned["RA"][0]
-            dec = result_table_ned["DEC"][0]
-            coord = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs")
+        result_table_ned = Ned.query_object(object_name)
+        ra = result_table_ned["RA"][0]
+        dec = result_table_ned["DEC"][0]
+        coord = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs")
 
-            # For NED we only take the redshift
-            mask = result_table_ned["Redshift"].mask[0]
-            if mask:
-                redshift = 0.0
-            else:
-                redshift = result_table_ned["Redshift"][0]
-        except IndexError as e:
-            return f"{'Object not found in SIMBAD or NED', e}"
+        # For NED we only take the redshift
+        mask = result_table_ned["Redshift"].mask[0]
+        if mask:
+            redshift = 0.0
+        else:
+            redshift = result_table_ned["Redshift"][0]
 
     coordinates = (
         coord.to_string("hmsdms")
