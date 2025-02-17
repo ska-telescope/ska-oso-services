@@ -80,14 +80,14 @@ COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
                     "redshift": 0.0,
                     "velocity": 0.0,
                 }
-            }
-        )
-    ]
+            },
+        ),
+    ],
 )
 def test_get_coordinates(client, identifier, reference_frame, expected_response):
 
     response = client.get(f"{COORDINATES_API_URL}/{identifier}/{reference_frame}")
-    assert response.status_code == HTTPStatus.OK,response.json()
+    assert response.status_code == HTTPStatus.OK, response.json()
     assert response.json() == expected_response
 
 

@@ -25,9 +25,7 @@ class Galactic(AppModel):
     redshift: float
 
 
-def round_coord(
-    ra: str, dec: str, velocity: float, redshift: float
-) -> Equatorial:
+def round_coord(ra: str, dec: str, velocity: float, redshift: float) -> Equatorial:
     """
     Rounds the seconds component of RA to 4 decimal places
     and the arcseconds component of DEC to 3.
@@ -42,7 +40,6 @@ def round_coord(
             and "declination", each containing a string value
             with the rounded RA and DEC coordinates.
     """
-
 
     ra_formatted = ":".join(
         f"{round(float(x), 4):07.4f}" if i == 2 else x
@@ -143,7 +140,6 @@ def get_coordinates(object_name: str) -> Equatorial:
     Velocity is set to zero.
     """
 
-    
     # Initialise velocity and redshift
     redshift = 0.0
     velocity = 0.0
@@ -181,8 +177,7 @@ def get_coordinates(object_name: str) -> Equatorial:
             return f"{'Object not found in SIMBAD or NED', e}"
 
     coordinates = (
-        coord
-        .to_string("hmsdms")
+        coord.to_string("hmsdms")
         .replace("h", ":")
         .replace("d", ":")
         .replace("m", ":")
