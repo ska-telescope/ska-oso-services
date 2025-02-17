@@ -82,6 +82,18 @@ COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
                 }
             },
         ),
+        (
+            "CR7",
+            "equatorial",
+            {
+                "equatorial": {
+                    "ra": "10:00:58.0008",
+                    "dec": "+01:48:15.156",
+                    "redshift": 6.541,
+                    "velocity": 0.0,
+                }
+            },
+        ),
     ],
 )
 def test_get_coordinates(client, identifier, reference_frame, expected_response):
