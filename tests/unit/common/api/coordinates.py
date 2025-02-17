@@ -15,9 +15,9 @@ COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
             "equatorial",
             {
                 "equatorial": {
-                    "ra": "00:42:44.330",
+                    "ra": "00:42:44.3300",
                     "dec": "+41:16:07.500",
-                    "redshift": -0.0010006922855944561,
+                    "redshift": 0.0,
                     "velocity": -300.0,
                 }
             },
@@ -29,7 +29,7 @@ COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
                 "galactic": {
                     "lat": -78.5856,
                     "lon": 354.21,
-                    "redshift": 0.022945539640067736,
+                    "redshift": 0.0,
                     "velocity": 6800.0,
                 }
             },
@@ -39,19 +39,55 @@ COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
             "equatorial",
             {
                 "equatorial": {
+                    "ra": "00:08:34.5389",
                     "dec": "-33:51:30.197",
-                    "ra": "00:08:34.539",
-                    "redshift": 0.022945539640067736,
+                    "redshift": 0.0,
                     "velocity": 6800.0,
                 }
             },
         ),
-    ],
+        (
+            "47 Tuc",
+            "equatorial",
+            {
+                "equatorial": {
+                    "ra": "00:24:05.3590",
+                    "dec": "-72:04:53.200",
+                    "redshift": 0.0,
+                    "velocity": -17.2,
+                }
+            },
+        ),
+        (
+            "HL Tau",
+            "equatorial",
+            {
+                "equatorial": {
+                    "ra": "04:31:38.5107",
+                    "dec": "+18:13:57.859",
+                    "redshift": 0.0,
+                    "velocity": 0.0,
+                }
+            },
+        ),
+        (
+            "WISEA J035950.64+670741.5",
+            "equatorial",
+            {
+                "equatorial": {
+                    "ra": "03:59:50.6448",
+                    "dec": "+67:07:41.592",
+                    "redshift": 0.0,
+                    "velocity": 0.0,
+                }
+            }
+        )
+    ]
 )
 def test_get_coordinates(client, identifier, reference_frame, expected_response):
 
     response = client.get(f"{COORDINATES_API_URL}/{identifier}/{reference_frame}")
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.OK,response.json()
     assert response.json() == expected_response
 
 

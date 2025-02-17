@@ -23,7 +23,7 @@ def test_coordinates_get():
         "equatorial": {
             "dec": "-33:51:30.197",
             "ra": "00:08:34.539",
-            "redshift": 0.022945539640067736,
+            "redshift": 0.0,
             "velocity": 6800.0,
         }
     }

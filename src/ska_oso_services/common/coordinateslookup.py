@@ -25,12 +25,12 @@ class Galactic(AppModel):
     redshift: float
 
 
-def round_coord_to_3_decimal_places(
+def round_coord(
     ra: str, dec: str, velocity: float, redshift: float
 ) -> Equatorial:
     """
-    Rounds the seconds component of RA and the arcseconds component of DEC
-    to 3 decimal places.
+    Rounds the seconds component of RA to 4 decimal places
+    and the arcseconds component of DEC to 3.
 
     Parameters:
     - ra (str): Right Ascension in "HH:MM:SS.sssssssss"
@@ -42,8 +42,10 @@ def round_coord_to_3_decimal_places(
             and "declination", each containing a string value
             with the rounded RA and DEC coordinates.
     """
+
+
     ra_formatted = ":".join(
-        f"{round(float(x), 3):06.3f}" if i == 2 else x
+        f"{round(float(x), 4):07.4f}" if i == 2 else x
         for i, x in enumerate(ra.split(":"))
     )
     dec_formatted = ":".join(
@@ -126,54 +128,67 @@ def _calculate_redshift(radial_velocity) -> float:
 
 def get_coordinates(object_name: str) -> Equatorial:
     """
-    Query celestial coordinates for a given object name from SIMBAD and NED databases.
-    If the object is not found in SIMBAD database
-    it then queries the NED (NASA/IPAC Extragalactic Database).
-    The function returns the Right Ascension (RA)
-    and Declination (Dec) in the hour-minute-second (HMS) and
-    degree-minute-second (DMS) format respectively.
-    Parameters:
-    object_name (str): name of the celestial object to query.
-    Returns:
-    dict: a dict with ra, dec, velocity and redshift values
+    Query celestial coordinates for a given object name in either the
+    SIMBAD or the NED databases of astronomical sources. We search SIMBAD
+    first as this contains more objects - only then is NED searched.
+    The function returns the Right Ascension (RA) and Declination (Dec)
+    in the hour-minute-second (HMS) and degree-minute-second (DMS) format
+    respectively.
+
+    Velocities are handled in the following way:
+    Simbad - for each object, a master value is stored which will be either
+    a velocity or a redshift. The function finds out which one this is and
+    stores it. The other is set to zero.
+    NED - only the redshift is stored as the velocity has limited precision.
+    Velocity is set to zero.
     """
-    # Try searching in SIMBAD
-    Simbad.add_votable_fields("ra", "dec", "rvz_radvel", "rv_value", "z_value")
+
+    
+    # Initialise velocity and redshift
+    redshift = 0.0
+    velocity = 0.0
+
+    # First look in SIMBAD
+    Simbad.add_votable_fields("velocity")
     result_table_simbad = Simbad.query_object(object_name)
+
     if result_table_simbad is not None:
         ra = result_table_simbad["RA"][0]
         dec = result_table_simbad["DEC"][0]
-        velocity = next(
-            (
-                value
-                for value in [
-                    result_table_simbad["RVZ_RADVEL"][0],
-                    result_table_simbad["RV_VALUE"][0],
-                ]
-                if value is not None and value != ""
-            ),
-            None,
-        )
-        if velocity is not None:
-            redshift = _calculate_redshift(velocity)
-        else:
-            redshift = None
+        coord = SkyCoord(ra, dec, unit=(u.hourangle, u.degree), frame="icrs")
+
+        # Determine if stored information is redshift or velocity
+        rvz_type = result_table_simbad["RVZ_TYPE"]
+        if rvz_type == "z":
+            redshift = result_table_simbad["RVZ_REDSHIFT"]
+        elif rvz_type == "v":
+            velocity = result_table_simbad["RVZ_RADVEL"]
     else:
         # If not found in SIMBAD, search in NED
         try:
             result_table_ned = Ned.query_object(object_name)
-        except RemoteServiceError as e:
+            ra = result_table_ned["RA"][0]
+            dec = result_table_ned["DEC"][0]
+            coord = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs")
+
+            # For NED we only take the redshift
+            mask = result_table_ned["Redshift"].mask[0]
+            if mask:
+                redshift = 0.0
+            else:
+                redshift = result_table_ned["Redshift"][0]
+        except IndexError as e:
             return f"{'Object not found in SIMBAD or NED', e}"
-        ra = result_table_ned["RA"][0]
-        dec = result_table_ned["DEC"][0]
+
     coordinates = (
-        SkyCoord(ra, dec, unit=(u.hourangle, u.degree), frame="icrs")
+        coord
         .to_string("hmsdms")
         .replace("h", ":")
         .replace("d", ":")
         .replace("m", ":")
         .replace("s", "")
     )
+
     return Equatorial(
         ra=coordinates.split(" ")[0],
         dec=coordinates.split(" ")[1],
