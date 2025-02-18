@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Changed coordinateslookup.py to work even when the source doesn't have a velocity or redshift
+* For SIMBAD, the velocity or the redshift is set, depending on which is the master value
+* The redshift is now set if the source is found via NED
+* More tests were added
 
 0.4.0
 **********

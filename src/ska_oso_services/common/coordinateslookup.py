@@ -173,11 +173,7 @@ def get_coordinates(object_name: str) -> Equatorial:
             redshift = result_table_ned["Redshift"][0]
 
     coordinates = (
-        coord.to_string("hmsdms")
-        .replace("h", ":")
-        .replace("d", ":")
-        .replace("m", ":")
-        .replace("s", "")
+        coord.to_string("hmsdms", pad=True, sep=":")
     )
 
     return Equatorial(
