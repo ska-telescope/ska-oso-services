@@ -10,7 +10,8 @@ Unreleased
 * Changed coordinateslookup.py to work even when the source doesn't have a velocity or redshift
 * For SIMBAD, the velocity or the redshift is set, depending on which is the master value
 * The redshift is now set if the source is found via NED
-* More tests were added for e.g. source in NED and not SIMBAD
+* Test file renamed to test_coordinates.py so that tests will run
+* More tests were added for e.g. source in NED and not SIMBAD, as well as source not found at all
 
 0.4.0
 **********

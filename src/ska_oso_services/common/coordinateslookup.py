@@ -1,5 +1,7 @@
 # https://stackoverflow.com/a/50099819
 # pylint: disable=no-member,no-name-in-module
+import warnings
+
 import astropy.units as u
 from astropy.constants import c as speed_of_light
 from astropy.coordinates import Angle, SkyCoord
@@ -8,8 +10,6 @@ from astroquery.ipac.ned import Ned
 from astroquery.simbad import Simbad
 
 from ska_oso_services.common.model import AppModel
-
-import warnings
 
 
 # TODO should be able to use the PDM coordinates here instead
