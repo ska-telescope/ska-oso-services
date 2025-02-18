@@ -6,10 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Upgraded to astroquery 0.4.9
 * Changed coordinateslookup.py to work even when the source doesn't have a velocity or redshift
 * For SIMBAD, the velocity or the redshift is set, depending on which is the master value
 * The redshift is now set if the source is found via NED
-* More tests were added
+* More tests were added for e.g. source in NED and not SIMBAD
 
 0.4.0
 **********

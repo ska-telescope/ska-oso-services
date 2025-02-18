@@ -147,23 +147,21 @@ def get_coordinates(object_name: str) -> Equatorial:
     Simbad.add_votable_fields("velocity")
     result_table_simbad = Simbad.query_object(object_name)
 
-    if result_table_simbad is not None:
-        ra = result_table_simbad["RA"][0]
-        dec = result_table_simbad["DEC"][0]
-        coord = SkyCoord(ra, dec, unit=(u.hourangle, u.degree), frame="icrs")
+    if len(result_table_simbad) != 0:
+        ra = result_table_simbad["ra"][0]
+        dec = result_table_simbad["dec"][0]
 
         # Determine if stored information is redshift or velocity
-        rvz_type = result_table_simbad["RVZ_TYPE"]
+        rvz_type = result_table_simbad["rvz_type"]
         if rvz_type == "z":
-            redshift = result_table_simbad["RVZ_REDSHIFT"]
+            redshift = result_table_simbad["rvz_redshift"]
         elif rvz_type == "v":
-            velocity = result_table_simbad["RVZ_RADVEL"]
+            velocity = result_table_simbad["rvz_radvel"]
     else:
         # If not found in SIMBAD, search in NED
         result_table_ned = Ned.query_object(object_name)
         ra = result_table_ned["RA"][0]
         dec = result_table_ned["DEC"][0]
-        coord = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs")
 
         # For NED we only take the redshift
         mask = result_table_ned["Redshift"].mask[0]
@@ -172,7 +170,9 @@ def get_coordinates(object_name: str) -> Equatorial:
         else:
             redshift = result_table_ned["Redshift"][0]
 
-    coordinates = (coord.to_string("hmsdms", pad=True, sep=":"))
+    coordinates = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs").to_string(
+        "hmsdms", pad=True, sep=":"
+    )
 
     return Equatorial(
         ra=coordinates.split(" ")[0],
