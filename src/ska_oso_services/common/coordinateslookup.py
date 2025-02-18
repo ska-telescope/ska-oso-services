@@ -3,7 +3,6 @@
 import warnings
 
 import astropy.units as u
-from astropy.constants import c as speed_of_light
 from astropy.coordinates import Angle, SkyCoord
 from astroquery.exceptions import RemoteServiceError
 from astroquery.ipac.ned import Ned
