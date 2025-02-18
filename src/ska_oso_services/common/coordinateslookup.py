@@ -3,10 +3,13 @@
 import astropy.units as u
 from astropy.constants import c as speed_of_light
 from astropy.coordinates import Angle, SkyCoord
+from astroquery.exceptions import RemoteServiceError
 from astroquery.ipac.ned import Ned
 from astroquery.simbad import Simbad
 
 from ska_oso_services.common.model import AppModel
+
+import warnings
 
 
 # TODO should be able to use the PDM coordinates here instead
@@ -139,7 +142,9 @@ def get_coordinates(object_name: str) -> Equatorial:
     Velocity is set to zero.
     """
 
-    # Initialise velocity and redshift
+    # Initialise outputs
+    ra = "00:00:0000"
+    dec = "00:00:000"
     redshift = 0.0
     velocity = 0.0
 
@@ -158,17 +163,20 @@ def get_coordinates(object_name: str) -> Equatorial:
         elif rvz_type == "v":
             velocity = result_table_simbad["rvz_radvel"]
     else:
-        # If not found in SIMBAD, search in NED
-        result_table_ned = Ned.query_object(object_name)
-        ra = result_table_ned["RA"][0]
-        dec = result_table_ned["DEC"][0]
+        try:
+            # If not found in SIMBAD, search in NED
+            result_table_ned = Ned.query_object(object_name)
+            ra = result_table_ned["RA"][0]
+            dec = result_table_ned["DEC"][0]
 
-        # For NED we only take the redshift
-        mask = result_table_ned["Redshift"].mask[0]
-        if mask:
-            redshift = 0.0
-        else:
-            redshift = result_table_ned["Redshift"][0]
+            # For NED we only take the redshift
+            mask = result_table_ned["Redshift"].mask[0]
+            if mask:
+                redshift = 0.0
+            else:
+                redshift = result_table_ned["Redshift"][0]
+        except RemoteServiceError as error:
+            warnings.warn(f"{'Object not found in SIMBAD or NED', error}")
 
     coordinates = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs").to_string(
         "hmsdms", pad=True, sep=":"

@@ -94,6 +94,18 @@ COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
                 }
             },
         ),
+        (
+            "NOSOURCE",
+            "equatorial",
+            {
+                "equatorial": {
+                    "ra": "00:00:00.0000",
+                    "dec": "+00:00:00.000",
+                    "redshift": 0.0,
+                    "velocity": 0.0,
+                }
+            },
+        ),
     ],
 )
 def test_get_coordinates(client, identifier, reference_frame, expected_response):
