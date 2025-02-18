@@ -105,26 +105,6 @@ def convert_to_galactic(
     )
 
 
-def _calculate_redshift(radial_velocity) -> float:
-    """
-    Calculate the redshift from the radial velocity.
-
-    :param radial_velocity: Radial velocity in km/s
-    :return: redshift
-    """
-    # Convert input to m/s - eventually can refactor method signature
-    radial_velocity = radial_velocity * 1e3
-    # Non-relativistic approximation
-    if abs(radial_velocity) < 0.01 * speed_of_light.value:
-        redshift = radial_velocity / speed_of_light.value
-    else:
-        # Relativistic formula
-        redshift = (1 + radial_velocity / speed_of_light.value) ** 0.5 / (
-            1 - radial_velocity / speed_of_light.value
-        ) ** 0.5 - 1
-    return redshift
-
-
 def get_coordinates(object_name: str) -> Equatorial:
     """
     Query celestial coordinates for a given object name in either the
