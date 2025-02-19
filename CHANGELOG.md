@@ -12,6 +12,7 @@ Unreleased
 * The redshift is now set if the source is found via NED
 * Test file renamed to test_coordinates.py so that tests will run
 * More tests were added for e.g. source in NED and not SIMBAD, as well as source not found at all
+* [BREAKING]: No source found returns a 404 error 
 
 0.4.0
 **********
