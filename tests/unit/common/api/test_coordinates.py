@@ -94,24 +94,20 @@ COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
                 }
             },
         ),
-        (
-            "NOSOURCE",
-            "equatorial",
-            {
-                "equatorial": {
-                    "ra": "00:00:00.0000",
-                    "dec": "+00:00:00.000",
-                    "redshift": 0.0,
-                    "velocity": 0.0,
-                }
-            },
-        ),
     ],
 )
 def test_get_coordinates(client, identifier, reference_frame, expected_response):
 
     response = client.get(f"{COORDINATES_API_URL}/{identifier}/{reference_frame}")
     assert response.status_code == HTTPStatus.OK, response.json()
+    assert response.json() == expected_response
+
+
+def test_get_coordinates_notfound(client):
+
+    expected_response = {"detail": "Object not found in SIMBAD or NED"}
+    response = client.get(f"{COORDINATES_API_URL}/NOSOURCE/equatorial")
+    assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == expected_response
 
 

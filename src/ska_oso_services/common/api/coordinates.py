@@ -65,6 +65,7 @@ def get_systemcoordinates(
     """
     LOGGER.debug("GET coordinates: %s", identifier)
     response = get_coordinates(identifier)
+
     if reference_frame.lower() == "galactic":
         return GalacticResponse(
             galactic=convert_to_galactic(

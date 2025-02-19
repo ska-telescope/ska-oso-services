@@ -1,13 +1,12 @@
 # https://stackoverflow.com/a/50099819
 # pylint: disable=no-member,no-name-in-module
-import warnings
-
 import astropy.units as u
 from astropy.coordinates import Angle, SkyCoord
 from astroquery.exceptions import RemoteServiceError
 from astroquery.ipac.ned import Ned
 from astroquery.simbad import Simbad
 
+from ska_oso_services.common.error_handling import NotFoundError
 from ska_oso_services.common.model import AppModel
 
 
@@ -154,8 +153,8 @@ def get_coordinates(object_name: str) -> Equatorial:
                 redshift = 0.0
             else:
                 redshift = result_table_ned["Redshift"][0]
-        except RemoteServiceError as error:
-            warnings.warn(f"{'Object not found in SIMBAD or NED', error}")
+        except RemoteServiceError as err:
+            raise NotFoundError(detail="Object not found in SIMBAD or NED") from err
 
     coordinates = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs").to_string(
         "hmsdms", pad=True, sep=":"
