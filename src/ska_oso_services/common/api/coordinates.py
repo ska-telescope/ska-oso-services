@@ -12,7 +12,7 @@ from ska_oso_services.common.coordinateslookup import (
     Galactic,
     convert_to_galactic,
     get_coordinates,
-    round_coord_to_3_decimal_places,
+    round_coord,
 )
 from ska_oso_services.common.model import AppModel
 
@@ -65,6 +65,7 @@ def get_systemcoordinates(
     """
     LOGGER.debug("GET coordinates: %s", identifier)
     response = get_coordinates(identifier)
+
     if reference_frame.lower() == "galactic":
         return GalacticResponse(
             galactic=convert_to_galactic(
@@ -73,7 +74,7 @@ def get_systemcoordinates(
         )
     else:
         return EquatorialResponse(
-            equatorial=round_coord_to_3_decimal_places(
+            equatorial=round_coord(
                 response.ra, response.dec, response.velocity, response.redshift
             )
         )
