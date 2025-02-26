@@ -10,7 +10,7 @@ For information on deploying and configuring the application in a given Kubernet
 
 For user information for a deployed instance of this application, see the 'User Guide'.
 
-For developer information, application internals, and information about interactions with other OSO applications, see the 'Application internals and developer information' section
+For developer information, application internals, and information about interactions with other OSO applications, see the 'Developer information' section
 
 For instructions on developing the application, see the `README <https://gitlab.com/ska-telescope/oso/ska-oso-services/-/blob/main/README.md>`_
 
@@ -35,9 +35,10 @@ For instructions on developing the application, see the `README <https://gitlab.
     :caption: Deploying and configuring
     :hidden:
 
-    deployment/environment_variables.rst
     deployment/deployment_to_kubernetes.rst
+    deployment/configuration.rst
     deployment/persistent_environments.rst
+    deployment/secret_management.rst
 
 
 .. toctree::
@@ -50,7 +51,7 @@ For instructions on developing the application, see the `README <https://gitlab.
 
 .. toctree::
     :maxdepth: 2
-    :caption: Application internals and developer information
+    :caption: Developer Information
     :hidden:
 
     internal/module_view.rst
