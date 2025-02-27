@@ -6,6 +6,7 @@ from http import HTTPStatus
 from unittest import mock
 
 import pytest
+from ska_db_oda.persistence.domain.errors import ODANotFound
 
 from ska_oso_services.common.model import ValidationResponse
 from tests.unit.conftest import ODT_BASE_API_URL
@@ -61,13 +62,13 @@ class TestSBDefinitionAPI:
         Check the sbds_get method returns the Not Found error when identifier not in ODA
         """
         uow_mock = mock.MagicMock()
-        uow_mock.sbds.get.side_effect = KeyError("could not be found")
+        uow_mock.sbds.get.side_effect = ODANotFound(identifier="sbd-1234")
         mock_uow().__enter__.return_value = uow_mock
 
         response = client.get(f"{SBDS_API_URL}/sbd-1234")
 
         assert response.json() == {
-            "detail": "Identifier sbd-1234 not found in repository"
+            "detail": "The requested identifier sbd-1234 could not be found."
         }
         assert response.status_code == HTTPStatus.NOT_FOUND
 
@@ -290,7 +291,9 @@ class TestSBDefinitionAPI:
         """
         mock_validate.return_value = {}
         uow_mock = mock.MagicMock()
-        uow_mock.sbds.__contains__.return_value = False
+        uow_mock.sbds.get.side_effect = ODANotFound(
+            identifier="sbd-mvp01-20200325-00001"
+        )
         mock_uow().__enter__.return_value = uow_mock
 
         response = client.put(
@@ -301,7 +304,8 @@ class TestSBDefinitionAPI:
 
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert response.json() == {
-            "detail": "Identifier sbd-mvp01-20200325-00001 not found in repository"
+            "detail": "The requested identifier sbd-mvp01-20200325-00001 "
+            "could not be found."
         }
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")

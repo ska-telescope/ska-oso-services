@@ -131,10 +131,9 @@ def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
 
     try:
         with oda.uow() as uow:
-            if identifier not in uow.sbds:
-                raise KeyError(
-                    f"Not found. The requested sbd_id {identifier} could not be found."
-                )
+            # This get will check if the identifier already exists
+            # and throw an error if it doesn't
+            uow.sbds.get(identifier)
             updated_sbd = uow.sbds.add(sbd)
             uow.commit()
         return updated_sbd
