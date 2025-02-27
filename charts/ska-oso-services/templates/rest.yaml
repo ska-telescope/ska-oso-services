@@ -75,6 +75,17 @@ spec:
         image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{$.Values.rest.image.tag | default $.Chart.AppVersion}}"
         imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
         # Command set in the Docker image
+        env:
+          - name: ADMIN_POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                {{ if .Values.rest.oda.postgres.password.secret }}
+                name: {{ .Values.rest.oda.postgres.password.secret }}
+                key: {{ .Values.rest.oda.postgres.password.key }}
+                {{ else }}
+                name: ska-db-oda-umbrella-postgres-{{ $.Release.Name }}
+                key: ADMIN_POSTGRES_PASSWORD
+                {{ end }}
         envFrom:
           - configMapRef:
               name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment

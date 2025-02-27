@@ -6,6 +6,7 @@ from http import HTTPStatus
 from unittest import mock
 
 import pytest
+from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_oso_pdm.project import ObservingBlock
 
 from tests.unit.conftest import ODT_BASE_API_URL
@@ -36,12 +37,12 @@ class TestProjectGet:
         Check the prjs_get method returns the Not Found error when identifier not in ODA
         """
         uow_mock = mock.MagicMock()
-        uow_mock.prjs.get.side_effect = KeyError("could not be found")
+        uow_mock.prjs.get.side_effect = ODANotFound(identifier="prj-1234")
         mock_uow().__enter__.return_value = uow_mock
 
         result = client.get(f"{PRJS_API_URL}/prj-1234")
         assert result.json() == {
-            "detail": "Identifier prj-1234 not found in repository"
+            "detail": "The requested identifier prj-1234 could not be found."
         }
         assert result.status_code == HTTPStatus.NOT_FOUND
 
@@ -247,7 +248,7 @@ class TestProjectPut:
         when the identifier is not found in the ODA.
         """
         uow_mock = mock.MagicMock()
-        uow_mock.prjs.__contains__.return_value = False
+        uow_mock.prjs.get.side_effect = ODANotFound(identifier="prj-999")
         mock_uow().__enter__.return_value = uow_mock
 
         project = TestDataFactory.project(prj_id="prj-999")
@@ -258,7 +259,10 @@ class TestProjectPut:
         )
 
         assert resp.status_code == HTTPStatus.NOT_FOUND
-        assert resp.json()["detail"] == "Identifier prj-999 not found in repository"
+        assert (
+            resp.json()["detail"]
+            == "The requested identifier prj-999 could not be found."
+        )
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
     def test_prjs_put_oda_error(self, mock_uow, client):
@@ -292,7 +296,7 @@ class TestProjectAddSBDefinition:
     def test_prjs_post_sbd_prj_id_not_found(self, mock_uow, client):
         """ """
         uow_mock = mock.MagicMock()
-        uow_mock.prjs.get.side_effect = KeyError("could not be found")
+        uow_mock.prjs.get.side_effect = ODANotFound(identifier="prj-999")
         mock_uow().__enter__.return_value = uow_mock
 
         resp = client.post(
@@ -300,7 +304,10 @@ class TestProjectAddSBDefinition:
         )
 
         assert resp.status_code == HTTPStatus.NOT_FOUND
-        assert resp.json()["detail"] == "Identifier prj-999 not found in repository"
+        assert (
+            resp.json()["detail"]
+            == "The requested identifier prj-999 could not be found."
+        )
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
     def test_prjs_post_sbd_obs_block_id_not_found(self, mock_uow, client):

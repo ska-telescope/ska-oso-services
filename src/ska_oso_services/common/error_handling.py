@@ -5,6 +5,7 @@ from typing import Optional
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
+from ska_db_oda.persistence.domain.errors import ODAError, ODANotFound
 
 from ska_oso_services.common.model import ErrorDetails, ErrorResponseTraceback
 
@@ -67,29 +68,26 @@ def _make_response(
     )
 
 
-async def oda_not_found_handler(request: Request, err: KeyError) -> JSONResponse:
+async def oda_not_found_handler(request: Request, err: ODANotFound) -> JSONResponse:
     """
-    A custom handler function to deal with KeyError raised by the ODA and
+    A custom handler function to deal with NotFoundInODA raised by the ODA and
     return the correct HTTP 404 response.
     """
-    # TODO there is a risk that the KeyError is not from the
-    #  ODA not being able to find the entity. After BTN-1502 the
-    #  ODA should raise its own exceptions which we can catch here
-    is_not_found_in_oda = any(
-        "could not be found" in str(arg).lower() for arg in err.args
+    LOGGER.debug("NotFoundInODA for path parameters %s", request.path_params)
+    return JSONResponse(
+        status_code=HTTPStatus.NOT_FOUND, content={"detail": err.message}
     )
-    if is_not_found_in_oda:
-        if identifier := request.path_params.get("identifier"):
-            detail = f"Identifier {identifier} not found in repository"
-        else:
-            detail = err.args[0]
-        raise NotFoundError(detail=detail)
-    else:
-        LOGGER.exception(
-            "KeyError raised by api function call, but not due to the "
-            "sbd_id not being found in the ODA."
-        )
-        return await dangerous_internal_server_handler(request, err)
+
+
+async def oda_error_handler(_: Request, err: ODAError) -> JSONResponse:
+    """
+    A custom handler function to deal with general ODAError and
+    return the correct 500 response.
+    """
+    LOGGER.error("ODAError with message %s", err.message)
+    return JSONResponse(
+        status_code=HTTPStatus.INTERNAL_SERVER_ERROR, content={"detail": err.message}
+    )
 
 
 async def dangerous_internal_server_handler(_: Request, err: Exception) -> JSONResponse:

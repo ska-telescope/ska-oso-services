@@ -114,10 +114,9 @@ def prjs_put(prj: Project, identifier: str) -> Project:
         )
     try:
         with oda.uow() as uow:
-            if identifier not in uow.prjs:
-                raise KeyError(
-                    f"Not found. The requested prj_id {identifier} could not be found."
-                )
+            # This get will check if the identifier already exists
+            # and throw an error if it doesn't
+            uow.prjs.get(identifier)
             updated_prjs = uow.prjs.add(prj)
             uow.commit()
 

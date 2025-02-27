@@ -65,7 +65,7 @@ tests:
       - equal:
           path: data.POSTGRES_HOST
           value:
-            RELEASE-NAME-postgresql
+            RELEASE-NAME-postgresql.NAMESPACE.svc.techops.internal.skao.int
 
   - it: should set POSTGRES_HOST using the values.yaml when set
     documentIndex: 0
@@ -90,19 +90,6 @@ tests:
     asserts:
       - equal:
           path: data.ADMIN_POSTGRES_USER
-          value:
-            foo
-
-  - it: should set ADMIN_POSTGRES_PASSWORD using the values.yaml when set
-    documentIndex: 0
-    set:
-      rest:
-        oda:
-          postgres:
-            password: foo
-    asserts:
-      - equal:
-          path: data.ADMIN_POSTGRES_PASSWORD
           value:
             foo
 
