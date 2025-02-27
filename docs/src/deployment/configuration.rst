@@ -24,7 +24,7 @@ but also can be overwritten via the values.yaml
      - The Kubernetes service address of a running SKUID service
      - Required
      - ``ska-oso-services.rest.skuid.url``
-     - - Optional - will fall back on: ``ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.{{ .Values.global.cluster_domain }}:9870``
+     - Optional - will fall back on: ``ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.{{ .Values.global.cluster_domain }}:9870``
    * - ODA_BACKEND_TYPE
      - Defines whether the ODA interfaces should connect to a Postgresql instance or use the filesystem.
      - Optional - default: ``postgres``
