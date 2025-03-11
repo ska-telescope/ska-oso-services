@@ -8,6 +8,8 @@ import logging
 from http import HTTPStatus
 
 from fastapi import APIRouter, HTTPException
+from ska_oso_pdm import SBDStatusHistory
+from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common import oda
@@ -69,7 +71,8 @@ def sbds_get(identifier: str) -> SBDefinition:
 )
 def sbds_post(sbd: SBDefinition) -> SBDefinition:
     """
-    Creates a new SchedulingBlockDefinition in the underlying data store.
+    Creates a new SchedulingBlockDefinition and related status entity
+    in the underlying data store.
     The response contains the entity as it exists in the data store, with an
     sbd_id and metadata populated.
     """
@@ -95,6 +98,10 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
     try:
         with oda.uow() as uow:
             updated_sbd = uow.sbds.add(sbd)
+
+            sbd_status = _create_sbd_status_entity(updated_sbd)
+            uow.sbds_status_history.add(sbd_status)
+
             uow.commit()
         return updated_sbd
     except ValueError as err:
@@ -135,6 +142,12 @@ def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
             # and throw an error if it doesn't
             uow.sbds.get(identifier)
             updated_sbd = uow.sbds.add(sbd)
+
+            # In this PUT should we be updating the existing status
+            # and changing the version in it?
+            sbd_status = _create_sbd_status_entity(updated_sbd)
+            uow.sbds_status_history.add(sbd_status)
+
             uow.commit()
         return updated_sbd
     except ValueError as err:
@@ -153,3 +166,15 @@ def validate(sbd: SBDefinition) -> ValidationResponse:
     valid = not bool(validate_result)
 
     return ValidationResponse(valid=valid, messages=validate_result)
+
+
+def _create_sbd_status_entity(sbd: SBDefinition) -> SBDStatusHistory:
+    return SBDStatusHistory(
+        sbd_ref=sbd.sbd_id,
+        sbd_version=sbd.metadata.version,
+        # At the start of PI26, the status lifecycle isn't fully in place
+        # We just set the default status to READY as this is required to be
+        # executed in the OET UI
+        current_status=SBDStatus.READY,
+        previous_status=SBDStatus.READY,
+    )

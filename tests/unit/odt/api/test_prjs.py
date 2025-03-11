@@ -90,6 +90,29 @@ class TestProjectPost:
         assert_json_is_equal(result.text, created_project.model_dump_json())
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
+    def test_prjs_post_adds_status_entity(self, mock_uow, client):
+        """
+        Check the prjs_post also adds a status entity
+        """
+        uow_mock = mock.MagicMock()
+        created_project = TestDataFactory.project()
+        uow_mock.prjs.add.return_value = created_project
+        uow_mock.prjs.get.return_value = created_project
+        mock_uow().__enter__.return_value = uow_mock
+
+        add_status_mock = mock.MagicMock()
+        uow_mock.prjs_status_history.add = add_status_mock
+
+        result = client.post(
+            f"{PRJS_API_URL}",
+            data=TestDataFactory.project(prj_id=None).model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert result.status_code == HTTPStatus.OK
+        add_status_mock.assert_called()
+
+    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
     def test_prjs_post_with_minimum_body(self, mock_uow, client):
         """
         Check the prjs_post method returns an 'empty' project with a
@@ -200,6 +223,30 @@ class TestProjectPut:
 
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, project.model_dump_json())
+
+    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
+    def test_prjs_put_adds_status(self, mock_uow, client):
+        """
+        Check the prjs_put also adds a status entity
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.prjs.__contains__.return_value = True
+        project = TestDataFactory.project()
+        uow_mock.prjs.add.return_value = project
+        uow_mock.prjs.get.return_value = project
+        mock_uow().__enter__.return_value = uow_mock
+
+        add_status_mock = mock.MagicMock()
+        uow_mock.prjs_status_history.add = add_status_mock
+
+        result = client.put(
+            f"{PRJS_API_URL}/{project.prj_id}",
+            data=project.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert result.status_code == HTTPStatus.OK
+        add_status_mock.assert_called()
 
     def test_prjs_put_wrong_identifier(self, client):
         """
@@ -365,3 +412,28 @@ class TestProjectAddSBDefinition:
 
         args, _ = uow_mock.prjs.add.call_args
         assert sbd.sbd_id in args[0].obs_blocks[0].sbd_ids
+
+    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
+    def test_prjs_post_sbd_adds_status_entities(self, mock_uow, client):
+        uow_mock = mock.MagicMock()
+        project = TestDataFactory.project()
+        obs_block_id = "ob-1"
+        project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
+        sbd = TestDataFactory.sbdefinition()
+        uow_mock.prjs.get.return_value = project
+        uow_mock.sbds.add.return_value = sbd
+        uow_mock.prjs.add.return_value = project
+        mock_uow().__enter__.return_value = uow_mock
+
+        add_sbd_status_mock = mock.MagicMock()
+        uow_mock.sbds_status_history.add = add_sbd_status_mock
+
+        add_prj_status_mock = mock.MagicMock()
+        uow_mock.prjs_status_history.add = add_prj_status_mock
+
+        resp = client.post(
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/sbds",
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        add_prj_status_mock.assert_called()
