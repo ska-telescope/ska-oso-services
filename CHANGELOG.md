@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 
+0.6.0
+**********
+* Create Projects and SBDefinitions with a default READY status. (Note: no other status updates are implemented yet)
+
 0.5.0
 **********
 * Update the Helm charts so that they have better defaults and require minimal changes in the makefile. See the docs

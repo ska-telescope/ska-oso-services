@@ -150,6 +150,31 @@ class TestSBDefinitionAPI:
         assert response.status_code == HTTPStatus.OK
         assert_json_is_equal(response.text, test_sbd.model_dump_json())
 
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
+    @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
+    def test_sbds_post_adds_status(self, mock_validate, mock_uow, client):
+        """
+        Check the sbds_post method also adds a status entity
+        """
+        mock_validate.return_value = {}
+        uow_mock = mock.MagicMock()
+        test_sbd = TestDataFactory.sbdefinition()
+        uow_mock.sbds.add.return_value = test_sbd
+        uow_mock.sbds.get.return_value = test_sbd
+        mock_uow().__enter__.return_value = uow_mock
+
+        add_status_mock = mock.MagicMock()
+        uow_mock.sbds_status_history.add = add_status_mock
+
+        response = client.post(
+            f"{SBDS_API_URL}",
+            data=SBDEFINITION_WITHOUT_ID_JSON,
+            headers={"Content-type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        add_status_mock.assert_called()
+
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_sbds_post_given_sbd_id_raises_error(self, mock_validate, client):
         """
@@ -238,6 +263,32 @@ class TestSBDefinitionAPI:
 
         assert response.status_code == HTTPStatus.OK
         assert_json_is_equal(response.text, test_sbd.model_dump_json())
+
+    @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
+    @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
+    def test_sbds_put_adds_status(self, mock_validate, mock_uow, client):
+        """
+        Check the sbds_put also adds a status entity
+        """
+        mock_validate.return_value = {}
+        uow_mock = mock.MagicMock()
+        uow_mock.sbds.__contains__.return_value = True
+        test_sbd = TestDataFactory.sbdefinition()
+        uow_mock.sbds.add.return_value = test_sbd
+        uow_mock.sbds.get.return_value = test_sbd
+        mock_uow().__enter__.return_value = uow_mock
+
+        add_status_mock = mock.MagicMock()
+        uow_mock.sbds_status_history.add = add_status_mock
+
+        response = client.put(
+            f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
+            data=VALID_MID_SBDEFINITION_JSON,
+            headers={"Content-type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        add_status_mock.assert_called()
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_sbds_put_wrong_identifier(self, mock_validate, client):

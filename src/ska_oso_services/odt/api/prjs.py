@@ -7,7 +7,8 @@ from typing import Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from ska_oso_pdm import TelescopeType
+from ska_oso_pdm import ProjectStatusHistory, TelescopeType
+from ska_oso_pdm.entity_status_history import ProjectStatus
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
@@ -17,6 +18,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.odt.api.sbds import _create_sbd_status_entity
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,6 +87,10 @@ def prjs_post(prj: Optional[Project] = None) -> Project:
     try:
         with oda.uow() as uow:
             updated_prj = uow.prjs.add(prj)
+
+            prj_status = _create_prj_status_entity(updated_prj)
+            uow.prjs_status_history.add(prj_status)
+
             uow.commit()
         return updated_prj
     except ValueError as err:
@@ -117,10 +123,14 @@ def prjs_put(prj: Project, identifier: str) -> Project:
             # This get will check if the identifier already exists
             # and throw an error if it doesn't
             uow.prjs.get(identifier)
-            updated_prjs = uow.prjs.add(prj)
+            updated_prj = uow.prjs.add(prj)
+
+            prj_status = _create_prj_status_entity(updated_prj)
+            uow.prjs_status_history.add(prj_status)
+
             uow.commit()
 
-        return updated_prjs
+        return updated_prj
     except ValueError as err:
         raise BadRequestError(
             detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
@@ -163,9 +173,29 @@ def prjs_sbds_post(
             sbd if sbd is not None else DEFAULT_SB_DEFINITION.model_copy(deep=True)
         )
         sbd = uow.sbds.add(sbd_to_save)
+
+        sbd_status = _create_sbd_status_entity(sbd)
+        uow.sbds_status_history.add(sbd_status)
+
         obs_block.sbd_ids.append(sbd.sbd_id)
         # Persist the change to the obs_block above
-        uow.prjs.add(prj)
+        prj = uow.prjs.add(prj)
+
+        prj_status = _create_prj_status_entity(prj)
+        uow.prjs_status_history.add(prj_status)
+
         uow.commit()
 
     return {"sbd": sbd, "prj": prj}
+
+
+def _create_prj_status_entity(prj: Project) -> ProjectStatusHistory:
+    return ProjectStatusHistory(
+        prj_ref=prj.prj_id,
+        prj_version=prj.metadata.version,
+        # At the start of PI26, the status lifecycle isn't fully in place
+        # We just set the default status to READY as this is required to be
+        # executed in the OET UI
+        current_status=ProjectStatus.READY,
+        previous_status=ProjectStatus.READY,
+    )
