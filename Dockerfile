@@ -6,7 +6,7 @@
 
 ## The builder image, used to build the virtual environment
 ARG BUILD_IMAGE="artefact.skao.int/ska-build-python:0.1.3"
-ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-python:0.1.3"
+ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-python:0.1.4"
 
 FROM $BUILD_IMAGE AS buildenv
 
