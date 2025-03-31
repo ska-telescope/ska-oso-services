@@ -26,7 +26,7 @@ class FrequencyBand:
 @dataclasses.dataclass
 class Subarray:
     name: str
-    stations: list[str | int]
+    receptors: list[str | int]
 
 
 class MidConfiguration(AppModel):
@@ -70,7 +70,7 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
         subarrays.append(
             Subarray(
                 name=array_assembly,
-                stations=mid_response["capabilities"]["mid"][array_assembly][
+                receptors=mid_response["capabilities"]["mid"][array_assembly][
                     "number_dish_ids"
                 ],
             )
@@ -97,7 +97,7 @@ def _get_low_telescope_configuration() -> LowConfiguration:
         subarrays.append(
             Subarray(
                 name=array_assembly,
-                stations=low_response["capabilities"]["low"][array_assembly][
+                receptors=low_response["capabilities"]["low"][array_assembly][
                     "number_station_ids"
                 ],
             )
