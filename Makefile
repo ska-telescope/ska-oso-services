@@ -9,6 +9,8 @@ CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-services
 KUBE_NAMESPACE ?= ska-oso-services
 RELEASE_NAME ?= test
+MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
+OSO_SERVICES_URL ?= http://ingress-nginx-controller-lb-stfc-techops-production-cicd.ingress-nginx.svc.techops.internal.skao.int/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 
 # Set sphinx documentation build to fail on warnings (as it is configured
 # in .readthedocs.yaml as well)
@@ -24,6 +26,7 @@ K8S_CHART_PARAMS += \
 # CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline, so these variables are set for a local deployment
 # Set cluster_domain to minikube default (cluster.local) in local development
 ifeq ($(CI_ENVIRONMENT_SLUG),)
+OSO_SERVICES_URL=http://`minikube ip`/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 K8S_CHART_PARAMS += \
   --set global.cluster_domain="cluster.local" \
   --set ska-db-oda-umbrella.vault.enabled=false
@@ -53,7 +56,8 @@ PYTHON_LINE_LENGTH = 88
 
 # Set the k8s test command run inside the testing pod to only run the component
 # tests (no k8s pod deployment required for unit tests)
-K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
+
+K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the component tests
 PYTHON_TEST_FILE = tests/unit/
