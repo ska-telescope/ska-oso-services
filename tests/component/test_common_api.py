@@ -9,7 +9,7 @@ from http import HTTPStatus
 
 import requests
 
-from . import OSO_SERVICES_URL
+from . import BASE_API_URL
 
 
 def test_coordinates_get():
@@ -18,7 +18,7 @@ def test_coordinates_get():
     and returns a success response with the resolved coordinates
     """
 
-    response = requests.get(f"{OSO_SERVICES_URL}/coordinates/N10/equatorial")
+    response = requests.get(f"{BASE_API_URL}/coordinates/N10/equatorial")
     expected_response = {
         "equatorial": {
             "dec": "-33:51:30.197",
