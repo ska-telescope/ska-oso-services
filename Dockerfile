@@ -33,7 +33,6 @@ ENV APP_USER="tango"
 ENV APP_DIR="/app"
 
 RUN adduser $APP_USER --disabled-password --home $APP_DIR
-RUN pip install poetry==1.8.3
 
 WORKDIR $APP_DIR
 
