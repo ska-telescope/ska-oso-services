@@ -23,6 +23,7 @@ COPY pyproject.toml poetry.lock ./
 RUN touch README.md
 # Install no-root here so we get a docker layer cached with dependencies
 # but not app code, to rebuild quickly.
+
 RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
 
 # The runtime image, used to just run the code provided its virtual environment
@@ -32,6 +33,7 @@ ENV APP_USER="tango"
 ENV APP_DIR="/app"
 
 RUN adduser $APP_USER --disabled-password --home $APP_DIR
+RUN pipx install poetry==1.8.3
 
 WORKDIR $APP_DIR
 
