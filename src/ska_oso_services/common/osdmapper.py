@@ -10,9 +10,6 @@ from ska_ost_osd.rest.api.resources import get_osd
 
 from ska_oso_services.common.model import AppModel
 
-# We currently only return frequency bands that do not depend on the array
-# assembly, so we just use AA0.5 as a constant. As the configuration API
-# expands we will need to return results for different assemblys.
 SUPPORTED_ARRAY_ASSEMBLIES = ["AA0.5", "AA1"]
 
 
@@ -75,6 +72,9 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
                 ],
             )
         )
+
+    # Receiver information is the same for each array assembly, as such we use the
+    # last fetched response to populate this information.
 
     receiver_information = mid_response["capabilities"]["mid"]["basic_capabilities"][
         "receiver_information"
