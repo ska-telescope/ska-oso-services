@@ -127,3 +127,6 @@ dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deplo
 # The docs build fails unless the ska-oso-services package is installed locally as importlib.metadata.version requires it.
 docs-pre-build:
 	poetry install --only-root
+
+k8s-pre-test:
+	@poetry export --format requirements.txt --output tests/requirements.txt --without-hashes --dev
