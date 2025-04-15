@@ -13,3 +13,12 @@ ska-db-oda-umbrella:
     skuid:
       enabled: true
 
+# The following values are used by the secret.yaml template
+vault:
+  enabled: true
+  mount: dev
+  secretPath: "stargazers/oso-services"
+  secretKeys:
+  - "AWS_SERVER_PUBLIC_KEY"
+  - "AWS_SERVER_SECRET_KEY"
+  - "SMTP_PASSWORD"
