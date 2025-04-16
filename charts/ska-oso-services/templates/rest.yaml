@@ -44,6 +44,32 @@ spec:
     app: {{ template "ska-oso-services.name" . }}
     component: {{ .Values.rest.component }}
 ---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  provider: {{ .Values.secretProvider.provider.name }}
+  parameters:
+    vaultAddress: {{ .Values.secretProvider.provider.vaultAddress }}
+    roleName: {{ .Values.secretProvider.provider.roleName }}
+    objects: |
+{{- range .Values.secretProvider.provider.secrets }}
+      - objectName: {{ .secretKey }}
+        secretPath: {{ $.Values.secretProvider.provider.secretsPath }}
+        secretKey: {{ .secretKey }}
+{{- end }}
+  secretObjects:
+    - secretName: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-bucket-credentials
+      type: Opaque
+      data:
+{{- range .Values.secretProvider.provider.secrets }}
+        - objectName: {{ .secretKey }}
+          key: {{ .secretKey }}
+{{- end }}
+{{- end }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -78,6 +104,31 @@ spec:
         envFrom:
           - configMapRef:
               name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
+        env:
+        {{- if .Values.secretProvider.enabled }}
+        {{- range .Values.secretProvider.provider.secrets }}
+          - name: {{ .targetEnv | default .secretKey }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "ska-oso-services.name" $ }}-{{ $.Values.rest.component }}-{{ $.Release.Name }}-bucket-credentials
+                key: {{ .secretKey }}
+          {{- end }}
+          {{- else }}
+          - name: AWS_PHT_BUCKET_NAME
+            value: "{{ .Values.global.env.aws_pht_bucket_name }}"
+          - name : AWS_SERVER_PUBLIC_KEY
+            value: "{{ .Values.global.env.aws_server_public_key }}"
+          - name: AWS_SERVER_SECRET_KEY
+            value: "{{ .Values.global.env.aws_server_secret_key }}"
+          - name: SMTP_PASSWORD
+            value: "{{ .Values.global.env.smtp_password }}"
+          {{- end }}
+        volumeMounts:
+          {{- if .Values.secretProvider.enabled }}
+          - name: secrets-store-inline
+            mountPath: "/mnt/secrets-store"
+            readOnly: true
+          {{- end }}
         ports:
           - containerPort: 5000
         resources:

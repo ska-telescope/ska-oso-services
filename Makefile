@@ -10,6 +10,11 @@ PROJECT_NAME = ska-oso-services
 KUBE_NAMESPACE ?= ska-oso-services
 RELEASE_NAME ?= test
 
+AWS_PHT_BUCKET_NAME ?=
+AWS_SERVER_PUBLIC_KEY ?=
+AWS_SERVER_SECRET_KEY ?=
+SMTP_PASSWORD ?=
+
 # Set sphinx documentation build to fail on warnings (as it is configured
 # in .readthedocs.yaml as well)
 DOCS_SPHINXOPTS ?= -W --keep-going

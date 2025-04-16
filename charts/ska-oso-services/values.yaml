@@ -50,3 +50,20 @@ nodeSelector: {}
 affinity: {}
 
 tolerations: []
+
+secretProvider:
+  enabled: true # for local dev mark false
+  provider:
+    name: "vault"
+    vaultAddress: "https://vault.skao.int"
+    roleName: "kube-role"
+    secretsPath: "kv/data/users/jackmktam/pht_s3_bucket"
+    secrets:
+    - secretKey: "aws_pht_bucket_name"
+      targetEnv: AWS_PHT_BUCKET_NAME
+    - secretKey: "aws_server_public_key"
+      targetEnv: AWS_SERVER_PUBLIC_KEY
+    - secretKey: "aws_server_secret_key"
+      targetEnv: AWS_SERVER_SECRET_KEY
+    - secretKey: "smtp_password"
+      targetEnv: SMTP_PASSWORD
