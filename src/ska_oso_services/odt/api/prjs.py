@@ -3,6 +3,10 @@ These functions map to the API paths, with the returned value being the API resp
 """
 
 import logging
+import os
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from smtplib import SMTP
 from typing import Optional
 
 from fastapi import APIRouter
@@ -19,6 +23,8 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.odt.api.sbds import _create_sbd_status_entity
+
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "SMTP_PASSWORD")
 
 LOGGER = logging.getLogger(__name__)
 
@@ -199,3 +205,33 @@ def _create_prj_status_entity(prj: Project) -> ProjectStatusHistory:
         current_status=ProjectStatus.READY,
         previous_status=ProjectStatus.READY,
     )
+
+@router.post("/send_email", summary="Send a confirmation email")
+def send_email(email: str, proposal_id: str) -> dict:
+    subject = f"Invitation to participate in SKAO proposal - {proposal_id}"
+    message = (
+        f"You have been invited to participate in the SKAO proposal with id {proposal_id}."
+        " Kindly click on attached link to accept or reject"
+    )
+
+    # SMTP configuration
+    smtp_server = "eu-smtp-outbound-1.mimecast.com"
+    smtp_port = 587
+    smtp_user = "proposal-preparation-tool@skao.int"
+    smtp_password = SMTP_PASSWORD
+
+    msg = MIMEMultipart()
+    msg["From"] = smtp_user
+    msg["To"] = email
+    msg["Subject"] = subject
+
+    msg.attach(MIMEText(message, "plain"))
+
+    # Connect to the SMTP server
+    server = SMTP(smtp_server, smtp_port)
+    server.starttls()  # Upgrade the connection to secure
+    server.login(smtp_user, smtp_password)
+    server.sendmail(smtp_user, email, msg.as_string())
+    server.quit()
+
+    return {"message": "Email sent successfully!"}
