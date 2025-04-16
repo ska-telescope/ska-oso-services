@@ -1,19 +1,10 @@
 global:
   cluster_domain: techops.internal.skao.int
 
-ska-oso-services:
-  rest:
-    oda:
-      backendType: postgres
-
 ska-db-oda-umbrella:
   enabled: true
   ska-db-oda:
-    enabled: true
-    secretProvider:
-      enabled: true
-    rest:
-      enabled: true # ska-oso-services doesn't need the rest server, however the way the secret provider is set up means it needs to be deployed.
+    enabled: false # ska-oso-services doesn't need the ODA rest server
   postgresql:
     enabled: true
   pgadmin4:
@@ -22,3 +13,12 @@ ska-db-oda-umbrella:
     skuid:
       enabled: true
 
+# The following values are used by the secret.yaml template
+vault:
+  enabled: true
+  mount: dev
+  secretPath: "stargazers/oso-services"
+  secretKeys:
+  - "AWS_SERVER_PUBLIC_KEY"
+  - "AWS_SERVER_SECRET_KEY"
+  - "SMTP_PASSWORD"
