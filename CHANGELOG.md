@@ -4,10 +4,8 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-0.7.0
+Unreleased
 **********
-* Added AA0.5 and AA1 subarray information /configuration endpoint response for both mid and low telescopes
-* Updated to OSD v3.1.1
 
 0.6.0
 **********

@@ -17,5 +17,3 @@ def test_configuration_get():
         min_frequency_hz=50e6, max_frequency_hz=350e6
     )
     assert len(response.ska_mid.frequency_band) == 6
-    assert len(response.ska_mid.subarrays) == 2
-    assert len(response.ska_low.subarrays) == 2
