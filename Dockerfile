@@ -5,8 +5,8 @@
 
 
 ## The builder image, used to build the virtual environment
-ARG BUILD_IMAGE="artefact.skao.int/ska-cicd-k8s-tools-build-deploy:0.12.0"
-ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-cicd-k8s-tools-build-deploy:0.12.0"
+ARG BUILD_IMAGE="artefact.skao.int/ska-build-python:0.1.3"
+ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-python:0.1.4"
 
 FROM $BUILD_IMAGE AS buildenv
 
@@ -23,6 +23,7 @@ COPY pyproject.toml poetry.lock ./
 RUN touch README.md
 # Install no-root here so we get a docker layer cached with dependencies
 # but not app code, to rebuild quickly.
+
 RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
 
 # The runtime image, used to just run the code provided its virtual environment
