@@ -9,7 +9,7 @@ Unreleased
 
 0.8.0
 **********
-* Update to ODA v7.4.0 and fastapi v0.115
+* Update to ODA v7.4.0 and fastapi v0.115.8
 
 0.7.0
 **********
