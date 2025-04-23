@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska-oso-services"
-version = "0.7.0"
+version = "0.8.0"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
 authors = ["Team Buttons"]
 license = "BSD-3-Clause"
@@ -49,10 +49,10 @@ python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
 # PDM dependency is pulled in via the ODA rather than being explicitly set here
 # If updating this, also remember to update the Helm dependency in the umbrella chart
-ska-db-oda = "^7.3.0"
+ska-db-oda = "^7.4.0"
 # ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
-pydantic = "^2.7"
-fastapi = "^0.111.0"
+pydantic = "^2.9"
+fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
 ska-ost-osd = "3.1.1"
 
