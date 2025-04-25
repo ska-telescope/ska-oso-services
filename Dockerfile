@@ -5,8 +5,8 @@
 
 
 ## The builder image, used to build the virtual environment
-ARG BUILD_IMAGE="artefact.skao.int/ska-cicd-k8s-tools-build-deploy:0.12.0"
-ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-cicd-k8s-tools-build-deploy:0.12.0"
+ARG BUILD_IMAGE="artefact.skao.int/ska-build-python:0.1.3"
+ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-python:0.1.4"
 
 FROM $BUILD_IMAGE AS buildenv
 
@@ -38,6 +38,10 @@ WORKDIR $APP_DIR
 
 # Used by the FilesystemRepository implementation of the ODA
 RUN mkdir -p /var/lib/oda && chown -R ${APP_USER} /var/lib/oda
+
+# Install git
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+    apt-get -y install --no-install-recommends git
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
