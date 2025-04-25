@@ -48,8 +48,7 @@ COPY --chown=$APP_USER:$APP_USER --from=buildenv ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=$APP_USER:$APP_USER . ./
 
 # Install git
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
-    apt-get -y install --no-install-recommends git \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get -y install --no-install-recommends git
 
 RUN python -m pip --require-virtualenv install --no-deps -e .
 
