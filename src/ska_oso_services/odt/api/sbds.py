@@ -8,11 +8,13 @@ import logging
 from http import HTTPStatus
 
 from fastapi import APIRouter, HTTPException
+from ska_aaa_authhelpers import Role
 from ska_oso_pdm import SBDStatusHistory
 from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
     UnprocessableEntityError,
@@ -28,6 +30,11 @@ router = APIRouter(prefix="/sbds")
 @router.get(
     "/create",
     summary="Create empty SBD",
+    dependencies=[
+        Permissions(
+            roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READ, Scope.ODT_READWRITE}
+        )
+    ],
 )
 def sbds_create() -> SBDefinition:
     """
@@ -41,6 +48,7 @@ def sbds_create() -> SBDefinition:
 @router.post(
     "/validate",
     summary="Validate an SBD",
+    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
 )
 def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
     """
@@ -53,7 +61,15 @@ def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
     return validation_resp
 
 
-@router.get("/{identifier}", summary="Get SBD by identifier")
+@router.get(
+    "/{identifier}",
+    summary="Get SBD by identifier",
+    dependencies=[
+        Permissions(
+            roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READ, Scope.ODT_READWRITE}
+        )
+    ],
+)
 def sbds_get(identifier: str) -> SBDefinition:
     """
     Retrieves the SchedulingBlockDefinition with the given identifier
@@ -68,6 +84,7 @@ def sbds_get(identifier: str) -> SBDefinition:
 @router.post(
     "/",
     summary="Create a new SBDefinition",
+    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
 )
 def sbds_post(sbd: SBDefinition) -> SBDefinition:
     """
@@ -114,6 +131,7 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
 @router.put(
     "/{identifier}",
     summary="Update an SBDefinition by identifier",
+    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
 )
 def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
     """
