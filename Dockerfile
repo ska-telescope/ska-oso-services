@@ -39,16 +39,16 @@ WORKDIR $APP_DIR
 # Used by the FilesystemRepository implementation of the ODA
 RUN mkdir -p /var/lib/oda && chown -R ${APP_USER} /var/lib/oda
 
+# GIT_PYTHON_REFRESH=quiet is required for now due to ska-telmodel
+# requiring git even when git functionality is not used (see SKB-891)
 ENV VIRTUAL_ENV=/app/.venv \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    GIT_PYTHON_REFRESH=quiet
 
 COPY --chown=$APP_USER:$APP_USER --from=buildenv ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Now we copy and install the application code:
 COPY --chown=$APP_USER:$APP_USER . ./
-
-# Install git
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get -y install --no-install-recommends git
 
 RUN python -m pip --require-virtualenv install --no-deps -e .
 
