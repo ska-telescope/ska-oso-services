@@ -57,12 +57,10 @@ Install the Helm umbrella chart into a Kubernetes cluster with ingress enabled:
 make k8s-install-chart
 ```
 
-The Swagger UI should be available external to the cluster at 
-`http://<KUBE_HOST>/<KUBE_NAMESPACE>/oso/api/v<MAJOR_VERSION>/ui/` and the API
-accesible via the same URL.
+The Swagger UI should be available external to the cluster at `http://<KUBE_HOST>/<KUBE_NAMESPACE>/oso/api/v0/ui/` and the API accessible via the same URL.
 
 If using minikube, `KUBE_HOST` can be found by running `minikube ip`. 
-`KUBE_NAMESPACE` is the namespace the chart was deployed to, likely `ska-db-oda`
+`KUBE_NAMESPACE` is the namespace the chart was deployed to, likely `ska-oso-services`
 
 To run the component tests in a k8s pod:
 
