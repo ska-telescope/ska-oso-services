@@ -1,0 +1,11 @@
+{
+	"result": false,
+	"validation_errors": [
+		"Target M28 has no valid sensitivity/integration time results or is not linked to an observation",
+		"Target M1 has no valid sensitivity/integration time results or is not linked to an observation",
+		"Observation Set mid-001 has no Targets linked in Results",
+		"Observation Set mid-002 has no Targets linked in Results",
+		"Observation Set low-001 has no Targets linked in Results",
+		"Observation Set low-002 has no Targets linked in Results"
+	]
+}
