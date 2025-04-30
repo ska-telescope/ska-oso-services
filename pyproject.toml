@@ -42,6 +42,11 @@ priority = "primary"
 #url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
 #priority = "explicit"
 
+[[tool.poetry.source]]
+name = "gitlab-ska-telmodel"
+url = "https://gitlab.com/api/v4/projects/19213064/packages/pypi/simple"
+priority = "explicit"
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -55,6 +60,7 @@ pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
 ska-ost-osd = "3.1.1"
+ska-telmodel = { version="1.20.1+dev.c081dfc23", source="gitlab-ska-telmodel" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
