@@ -2846,13 +2846,13 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-telmodel"
-version = "1.20.1+dev.c081dfc23"
+version = "1.20.1"
 description = "SKA telescope model library"
 optional = false
 python-versions = ">=3.10.0,<4.0.0"
 files = [
-    {file = "ska_telmodel-1.20.1+dev.c081dfc23-py3-none-any.whl", hash = "sha256:6424d65cf750c4fb31c84ddecbfcc90d082827e59d8a5957392e30c10a5ca3b6"},
-    {file = "ska_telmodel-1.20.1+dev.c081dfc23.tar.gz", hash = "sha256:ff888ede91a113dd9b42734552c53cd85bc762828ca112014777bc95f5e95397"},
+    {file = "ska_telmodel-1.20.1-py3-none-any.whl", hash = "sha256:8258d74d5c75e0fdaad8802d3ce44bb80329a0cb1af69ab6963664546698382a"},
+    {file = "ska_telmodel-1.20.1.tar.gz", hash = "sha256:72edc7b9bfc0834835531afbce265ddc3fbeb4610c82faf9007f0f1e583d8a50"},
 ]
 
 [package.dependencies]
@@ -2870,8 +2870,8 @@ toolz = ">=0.12.0,<0.13.0"
 
 [package.source]
 type = "legacy"
-url = "https://gitlab.com/api/v4/projects/19213064/packages/pypi/simple"
-reference = "gitlab-ska-telmodel"
+url = "https://artefact.skao.int/repository/pypi-internal/simple"
+reference = "ska-nexus"
 
 [[package]]
 name = "smmap"
@@ -3587,4 +3587,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "a7b54494add4da9447363eb0d9d5ea44ca522467315e370e373dee9dc6ea1ddd"
+content-hash = "f1b4a66128a62450937760f44e7a766880dfc7e05a929e32ab69452c911b9a7e"
