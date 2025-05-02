@@ -7,18 +7,16 @@ to a deployment of ska-oso-services in the same cluster
 
 from http import HTTPStatus
 
-import requests
-
 from . import BASE_API_URL
 
 
-def test_coordinates_get():
+def test_coordinates_get(authrequests):
     """
     Test that the GET /coordinates path receives the request
     and returns a success response with the resolved coordinates
     """
 
-    response = requests.get(f"{BASE_API_URL}/coordinates/N10/equatorial")
+    response = authrequests.get(f"{BASE_API_URL}/coordinates/N10/equatorial")
     expected_response = {
         "equatorial": {
             "dec": "-33:51:30.197",

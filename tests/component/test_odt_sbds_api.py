@@ -1,7 +1,7 @@
 """
 Component level tests for the /oda/sbds paths of ska-oso-services API.
 
-These will run from a test pod inside a kubernetes cluster, making requests
+These will run from a test pod inside a kubernetes cluster, making reqfuests
 to a deployment of ska-oso-services in the same cluster
 """
 
@@ -10,7 +10,6 @@ import json
 from http import HTTPStatus
 
 import pytest
-import requests
 
 from ..unit.util import (
     SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
@@ -21,25 +20,25 @@ from ..unit.util import (
 from . import ODT_URL
 
 
-def test_sbd_create():
+def test_sbd_create(authrequests):
     """
     Test that the GET /sbds/create path receives the request
     and returns a valid SBD
     """
 
-    response = requests.get(f"{ODT_URL}/sbds/create")
+    response = authrequests.get(f"{ODT_URL}/sbds/create")
     assert response.status_code == HTTPStatus.OK
 
     assert response.json()["interface"] == "https://schema.skao.int/ska-oso-pdm-sbd/0.1"
 
 
-def test_sbd_validate():
+def test_sbd_validate(authrequests):
     """
     Test that the POST /sbds/validate path receives the request
     and returns the correct response
     """
 
-    response = requests.post(
+    response = authrequests.post(
         f"{ODT_URL}/sbds/validate",
         data=VALID_MID_SBDEFINITION_JSON,
         headers={"Content-type": "application/json"},
@@ -51,12 +50,12 @@ def test_sbd_validate():
 
 
 @pytest.mark.xray("XTP-34548")
-def test_sbd_post_then_get():
+def test_sbd_post_then_get(authrequests):
     """
     Test that an entity POSTed to /sbds can then be retrieved
     with GET /sbds/{identifier}
     """
-    post_response = requests.post(
+    post_response = authrequests.post(
         f"{ODT_URL}/sbds",
         data=SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
         headers={"Content-type": "application/json"},
@@ -70,7 +69,7 @@ def test_sbd_post_then_get():
     )
 
     sbd_id = post_response.json()["sbd_id"]
-    get_response = requests.get(f"{ODT_URL}/sbds/{sbd_id}")
+    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
 
     # Assert the ODT can get the SBD, ignoring the metadata as it contains
     # timestamps and is the responsibility of the ODA
@@ -82,11 +81,11 @@ def test_sbd_post_then_get():
     )
 
 
-def test_sbd_post_then_put():
+def test_sbd_post_then_put(authrequests):
     """
     Test that an entity POSTed to /sbds can then be updated with PUT /sbds/{identifier}
     """
-    post_response = requests.post(
+    post_response = authrequests.post(
         f"{ODT_URL}/sbds",
         data=SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
         headers={"Content-type": "application/json"},
@@ -101,7 +100,7 @@ def test_sbd_post_then_put():
 
     sbd_id = post_response.json()["sbd_id"]
     sbd_to_update = TestDataFactory.sbdefinition(sbd_id=sbd_id).model_dump_json()
-    put_response = requests.put(
+    put_response = authrequests.put(
         f"{ODT_URL}/sbds/{sbd_id}",
         data=sbd_to_update,
         headers={"Content-type": "application/json"},
@@ -117,13 +116,13 @@ def test_sbd_post_then_put():
     assert put_response.json()["metadata"]["version"] == 2
 
 
-def test_sbd_get_not_found():
+def test_sbd_get_not_found(authrequests):
     """
     Test that the GET /sbds/{identifier} path returns
     404 when the SBD is not found in the ODA
     """
 
-    response = requests.get(f"{ODT_URL}/sbds/123")
+    response = authrequests.get(f"{ODT_URL}/sbds/123")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {
@@ -131,13 +130,13 @@ def test_sbd_get_not_found():
     }
 
 
-def test_sbd_put_not_found():
+def test_sbd_put_not_found(authrequests):
     """
     Test that the GET /sbds/{identifier} path returns
     404 when the SBD is not found in the ODA
     """
 
-    response = requests.get(f"{ODT_URL}/sbds/123")
+    response = authrequests.get(f"{ODT_URL}/sbds/123")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {
@@ -145,13 +144,13 @@ def test_sbd_put_not_found():
     }
 
 
-def test_sbd_put_validation_error():
+def test_sbd_put_validation_error(authrequests):
     """
     Test that the PUT /sbds/{identifier} path with an invalid SBDefinition
     returns a FastAPI generated validation error response
     """
 
-    response = requests.put(
+    response = authrequests.put(
         f"{ODT_URL}/sbds/sbd-mvp01-20200325-00001",
         data="""{"telescope": "not_a_telescope"}""",
         headers={"Content-type": "application/json"},
