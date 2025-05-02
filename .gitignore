@@ -35,6 +35,7 @@ MANIFEST.skao.int%
 **/pytest-logs.txt
 **/Chart.lock
 *.tgz
+**/requirements.txt
 
 PrivateRules.mak
 

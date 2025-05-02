@@ -4,6 +4,15 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+***********
+
+Update the docker base images (BTN-2661)
+
+0.8.0
+**********
+* Update to ODA v7.4.0 and fastapi v0.115.8
+
 0.7.0
 **********
 * Added AA0.5 and AA1 subarray information /configuration endpoint response for both mid and low telescopes
