@@ -206,11 +206,12 @@ def _create_prj_status_entity(prj: Project) -> ProjectStatusHistory:
         previous_status=ProjectStatus.READY,
     )
 
+
 @router.post("/send_email", summary="Send a confirmation email")
 def send_email(email: str, proposal_id: str) -> dict:
     subject = f"Invitation to participate in SKAO proposal - {proposal_id}"
     message = (
-        f"You have been invited to participate in the SKAO proposal with id {proposal_id}."
+        f"You have been invited to participate in the SKAO proposal with id {proposal_id}."  # noqa
         " Kindly click on attached link to accept or reject"
     )
 

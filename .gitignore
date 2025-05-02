@@ -41,3 +41,4 @@ PrivateRules.mak
 .venv
 .project
 .pydevproject
+lint.bat
