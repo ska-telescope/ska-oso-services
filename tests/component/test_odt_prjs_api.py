@@ -43,7 +43,7 @@ def test_empty_sbd_created_and_linked_to_project(authrequests):
     sbd_id = sbd_post_response.json()["sbd"]["sbd_id"]
     # Check the SBDefinition is linked to Project
     get_prj_response = authrequests.get(f"{ODT_URL}/prjs/{prj_id}")
-    assert get_prj_response.status_code == HTTPStatus.OK
+    assert get_prj_response.status_code == HTTPStatus.OK, get_prj_response.content
     assert get_prj_response.json()["obs_blocks"][0]["sbd_ids"][0] == sbd_id
 
 
@@ -69,12 +69,12 @@ def test_sbd_created_and_linked_to_project(authrequests):
         data=json.dumps({"telescope": "ska_mid"}),
         headers={"Content-type": "application/json"},
     )
-    assert sbd_post_response.status_code == HTTPStatus.OK
+    assert sbd_post_response.status_code == HTTPStatus.OK, sbd_post_response.content
     sbd_id = sbd_post_response.json()["sbd"]["sbd_id"]
 
     # Check the SBDefinition is linked to Project
     get_prj_response = authrequests.get(f"{ODT_URL}/prjs/{prj_id}")
-    assert get_prj_response.status_code == HTTPStatus.OK
+    assert get_prj_response.status_code == HTTPStatus.OK, get_prj_response.content
     assert get_prj_response.json()["obs_blocks"][0]["sbd_ids"][0] == sbd_id
 
 
@@ -89,7 +89,7 @@ def test_prj_post_then_get(authrequests):
         headers={"Content-type": "application/json"},
     )
 
-    assert post_response.status_code == HTTPStatus.OK
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
         VALID_PROJECT_WITHOUT_JSON,
@@ -101,7 +101,7 @@ def test_prj_post_then_get(authrequests):
 
     # Assert the ODT can get the Project, ignoring the metadata as it contains
     # timestamps and is the responsibility of the ODA
-    assert get_response.status_code == HTTPStatus.OK
+    assert get_response.status_code == HTTPStatus.OK, get_response.content
     assert_json_is_equal(
         get_response.content,
         VALID_PROJECT_WITHOUT_JSON,
@@ -120,7 +120,7 @@ def test_prj_post_then_put(authrequests):
         headers={"Content-type": "application/json"},
     )
 
-    assert post_response.status_code == HTTPStatus.OK
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
         VALID_PROJECT_WITHOUT_JSON,
@@ -136,7 +136,7 @@ def test_prj_post_then_put(authrequests):
     )
     # Assert the ODT can get the Project, ignoring the metadata as it contains
     # timestamps and is the responsibility of the ODA
-    assert put_response.status_code == HTTPStatus.OK
+    assert put_response.status_code == HTTPStatus.OK, put_response.content
     assert_json_is_equal(
         put_response.content,
         VALID_PROJECT_WITHOUT_JSON,
@@ -153,7 +153,7 @@ def test_prj_get_not_found(authrequests):
 
     response = authrequests.get(f"{ODT_URL}/prjs/123")
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.status_code == HTTPStatus.NOT_FOUND, response.content
     assert response.json() == {
         "detail": "The requested identifier 123 could not be found.",
     }
@@ -167,7 +167,7 @@ def test_prj_put_not_found(authrequests):
 
     response = authrequests.get(f"{ODT_URL}/prjs/123")
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.status_code == HTTPStatus.NOT_FOUND, response.content
     assert response.json() == {
         "detail": "The requested identifier 123 could not be found.",
     }
