@@ -8,6 +8,7 @@ from importlib.metadata import version
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from ska_db_oda.persistence.domain.errors import ODAError, ODANotFound
 from ska_ser_logging import configure_logging
 
 from ska_oso_services import odt
@@ -17,7 +18,6 @@ from ska_oso_services.common.error_handling import (
     oda_error_handler,
     oda_not_found_handler,
 )
-from ska_db_oda.persistence.domain.errors import ODANotFound, ODAError
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
@@ -65,4 +65,5 @@ oda.init_app(main)
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(main, host="localhost", port=8000)
