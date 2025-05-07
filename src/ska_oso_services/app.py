@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ska_db_oda.persistence.domain.errors import ODAError, ODANotFound
 from ska_ser_logging import configure_logging
 
-from ska_oso_services import odt
+from ska_oso_services import odt, pht
 from ska_oso_services.common import api, oda
 from ska_oso_services.common.error_handling import (
     dangerous_internal_server_handler,
@@ -51,7 +51,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
     # Assemble the constituent APIs:
     app.include_router(api.common_router, prefix=API_PREFIX)
     app.include_router(odt.router, prefix=API_PREFIX)
-    # app.include_router(pht.router)...
+    app.include_router(pht.router, prefix=API_PREFIX)
     app.exception_handler(ODANotFound)(oda_not_found_handler)
     app.exception_handler(ODAError)(oda_error_handler)
 
@@ -62,3 +62,6 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 main = create_app()
 oda.init_app(main)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app:main", host="127.0.0.1", port=8000, reload=True)

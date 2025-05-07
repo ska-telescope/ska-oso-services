@@ -2705,6 +2705,7 @@ name = "ska-db-oda"
 version = "7.4.0"
 description = "SKA Database OSO Data Archive"
 optional = false
+<<<<<<< Updated upstream
 python-versions = ">=3.10,<4.0"
 files = [
     {file = "ska_db_oda-7.4.0-py3-none-any.whl", hash = "sha256:49075cc1be66dc681cecc58d805940bb591974a5c1e882352ca760f79acf52ec"},
@@ -2722,21 +2723,40 @@ requests = ">=2.27.1,<3.0.0"
 ska-oso-pdm = ">=17.2.0,<18.0.0"
 ska-ser-logging = ">=0.4.1,<0.5.0"
 ska-ser-skuid = ">=3.3.3,<4.0.0"
+=======
+python-versions = "^3.10"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+fastapi = {version = "^0.115.8", extras = ["standard"]}
+fire = "^0.5.0"
+psycopg = {version = "^3.0.15", extras = ["binary"]}
+psycopg-pool = "^3.1.1"
+pydantic = "^2.9"
+python-dateutil = "^2.8.2"
+requests = "^2.27.1"
+ska-oso-pdm = "^18.0.0"
+ska-ser-logging = "^0.4.1"
+ska-ser-skuid = "^3.3.3"
+>>>>>>> Stashed changes
 
 [package.source]
-type = "legacy"
-url = "https://artefact.skao.int/repository/pypi-internal/simple"
-reference = "ska-nexus"
+type = "git"
+url = "https://oauth2:glpat-neQV5MsnNDiqcuf8ccKa@gitlab.com/ska-telescope/db/ska-db-oda.git"
+reference = "star-1264-2"
+resolved_reference = "355a7c05fe99f4a929549b71df50abb5bbe74989"
 
 [[package]]
 name = "ska-oso-pdm"
-version = "17.2.0"
+version = "18.0.0"
 description = "SKA Project Data Model serialisation library"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "ska_oso_pdm-17.2.0-py3-none-any.whl", hash = "sha256:d11e25b80a0db252e2b80debeb26196e1410def4c997e4490dcf40ee72b856b5"},
-    {file = "ska_oso_pdm-17.2.0.tar.gz", hash = "sha256:f52d14ba73ba92605f8c4d4aeeb3aab6d85a12d0b0f061b5d5314200ceda0761"},
+    {file = "ska_oso_pdm-18.0.0-py3-none-any.whl", hash = "sha256:82715c6b3711be3bae09e01043e5105166fa33ff1062d9e5df5f58202ccf8b50"},
+    {file = "ska_oso_pdm-18.0.0.tar.gz", hash = "sha256:8cb2fb787cf10f26f753d494400e73bca6e9d666d91cc1b3fa934f847ef68e02"},
 ]
 
 [package.dependencies]
@@ -3111,6 +3131,10 @@ version = "0.46.2"
 description = "The little ASGI library that shines."
 optional = false
 python-versions = ">=3.9"
+<<<<<<< Updated upstream
+=======
+groups = ["main"]
+>>>>>>> Stashed changes
 files = [
     {file = "starlette-0.46.2-py3-none-any.whl", hash = "sha256:595633ce89f8ffa71a015caed34a5b2dc1c0cdb3f0f1fbd1e69339cf2abeec35"},
     {file = "starlette-0.46.2.tar.gz", hash = "sha256:7f7361f34eed179294600af672f565727419830b54b7b084efe44bb82d2fccd5"},
@@ -3582,4 +3606,8 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
+<<<<<<< Updated upstream
 content-hash = "bb350892617faed041060edab1e9cd1011728b1d7eb1e2819aac63593741cc77"
+=======
+content-hash = "bd992b68e0cbe4774058fe08fc2e6b1f94b24dc2491034cd2d0b317c15609738"
+>>>>>>> Stashed changes
