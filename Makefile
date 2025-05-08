@@ -3,12 +3,18 @@
 # the Docker tag for this project. The definition below inherits the standard
 # value for CAR_OCI_REGISTRY_HOST (=artefact.skao.int) and overwrites
 # PROJECT_NAME to give a final Docker tag of artefact.skao.int/ska-oso-services
-#
+
 CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-services
 KUBE_NAMESPACE ?= ska-oso-services
 RELEASE_NAME ?= test
+MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
+OSO_SERVICES_URL ?= http://ska-oso-services-rest-test:5000/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
+
+SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.13.6
+K8S_TEST_IMAGE_TO_TEST=$(SKA_K8S_TOOLS_BUILD_DEPLOY)
+
 PIPELINE_TEST_DEPLOYMENT ?= false
 
 
@@ -26,6 +32,7 @@ K8S_CHART_PARAMS += \
 # CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline, so these variables are set for a local deployment
 # Set cluster_domain to minikube default (cluster.local) in local development
 ifeq ($(CI_ENVIRONMENT_SLUG),)
+OSO_SERVICES_URL=http://`minikube ip`/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 K8S_CHART_PARAMS += \
   --set global.cluster_domain="cluster.local" \
   --set ska-db-oda-umbrella.vault.enabled=false
@@ -56,7 +63,8 @@ PYTHON_LINE_LENGTH = 88
 
 # Set the k8s test command run inside the testing pod to only run the component
 # tests (no k8s pod deployment required for unit tests)
-K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
+
+K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the component tests
 PYTHON_TEST_FILE = tests/unit/
@@ -124,3 +132,6 @@ dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deplo
 # The docs build fails unless the ska-oso-services package is installed locally as importlib.metadata.version requires it.
 docs-pre-build:
 	poetry install --only-root
+
+k8s-pre-test:
+	@poetry export --format requirements.txt --output tests/requirements.txt --without-hashes --dev

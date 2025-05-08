@@ -5,8 +5,8 @@
 
 
 ## The builder image, used to build the virtual environment
-ARG BUILD_IMAGE="artefact.skao.int/ska-cicd-k8s-tools-build-deploy:0.12.0"
-ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-cicd-k8s-tools-build-deploy:0.12.0"
+ARG BUILD_IMAGE="artefact.skao.int/ska-build-python:0.1.3"
+ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-python:0.1.4"
 
 FROM $BUILD_IMAGE AS buildenv
 
@@ -23,6 +23,7 @@ COPY pyproject.toml poetry.lock ./
 RUN touch README.md
 # Install no-root here so we get a docker layer cached with dependencies
 # but not app code, to rebuild quickly.
+
 RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
 
 # The runtime image, used to just run the code provided its virtual environment
@@ -38,8 +39,11 @@ WORKDIR $APP_DIR
 # Used by the FilesystemRepository implementation of the ODA
 RUN mkdir -p /var/lib/oda && chown -R ${APP_USER} /var/lib/oda
 
+# GIT_PYTHON_REFRESH=quiet is required for now due to ska-telmodel
+# requiring git even when git functionality is not used (see SKB-891)
 ENV VIRTUAL_ENV=/app/.venv \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    GIT_PYTHON_REFRESH=quiet
 
 COPY --chown=$APP_USER:$APP_USER --from=buildenv ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 

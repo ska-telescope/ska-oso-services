@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 
+Update the docker base images (BTN-2661)
+
 0.8.0
 **********
 * Update to ODA v7.4.0 and fastapi v0.115.8
