@@ -7,6 +7,7 @@ to a deployment of ska-oso-services in the same cluster
 
 # pylint: disable=missing-timeout
 import json
+from http import HTTPStatus
 
 import requests
 from ska_oso_pdm.proposal import Proposal
@@ -34,9 +35,8 @@ def test_create_proposal():
         json=proposal_payload,
         headers={"Content-Type": "application/json"},
     )
-
     assert (
-        response.status_code == 200
+        response.status_code == HTTPStatus.OK
     ), f"Failed with status {response.status_code}: {response.text}"
     result = response.json()
     assert isinstance(result, str), f"Expected string, got {type(result)}: {result}"
