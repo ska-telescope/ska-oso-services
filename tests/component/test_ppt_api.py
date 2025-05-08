@@ -1,0 +1,45 @@
+"""
+Component level tests for the /oda/sbds paths of ska-oso-services API.
+
+These will run from a test pod inside a kubernetes cluster, making requests
+to a deployment of ska-oso-services in the same cluster
+"""
+
+# pylint: disable=missing-timeout
+import json
+
+import requests
+from ska_oso_pdm.proposal import Proposal
+
+from ..unit.util import load_string_from_file
+from . import PHT_URL
+
+
+def test_create_proposal_integration():
+    """
+    Integration test for the POST /proposal/create endpoint.
+    Assumes the server is running and accessible.
+    """
+
+    # Parse JSON into Proposal model
+    prsl = Proposal.model_validate_json(
+        load_string_from_file("../unit/files/create_proposal.json")
+    )
+
+    # Convert back to JSON dict for POST request
+    proposal_payload = json.loads(prsl.model_dump_json())
+
+    response = requests.post(
+        f"{PHT_URL}/proposal/create",
+        json=proposal_payload,
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert (
+        response.status_code == 200
+    ), f"Failed with status {response.status_code}: {response.text}"
+
+    # Optional: check the response is a string proposal ID
+    result = response.text.strip('"')
+    assert result.isalnum(), f"Unexpected ID format: {result}"
+    assert len(result) >= 6, "Proposal ID is suspiciously short"

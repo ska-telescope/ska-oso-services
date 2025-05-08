@@ -18,10 +18,9 @@ def create_proposal(proposal: Proposal) -> str:
     """
     LOGGER.debug("POST PROPOSAL create")
 
-    prsl = Proposal.model_validate(proposal)
     try:
         with oda.uow() as uow:
-            created_prsl = uow.prsls.add(prsl)
+            created_prsl = uow.prsls.add(proposal)
             uow.commit()
         LOGGER.info("Proposal successfully created with ID {created_prsl.prsl_id}")
         return created_prsl.prsl_id
