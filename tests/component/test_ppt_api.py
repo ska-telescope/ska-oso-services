@@ -38,3 +38,5 @@ def test_create_proposal():
     assert (
         response.status_code == 200
     ), f"Failed with status {response.status_code}: {response.text}"
+    result = response.json() 
+    assert isinstance(result, str), f"Expected string, got {type(result)}: {result}"
