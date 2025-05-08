@@ -1,5 +1,5 @@
 {
-    "prsl_id": None,
+    "prsl_id": "klk f",
     "status": "draft",
     "investigator_refs": [
       "TestUser"
@@ -11,6 +11,6 @@
       "proposal_type": {
         "main_type": "standard_proposal",
         "attributes": ["coordinated_proposal"]
-      },
+      }
     }
 }
