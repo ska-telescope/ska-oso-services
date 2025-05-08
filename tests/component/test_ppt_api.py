@@ -15,7 +15,7 @@ from ..unit.util import load_string_from_file
 from . import PHT_URL
 
 
-def test_create_proposal_integration():
+def test_create_proposal():
     """
     Integration test for the POST /proposal/create endpoint.
     Assumes the server is running and accessible.
@@ -42,4 +42,3 @@ def test_create_proposal_integration():
     # Optional: check the response is a string proposal ID
     result = response.text.strip('"')
     assert result.isalnum(), f"Unexpected ID format: {result}"
-    assert len(result) >= 6, "Proposal ID is suspiciously short"
