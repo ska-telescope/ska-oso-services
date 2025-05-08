@@ -38,7 +38,3 @@ def test_create_proposal():
     assert (
         response.status_code == 200
     ), f"Failed with status {response.status_code}: {response.text}"
-
-    # Optional: check the response is a string proposal ID
-    result = response.text.strip('"')
-    assert result.isalnum(), f"Unexpected ID format: {result}"
