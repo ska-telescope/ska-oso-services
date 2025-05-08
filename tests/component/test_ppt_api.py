@@ -31,7 +31,7 @@ def test_create_proposal():
     proposal_payload = json.loads(prsl.model_dump_json())
 
     response = requests.post(
-        f"{PHT_URL}/proposal/create",
+        f"{PHT_URL}/proposals/create",
         json=proposal_payload,
         headers={"Content-Type": "application/json"},
     )

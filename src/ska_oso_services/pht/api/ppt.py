@@ -4,11 +4,11 @@ from fastapi import APIRouter
 from ska_oso_pdm.proposal import Proposal
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.error_handling import BadRequestError
+from ska_oso_services.common.error_handling import BadRequestError, NotFoundError
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/proposal")
+router = APIRouter(prefix="/proposals")
 
 
 @router.post("/create", summary="Create a new proposal")
@@ -29,3 +29,20 @@ def create_proposal(proposal: Proposal) -> str:
         raise BadRequestError(
             detail=f"Failed when attempting to create a proposal: '{err.args[0]}'",
         ) from err
+
+
+@router.get("/{proposal_id}", summary="Get the existing proposal")
+def get_proposal(proposal_id: str) -> Proposal:
+
+    LOGGER.debug(f"GET PROPOSAL prsl_id: {proposal_id}", proposal_id)
+
+    try:
+        with oda.uow() as uow:
+            proposal = uow.prsls.get(proposal_id)
+            LOGGER.info(f"Proposal retrieved successfully: {proposal_id}")
+            return proposal
+
+    except KeyError as err:
+        LOGGER.warning(f"Proposal not found: {proposal_id}")
+        raise NotFoundError(f"Could not find proposal: {proposal_id}") from err
+
