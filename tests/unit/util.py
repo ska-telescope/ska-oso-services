@@ -106,7 +106,6 @@ class TestDataFactory:
     ) -> Proposal:
         """
         Load a valid Proposal object from file and override prsl_id,
-        or return invalid proposal dict if as_invalid is True.
         """
 
         proposal = Proposal.model_validate_json(
