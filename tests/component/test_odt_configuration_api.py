@@ -16,5 +16,5 @@ def test_configuration_get(authrequests):
     and returns a success response
     """
 
-    response = authrequests.get(f"{ODT_URL}/sbds/create")
+    response = authrequests.get(f"{ODT_URL}/configuration")
     assert response.status_code == HTTPStatus.OK, response.json()

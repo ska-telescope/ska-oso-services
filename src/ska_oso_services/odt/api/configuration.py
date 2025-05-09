@@ -15,7 +15,7 @@ router = APIRouter()
     "/configuration",
     summary="Get static configuration data used by the ODT UI "
     "that is sourced from the OSD.",
-    dependencies=[Permissions(roles={Role.ANY}, scopes={Scope})],
+    dependencies=[Permissions(roles={Role.ANY}, scopes=Scope)],
 )
 def configuration_get() -> Configuration:
     LOGGER.debug("GET /configuration")
