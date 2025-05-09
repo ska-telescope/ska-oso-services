@@ -1,14 +1,16 @@
+from os import getenv
+
 import pytest
 from requests import Session
 from ska_aaa_authhelpers.test_helpers import mint_test_token
 
-from ska_oso_services.common.auth import AUDIENCE, Scope
+AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
 
 
 @pytest.fixture(scope="session")
 def authrequests():
     req = Session()
-    token = mint_test_token(audience=AUDIENCE, scopes={Scope.ODT_READWRITE})
+    token = mint_test_token(audience=AUDIENCE, scopes={"odt:readwrite"})
     req.headers.update({"Authorization": f"Bearer {token}"})
     return req
 
