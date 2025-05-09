@@ -34,15 +34,14 @@ def create_proposal(proposal: Proposal) -> str:
 @router.get("/{proposal_id}", summary="Get the existing proposal")
 def get_proposal(proposal_id: str) -> Proposal:
 
-    LOGGER.debug(f"GET PROPOSAL prsl_id: {proposal_id}", proposal_id)
+    LOGGER.debug("GET PROPOSAL prsl_id: %s", proposal_id)
 
     try:
         with oda.uow() as uow:
             proposal = uow.prsls.get(proposal_id)
-            LOGGER.info(f"Proposal retrieved successfully: {proposal_id}")
-            return proposal
+        LOGGER.info("Proposal retrieved successfully: %s", proposal_id)
+        return proposal
 
     except KeyError as err:
-        LOGGER.warning(f"Proposal not found: {proposal_id}")
+        LOGGER.warning("Proposal not found: %s", proposal_id)
         raise NotFoundError(f"Could not find proposal: {proposal_id}") from err
-
