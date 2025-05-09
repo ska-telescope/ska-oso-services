@@ -24,9 +24,9 @@ from ska_oso_services.common.error_handling import (
 )
 from ska_oso_services.odt.api.sbds import _create_sbd_status_entity
 
-SMTP_PASSWORD = os.environ["SMTP_PASSWORD"]
-AWS_SERVER_PUBLIC_KEY = os.environ["AWS_SERVER_PUBLIC_KEY"]
-AWS_SERVER_SECRET_KEY = os.environ["AWS_SERVER_SECRET_KEY"]
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "NOT_PROVIDED")
+AWS_SERVER_PUBLIC_KEY = os.getenv("AWS_SERVER_PUBLIC_KEY", "NOT_PROVIDED")
+AWS_SERVER_SECRET_KEY = os.getenv("AWS_SERVER_SECRET_KEY", "NOT_PROVIDED")
 
 LOGGER = logging.getLogger(__name__)
 
@@ -209,36 +209,6 @@ def _create_prj_status_entity(prj: Project) -> ProjectStatusHistory:
     )
 
 
-@router.post("/send_email", summary="Send a confirmation email")
-def send_email(email: str, proposal_id: str) -> dict:
-    subject = f"Invitation to participate in SKAO proposal - {proposal_id}"
-    message = (
-        f"You have been invited to participate in the SKAO proposal with id {proposal_id}."  # noqa
-        " Kindly click on attached link to accept or reject"
-    )
-
-    # SMTP configuration
-    smtp_server = "eu-smtp-outbound-1.mimecast.com"
-    smtp_port = 587
-    smtp_user = "proposal-preparation-tool@skao.int"
-    smtp_password = SMTP_PASSWORD
-
-    msg = MIMEMultipart()
-    msg["From"] = smtp_user
-    msg["To"] = email
-    msg["Subject"] = subject
-
-    msg.attach(MIMEText(message, "plain"))
-
-    # Connect to the SMTP server
-    server = SMTP(smtp_server, smtp_port)
-    server.starttls()  # Upgrade the connection to secure
-    server.login(smtp_user, smtp_password)
-    server.sendmail(smtp_user, email, msg.as_string())
-    server.quit()
-
-    return {"message": "Email sent successfully!"}
-
-@router.get("/get_keys", summary="get keys")
-def get_keys():
-    return AWS_SERVER_PUBLIC_KEY, AWS_SERVER_SECRET_KEY
+@router.get("/get_secrets", summary="get secrets")
+def get_secrets():
+    return SMTP_PASSWORD, AWS_SERVER_PUBLIC_KEY, AWS_SERVER_SECRET_KEY
