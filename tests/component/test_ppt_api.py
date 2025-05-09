@@ -14,9 +14,11 @@ import requests
 from ..unit.util import VALID_NEW_PROPOSAL
 from . import PPT_URL
 
+
 def test_create_and_get_proposal():
     """
-    Integration test for the POST /proposal/create endpoint and GET /proposals/{prsl_id}.
+    Integration test for the POST /proposal/create endpoint
+    and GET /proposals/{prsl_id}.
     Assumes the server is running and accessible.
     """
 

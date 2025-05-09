@@ -62,4 +62,3 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 main = create_app()
 oda.init_app(main)
-
