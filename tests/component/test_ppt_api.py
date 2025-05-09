@@ -16,7 +16,6 @@ from ska_oso_pdm.proposal import Proposal
 
 from ..unit.util import (
     VALID_NEW_PROPOSAL,
-    VALID_NEW_PROPOSAL_NO_METADATA,
     TestDataFactory,
     assert_json_is_equal,
 )
