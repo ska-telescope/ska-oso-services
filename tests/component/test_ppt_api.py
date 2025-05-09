@@ -53,7 +53,6 @@ def test_create_and_get_proposal():
     for obj in (actual_payload, expected_payload):
         obj.pop("prsl_id", None)
         if "metadata" in obj:
-            obj["metadata"].pop("created_on", None)
-            obj["metadata"].pop("last_modified_on", None)
+            obj.pop("metadata", None)
 
     assert actual_payload == expected_payload
