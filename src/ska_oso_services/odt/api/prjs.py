@@ -24,7 +24,9 @@ from ska_oso_services.common.error_handling import (
 )
 from ska_oso_services.odt.api.sbds import _create_sbd_status_entity
 
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "SMTP_PASSWORD")
+SMTP_PASSWORD = os.environ["SMTP_PASSWORD"]
+AWS_SERVER_PUBLIC_KEY = os.environ["AWS_SERVER_PUBLIC_KEY"]
+AWS_SERVER_SECRET_KEY = os.environ["AWS_SERVER_SECRET_KEY"]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -236,3 +238,7 @@ def send_email(email: str, proposal_id: str) -> dict:
     server.quit()
 
     return {"message": "Email sent successfully!"}
+
+@router.get("/get_keys", summary="get keys")
+def get_keys():
+    return AWS_SERVER_PUBLIC_KEY, AWS_SERVER_SECRET_KEY
