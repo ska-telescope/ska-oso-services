@@ -1,5 +1,5 @@
 """
-Component level tests for the /oda/sbds paths of ska-oso-services API.
+Component level tests for the /oda/proposals paths of ska-oso-services API.
 
 These will run from a test pod inside a kubernetes cluster, making requests
 to a deployment of ska-oso-services in the same cluster
@@ -10,12 +10,9 @@ import json
 from http import HTTPStatus
 
 import requests
-from ska_oso_pdm.proposal import Proposal
 
-from ..unit.util import VALID_NEW_PROPOSAL, TestDataFactory, assert_json_is_equal
+from ..unit.util import VALID_NEW_PROPOSAL
 from . import PHT_URL
-
-# from ..unit.util import load_string_from_file
 
 
 def test_create_and_get_proposal():
@@ -31,10 +28,8 @@ def test_create_and_get_proposal():
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
-    result = post_response.json()
-    assert isinstance(result, str), f"Expected string, got {type(result)}: {result}"
-
-    prsl_id = result
+    prsl_id = post_response.json()
+    assert isinstance(prsl_id, str), f"Expected string, got {type(prsl_id)}: {prsl_id}"
 
     # GET created proposal
     get_response = requests.get(f"{PHT_URL}/proposals/{prsl_id}")
@@ -46,7 +41,6 @@ def test_create_and_get_proposal():
 
     # Strip dynamic fields
     for obj in (actual_payload, expected_payload):
-        obj.pop("prsl_id", None)
         if "metadata" in obj:
             obj.pop("metadata", None)
 
