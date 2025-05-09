@@ -10,10 +10,11 @@ import json
 from http import HTTPStatus
 
 import requests
+from ska_oso_pdm.proposal import Proposal
 
 from ..unit.util import VALID_NEW_PROPOSAL
-from . import PHT_URL
-
+from . import PPT_URL
+#PHT_URL = 'http://192.168.49.2/ska-oso-services/oso/api/v0'
 
 def test_create_and_get_proposal():
     """
@@ -23,7 +24,7 @@ def test_create_and_get_proposal():
 
     # POST using JSON string
     post_response = requests.post(
-        f"{PHT_URL}/proposals/create",
+        f"{PPT_URL}/proposals/create",
         data=VALID_NEW_PROPOSAL,
         headers={"Content-Type": "application/json"},
     )
@@ -32,7 +33,7 @@ def test_create_and_get_proposal():
     assert isinstance(prsl_id, str), f"Expected string, got {type(prsl_id)}: {prsl_id}"
 
     # GET created proposal
-    get_response = requests.get(f"{PHT_URL}/proposals/{prsl_id}")
+    get_response = requests.get(f"{PPT_URL}/proposals/{prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     actual_payload = get_response.json()
 
@@ -41,6 +42,7 @@ def test_create_and_get_proposal():
 
     # Strip dynamic fields
     for obj in (actual_payload, expected_payload):
+        obj.pop("prsl_id", None)
         if "metadata" in obj:
             obj.pop("metadata", None)
 
