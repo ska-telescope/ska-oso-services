@@ -1,13 +1,6 @@
 {
     "prsl_id": "prp-001",
     "status": "draft",
-    "metadata": {
-    "version": 1,
-    "created_by": "DefaultUser",
-    "created_on": "2022-03-28T15:43:53.971548+00:00",
-    "last_modified_on": "2022-03-28T15:43:53.971548+00:00",
-    "last_modified_by": "DefaultUser"
-  },
     "investigator_refs": [
       "TestUser"
     ],

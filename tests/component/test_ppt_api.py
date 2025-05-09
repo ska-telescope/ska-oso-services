@@ -29,25 +29,27 @@ def test_create_and_get_proposal():
     Assumes the server is running and accessible.
     """
 
+    # POST using JSON string
     post_response = requests.post(
         f"{PHT_URL}/proposals/create",
-        json=VALID_NEW_PROPOSAL,
+        data=VALID_NEW_PROPOSAL,  
         headers={"Content-Type": "application/json"},
     )
-    assert (
-        post_response.status_code == HTTPStatus.OK
-    ), f"Failed with status {post_response.status_code}: {post_response.text}"
+    assert post_response.status_code == HTTPStatus.OK, post_response.text
     result = post_response.json()
     assert isinstance(result, str), f"Expected string, got {type(result)}: {result}"
 
-    prsl_id = post_response.json()["proposal_id"]
-    get_response = requests.get(f"{PHT_URL}/proposals/{prsl_id}")
+    prsl_id = result  
 
-    # Assert the PPT can get the proposal, ignoring the metadata as it contains
-    # timestamps and is the responsibility of the ODA
+    # GET created proposal
+    get_response = requests.get(f"{PHT_URL}/proposals/{prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     actual_payload = get_response.json()
-    expected_payload = VALID_NEW_PROPOSAL
+
+    # Prepare expected payload from input
+    expected_payload = json.loads(VALID_NEW_PROPOSAL)  
+
+    # Strip dynamic fields
     for obj in (actual_payload, expected_payload):
         obj.pop("prsl_id", None)
         if "metadata" in obj:
