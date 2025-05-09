@@ -4,9 +4,6 @@ These functions map to the API paths, with the returned value being the API resp
 
 import logging
 import os
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from smtplib import SMTP
 from typing import Optional
 
 from fastapi import APIRouter
