@@ -12,15 +12,10 @@ from http import HTTPStatus
 import requests
 from ska_oso_pdm.proposal import Proposal
 
-# from ..unit.util import load_string_from_file
-
-from ..unit.util import (
-    VALID_NEW_PROPOSAL,
-    TestDataFactory,
-    assert_json_is_equal,
-)
-
+from ..unit.util import VALID_NEW_PROPOSAL, TestDataFactory, assert_json_is_equal
 from . import PHT_URL
+
+# from ..unit.util import load_string_from_file
 
 
 def test_create_and_get_proposal():
@@ -32,14 +27,14 @@ def test_create_and_get_proposal():
     # POST using JSON string
     post_response = requests.post(
         f"{PHT_URL}/proposals/create",
-        data=VALID_NEW_PROPOSAL,  
+        data=VALID_NEW_PROPOSAL,
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     result = post_response.json()
     assert isinstance(result, str), f"Expected string, got {type(result)}: {result}"
 
-    prsl_id = result  
+    prsl_id = result
 
     # GET created proposal
     get_response = requests.get(f"{PHT_URL}/proposals/{prsl_id}")
@@ -47,7 +42,7 @@ def test_create_and_get_proposal():
     actual_payload = get_response.json()
 
     # Prepare expected payload from input
-    expected_payload = json.loads(VALID_NEW_PROPOSAL)  
+    expected_payload = json.loads(VALID_NEW_PROPOSAL)
 
     # Strip dynamic fields
     for obj in (actual_payload, expected_payload):

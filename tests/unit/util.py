@@ -103,7 +103,6 @@ class TestDataFactory:
     @staticmethod
     def proposal(
         prsl_id: str = "prsl-mvp01-20220923-00001",
-        
     ) -> Proposal:
         """
         Load a valid Proposal object from file and override prsl_id,
