@@ -3,7 +3,6 @@ These functions map to the API paths, with the returned value being the API resp
 """
 
 import logging
-import os
 from typing import Optional
 
 from fastapi import APIRouter
@@ -20,10 +19,6 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.odt.api.sbds import _create_sbd_status_entity
-
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "NOT_PROVIDED")
-AWS_SERVER_PUBLIC_KEY = os.getenv("AWS_SERVER_PUBLIC_KEY", "NOT_PROVIDED")
-AWS_SERVER_SECRET_KEY = os.getenv("AWS_SERVER_SECRET_KEY", "NOT_PROVIDED")
 
 LOGGER = logging.getLogger(__name__)
 
@@ -204,8 +199,3 @@ def _create_prj_status_entity(prj: Project) -> ProjectStatusHistory:
         current_status=ProjectStatus.READY,
         previous_status=ProjectStatus.READY,
     )
-
-
-@router.get("/get_secrets", summary="get secrets")
-def get_secrets():
-    return SMTP_PASSWORD, AWS_SERVER_PUBLIC_KEY, AWS_SERVER_SECRET_KEY
