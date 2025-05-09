@@ -10,11 +10,10 @@ import json
 from http import HTTPStatus
 
 import requests
-from ska_oso_pdm.proposal import Proposal
 
 from ..unit.util import VALID_NEW_PROPOSAL
 from . import PPT_URL
-#PHT_URL = 'http://192.168.49.2/ska-oso-services/oso/api/v0'
+
 
 def test_create_and_get_proposal():
     """
