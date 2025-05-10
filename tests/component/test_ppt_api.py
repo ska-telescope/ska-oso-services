@@ -71,7 +71,7 @@ def test_proposal_create_then_put():
 
     # Generate and override proposal for PUT
     proposal = TestDataFactory.proposal(prsl_id=returned_prsl_id)
-    proposal.metadata["version"] = 1  # Force version to 1 before PUT
+    proposal.metadata.version = 1  # Force version to 1 before PUT
     proposal_to_update = proposal.model_dump_json()
 
     # PUT updated proposal
