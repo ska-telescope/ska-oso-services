@@ -101,7 +101,7 @@ class TestDataFactory:
         return prj
 
     @staticmethod
-    def proposal(prsl_id: str = "prsl-mvp01-20220923-00001", version=1) -> Proposal:
+    def proposal(prsl_id: str = "prsl-mvp01-20220923-00001") -> Proposal:
         """
         Load a valid Proposal object from file and override prsl_id,
         """
@@ -110,7 +110,6 @@ class TestDataFactory:
             load_string_from_file("files/create_proposal.json")
         )
         proposal.prsl_id = prsl_id
-        proposal.metadata.version = version
 
         return proposal
 
