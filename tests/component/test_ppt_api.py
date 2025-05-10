@@ -52,10 +52,11 @@ def test_create_and_get_proposal():
 def test_proposal_create_then_put():
     """
     Test that an entity POSTed to /proposals/create
-    can then be updated with PUT /proposals/{identifier}
+    can then be updated with PUT /proposals/{identifier},
+    and the version number increments as expected.
     """
 
-    # POST a new proposal
+    #POST a new proposal
     post_response = requests.post(
         f"{PPT_URL}/proposals/create",
         data=VALID_NEW_PROPOSAL,
@@ -69,12 +70,16 @@ def test_proposal_create_then_put():
     expected_prsl_id = json.loads(VALID_NEW_PROPOSAL)["prsl_id"]
     assert returned_prsl_id == expected_prsl_id
 
-    # Generate and override proposal for PUT
+    #GET the proposal to get initial version
+    get_response = requests.get(f"{PPT_URL}/proposals/{returned_prsl_id}")
+    assert get_response.status_code == HTTPStatus.OK, get_response.content
+    initial_version = get_response.json()["metadata"]["version"]
+
+    # Step 3: Generate update and enforce prsl_id match
     proposal = TestDataFactory.proposal(prsl_id=returned_prsl_id)
-    proposal.metadata.version = 1  # Force version to 1 before PUT
     proposal_to_update = proposal.model_dump_json()
 
-    # PUT updated proposal
+    #PUT updated proposal
     put_response = requests.put(
         f"{PPT_URL}/proposals/{returned_prsl_id}",
         data=proposal_to_update,
@@ -83,12 +88,13 @@ def test_proposal_create_then_put():
 
     assert put_response.status_code == HTTPStatus.OK, put_response.content
 
-    # Compare full updated JSON
+    #Compare JSON output
     assert_json_is_equal(
         put_response.text,
         proposal_to_update,
-        exclude_paths=["root['metadata']", "root['prsl_id']"],
+        exclude_paths=["root['metadata']", "root['prsl_id']"]
     )
 
-    # Ensure version bumped to 2
-    assert put_response.json()["metadata"]["version"] == 2
+    # Ensure version incremented
+    new_version = put_response.json()["metadata"]["version"]
+    assert new_version == initial_version + 1, f"Expected version {initial_version + 1}, got {new_version}"
