@@ -55,7 +55,7 @@ def test_proposal_create_then_put():
     can then be updated with PUT /proposals/{identifier}
     """
     post_response = requests.post(
-        f"{PPT_URL}/proposals",
+        f"{PPT_URL}/proposals/create",
         data=VALID_NEW_PROPOSAL,
         headers={"Content-type": "application/json"},
     )
