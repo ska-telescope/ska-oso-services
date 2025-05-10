@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter
+from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
 
 from ska_oso_services.common import oda
@@ -45,3 +46,23 @@ def get_proposal(proposal_id: str) -> Proposal:
     except KeyError as err:
         LOGGER.warning("Proposal not found: %s", proposal_id)
         raise NotFoundError(f"Could not find proposal: {proposal_id}") from err
+
+
+@router.get("/list/{user_id}", summary="Get a list of proposals created by a user")
+def get_proposals_for_user(user_id: str) -> list[Proposal]:
+    """
+    Function that requests to GET /proposals/list are mapped to
+
+    Retrieves the Proposals for the given user ID from the
+    underlying data store, if available
+
+    :param user_id: identifier of the Proposal
+    :return: a tuple of a list of Proposal and a
+        HTTP status, which the Connection will wrap in a response
+    """
+
+    LOGGER.debug("GET PROPOSAL LIST query for the user: {user_id}")
+    with oda.uow() as uow:
+        query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
+        proposals = uow.prsls.query(query_param)
+    return proposals
