@@ -8,6 +8,7 @@ to a deployment of ska-oso-services in the same cluster
 # pylint: disable=missing-timeout
 import json
 from http import HTTPStatus
+import uuid
 
 import requests
 
