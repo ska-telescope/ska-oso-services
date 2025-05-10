@@ -61,13 +61,13 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
     """
 
     LOGGER.debug("GET PROPOSAL LIST query for the user: {user_id}")
-   
+
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
         proposals = uow.prsls.query(query_param)
 
         if proposals is None:
-            LOGGER.info(f"No proposals found for user: {user_id}")
+            LOGGER.info("No proposals found for user: {user_id}")
             return []
 
         LOGGER.debug("Found {len(proposals)} proposals for user {user_id}")
