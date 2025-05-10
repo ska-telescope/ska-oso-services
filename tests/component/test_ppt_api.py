@@ -54,32 +54,45 @@ def test_proposal_create_then_put():
     Test that an entity POSTed to /proposals/create
     can then be updated with PUT /proposals/{identifier}
     """
+
+    # Create proposal via POST
     post_response = requests.post(
         f"{PPT_URL}/proposals/create",
         data=VALID_NEW_PROPOSAL,
-        headers={"Content-type": "application/json"},
+        headers={"Content-Type": "application/json"},
     )
 
     assert post_response.status_code == HTTPStatus.OK, post_response.content
+
+    # Convert JSON bytes into object before comparison
+    created = post_response.json()
+    expected = json.loads(VALID_NEW_PROPOSAL)
+
     assert_json_is_equal(
-        post_response.content,
-        VALID_NEW_PROPOSAL,
-        exclude_paths=["root['metadata']", "root['sbd_id']"],
+        json.dumps(created),
+        json.dumps(expected),
+        exclude_paths=["root['metadata']", "root['sbd_id']"]
     )
 
-    prsl_id = post_response.json()
-    proposal_to_update = TestDataFactory.proposal(prsl_id=prsl_id).model_dump_json()
+    # Extract prsl_id and prepare updated proposal
+    prsl_id = created["prsl_id"]
+    updated_json = TestDataFactory.proposal(prsl_id=prsl_id).model_dump_json()
+
+    # PUT updated proposal
     put_response = requests.put(
         f"{PPT_URL}/proposals/{prsl_id}",
-        data=proposal_to_update,
-        headers={"Content-type": "application/json"},
+        data=updated_json,
+        headers={"Content-Type": "application/json"},
     )
-    # Assert the ODT can get the proposal, ignoring the metadata as it contains
-    # timestamps and is the responsibility of the ODA
-    assert put_response.status_code == HTTPStatus.OK, post_response.content
+
+    assert put_response.status_code == HTTPStatus.OK, put_response.content
+
+    updated = put_response.json()
+
     assert_json_is_equal(
-        put_response.content,
-        proposal_to_update,
-        exclude_paths=["root['metadata']", "root['prsl_id']"],
+        json.dumps(updated),
+        updated_json,
+        exclude_paths=["root['metadata']", "root['prsl_id']"]
     )
-    assert put_response.json()["metadata"]["version"] == 2
+
+    assert updated["metadata"]["version"] == 2
