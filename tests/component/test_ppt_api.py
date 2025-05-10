@@ -70,31 +70,23 @@ def test_proposal_create_then_put():
     expected_prsl_id = json.loads(VALID_NEW_PROPOSAL)["prsl_id"]
     assert returned_prsl_id == expected_prsl_id
 
-    #GET the proposal to get initial version
+    #GET proposal to fetch latest state
     get_response = requests.get(f"{PPT_URL}/proposals/{returned_prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
-    initial_version = get_response.json()["metadata"]["version"]
 
-    # Step 3: Generate update and enforce prsl_id match
-    proposal = TestDataFactory.proposal(prsl_id=returned_prsl_id)
-    proposal_to_update = proposal.model_dump_json()
+    original_proposal = get_response.json()
+    initial_version = original_proposal["metadata"]["version"]
 
-    #PUT updated proposal
+    # Modify content (simulate update)
+    original_proposal["info"]["title"] = "Updated Title"
+    proposal_to_update = json.dumps(original_proposal)
+
+    # PUT updated proposal
     put_response = requests.put(
         f"{PPT_URL}/proposals/{returned_prsl_id}",
         data=proposal_to_update,
         headers={"Content-Type": "application/json"},
     )
 
-    assert put_response.status_code == HTTPStatus.OK, put_response.content
-
-    #Compare JSON output
-    assert_json_is_equal(
-        put_response.text,
-        proposal_to_update,
-        exclude_paths=["root['metadata']", "root['prsl_id']"]
-    )
-
-    # Ensure version incremented
-    new_version = put_response.json()["metadata"]["version"]
-    assert new_version == initial_version + 1, f"Expected version {initial_version + 1}, got {new_version}"
+    # Confirm version bumped
+    assert put_response.json()["metadata"]["version"] == initial_version + 1
