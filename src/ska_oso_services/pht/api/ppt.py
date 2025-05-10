@@ -58,11 +58,17 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
 
     :param user_id: identifier of the Proposal
     :return: a tuple of a list of Proposal and a
-        HTTP status, which the Connection will wrap in a response
     """
 
     LOGGER.debug("GET PROPOSAL LIST query for the user: {user_id}")
+   
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
         proposals = uow.prsls.query(query_param)
-    return proposals
+
+        if proposals is None:
+            LOGGER.info(f"No proposals found for user: {user_id}")
+            return []
+
+        LOGGER.debug("Found {len(proposals)} proposals for user {user_id}")
+        return proposals
