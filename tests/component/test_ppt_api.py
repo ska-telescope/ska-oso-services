@@ -11,7 +11,7 @@ from http import HTTPStatus
 
 import requests
 
-from ..unit.util import VALID_NEW_PROPOSAL, TestDataFactory, assert_json_is_equal
+from ..unit.util import VALID_NEW_PROPOSAL
 from . import PPT_URL
 
 
@@ -56,7 +56,7 @@ def test_proposal_create_then_put():
     and the version number increments as expected.
     """
 
-    #POST a new proposal
+    # POST a new proposal
     post_response = requests.post(
         f"{PPT_URL}/proposals/create",
         data=VALID_NEW_PROPOSAL,
@@ -70,7 +70,7 @@ def test_proposal_create_then_put():
     expected_prsl_id = json.loads(VALID_NEW_PROPOSAL)["prsl_id"]
     assert returned_prsl_id == expected_prsl_id
 
-    #GET proposal to fetch latest state
+    # GET proposal to fetch latest state
     get_response = requests.get(f"{PPT_URL}/proposals/{returned_prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
