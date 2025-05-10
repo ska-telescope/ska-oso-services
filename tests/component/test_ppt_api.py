@@ -55,7 +55,7 @@ def test_proposal_create_then_put():
     can then be updated with PUT /proposals/{identifier}
     """
 
-    # Create proposal via POST
+    #POST a new proposal
     post_response = requests.post(
         f"{PPT_URL}/proposals/create",
         data=VALID_NEW_PROPOSAL,
@@ -64,35 +64,29 @@ def test_proposal_create_then_put():
 
     assert post_response.status_code == HTTPStatus.OK, post_response.content
 
-    # Convert JSON bytes into object before comparison
-    created = post_response.json()
-    expected = json.loads(VALID_NEW_PROPOSAL)
+    # The POST endpoint returns only the prsl_id as a string
+    returned_prsl_id = post_response.json()
+    expected_prsl_id = json.loads(VALID_NEW_PROPOSAL)["prsl_id"]
+    assert returned_prsl_id == expected_prsl_id
 
-    assert_json_is_equal(
-        json.dumps(created),
-        json.dumps(expected),
-        exclude_paths=["root['metadata']", "root['sbd_id']"]
-    )
+    # Prepare full updated proposal
+    proposal_to_update = TestDataFactory.proposal(prsl_id=returned_prsl_id).model_dump_json()
 
-    # Extract prsl_id and prepare updated proposal
-    prsl_id = created["prsl_id"]
-    updated_json = TestDataFactory.proposal(prsl_id=prsl_id).model_dump_json()
-
-    # PUT updated proposal
+    #PUT updated proposal
     put_response = requests.put(
-        f"{PPT_URL}/proposals/{prsl_id}",
-        data=updated_json,
+        f"{PPT_URL}/proposals/{returned_prsl_id}",
+        data=proposal_to_update,
         headers={"Content-Type": "application/json"},
     )
 
     assert put_response.status_code == HTTPStatus.OK, put_response.content
 
-    updated = put_response.json()
-
+    #Compare full updated JSON
     assert_json_is_equal(
-        json.dumps(updated),
-        updated_json,
+        put_response.text,
+        proposal_to_update,
         exclude_paths=["root['metadata']", "root['prsl_id']"]
     )
 
-    assert updated["metadata"]["version"] == 2
+    # Step 5: Ensure version bumped
+    assert put_response.json()["metadata"]["version"] == 2
