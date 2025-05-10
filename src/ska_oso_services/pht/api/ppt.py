@@ -36,7 +36,7 @@ def create_proposal(proposal: Proposal) -> str:
         ) from err
 
 
-@router.get("/{proposal_id}", summary="Get the existing proposal")
+@router.get("/{proposal_id}", summary="Retrieve an existing proposal")
 def get_proposal(proposal_id: str) -> Proposal:
 
     LOGGER.debug("GET PROPOSAL prsl_id: %s", proposal_id)
@@ -78,9 +78,7 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
         return proposals
 
 
-@router.put(
-    "/{proposal_id}", summary="Update an existing proposal", response_model=Proposal
-)
+@router.put("/{proposal_id}", summary="Update an existing proposal")
 def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
     """
     Updates a proposal in the underlying data store.
