@@ -5,7 +5,11 @@ from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.error_handling import BadRequestError, NotFoundError
+from ska_oso_services.common.error_handling import (
+    BadRequestError,
+    NotFoundError,
+    UnprocessableEntityError,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,3 +76,45 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
 
         LOGGER.debug("Found {len(proposals)} proposals for user {user_id}")
         return proposals
+
+
+@router.put(
+    "/{proposal_id}", summary="Update an existing proposal", response_model=Proposal
+)
+def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
+    """
+    Updates a proposal in the underlying data store.
+
+    :param proposal_id: identifier of the Proposal in the URL
+    :param prsl: Proposal object payload from the request body
+    :return: the updated Proposal object
+    """
+    LOGGER.debug("PUT PROPOSAL - Attempting update for proposal_id: {proposal_id}")
+
+    # Ensure ID match
+    if prsl.prsl_id != proposal_id:
+        LOGGER.warning(
+            "Proposal ID mismatch: path ID={proposal_id}, body ID={prsl.prsl_id}"
+        )
+        raise UnprocessableEntityError(
+            detail="Proposal ID in path and payload do not match."
+        )
+
+    with oda.uow() as uow:
+        # Verify proposal exists
+        existing = uow.prsls.get(proposal_id)
+        if not existing:
+            LOGGER.info("Proposal not found for update: {proposal_id}")
+            raise NotFoundError(detail="Proposal not found: {proposal_id}")
+
+        try:
+            updated_prsl = uow.prsls.add(prsl)  # Add is used for update
+            uow.commit()
+            LOGGER.info("Proposal {proposal_id} updated successfully")
+            return updated_prsl
+
+        except ValueError as err:
+            LOGGER.error("Validation failed for proposal {proposal_id}: {err}")
+            raise BadRequestError(
+                detail="Validation error while saving proposal: {err.args[0]}"
+            ) from err
