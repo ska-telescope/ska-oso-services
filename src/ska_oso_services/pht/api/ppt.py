@@ -10,6 +10,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.pht.api import validation
 
 LOGGER = logging.getLogger(__name__)
 
@@ -116,3 +117,20 @@ def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
             raise BadRequestError(
                 detail="Validation error while saving proposal: {err.args[0]}"
             ) from err
+
+
+@router.post("/validate", summary="Validate a proposal")
+def validate_proposal(prsl: Proposal) -> dict:
+    """
+    Validates a submitted proposal via POST.
+
+    Returns:
+        dict: {
+            "result": bool,
+            "validation_errors": list[str]
+        }
+    """
+    LOGGER.debug("POST PROPOSAL validate")
+    result = validation.validate_proposal(prsl)
+
+    return result
