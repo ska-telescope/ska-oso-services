@@ -7,8 +7,8 @@ to a deployment of ska-oso-services in the same cluster
 
 # pylint: disable=missing-timeout
 import json
-from http import HTTPStatus
 import uuid
+from http import HTTPStatus
 
 import requests
 
@@ -93,7 +93,6 @@ def test_proposal_create_then_put():
     assert put_response.json()["metadata"]["version"] == initial_version + 1
 
 
-
 def test_get_list_proposals_for_user():
     """
     Integration test:
@@ -136,4 +135,6 @@ def test_get_list_proposals_for_user():
     # Check that all created proposals are returned
     returned_ids = {p["prsl_id"] for p in proposals}
     for prsl_id in created_ids:
-        assert prsl_id in returned_ids, f"Missing proposal {prsl_id} in GET /list/{user_id}"
+        assert (
+            prsl_id in returned_ids
+        ), f"Missing proposal {prsl_id} in GET /list/{user_id}"
