@@ -17,7 +17,7 @@ from tests.unit.util import (
     load_string_from_file,
 )
 
-PROPOSAL_API_URL = f"{PHT_BASE_API_URL}/proposals"
+PROPOSAL_API_URL = f"{PHT_BASE_API_URL}/prsls"
 
 
 def has_validation_error(detail, field: str) -> bool:
@@ -25,7 +25,7 @@ def has_validation_error(detail, field: str) -> bool:
 
 
 class TestProposalAPI:
-    @mock.patch("ska_oso_services.pht.api.ppt.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_create_proposal(self, mock_oda, client):
         """
         Check the proposal_create method returns the expected prsl_id and status code.
@@ -46,7 +46,7 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.OK
         assert response.json() == proposal_obj.prsl_id
 
-    @mock.patch("ska_oso_services.pht.api.ppt.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_create_proposal_value_error_raises_bad_request(self, mock_oda, client):
         """
         Simulate ValueError in proposal creation and ensure it raises BadRequestError.
@@ -67,7 +67,7 @@ class TestProposalAPI:
         data = response.json()
         assert "Failed when attempting to create a proposal" in data["detail"]
 
-    @mock.patch("ska_oso_services.pht.api.ppt.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_get_proposal_not_found(self, mock_oda, client):
         """
         Ensure KeyError during get() raises NotFoundError (404).
@@ -83,7 +83,7 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert "Could not find proposal" in response.json()["detail"]
 
-    @mock.patch("ska_oso_services.pht.api.ppt.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_get_proposal_success(self, mock_oda, client):
         """
         Ensure valid proposal ID returns the Proposal object.
@@ -102,7 +102,7 @@ class TestProposalAPI:
         assert data["prsl_id"] == proposal_id
         assert data["info"]["title"] == proposal.info.title
 
-    @mock.patch("ska_oso_services.pht.api.ppt.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_get_proposal_list_success(self, mock_oda, client):
         """
         Check if the get_proposals_for_user returns proposals correctly.
@@ -118,7 +118,7 @@ class TestProposalAPI:
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(proposal_objs)
 
-    @mock.patch("ska_oso_services.pht.api.ppt.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_get_proposal_list_none(self, mock_oda, client):
         """
         Should return empty list if no proposals are found.
@@ -133,10 +133,10 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
 
-    @mock.patch("ska_oso_services.pht.api.ppt.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_proposal_put_success(self, mock_uow, client):
         """
-        Check the ppt_put method returns the expected response
+        Check the prsls_put method returns the expected response
         """
         uow_mock = mock.MagicMock()
         uow_mock.prsl.__contains__.return_value = True
@@ -155,7 +155,7 @@ class TestProposalAPI:
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, proposal_obj.model_dump_json())
 
-    @mock.patch("ska_oso_services.pht.api.ppt.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_update_proposal_not_found(self, mock_uow, client):
         """
         Should return 404 if proposal doesn't exist.
@@ -176,7 +176,7 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert "not found" in response.json()["detail"].lower()
 
-    @mock.patch("ska_oso_services.pht.api.ppt.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_update_proposal_id_mismatch(self, mock_uow, client):
         """
         Should raise 422 when ID in path != payload.
@@ -193,7 +193,7 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
         assert "do not match" in response.json()["detail"].lower()
 
-    @mock.patch("ska_oso_services.pht.api.ppt.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_update_proposal_validation_error(self, mock_oda, client):
         """
         Should return 400 if .add() raises ValueError.

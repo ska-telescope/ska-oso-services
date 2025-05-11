@@ -14,7 +14,7 @@ from ska_oso_services.pht.api import validation
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/proposals")
+router = APIRouter(prefix="/prsls")
 
 
 @router.post("/create", summary="Create a new proposal")

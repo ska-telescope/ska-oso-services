@@ -1,5 +1,5 @@
 """
-Component level tests for the /oda/proposals paths of ska-oso-services API.
+Component level tests for the /oda/prsls paths of ska-oso-services API.
 
 These will run from a test pod inside a kubernetes cluster, making requests
 to a deployment of ska-oso-services in the same cluster
@@ -13,19 +13,19 @@ from http import HTTPStatus
 import requests
 
 from ..unit.util import VALID_NEW_PROPOSAL, TestDataFactory
-from . import PPT_URL
+from . import PHT_URL
 
 
 def test_create_and_get_proposal():
     """
-    Integration test for the POST /proposal/create endpoint
-    and GET /proposals/{prsl_id}.
+    Integration test for the POST /prsls/create endpoint
+    and GET /prsls/{prsl_id}.
     Assumes the server is running and accessible.
     """
 
     # POST using JSON string
     post_response = requests.post(
-        f"{PPT_URL}/proposals/create",
+        f"{PHT_URL}/prsls/create",
         data=VALID_NEW_PROPOSAL,
         headers={"Content-Type": "application/json"},
     )
@@ -34,7 +34,7 @@ def test_create_and_get_proposal():
     assert isinstance(prsl_id, str), f"Expected string, got {type(prsl_id)}: {prsl_id}"
 
     # GET created proposal
-    get_response = requests.get(f"{PPT_URL}/proposals/{prsl_id}")
+    get_response = requests.get(f"{PHT_URL}/prsls/{prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     actual_payload = get_response.json()
 
@@ -52,14 +52,14 @@ def test_create_and_get_proposal():
 
 def test_proposal_create_then_put():
     """
-    Test that an entity POSTed to /proposals/create
-    can then be updated with PUT /proposals/{identifier},
+    Test that an entity POSTed to /prsls/create
+    can then be updated with PUT /prsls/{identifier},
     and the version number increments as expected.
     """
 
     # POST a new proposal
     post_response = requests.post(
-        f"{PPT_URL}/proposals/create",
+        f"{PHT_URL}/prsls/create",
         data=VALID_NEW_PROPOSAL,
         headers={"Content-Type": "application/json"},
     )
@@ -72,7 +72,7 @@ def test_proposal_create_then_put():
     assert returned_prsl_id == expected_prsl_id
 
     # GET proposal to fetch latest state
-    get_response = requests.get(f"{PPT_URL}/proposals/{returned_prsl_id}")
+    get_response = requests.get(f"{PHT_URL}/prsls/{returned_prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
     original_proposal = get_response.json()
@@ -84,7 +84,7 @@ def test_proposal_create_then_put():
 
     # PUT updated proposal
     put_response = requests.put(
-        f"{PPT_URL}/proposals/{returned_prsl_id}",
+        f"{PHT_URL}/prsls/{returned_prsl_id}",
         data=proposal_to_update,
         headers={"Content-Type": "application/json"},
     )
@@ -111,7 +111,7 @@ def test_get_list_proposals_for_user():
         proposal_json = proposal.model_dump_json()
 
         response = requests.post(
-            f"{PPT_URL}/proposals/create",
+            f"{PHT_URL}/prsls/create",
             data=proposal_json,
             headers={"Content-Type": "application/json"},
         )
@@ -120,12 +120,12 @@ def test_get_list_proposals_for_user():
 
     # Get created_by from one of the created proposals
     example_prsl_id = created_ids[0]
-    get_response = requests.get(f"{PPT_URL}/proposals/{example_prsl_id}")
+    get_response = requests.get(f"{PHT_URL}/prsls/{example_prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     user_id = get_response.json()["metadata"]["created_by"]
 
     # GET /list/{user_id}
-    list_response = requests.get(f"{PPT_URL}/proposals/list/{user_id}")
+    list_response = requests.get(f"{PHT_URL}/prsls/list/{user_id}")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     proposals = list_response.json()
