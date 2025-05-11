@@ -1,6 +1,8 @@
 import logging
+from http import HTTPStatus
 
-from fastapi import APIRouter
+from botocore.exceptions import BotoCoreError, ClientError
+from fastapi import APIRouter, HTTPException
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
 
@@ -11,6 +13,15 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.api import validation
+from ska_oso_services.pht.model import EmailRequest
+from ska_oso_services.pht.utils.email_helper import send_email_async
+from ska_oso_services.pht.utils.s3_bucket import (
+    PRESIGNED_URL_EXPIRY_TIME,
+    create_presigned_url_delete_pdf,
+    create_presigned_url_download_pdf,
+    create_presigned_url_upload_pdf,
+    get_aws_client,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -134,3 +145,123 @@ def validate_proposal(prsl: Proposal) -> dict:
     result = validation.validate_proposal(prsl)
 
     return result
+
+
+@router.post("/send-email/", summary="Send an async email")
+async def send_email(request: EmailRequest):
+    """
+    Endpoint to send SKAO email asynchronously via SMTP
+    """
+    await send_email_async(request.email, request.prsl_id)
+    return {"message": "Email sent successfully"}
+
+
+@router.post("/signed-url/upload/{filename}", summary="Create upload PDF URL")
+def create_upload_pdf_url(filename: str) -> str:
+    """
+    Generate a presigned S3 upload URL for the given filename.
+    """
+
+    if not filename or "/" in filename or "\\" in filename:
+        validation_resp = {
+            "error": "Invalid filename",
+            "reason": "Filename must not contain slashes or be empty",
+            "field": "filename",
+            "value": filename,
+        }
+        raise UnprocessableEntityError(detail=validation_resp)
+
+    LOGGER.debug("POST Upload Signed URL for: %s", filename)
+
+    try:
+        s3_client = get_aws_client()
+    except BotoCoreError as boto_err:
+        LOGGER.exception("S3 client init failed")
+        raise HTTPException(
+            status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+            detail="Could not initialize S3 client",
+        ) from boto_err
+
+    try:
+        return create_presigned_url_upload_pdf(
+            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+        )
+    except ClientError as client_err:
+        LOGGER.exception("S3 client failed to generate upload URL")
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_GATEWAY, detail="Failed to generate upload URL"
+        ) from client_err
+
+
+@router.post("/signed-url/download/{filename}", summary="Create download PDF URL")
+def create_download_pdf_url(filename: str) -> str:
+    """
+    Generate a presigned S3 download URL for the given filename.
+    """
+    if not filename or "/" in filename or "\\" in filename:
+        raise UnprocessableEntityError(
+            detail={
+                "error": "Invalid filename",
+                "reason": "Filename must not contain slashes or be empty",
+                "field": "filename",
+                "value": filename,
+            }
+        )
+
+    LOGGER.debug("POST Download Signed URL for: %s", filename)
+
+    try:
+        s3_client = get_aws_client()
+    except BotoCoreError as boto_err:
+        LOGGER.exception("S3 client init failed")
+        raise HTTPException(
+            status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+            detail="Could not initialize S3 client",
+        ) from boto_err
+
+    try:
+        return create_presigned_url_download_pdf(
+            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+        )
+    except ClientError as client_err:
+        LOGGER.exception("S3 client failed to generate download URL")
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_GATEWAY, detail="Failed to generate download URL"
+        ) from client_err
+
+
+@router.post("/signed-url/delete/{filename}", summary="Create delete PDF URL")
+def create_delete_pdf_url(filename: str) -> str:
+    """
+    Generate a presigned S3 delete URL for the given filename.
+    """
+    if not filename or "/" in filename or "\\" in filename:
+        raise UnprocessableEntityError(
+            detail={
+                "error": "Invalid filename",
+                "reason": "Filename must not contain slashes or be empty",
+                "field": "filename",
+                "value": filename,
+            }
+        )
+
+    LOGGER.debug("POST Delete Signed URL for: %s", filename)
+
+    try:
+        s3_client = get_aws_client()
+    except BotoCoreError as boto_err:
+        LOGGER.exception("S3 client init failed")
+        raise HTTPException(
+            status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+            detail="Could not initialize S3 client",
+        ) from boto_err
+
+    try:
+        return create_presigned_url_delete_pdf(
+            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+        )
+    except ClientError as client_err:
+        LOGGER.exception("S3 client failed to generate delete URL")
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_GATEWAY, detail="Failed to generate delete URL"
+        ) from client_err

@@ -113,6 +113,10 @@ class TestDataFactory:
 
         return proposal
 
+    @staticmethod
+    def email_payload(email="test@example.com", prsl_id="SKAO123"):
+        return {"email": email, "prsl_id": prsl_id}
+
 
 VALID_MID_SBDEFINITION_JSON = TestDataFactory.sbdefinition().model_dump_json()
 VALID_LOW_SBDEFINITION_JSON = TestDataFactory.lowsbdefinition().model_dump_json()
@@ -127,3 +131,11 @@ VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(prj_id=None).model_dump_jso
 
 # proposal entry
 VALID_NEW_PROPOSAL = TestDataFactory.proposal().model_dump_json()
+PAYLOAD_SUCCESS = TestDataFactory.email_payload()
+PAYLOAD_CONNECT_FAIL = TestDataFactory.email_payload(
+    "connectfail@example.com", "PRSL999"
+)
+PAYLOAD_BAD_TO = TestDataFactory.email_payload("badto@example.com", "PRSLBAD")
+PAYLOAD_GENERIC_FAIL = TestDataFactory.email_payload(
+    "genericfail@example.com", "GENERICFAIL"
+)
