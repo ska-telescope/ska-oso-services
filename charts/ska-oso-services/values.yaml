@@ -6,10 +6,14 @@ minikube: true
 system: TM-mid
 telescope: SKA-mid
 subsystem: ska-oso-services
+# A permanent deployment should never set this to true, as it will
+# cause the authentication to use test public keys.
+pipeline_test_deployment: false
 
 global:
   minikube: true
   cluster_domain: techops.internal.skao.int
+
 
 rest:
   component: rest

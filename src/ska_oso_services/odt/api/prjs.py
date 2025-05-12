@@ -7,12 +7,14 @@ from typing import Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel
+from ska_aaa_authhelpers import Role
 from ska_oso_pdm import ProjectStatusHistory, TelescopeType
 from ska_oso_pdm.entity_status_history import ProjectStatus
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
     NotFoundError,
@@ -44,6 +46,11 @@ router = APIRouter(prefix="/prjs")
 @router.get(
     "/{identifier}",
     summary="Get Project by identifier",
+    dependencies=[
+        Permissions(
+            roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READ, Scope.ODT_READWRITE}
+        )
+    ],
 )
 def prjs_get(identifier: str) -> Project:
     """
@@ -58,6 +65,7 @@ def prjs_get(identifier: str) -> Project:
 @router.post(
     "/",
     summary="Create a new Project",
+    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_post(prj: Optional[Project] = None) -> Project:
     """
@@ -103,6 +111,7 @@ def prjs_post(prj: Optional[Project] = None) -> Project:
 @router.put(
     "/{identifier}",
     summary="Update a Project by identifier",
+    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_put(prj: Project, identifier: str) -> Project:
     """
@@ -145,6 +154,7 @@ class PrjSBDLinkResponse(BaseModel):
 @router.post(
     "/{identifier}/{obs_block_id}/sbds",
     summary="Create a new SBDefinition linked to a project",
+    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_sbds_post(
     identifier: str, obs_block_id: str, sbd: Optional[SBDefinition] = None

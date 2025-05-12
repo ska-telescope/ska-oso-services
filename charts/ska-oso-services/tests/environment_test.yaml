@@ -8,6 +8,13 @@ tests:
       - hasDocuments:
           count: 1
 
+  - it: should set PIPELINE_TESTS_DEPLOYMENT to false.
+    asserts:
+      - equal:
+          path: data.PIPELINE_TESTS_DEPLOYMENT
+          value:
+            "false"
+
   - it: should be of type ConfigMap and have the correct apiVersion, v1.
     documentIndex: 0
     asserts:

@@ -27,6 +27,10 @@ stages:
   - pages
   - scan
 
+k8s-test:
+  variables:
+    PIPELINE_TEST_DEPLOYMENT: true
+
 .info_script: &info_script
     - |-
       echo "Status of pods in $KUBE_NAMESPACE namespace:"
