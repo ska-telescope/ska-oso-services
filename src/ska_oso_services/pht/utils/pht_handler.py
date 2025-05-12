@@ -52,27 +52,4 @@ def transform_update_proposal(data: Proposal) -> Proposal:
     )
 
 
-def transform_create_proposal(data: Proposal) -> Proposal:
-    """
-    Transforms and updates a given Proposal object with specific operations.
 
-    - Forces status to "draft"
-    - Extracts investigator IDs if available
-    """
-    # TODO: Assess if this function is still needed once
-    # the status comes from the frontend
-    return Proposal(
-        prsl_id=data.prsl_id,
-        status="draft",  # At the time of creation the status is draft
-        info=data.info or {},
-        cycle=data.cycle,
-        investigator_refs=(
-            [
-                user.get("investigator_id")
-                for user in data.info.get("investigators", [])
-                if "investigator_id" in user
-            ]
-            if "investigators" in data.info
-            else []
-        ),
-    )

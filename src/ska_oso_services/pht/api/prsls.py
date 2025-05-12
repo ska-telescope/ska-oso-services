@@ -1,5 +1,6 @@
 import logging
 from http import HTTPStatus
+from typing import Dict
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, HTTPException
@@ -42,14 +43,12 @@ def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) ->
     """
     Creates a new proposal in the ODA
     """
-    # TODO: Remove this once the frontend is updated to send the status
-    proposal_transformed = transform_create_proposal(proposal)
 
     LOGGER.debug("POST PROPOSAL create")
 
     try:
         with oda.uow() as uow:
-            created_prsl = uow.prsls.add(proposal_transformed)
+            created_prsl = uow.prsls.add(proposal)
             uow.commit()
         LOGGER.info("Proposal successfully created with ID {created_prsl.prsl_id}")
         return created_prsl.prsl_id
