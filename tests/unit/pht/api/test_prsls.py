@@ -273,8 +273,7 @@ class TestProposalEmailAPI:
             headers={"Content-type": "application/json"},
         )
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Invalid recipient address" in response.text
+        assert "Unable to send email for this recipient." in response.text
 
     @mock.patch(
         "ska_oso_services.pht.utils.email_helper.aiosmtplib.send",

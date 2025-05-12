@@ -82,14 +82,14 @@ async def send_email_async(email: str, prsl_id: str):
 
     except SMTPConnectError as err:
         LOGGER.error("SMTP connection error: %s", str(err))
-        raise HTTPException(status_code=500, detail="SMTP connection failed") from err
+        raise HTTPException(status_code=503, detail="SMTP connection failed") from err
 
     except SMTPRecipientsRefused as err:
         LOGGER.error("Recipient refused: %s", str(err))
         raise UnprocessableEntityError(
             detail="Unable to send email for this recipient."
-        )
+        ) from err
 
     except SMTPException as err:
         LOGGER.error("SMTP error for %s: %s", email, str(err))
-        raise HTTPException(status_code=500, detail="SMTP send failed") from err
+        raise HTTPException(status_code=502, detail="SMTP send failed") from err
