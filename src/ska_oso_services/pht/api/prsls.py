@@ -19,7 +19,6 @@ from ska_oso_services.pht.utils import validation
 from ska_oso_services.pht.utils.email_helper import send_email_async
 from ska_oso_services.pht.utils.pht_handler import (
     EXAMPLE_PROPOSAL,
-    transform_create_proposal,
     transform_update_proposal,
 )
 from ska_oso_services.pht.utils.s3_bucket import (
