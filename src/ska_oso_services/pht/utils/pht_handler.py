@@ -1,6 +1,6 @@
 """Transform and update proposal data.
 This module contains functions to transform and update proposal data
-for submission and creation processes. 
+for submission and creation processes.
 """
 
 from datetime import datetime, timezone
