@@ -8,6 +8,8 @@ from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRef
 from fastapi import HTTPException
 from jinja2 import Template
 
+from ska_oso_services.common.error_handling import UnprocessableEntityError
+
 LOGGER = logging.getLogger(__name__)
 
 # HTML email template
@@ -80,14 +82,14 @@ async def send_email_async(email: str, prsl_id: str):
 
     except SMTPConnectError as err:
         LOGGER.error("SMTP connection error: %s", str(err))
-        raise HTTPException(status_code=503, detail="SMTP connection failed") from err
+        raise HTTPException(status_code=500, detail="SMTP connection failed") from err
 
     except SMTPRecipientsRefused as err:
         LOGGER.error("Recipient refused: %s", str(err))
-        raise HTTPException(
-            status_code=400, detail="Invalid recipient address"
-        ) from err
+        raise UnprocessableEntityError(
+            detail="Unable to send email for this recipient."
+        )
 
     except SMTPException as err:
         LOGGER.error("SMTP error for %s: %s", email, str(err))
-        raise HTTPException(status_code=502, detail="SMTP send failed") from err
+        raise HTTPException(status_code=500, detail="SMTP send failed") from err
