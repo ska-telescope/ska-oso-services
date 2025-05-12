@@ -43,6 +43,17 @@ def create_app(production=PRODUCTION) -> FastAPI:
         openapi_url=f"{API_PREFIX}/openapi.json",
         docs_url=f"{API_PREFIX}/ui",
         lifespan=watchdog(),
+        allow_unsecured={
+            "create_proposal",
+            "get_proposal",
+            "get_proposals_for_user",
+            "update_proposal",
+            "validate_proposal",
+            "send_email",
+            "create_upload_pdf_url",
+            "create_download_pdf_url",
+            "create_delete_pdf_url",
+        },
     )
 
     app.add_middleware(
