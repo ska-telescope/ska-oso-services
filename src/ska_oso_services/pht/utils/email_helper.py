@@ -8,6 +8,8 @@ from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRef
 from fastapi import HTTPException
 from jinja2 import Template
 
+LOGGER = logging.getLogger(__name__)
+
 # HTML email template
 HTML_TEMPLATE = """
 <html>
@@ -74,18 +76,18 @@ async def send_email_async(email: str, prsl_id: str):
             username=smtp_user,
             password=smtp_password,
         )
-        logging.info("Email sent to %s for proposal %s", email, prsl_id)
+        LOGGER.info("Email sent to %s for proposal %s", email, prsl_id)
 
     except SMTPConnectError as err:
-        logging.error("SMTP connection error: %s", str(err))
+        LOGGER.error("SMTP connection error: %s", str(err))
         raise HTTPException(status_code=503, detail="SMTP connection failed") from err
 
     except SMTPRecipientsRefused as err:
-        logging.error("Recipient refused: %s", str(err))
+        LOGGER.error("Recipient refused: %s", str(err))
         raise HTTPException(
             status_code=400, detail="Invalid recipient address"
         ) from err
 
     except SMTPException as err:
-        logging.error("SMTP error for %s: %s", email, str(err))
+        LOGGER.error("SMTP error for %s: %s", email, str(err))
         raise HTTPException(status_code=502, detail="SMTP send failed") from err

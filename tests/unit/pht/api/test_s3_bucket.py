@@ -29,13 +29,6 @@ class TestSignedUrlDelete:
 
         assert response.text.strip('"') == "https://s3/delete-url"
 
-    def test_create_delete_url_invalid_filename(self, client):
-        filename = "bad\\name.pdf"  # invalid, but routed OK
-        response = client.post(f"{PROPOSAL_API_URL}/signed-url/delete/{filename}")
-
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-        assert "Invalid filename" in response.text
-
     @mock.patch(
         "ska_oso_services.pht.api.prsls.get_aws_client", side_effect=BotoCoreError()
     )
@@ -136,13 +129,6 @@ class TestSignedUrlDownload:
 
         assert response.status_code == 200
         assert response.text.strip('"') == "https://s3/download-url"
-
-    def test_create_download_url_invalid_filename(self, client):
-        filename = "bad\\download.pdf"
-        response = client.post(f"{PROPOSAL_API_URL}/signed-url/download/{filename}")
-
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-        assert "Invalid filename" in response.text
 
     @mock.patch(
         "ska_oso_services.pht.api.prsls.get_aws_client", side_effect=BotoCoreError()

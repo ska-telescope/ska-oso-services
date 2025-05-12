@@ -7,80 +7,72 @@ from datetime import datetime, timezone
 
 from ska_oso_pdm.proposal import Proposal
 
+EXAMPLE_PROPOSAL = {
+    "prsl_id": "prp-ska01-202204-02",
+    "status": "",
+    "cycle": "5000_2023",
+    "info": {
+        "title": "The Milky Way View",
+        "proposal_type": {
+            "main_type": "standard_proposal",
+            "attributes": ["coordinated_proposal"],
+        },
+    },
+}
 
-def transform_update_proposal(data: dict) -> dict:
+
+def transform_update_proposal(data: Proposal) -> Proposal:
     """
-    Transforms and updates a given data dictionary with specific operations.
+    Transforms and updates a given Proposal model.
 
-    The function performs the following transformations:
-    - Sets the 'proposal_id' field to "12345" if the original 'proposal_id' is "new".
-    - Adds or modifies date-related metadata.
-    - Rounds 'right_ascension' and 'declination' in 'targets' to 3 decimal places.
-    - Changes the units of 'right_ascension' and 'declination' to degrees.
-
-    Parameters:
-    data (dict): A dictionary containing various fields, including 'proposal_id',
-                 'submitted_by', 'submitted_on', and nested 'info'
-                 which includes 'investigators' and 'targets'.
-
-    Returns:
-    dict: The transformed and updated data dictionary.
+    - If prsl_id is "new", sets it to "12345".
+    - Sets submitted_on to now if submitted_by is provided.
+    - Sets status based on presence of submitted_on.
+    - Extracts investigator_refs from info.investigators.
     """
 
-    if not data:
-        return {}
-
-    # Constructing and returning the updated data
-    if data.get("submitted_by"):
-        # Constructing and returning the updated data
-        return {
-            "prsl_id": data["prsl_id"],
-            "cycle": data["cycle"],
-            "submitted_by": data["submitted_by"],
-            "submitted_on": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "status": "submitted" if data["submitted_on"] else "draft",
-            "investigator_refs": [
-                user["investigator_id"]
-                for user in data.get("info", {}).get("investigators", [])
-            ],
-            "info": data.get("info", {}),
-        }
+    # TODO : rethink the logic here - may need to move to UI
+    if data.submitted_by:
+        submitted_on = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        status = "submitted"
     else:
-        return {
-            "prsl_id": data["prsl_id"],
-            "cycle": data["cycle"],
-            "status": "submitted" if data.get("submitted_on") else "draft",
-            "investigator_refs": [
-                user["investigator_id"]
-                for user in data.get("info", {}).get("investigators", [])
-            ],
-            "info": data.get("info", {}),
-        }
+        submitted_on = data.submitted_on
+        status = "submitted" if submitted_on else "draft"
 
+    investigator_refs = [inv.investigator_id for inv in data.info.investigators]
 
-def transform_create_proposal(data: dict) -> Proposal:
-    """
-    Transforms and updates a given data dictionary with specific operations.
-
-    The function performs the following transformations:
-    - Sets the 'proposal_id' field to "new" .
-    - Adds or modifies date-related metadata.
-
-    Parameters:
-    data (dict): A dictionary containing various fields, including 'proposal_id',
-                 'submitted_by', 'submitted_on', and nested 'info'
-                 which includes 'investigators' and 'targets'.
-
-    Returns:
-    dict: The updated data dictionary.
-    """
     return Proposal(
-        prsl_id=data.get("prsl_id", None),
-        status="draft",
-        info=data.get("info", {}),
-        cycle=data.get("cycle", {}),
-        investigator_refs=[
-            user["investigator_id"]
-            for user in data.get("info", {}).get("investigators", [])
-        ],
+        prsl_id=data.prsl_id,
+        cycle=data.cycle,
+        submitted_by=data.submitted_by,
+        submitted_on=submitted_on,
+        status=status,
+        info=data.info,
+        investigator_refs=investigator_refs,
+    )
+
+
+def transform_create_proposal(data: Proposal) -> Proposal:
+    """
+    Transforms and updates a given Proposal object with specific operations.
+
+    - Forces status to "draft"
+    - Extracts investigator IDs if available
+    """
+    # TODO: Assess if this function is still needed once
+    # the status comes from the frontend
+    return Proposal(
+        prsl_id=data.prsl_id,
+        status="draft",  # At the time of creation the status is draft
+        info=data.info or {},
+        cycle=data.cycle,
+        investigator_refs=(
+            [
+                user.get("investigator_id")
+                for user in data.info.get("investigators", [])
+                if "investigator_id" in user
+            ]
+            if "investigators" in data.info
+            else []
+        ),
     )

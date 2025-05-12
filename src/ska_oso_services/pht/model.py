@@ -1,3 +1,7 @@
+"""
+Model specific for the pht
+"""
+
 from pydantic import BaseModel, EmailStr
 
 

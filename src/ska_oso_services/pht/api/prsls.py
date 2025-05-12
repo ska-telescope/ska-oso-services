@@ -2,7 +2,7 @@ import logging
 from http import HTTPStatus
 
 from botocore.exceptions import BotoCoreError, ClientError
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
@@ -17,6 +17,7 @@ from ska_oso_services.pht.model import EmailRequest
 from ska_oso_services.pht.utils import validation
 from ska_oso_services.pht.utils.email_helper import send_email_async
 from ska_oso_services.pht.utils.pht_handler import (
+    EXAMPLE_PROPOSAL,
     transform_create_proposal,
     transform_update_proposal,
 )
@@ -33,12 +34,15 @@ LOGGER = logging.getLogger(__name__)
 router = APIRouter(prefix="/prsls")
 
 
-@router.post("/create", summary="Create a new proposal")
-def create_proposal(proposal: dict) -> str:
+@router.post(
+    "/create",
+    summary="Create a new proposal",
+)
+def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) -> str:
     """
     Creates a new proposal in the ODA
     """
-
+    # TODO: Remove this once the frontend is updated to send the status
     proposal_transformed = transform_create_proposal(proposal)
 
     LOGGER.debug("POST PROPOSAL create")
@@ -99,7 +103,7 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
 
 
 @router.put("/{proposal_id}", summary="Update an existing proposal")
-def update_proposal(proposal_id: str, prsl: dict) -> Proposal:
+def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
     """
     Updates a proposal in the underlying data store.
 
@@ -121,10 +125,11 @@ def update_proposal(proposal_id: str, prsl: dict) -> Proposal:
     # Ensure ID match
     if prsl.prsl_id != proposal_id:
         LOGGER.warning(
-            "Proposal ID mismatch: path ID={proposal_id}, body ID={prsl.prsl_id}"
+            "Proposal ID mismatch: Proposal ID={proposal_id} in path, "
+            "body ID={prsl.prsl_id}"
         )
         raise UnprocessableEntityError(
-            detail="Proposal ID in path and payload do not match."
+            detail="Proposal ID in path and body do not match."
         )
 
     with oda.uow() as uow:
@@ -193,20 +198,22 @@ def create_upload_pdf_url(filename: str) -> str:
     try:
         s3_client = get_aws_client()
     except BotoCoreError as boto_err:
-        LOGGER.exception("S3 client init failed")
+        LOGGER.exception("S3 client initialize failed")
         raise HTTPException(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
-            detail="Could not initialize S3 client",
+            detail="Could not initialize S3 client {boto_err.args[0]}",
         ) from boto_err
 
     try:
         return create_presigned_url_upload_pdf(
             key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
         )
+    # TODO: Andrey to look into this and determine the correct code or if not needed
     except ClientError as client_err:
         LOGGER.exception("S3 client failed to generate upload URL")
         raise HTTPException(
-            status_code=HTTPStatus.BAD_GATEWAY, detail="Failed to generate upload URL"
+            status_code=HTTPStatus.BAD_GATEWAY,
+            detail="Failed to generate upload URL {client_err.args[0]}",
         ) from client_err
 
 
@@ -215,35 +222,29 @@ def create_download_pdf_url(filename: str) -> str:
     """
     Generate a presigned S3 download URL for the given filename.
     """
-    if not filename or "/" in filename or "\\" in filename:
-        raise UnprocessableEntityError(
-            detail={
-                "error": "Invalid filename",
-                "reason": "Filename must not contain slashes or be empty",
-                "field": "filename",
-                "value": filename,
-            }
-        )
 
     LOGGER.debug("POST Download Signed URL for: %s", filename)
 
     try:
         s3_client = get_aws_client()
     except BotoCoreError as boto_err:
-        LOGGER.exception("S3 client init failed")
+        LOGGER.exception("S3 client initialize failed")
         raise HTTPException(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
-            detail="Could not initialize S3 client",
+            detail="Could not initialize S3 client {boto_err.args[0]}",
         ) from boto_err
 
     try:
         return create_presigned_url_download_pdf(
             key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
         )
+    # TODO: Andrey to look into this when secrets are available
+    # and determine the correct code or if not needed
     except ClientError as client_err:
         LOGGER.exception("S3 client failed to generate download URL")
         raise HTTPException(
-            status_code=HTTPStatus.BAD_GATEWAY, detail="Failed to generate download URL"
+            status_code=HTTPStatus.BAD_GATEWAY,
+            detail="Failed to generate download URL {client_err.args[0]}",
         ) from client_err
 
 
@@ -252,33 +253,27 @@ def create_delete_pdf_url(filename: str) -> str:
     """
     Generate a presigned S3 delete URL for the given filename.
     """
-    if not filename or "/" in filename or "\\" in filename:
-        raise UnprocessableEntityError(
-            detail={
-                "error": "Invalid filename",
-                "reason": "Filename must not contain slashes or be empty",
-                "field": "filename",
-                "value": filename,
-            }
-        )
 
     LOGGER.debug("POST Delete Signed URL for: %s", filename)
 
     try:
         s3_client = get_aws_client()
     except BotoCoreError as boto_err:
-        LOGGER.exception("S3 client init failed")
+        LOGGER.exception("S3 client initialize failed")
         raise HTTPException(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
-            detail="Could not initialize S3 client",
+            detail="Could not initialize S3 client {boto_err.args[0]}",
         ) from boto_err
 
     try:
         return create_presigned_url_delete_pdf(
             key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
         )
+    # TODO: Andrey to look into this when secrets are available
+    # and determine the correct code or if not needed
     except ClientError as client_err:
         LOGGER.exception("S3 client failed to generate delete URL")
         raise HTTPException(
-            status_code=HTTPStatus.BAD_GATEWAY, detail="Failed to generate delete URL"
+            status_code=HTTPStatus.BAD_GATEWAY,
+            detail="Failed to generate delete URL {client_err.args[0]}",
         ) from client_err
