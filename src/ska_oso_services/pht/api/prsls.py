@@ -3,6 +3,7 @@ from http import HTTPStatus
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, HTTPException
+from pydantic import ValidationError
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
 
@@ -15,6 +16,10 @@ from ska_oso_services.common.error_handling import (
 from ska_oso_services.pht.model import EmailRequest
 from ska_oso_services.pht.utils import validation
 from ska_oso_services.pht.utils.email_helper import send_email_async
+from ska_oso_services.pht.utils.pht_handler import (
+    transform_create_proposal,
+    transform_update_proposal,
+)
 from ska_oso_services.pht.utils.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
     create_presigned_url_delete_pdf,
@@ -29,15 +34,18 @@ router = APIRouter(prefix="/prsls")
 
 
 @router.post("/create", summary="Create a new proposal")
-def create_proposal(proposal: Proposal) -> str:
+def create_proposal(proposal: dict) -> str:
     """
     Creates a new proposal in the ODA
     """
+
+    proposal_transformed = transform_create_proposal(proposal)
+
     LOGGER.debug("POST PROPOSAL create")
 
     try:
         with oda.uow() as uow:
-            created_prsl = uow.prsls.add(proposal)
+            created_prsl = uow.prsls.add(proposal_transformed)
             uow.commit()
         LOGGER.info("Proposal successfully created with ID {created_prsl.prsl_id}")
         return created_prsl.prsl_id
@@ -91,7 +99,7 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
 
 
 @router.put("/{proposal_id}", summary="Update an existing proposal")
-def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
+def update_proposal(proposal_id: str, prsl: dict) -> Proposal:
     """
     Updates a proposal in the underlying data store.
 
@@ -99,6 +107,15 @@ def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
     :param prsl: Proposal object payload from the request body
     :return: the updated Proposal object
     """
+    transform_body = transform_update_proposal(prsl)
+
+    try:
+        prsl = Proposal.model_validate(transform_body)  # test transformed
+    except ValidationError as err:
+        raise BadRequestError(
+            detail="Validation error after transforming proposal: {err.args[0]}"
+        ) from err
+
     LOGGER.debug("PUT PROPOSAL - Attempting update for proposal_id: {proposal_id}")
 
     # Ensure ID match

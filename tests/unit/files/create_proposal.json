@@ -1,10 +1,6 @@
 {
     "prsl_id": "prp-001",
     "status": "draft",
-    "investigator_refs": [
-      "TestUser"
-    ],
-  
     "cycle": "5000_2023",
     "info": {
       "title": "The Milky Way View",

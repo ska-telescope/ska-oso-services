@@ -5,6 +5,8 @@ for submission and creation processes.
 
 from datetime import datetime, timezone
 
+from ska_oso_pdm.proposal import Proposal
+
 
 def transform_update_proposal(data: dict) -> dict:
     """
@@ -56,7 +58,7 @@ def transform_update_proposal(data: dict) -> dict:
         }
 
 
-def transform_create_proposal(data: dict) -> dict:
+def transform_create_proposal(data: dict) -> Proposal:
     """
     Transforms and updates a given data dictionary with specific operations.
 
@@ -72,13 +74,13 @@ def transform_create_proposal(data: dict) -> dict:
     Returns:
     dict: The updated data dictionary.
     """
-    return {
-        "prsl_id": None,
-        "status": "draft",
-        "info": data.get("info", {}),
-        "cycle": data.get("cycle", {}),
-        "investigator_refs": [
+    return Proposal(
+        prsl_id=data.get("prsl_id", None),
+        status="draft",
+        info=data.get("info", {}),
+        cycle=data.get("cycle", {}),
+        investigator_refs=[
             user["investigator_id"]
             for user in data.get("info", {}).get("investigators", [])
         ],
-    }
+    )
