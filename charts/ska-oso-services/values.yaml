@@ -24,7 +24,7 @@ rest:
   image:
     registry: artefact.skao.int
     image: ska-oso-services
-    tag: 0.8.0-dirty # Defaults to the chart appVersion if not set
+    tag: ~ # Defaults to the chart appVersion if not set
     pullPolicy: IfNotPresent
   oda:
     backendType: postgres
