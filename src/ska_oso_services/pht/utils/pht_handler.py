@@ -50,6 +50,3 @@ def transform_update_proposal(data: Proposal) -> Proposal:
         info=data.info,
         investigator_refs=investigator_refs,
     )
-
-
-

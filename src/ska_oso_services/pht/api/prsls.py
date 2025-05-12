@@ -1,6 +1,5 @@
 import logging
 from http import HTTPStatus
-from typing import Dict
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, HTTPException
