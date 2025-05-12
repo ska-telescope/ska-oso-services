@@ -7,7 +7,6 @@ from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import status
 from fastapi.testclient import TestClient
 
-
 from tests.unit.conftest import PHT_BASE_API_URL
 
 PROPOSAL_API_URL = f"{PHT_BASE_API_URL}/prsls"
@@ -173,5 +172,3 @@ class TestSignedUrlDownload:
 
         assert response.status_code == status.HTTP_502_BAD_GATEWAY
         assert "Failed to generate download URL" in response.text
-
-

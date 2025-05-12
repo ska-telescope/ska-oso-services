@@ -1,4 +1,5 @@
 from unittest import mock
+
 from ska_oso_services.pht.utils.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
     S3Config,
@@ -9,6 +10,7 @@ from ska_oso_services.pht.utils.s3_bucket import (
     generate_presigned_url,
     get_aws_client,
 )
+
 
 class TestS3BucketUtils:
 
