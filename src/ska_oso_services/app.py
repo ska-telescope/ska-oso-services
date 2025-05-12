@@ -8,6 +8,7 @@ from importlib.metadata import version
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from ska_aaa_authhelpers import AuditLogFilter, watchdog
 from ska_db_oda.persistence.domain.errors import ODAError, ODANotFound
 from ska_ser_logging import configure_logging
 
@@ -35,10 +36,14 @@ def create_app(production=PRODUCTION) -> FastAPI:
     """
     Create the Connexion application with required config
     """
-    configure_logging(level=LOG_LEVEL)
+    configure_logging(level=LOG_LEVEL, tags_filter=AuditLogFilter)
     LOGGER.info("Creating FastAPI app")
 
-    app = FastAPI(openapi_url=f"{API_PREFIX}/openapi.json", docs_url=f"{API_PREFIX}/ui")
+    app = FastAPI(
+        openapi_url=f"{API_PREFIX}/openapi.json",
+        docs_url=f"{API_PREFIX}/ui",
+        lifespan=watchdog(),
+    )
 
     app.add_middleware(
         CORSMiddleware,
