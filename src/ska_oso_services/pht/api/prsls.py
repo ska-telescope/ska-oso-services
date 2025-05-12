@@ -12,7 +12,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
-from ska_oso_services.pht.api import validation
+from ska_oso_services.pht.utils import validation
 from ska_oso_services.pht.model import EmailRequest
 from ska_oso_services.pht.utils.email_helper import send_email_async
 from ska_oso_services.pht.utils.s3_bucket import (
