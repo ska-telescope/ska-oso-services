@@ -7,7 +7,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 
-Update the docker base images (BTN-2661)
+1.0.0
+***********
+* [BREAKING] AAA now enforced on all API resources. A valid JWT token with the correct scope, audience and group membership must be sent in the Authorization
+  header for all requests. See ``ska-aaa-authhelpers`` and Solution Intent for more details.
+* Update the docker base images (BTN-2661)
 
 0.8.0
 **********
