@@ -92,10 +92,10 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
         proposals = uow.prsls.query(query_param)
 
         if proposals is None:
-            LOGGER.info("No proposals found for user: {user_id}")
+            LOGGER.info("No proposals found for user: %s", user_id)
             return []
 
-        LOGGER.debug("Found {len(proposals)} proposals for user {user_id}")
+        LOGGER.debug("Found %d proposals for user: %s", len(proposals), user_id)
         return proposals
 
 
@@ -117,13 +117,14 @@ def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
             detail="Validation error after transforming proposal: {err.args[0]}"
         ) from err
 
-    LOGGER.debug("PUT PROPOSAL - Attempting update for proposal_id: {proposal_id}")
+    LOGGER.debug("PUT PROPOSAL - Attempting update for proposal_id: %s", proposal_id)
 
     # Ensure ID match
     if prsl.prsl_id != proposal_id:
         LOGGER.warning(
-            "Proposal ID mismatch: Proposal ID={proposal_id} in path, "
-            "body ID={prsl.prsl_id}"
+            "Proposal ID mismatch: Proposal ID=%s in path, body ID=%s",
+            proposal_id,
+            prsl.prsl_id,
         )
         raise UnprocessableEntityError(
             detail="Proposal ID in path and body do not match."
@@ -133,17 +134,17 @@ def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
         # Verify proposal exists
         existing = uow.prsls.get(proposal_id)
         if not existing:
-            LOGGER.info("Proposal not found for update: {proposal_id}")
+            LOGGER.info("Proposal not found for update: %s", proposal_id)
             raise NotFoundError(detail="Proposal not found: {proposal_id}")
 
         try:
             updated_prsl = uow.prsls.add(prsl)  # Add is used for update
             uow.commit()
-            LOGGER.info("Proposal {proposal_id} updated successfully")
+            LOGGER.info("Proposal %s updated successfully", proposal_id)
             return updated_prsl
 
         except ValueError as err:
-            LOGGER.error("Validation failed for proposal {proposal_id}: {err}")
+            LOGGER.error("Validation failed for proposal %s: %s", proposal_id, err)
             raise BadRequestError(
                 detail="Validation error while saving proposal: {err.args[0]}"
             ) from err
@@ -195,7 +196,7 @@ def create_upload_pdf_url(filename: str) -> str:
     try:
         s3_client = get_aws_client()
     except BotoCoreError as boto_err:
-        LOGGER.exception("S3 client initialize failed")
+        LOGGER.exception("S3 client initialization failed: %s", boto_err)
         raise HTTPException(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
             detail="Could not initialize S3 client {boto_err.args[0]}",
@@ -207,7 +208,7 @@ def create_upload_pdf_url(filename: str) -> str:
         )
     # TODO: Andrey to look into this and determine the correct code or if not needed
     except ClientError as client_err:
-        LOGGER.exception("S3 client failed to generate upload URL")
+        LOGGER.exception("S3 client failed to generate upload URL: %s", client_err)
         raise HTTPException(
             status_code=HTTPStatus.BAD_GATEWAY,
             detail="Failed to generate upload URL {client_err.args[0]}",
@@ -225,7 +226,7 @@ def create_download_pdf_url(filename: str) -> str:
     try:
         s3_client = get_aws_client()
     except BotoCoreError as boto_err:
-        LOGGER.exception("S3 client initialize failed")
+        LOGGER.exception("S3 client initialization failed: %s", boto_err)
         raise HTTPException(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
             detail="Could not initialize S3 client {boto_err.args[0]}",
@@ -238,7 +239,7 @@ def create_download_pdf_url(filename: str) -> str:
     # TODO: Andrey to look into this when secrets are available
     # and determine the correct code or if not needed
     except ClientError as client_err:
-        LOGGER.exception("S3 client failed to generate download URL")
+        LOGGER.exception("S3 client failed to generate download URL: %s", client_err)
         raise HTTPException(
             status_code=HTTPStatus.BAD_GATEWAY,
             detail="Failed to generate download URL {client_err.args[0]}",
@@ -256,7 +257,7 @@ def create_delete_pdf_url(filename: str) -> str:
     try:
         s3_client = get_aws_client()
     except BotoCoreError as boto_err:
-        LOGGER.exception("S3 client initialize failed")
+        LOGGER.exception("S3 client initialize failed: %s", boto_err)
         raise HTTPException(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
             detail="Could not initialize S3 client {boto_err.args[0]}",
@@ -269,7 +270,7 @@ def create_delete_pdf_url(filename: str) -> str:
     # TODO: Andrey to look into this when secrets are available
     # and determine the correct code or if not needed
     except ClientError as client_err:
-        LOGGER.exception("S3 client failed to generate delete URL")
+        LOGGER.exception("S3 client failed to generate delete URL: %s", client_err)
         raise HTTPException(
             status_code=HTTPStatus.BAD_GATEWAY,
             detail="Failed to generate delete URL {client_err.args[0]}",
