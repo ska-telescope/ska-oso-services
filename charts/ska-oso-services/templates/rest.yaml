@@ -93,7 +93,7 @@ spec:
                 name: {{ .Values.rest.pht.aws_server_public_key.secret }}
                 key: {{ .Values.rest.pht.aws_server_public_key.key }}
                 {{ else }}
-                name: ska-oso-services-umbrella-allsecrets-{{ $.Release.Name }}
+                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
                 key: AWS_SERVER_PUBLIC_KEY
                 {{ end }}
           - name: AWS_SERVER_SECRET_KEY
@@ -103,7 +103,7 @@ spec:
                 name: {{ .Values.rest.pht.aws_server_secret_key.secret }}
                 key: {{ .Values.rest.pht.aws_server_secret_key.key }}
                 {{ else }}
-                name: ska-oso-services-umbrella-allsecrets-{{ $.Release.Name }}
+                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
                 key: AWS_SERVER_SECRET_KEY
                 {{ end }}
           - name: SMTP_PASSWORD
@@ -113,7 +113,7 @@ spec:
                 name: {{ .Values.rest.pht.smtp_password.secret }}
                 key: {{ .Values.rest.pht.smtp_password.key }}
                 {{ else }}
-                name: ska-oso-services-umbrella-allsecrets-{{ $.Release.Name }}
+                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
                 key: SMTP_PASSWORD
                 {{ end }}
         envFrom:
