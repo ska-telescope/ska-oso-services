@@ -15,6 +15,7 @@ from ska_oso_services.common.auth import AUDIENCE, Scope
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 APP_BASE_API_URL = f"/ska-oso-services/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
 ODT_BASE_API_URL = f"{APP_BASE_API_URL}/odt"
+PHT_BASE_API_URL = f"{APP_BASE_API_URL}/pht"
 
 
 @pytest.fixture(scope="module", name="test_app")
