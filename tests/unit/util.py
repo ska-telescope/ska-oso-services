@@ -10,6 +10,7 @@ from deepdiff import DeepDiff
 from ska_db_oda.persistence.domain import set_identifier
 from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
+from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
 
@@ -99,6 +100,23 @@ class TestDataFactory:
 
         return prj
 
+    @staticmethod
+    def proposal(prsl_id: str = "prsl-mvp01-20220923-00001") -> Proposal:
+        """
+        Load a valid Proposal object from file and override prsl_id,
+        """
+
+        proposal = Proposal.model_validate_json(
+            load_string_from_file("files/create_proposal.json")
+        )
+        proposal.prsl_id = prsl_id
+
+        return proposal
+
+    @staticmethod
+    def email_payload(email="test@example.com", prsl_id="SKAO123"):
+        return {"email": email, "prsl_id": prsl_id}
+
 
 VALID_MID_SBDEFINITION_JSON = TestDataFactory.sbdefinition().model_dump_json()
 VALID_LOW_SBDEFINITION_JSON = TestDataFactory.lowsbdefinition().model_dump_json()
@@ -110,3 +128,14 @@ SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON = TestDataFactory.sbdefinition(
 ).model_dump_json()
 
 VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(prj_id=None).model_dump_json()
+
+# proposal entry
+VALID_NEW_PROPOSAL = TestDataFactory.proposal().model_dump_json()
+PAYLOAD_SUCCESS = TestDataFactory.email_payload()
+PAYLOAD_CONNECT_FAIL = TestDataFactory.email_payload(
+    "connectfail@example.com", "PRSL999"
+)
+PAYLOAD_BAD_TO = TestDataFactory.email_payload("badto@example.com", "PRSLBAD")
+PAYLOAD_GENERIC_FAIL = TestDataFactory.email_payload(
+    "genericfail@example.com", "GENERICFAIL"
+)

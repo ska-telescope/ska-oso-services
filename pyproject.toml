@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska-oso-services"
-version = "0.8.0"
+version = "1.0.0"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
 authors = ["Team Buttons"]
 license = "BSD-3-Clause"
@@ -55,6 +55,13 @@ pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
 ska-ost-osd = "3.1.1"
+aiosmtplib = "^4.0.1"
+boto3 = "^1.38.13"
+
+ska-aaa-authhelpers = "^1.0.0"
+# Need to pin as otherwise pip cannot resolve the dependencies in the tests.
+# This dependency comes through the osd > telmodel, so reasses when updating those.
+argcomplete = "^1.9.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
