@@ -5,7 +5,7 @@ from os import getenv
 from ska_aaa_authhelpers import Requires
 from ska_aaa_authhelpers.test_helpers import TEST_ISSUER, TEST_PUBLIC_KEYS
 
-AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
+AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
 
 
 # This should never be true in production, because
