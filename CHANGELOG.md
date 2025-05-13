@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 
+1.0.1
+****** 
+* Add 'api://' prefix to the audience used by AAA
+
 1.0.0
 ***********
 * [BREAKING] AAA now enforced on all API resources. A valid JWT token with the correct scope, audience and group membership must be sent in the Authorization
