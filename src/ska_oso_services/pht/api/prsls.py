@@ -51,7 +51,7 @@ def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) ->
         LOGGER.info("Proposal successfully created with ID {created_prsl.prsl_id}")
         return created_prsl.prsl_id
     except ValueError as err:
-        LOGGER.exception("ValueError when adding proposal to the ODA : {err}")
+        LOGGER.exception("ValueError when adding proposal to the ODA: %s", err)
         raise BadRequestError(
             detail=f"Failed when attempting to create a proposal: '{err.args[0]}'",
         ) from err
