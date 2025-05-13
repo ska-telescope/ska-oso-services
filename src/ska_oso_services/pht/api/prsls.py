@@ -51,7 +51,7 @@ def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) ->
         LOGGER.info("Proposal successfully created with ID {created_prsl.prsl_id}")
         return created_prsl.prsl_id
     except ValueError as err:
-        LOGGER.exception("ValueError when adding proposal to the ODA")
+        LOGGER.exception("ValueError when adding proposal to the ODA : {err}")
         raise BadRequestError(
             detail=f"Failed when attempting to create a proposal: '{err.args[0]}'",
         ) from err
@@ -180,7 +180,7 @@ def create_upload_pdf_url(filename: str) -> str:
     """
     Generate a presigned S3 upload URL for the given filename.
     """
-
+    # Catch simple things someone may add to the filename
     if not filename or "/" in filename or "\\" in filename:
         validation_resp = {
             "error": "Invalid filename",
