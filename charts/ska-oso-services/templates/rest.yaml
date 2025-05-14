@@ -86,6 +86,46 @@ spec:
                 name: ska-db-oda-umbrella-postgres-{{ $.Release.Name }}
                 key: ADMIN_POSTGRES_PASSWORD
                 {{ end }}
+          - name: AWS_SERVER_PUBLIC_KEY
+            valueFrom:
+              secretKeyRef:
+                {{ if .Values.rest.pht.aws_server_public_key.secret }}
+                name: {{ .Values.rest.pht.aws_server_public_key.secret }}
+                key: {{ .Values.rest.pht.aws_server_public_key.key }}
+                {{ else }}
+                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
+                key: AWS_SERVER_PUBLIC_KEY
+                {{ end }}
+          - name: AWS_SERVER_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                {{ if .Values.rest.pht.aws_server_secret_key.secret }}
+                name: {{ .Values.rest.pht.aws_server_secret_key.secret }}
+                key: {{ .Values.rest.pht.aws_server_secret_key.key }}
+                {{ else }}
+                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
+                key: AWS_SERVER_SECRET_KEY
+                {{ end }}
+          - name: SMTP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                {{ if .Values.rest.pht.smtp_password.secret }}
+                name: {{ .Values.rest.pht.smtp_password.secret }}
+                key: {{ .Values.rest.pht.smtp_password.key }}
+                {{ else }}
+                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
+                key: SMTP_PASSWORD
+                {{ end }}
+          - name: AWS_PHT_BUCKET_NAME
+            valueFrom:
+              secretKeyRef:
+                {{ if .Values.rest.pht.s3_bucket_name.secret }}
+                name: {{ .Values.rest.pht.s3_bucket_name.secret }}
+                key: {{ .Values.rest.pht.s3_bucket_name.key }}
+                {{ else }}
+                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
+                key: AWS_PHT_BUCKET_NAME
+                {{ end }}
         envFrom:
           - configMapRef:
               name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
