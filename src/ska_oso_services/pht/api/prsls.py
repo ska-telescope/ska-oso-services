@@ -48,7 +48,7 @@ def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) ->
         with oda.uow() as uow:
             created_prsl = uow.prsls.add(proposal)
             uow.commit()
-        LOGGER.info(f"Proposal successfully created with ID {created_prsl.prsl_id}")
+        LOGGER.info("Proposal successfully created with ID %s", created_prsl.prsl_id)
         return created_prsl.prsl_id
     except ValueError as err:
         LOGGER.exception("ValueError when adding proposal to the ODA: %s", err)

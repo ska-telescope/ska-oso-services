@@ -38,9 +38,7 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages',
-    'sphinxcontrib.plantuml']
+    'sphinx.ext.viewcode']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
