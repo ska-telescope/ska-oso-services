@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Added all pht endpoints:
+  - POST endpoint to create a proposal
+  - PUT endpoint to update a proposal
+  - GET endpoint to retrieve a proposal by proposal ID
+  - GET endpoint to retrieve a list proposal by user
+  - Validate POST endpoint to validate a proposal
+  - Email and pdfs endpoints to send emails and upload pdfs to s3 buckets
 
 1.0.0
 ***********

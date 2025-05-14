@@ -11,7 +11,7 @@ from tests.unit.util import assert_json_is_equal
 
 COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
 
-#Define test cases
+# Define test cases
 COORDINATE_TEST_CASES = [
     (
         "M31",
