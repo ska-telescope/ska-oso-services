@@ -58,7 +58,6 @@ def configuration_from_osd() -> Configuration:
 
 
 def _get_mid_telescope_configuration() -> MidConfiguration:
-
     subarrays = []
     for array_assembly in SUPPORTED_ARRAY_ASSEMBLIES:
         mid_response = get_osd(
@@ -88,7 +87,6 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
 
 
 def _get_low_telescope_configuration() -> LowConfiguration:
-
     subarrays = []
     for array_assembly in SUPPORTED_ARRAY_ASSEMBLIES:
         low_response = get_osd(

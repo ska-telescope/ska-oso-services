@@ -59,7 +59,6 @@ def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) ->
 
 @router.get("/{proposal_id}", summary="Retrieve an existing proposal")
 def get_proposal(proposal_id: str) -> Proposal:
-
     LOGGER.debug("GET PROPOSAL prsl_id: %s", proposal_id)
 
     try:
