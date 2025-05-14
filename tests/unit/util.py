@@ -3,8 +3,8 @@ Utility functions to be used in tests
 """
 
 import json
-import os.path
 from datetime import datetime
+from pathlib import Path
 
 from deepdiff import DeepDiff
 from ska_db_oda.persistence.domain import set_identifier
@@ -12,7 +12,6 @@ from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
-from pathlib import Path
 
 CUR_DIR = Path(__file__).parent
 
@@ -45,7 +44,7 @@ def load_string_from_file(filename: str, directory: str = "files") -> str:
         return data
 
 
-class TestDataFactory:    
+class TestDataFactory:
     @staticmethod
     def sbdefinition(
         sbd_id: SBDefinitionID = "sbd-mvp01-20200325-00001",
@@ -93,7 +92,7 @@ class TestDataFactory:
         prj_id: str = "prj-mvp01-20220923-00001",
         version: int = 1,
     ) -> Project:
-        
+
         data = load_string_from_file("project.json")
         prj = Project.model_validate_json(data)
 
@@ -113,7 +112,7 @@ class TestDataFactory:
         proposal.prsl_id = prsl_id
 
         return proposal
-    
+
     @staticmethod
     def complete_proposal():
         filename = "complete_proposal.json"
