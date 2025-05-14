@@ -32,6 +32,9 @@ class TestSignedUrlDelete:
         "ska_oso_services.pht.api.prsls.get_aws_client", side_effect=BotoCoreError()
     )
     def test_create_delete_url_boto_core_error(self, mock_get_client, client):
+        """
+        Test that a BotoCoreError is handled correctly
+        """
         response = client.post(
             f"{PROPOSAL_API_URL}/signed-url/delete/valid-filename.pdf"
         )
@@ -49,6 +52,9 @@ class TestSignedUrlDelete:
     def test_create_delete_url_client_error(
         self, mock_create_url, mock_get_client, client
     ):
+        """
+        Test that a ClientError is handled correctly
+        """
         mock_get_client.return_value = mock.MagicMock()
 
         response = client.post(
@@ -65,6 +71,9 @@ class TestSignedUrlUpload:
         "ska_oso_services.pht.api.prsls.create_presigned_url_upload_pdf", autospec=True
     )
     def test_create_upload_url_success(self, mock_create_url, mock_get_client, client):
+        """
+        Test that a presigned URL for uploading a file is created successfully
+        """
         mock_get_client.return_value = mock.MagicMock()
         mock_create_url.return_value = "https://s3/upload-url"
         filename = "upload-me.pdf"
@@ -74,6 +83,12 @@ class TestSignedUrlUpload:
         assert response.text.strip('"') == "https://s3/upload-url"
 
     def test_create_upload_url_invalid_filename(self, client):
+        """
+        Test that an invalid filename returns a 422 error
+        """
+        # Invalid filename with backslash
+        # This is a common mistake when using Windows paths
+        # and should be handled by the API
         filename = "bad\\upload.pdf"
         response = client.post(f"{PROPOSAL_API_URL}/signed-url/upload/{filename}")
 
@@ -84,6 +99,10 @@ class TestSignedUrlUpload:
         "ska_oso_services.pht.api.prsls.get_aws_client", side_effect=BotoCoreError()
     )
     def test_create_upload_url_boto_core_error(self, mock_get_client, client):
+        """
+        Test that a BotoCoreError is handled correctly
+        """
+        # Mock the S3 client to raise a BotoCoreError
         response = client.post(
             f"{PROPOSAL_API_URL}/signed-url/upload/valid-filename.pdf"
         )

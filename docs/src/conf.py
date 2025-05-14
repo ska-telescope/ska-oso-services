@@ -39,7 +39,8 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages']
+    'sphinx.ext.githubpages',
+    'sphinxcontrib.plantuml']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -89,6 +90,7 @@ todo_include_todos = True
 # a list of builtin themes.
 #
 html_theme = 'ska_ser_sphinx_theme'
+plantuml = 'plantuml'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

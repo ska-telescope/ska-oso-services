@@ -48,7 +48,7 @@ def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) ->
         with oda.uow() as uow:
             created_prsl = uow.prsls.add(proposal)
             uow.commit()
-        LOGGER.info("Proposal successfully created with ID {created_prsl.prsl_id}")
+        LOGGER.info(f"Proposal successfully created with ID {created_prsl.prsl_id}")
         return created_prsl.prsl_id
     except ValueError as err:
         LOGGER.exception("ValueError when adding proposal to the ODA: %s", err)
@@ -84,7 +84,7 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
     :return: a tuple of a list of Proposal and a
     """
 
-    LOGGER.debug("GET PROPOSAL LIST query for the user: {user_id}")
+    LOGGER.debug("GET PROPOSAL LIST query for the user: %s", user_id)
 
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
@@ -113,7 +113,7 @@ def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
         prsl = Proposal.model_validate(transform_body)  # test transformed
     except ValidationError as err:
         raise BadRequestError(
-            detail="Validation error after transforming proposal: {err.args[0]}"
+            detail=f"Validation error after transforming proposal: {err.args[0]}"
         ) from err
 
     LOGGER.debug("PUT PROPOSAL - Attempting update for proposal_id: %s", proposal_id)
