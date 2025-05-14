@@ -38,3 +38,8 @@ MANIFEST.skao.int%
 **/requirements.txt
 
 PrivateRules.mak
+
+.venv
+.project
+.pydevproject
+lint.bat
