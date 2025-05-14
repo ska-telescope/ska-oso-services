@@ -13,7 +13,6 @@ from ska_oso_services.pht.utils.s3_bucket import (
 
 
 class TestS3BucketUtils:
-
     def test_get_aws_client_returns_boto3_client(self):
         client = get_aws_client()
         assert client.meta.service_model.service_name == "s3"

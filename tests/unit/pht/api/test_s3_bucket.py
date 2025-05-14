@@ -13,7 +13,6 @@ PROPOSAL_API_URL = f"{PHT_BASE_API_URL}/prsls"
 
 
 class TestSignedUrlDelete:
-
     @mock.patch("ska_oso_services.pht.api.prsls.get_aws_client", autospec=True)
     @mock.patch(
         "ska_oso_services.pht.api.prsls.create_presigned_url_delete_pdf", autospec=True
@@ -61,7 +60,6 @@ class TestSignedUrlDelete:
 
 
 class TestSignedUrlUpload:
-
     @mock.patch("ska_oso_services.pht.api.prsls.get_aws_client", autospec=True)
     @mock.patch(
         "ska_oso_services.pht.api.prsls.create_presigned_url_upload_pdf", autospec=True
@@ -113,7 +111,6 @@ class TestSignedUrlUpload:
 
 
 class TestSignedUrlDownload:
-
     @mock.patch("ska_oso_services.pht.api.prsls.get_aws_client", autospec=True)
     @mock.patch(
         "ska_oso_services.pht.api.prsls.create_presigned_url_download_pdf",
