@@ -40,10 +40,43 @@ rest:
         # If left as null the default secret deployed by the ODA umbrella will be used.
         secret: ~
         key: ~
+  pht:
+    aws_server_public_key:
+      # This is the resource name of a k8s secret and the key the password is stored under.
+      # If left as null the default secret deployed by the PHT umbrella will be used.
+      secret: ~
+      key: ~
+    aws_server_secret_key:
+      # This is the resource name of a k8s secret and the key the password is stored under.
+      # If left as null the default secret deployed by the PHT umbrella will be used.
+      secret: ~
+      key: ~
+    smtp_password:
+      # This is the resource name of a k8s secret and the key the password is stored under.
+      # If left as null the default secret deployed by the PHT umbrella will be used.
+      secret: ~
+      key: ~
+    s3_bucket_name:
+      # This is the resource name of a k8s secret and the key the password is stored under.
+      # If left as null the default secret deployed by the PHT umbrella will be used.
+      secret: ~
+      key: ~
+
   skuid:
     url: # Standard SKUID svc address is used if this is not set
   ingress:
     enabled: true
+
+# The following values are used by the all_secrets.yaml template
+vault:
+  enabled: true
+  mount: dev
+  secretPath: "stargazers/oso-services"
+  secretKeys:
+  - "AWS_SERVER_PUBLIC_KEY"
+  - "AWS_SERVER_SECRET_KEY"
+  - "SMTP_PASSWORD"
+  - "AWS_PHT_BUCKET_NAME"
 
 nodeSelector: {}
 
