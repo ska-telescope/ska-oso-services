@@ -2984,14 +2984,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-db-oda"
-version = "7.4.0"
+version = "8.0.0"
 description = "SKA Database OSO Data Archive"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_db_oda-7.4.0-py3-none-any.whl", hash = "sha256:49075cc1be66dc681cecc58d805940bb591974a5c1e882352ca760f79acf52ec"},
-    {file = "ska_db_oda-7.4.0.tar.gz", hash = "sha256:804276407c4dbd69d9239ba232cf6ac3443730be5633a2eb9f9eb1071f6cdf28"},
+    {file = "ska_db_oda-8.0.0-py3-none-any.whl", hash = "sha256:ae1f0d01a8e8746b84650ada8ad7f8ba65739408659cb3c3148af181d7cf9e96"},
+    {file = "ska_db_oda-8.0.0.tar.gz", hash = "sha256:794252e776a049e86b04d04b82375124db2039a48668952d1c0967771ca3a860"},
 ]
 
 [package.dependencies]
@@ -3002,7 +3002,7 @@ psycopg-pool = ">=3.1.1,<4.0.0"
 pydantic = ">=2.9,<3.0"
 python-dateutil = ">=2.8.2,<3.0.0"
 requests = ">=2.27.1,<3.0.0"
-ska-oso-pdm = ">=17.2.0,<18.0.0"
+ska-oso-pdm = ">=18.0.0,<19.0.0"
 ska-ser-logging = ">=0.4.1,<0.5.0"
 ska-ser-skuid = ">=3.3.3,<4.0.0"
 
@@ -3013,14 +3013,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-oso-pdm"
-version = "17.2.0"
+version = "18.0.0"
 description = "SKA Project Data Model serialisation library"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_oso_pdm-17.2.0-py3-none-any.whl", hash = "sha256:d11e25b80a0db252e2b80debeb26196e1410def4c997e4490dcf40ee72b856b5"},
-    {file = "ska_oso_pdm-17.2.0.tar.gz", hash = "sha256:f52d14ba73ba92605f8c4d4aeeb3aab6d85a12d0b0f061b5d5314200ceda0761"},
+    {file = "ska_oso_pdm-18.0.0-py3-none-any.whl", hash = "sha256:82715c6b3711be3bae09e01043e5105166fa33ff1062d9e5df5f58202ccf8b50"},
+    {file = "ska_oso_pdm-18.0.0.tar.gz", hash = "sha256:8cb2fb787cf10f26f753d494400e73bca6e9d666d91cc1b3fa934f847ef68e02"},
 ]
 
 [package.dependencies]
@@ -3925,4 +3925,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "7836b974392df0d4ff27dc3897bd20618d72583e9d244a8cfeb9c16b0410bd4c"
+content-hash = "6e0ffb4fc25c8e5d2811f69796c5d1aaceb7ec8943e6122e5f1d97d03123c78a"
