@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 * Added all pht endpoints:
+  - Updated the ska-oso-oda version to v8.0.0
   - POST endpoint to create a proposal
   - PUT endpoint to update a proposal
   - GET endpoint to retrieve a proposal by proposal ID
