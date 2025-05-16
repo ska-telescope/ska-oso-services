@@ -15,6 +15,10 @@ Unreleased
   - Validate POST endpoint to validate a proposal
   - POST Email and pdfs endpoints to send emails and generate signed urls for upload, download and delete actions.
 
+1.0.1
+****** 
+* Add 'api://' prefix to the audience used by AAA
+
 1.0.0
 ***********
 * [BREAKING] AAA now enforced on all API resources. A valid JWT token with the correct scope, audience and group membership must be sent in the Authorization

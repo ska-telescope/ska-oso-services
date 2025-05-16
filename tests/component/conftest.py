@@ -4,7 +4,7 @@ import pytest
 from requests import Session
 from ska_aaa_authhelpers.test_helpers import mint_test_token
 
-AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
+AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
 
 
 @pytest.fixture(scope="session")
