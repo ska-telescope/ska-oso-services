@@ -12,4 +12,3 @@ ska-db-oda-umbrella:
   ska-ser-skuid:
     skuid:
       enabled: true
-

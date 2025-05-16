@@ -135,11 +135,11 @@ def get_coordinates(object_name: str) -> Equatorial:
         dec = result_table_simbad["dec"][0]
 
         # Determine if stored information is redshift or velocity
-        rvz_type = result_table_simbad["rvz_type"][0]
+        rvz_type = result_table_simbad["rvz_type"]
         if rvz_type == "z":
-            redshift = result_table_simbad["rvz_redshift"][0]
+            redshift = result_table_simbad["rvz_redshift"]
         elif rvz_type == "v":
-            velocity = result_table_simbad["rvz_radvel"][0]
+            velocity = result_table_simbad["rvz_radvel"]
     else:
         try:
             # If not found in SIMBAD, search in NED
