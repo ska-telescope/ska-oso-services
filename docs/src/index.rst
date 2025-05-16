@@ -47,7 +47,7 @@ For instructions on developing the application, see the `README <https://gitlab.
     :hidden:
 
     external/odt_rest_api.rst
-
+    external/pht_rest_api.rst
 
 .. toctree::
     :maxdepth: 2
@@ -57,5 +57,5 @@ For instructions on developing the application, see the `README <https://gitlab.
     internal/module_view.rst
     internal/persistence.rst
     internal/prj_and_sbd.rst
-
+    internal/prsl.rst
 
