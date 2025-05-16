@@ -13,7 +13,7 @@ Unreleased
   - GET endpoint to retrieve a proposal by proposal ID
   - GET endpoint to retrieve a list proposal by user
   - Validate POST endpoint to validate a proposal
-  - Email and pdfs endpoints to send emails and upload pdfs to s3 buckets
+  - POST Email and pdfs endpoints to send emails and generate signed urls for upload, download and delete actions.
 
 1.0.0
 ***********
