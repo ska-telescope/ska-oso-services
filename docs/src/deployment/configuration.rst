@@ -69,6 +69,7 @@ but also can be overwritten via the values.yaml
      - The aws S3 buket name used by PHT.
      - Required
      - Pulled from Vault - see :doc:`secret_management`
+     -
    * - SMTP_PASSWORD
      - The SMTP password to connect to SKAO server. Used by PHT to send emails.
      - Required
