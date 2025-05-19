@@ -44,7 +44,6 @@ but also can be overwritten via the values.yaml
      - The admin password of the PostgreSQL instance that the postgres ODA will connect to.
      - Required if ``ODA_BACKEND_TYPE`` is ``postgres``
      - Pulled from Vault - see :doc:`secret_management`
-     -
    * - POSTGRES_PORT
      - The port of the PostgreSQL instance that the postgres ODA will connect to.
      - Optional - default: ``5432``
