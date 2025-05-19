@@ -44,6 +44,7 @@ but also can be overwritten via the values.yaml
      - The admin password of the PostgreSQL instance that the postgres ODA will connect to.
      - Required if ``ODA_BACKEND_TYPE`` is ``postgres``
      - Pulled from Vault - see :doc:`secret_management`
+     -
    * - POSTGRES_PORT
      - The port of the PostgreSQL instance that the postgres ODA will connect to.
      - Optional - default: ``5432``
@@ -58,10 +59,12 @@ but also can be overwritten via the values.yaml
      - The aws server public key used to connect to the AWS account. Used by PHT to work with S3.
      - Required
      - Pulled from Vault - see :doc:`secret_management`
+     -
    * - AWS_SERVER_SECRET_KEY
      - The aws server secret key used to connect to the AWS account. Used by PHT to work with S3.
      - Required
      - Pulled from Vault - see :doc:`secret_management`
+     -
    * - AWS_PHT_BUCKET_NAME
      - The aws S3 buket name used by PHT.
      - Required
@@ -70,3 +73,4 @@ but also can be overwritten via the values.yaml
      - The SMTP password to connect to SKAO server. Used by PHT to send emails.
      - Required
      - Pulled from Vault - see :doc:`secret_management`
+     -
