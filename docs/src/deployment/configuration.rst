@@ -55,3 +55,23 @@ but also can be overwritten via the values.yaml
      - Optional - default: ``postgres``
      - ``ska-oso-services.rest.oda.postgres.db.name``
      - Optional - no default in chart
+   * - AWS_SERVER_PUBLIC_KEY
+     - The aws server public key used to connect to the AWS account. Used by PHT to work with S3.
+     - Required
+     - Pulled from Vault - see :doc:`secret_management`
+     -
+   * - AWS_SERVER_SECRET_KEY
+     - The aws server secret key used to connect to the AWS account. Used by PHT to work with S3.
+     - Required
+     - Pulled from Vault - see :doc:`secret_management`
+     -
+   * - AWS_PHT_BUCKET_NAME
+     - The aws S3 buket name used by PHT.
+     - Required
+     - Pulled from Vault - see :doc:`secret_management`
+     -
+   * - SMTP_PASSWORD
+     - The SMTP password to connect to SKAO server. Used by PHT to send emails.
+     - Required
+     - Pulled from Vault - see :doc:`secret_management`
+     -
