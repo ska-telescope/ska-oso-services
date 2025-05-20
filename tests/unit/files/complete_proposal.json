@@ -1,0 +1,347 @@
+{
+	"prsl_id": "prp-ska01-202204-01",
+	"status": "submitted",
+	"submitted_on": "2022-09-23T15:43:53.971548Z",
+	"submitted_by": "TestUser",
+	"investigator_refs": [
+		"prp-ska01-202204-01"
+	],
+	"metadata": {
+		"version": 1,
+		"created_by": "TestUser",
+		"created_on": "2022-09-23T15:43:53.971548Z",
+		"last_modified_by": "TestUser",
+		"last_modified_on": "2022-09-23T15:43:53.971548Z"
+	},
+	"cycle": "SKA_5000_2023",
+	"info": {
+		"title": "The Milky Way View",
+		"proposal_type": {
+			"main_type": "standard_proposal",
+			"sub_type": [
+				"coordinated_proposal"
+			]
+		},
+		"abstract": "Pretty Looking frontend depends on hard work put into good wire-framing and requirement gathering",
+		"science_category": "Science Category",
+		"targets": [
+			{
+				"target_id": "M1",
+				"pointing_pattern": {
+					"active": "SinglePointParameters",
+					"parameters": [
+						{
+							"kind": "SinglePointParameters",
+							"offset_x_arcsec": 0.0,
+							"offset_y_arcsec": 0.0
+						}
+					]
+				},
+				"reference_coordinate": {
+					"kind": "equatorial",
+					"ra": 250.0,
+					"dec": -30.0,
+					"unit": [
+						"deg",
+						"deg"
+					],
+					"reference_frame": "icrs"
+				},
+				"radial_velocity": {
+					"quantity": {
+						"value": 0.0,
+						"unit": "km / s"
+					},
+					"definition": "RADIO",
+					"reference_frame": "LSRK",
+					"redshift": 0.0
+				}
+			},
+			{
+				"target_id": "M2",
+				"pointing_pattern": {
+					"active": "SinglePointParameters",
+					"parameters": [
+						{
+							"kind": "SinglePointParameters",
+							"offset_x_arcsec": 0.0,
+							"offset_y_arcsec": 0.0
+						}
+					]
+				},
+				"reference_coordinate": {
+					"kind": "equatorial",
+					"ra": 250.0,
+					"dec": -30.0,
+					"unit": [
+						"deg",
+						"deg"
+					],
+					"reference_frame": "icrs"
+				},
+				"radial_velocity": {
+					"quantity": {
+						"value": 0.0,
+						"unit": "km / s"
+					},
+					"definition": "RADIO",
+					"reference_frame": "LSRK",
+					"redshift": 0.0
+				}
+			}
+		],
+		"documents": [
+			{
+				"document_id": "doc_ref_01",
+				"link": "https://freetestdata.com/wp-content/uploads/2021/09/Free_Test_Data_100KB_PDF.pdf",
+				"type": "proposal_science"
+			},
+			{
+				"document_id": "doc_ref_02",
+				"link": "https://freetestdata.com/wp-content/uploads/2021/09/Free_Test_Data_100KB_PDF.pdf",
+				"type": "proposal_technical"
+			}
+		],
+		"investigators": [
+			{
+				"investigator_id": "prp-ska01-202204-01",
+				"status": "pending",
+				"given_name": "Tony",
+				"family_name": "Bennet",
+				"email": "somewhere.vague@example.com",
+				"organization": "",
+				"for_phd": false,
+				"principal_investigator": true
+			}
+		],
+		"observation_sets": [
+			{
+				"observation_set_id": "low-001",
+				"group_id": "2",
+				"elevation": 23,
+				"observing_band": "low_band",
+				"array_details": {
+					"array": "ska_low",
+					"subarray": "aa0.5",
+					"number_of_stations": 1
+				},
+				"observation_type_details": {
+					"observation_type": "continuum",
+					"bandwidth": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"central_frequency": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"supplied": {
+						"supplied_type": "integration_time",
+						"value": 0.0,
+						"unit": "",
+						"quantity": {
+							"value": -12.345,
+							"unit": "m / s"
+						}
+					},
+					"spectral_resolution": "DUMMY",
+					"effective_resolution": "DUMMY",
+					"image_weighting": "DUMMY",
+					"robust" : "DUMMY",
+					"spectral_averaging": "DUMMY"
+				},
+				"details": "LOW + Continuum"
+			},
+			{
+				"observation_set_id": "low-002",
+				"group_id": "2",
+				"elevation": 23,
+				"observing_band": "low_band",
+				"array_details": {
+					"array": "ska_low",
+					"subarray": "aa0.5",
+					"number_of_stations": 1
+				},
+				"observation_type_details": {
+					"observation_type": "zoom",
+					"bandwidth": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"central_frequency": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"supplied": {
+						"supplied_type": "sensitivity",
+						"value": 0.0,
+						"unit": "",
+						"quantity": {
+							"value": -12.345,
+							"unit": "m / s"
+						}
+					},
+					"spectral_resolution": "DUMMY",
+					"effective_resolution": "DUMMY",
+					"image_weighting": "DUMMY",
+					"robust" : "DUMMY",
+					"spectral_averaging": "DUMMY"
+				},
+				"details": "LOW + Zoom"
+			}
+		],
+		"data_product_sdps": [
+			{
+				"data_products_sdp_id": "SDP-1",
+				"options": [
+					"1",
+					"2",
+					"5"
+				],
+				"observation_set_refs": [
+					"mid-001",
+					"low-001"
+				],
+				"image_size": {
+					"value": 0.0,
+					"unit": "deg"
+				},
+				"pixel_size": {
+					"value": 0.0,
+					"unit": "deg"
+				},
+				"weighting": "WEIGHTING"
+			}
+		],
+		"data_product_src_nets": [
+			{
+				"data_products_src_id": "2"
+			}
+		],
+		"result_details": [
+			{
+				"observation_set_ref": "low-001",
+				"target_ref": "M1",
+				"result": {
+					"supplied_type": "integration_time",
+					"weighted_continuum_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"weighted_spectral_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"total_continuum_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"total_spectral_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"surface_brightness_sensitivity": {
+						"continuum": 0.0,
+						"spectral": 0.0,
+						"unit": ""
+					}
+				},
+				"continuum_confusion_noise": {
+					"value": 0.0,
+					"unit": ""
+				},
+				"synthesized_beam_size": {
+					"continuum": "0.0",
+					"spectral": "0.0",
+					"unit": "Hz"
+				},
+				"spectral_confusion_noise": {
+					"value": 0.0,
+					"unit": ""
+				}
+			},
+			{
+				"observation_set_ref": "low-001",
+				"target_ref": "M2",
+				"result": {
+					"supplied_type": "integration_time",
+					"weighted_continuum_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"weighted_spectral_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"total_continuum_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"total_spectral_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"surface_brightness_sensitivity": {
+						"continuum": 0.0,
+						"spectral": 0.0,
+						"unit": ""
+					}
+				},
+				"continuum_confusion_noise": {
+					"value": 0.0,
+					"unit": ""
+				},
+				"synthesized_beam_size": {
+					"continuum": "0.0",
+					"spectral": "0.0",
+					"unit": "Hz"
+				},
+				"spectral_confusion_noise": {
+					"value": 0.0,
+					"unit": ""
+				}
+			},
+			{
+				"observation_set_ref": "low-002",
+				"target_ref": "M2",
+				"result": {
+					"supplied_type": "integration_time",
+					"weighted_continuum_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"weighted_spectral_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"total_continuum_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"total_spectral_sensitivity": {
+						"value": 0.0,
+						"unit": ""
+					},
+					"surface_brightness_sensitivity": {
+						"continuum": 0.0,
+						"spectral": 0.0,
+						"unit": ""
+					}
+				},
+				"continuum_confusion_noise": {
+					"value": 0.0,
+					"unit": ""
+				},
+				"synthesized_beam_size": {
+					"continuum": "0.0",
+					"spectral": "0.0",
+					"unit": "Hz"
+				},
+				"spectral_confusion_noise": {
+					"value": 0.0,
+					"unit": ""
+				}
+			}
+		]
+	}
+}

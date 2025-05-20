@@ -3,8 +3,8 @@ Utility functions to be used in tests
 """
 
 import json
-import os.path
 from datetime import datetime
+from pathlib import Path
 
 from deepdiff import DeepDiff
 from ska_db_oda.persistence.domain import set_identifier
@@ -12,6 +12,8 @@ from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
+
+CUR_DIR = Path(__file__).parent
 
 
 def assert_json_is_equal(json_a, json_b, exclude_paths=None):
@@ -32,15 +34,14 @@ def assert_json_is_equal(json_a, json_b, exclude_paths=None):
         assert {} == diff, f"JSON not equal: {diff}"
 
 
-def load_string_from_file(filename):
+def load_string_from_file(filename: str, directory: str = "files") -> str:
     """
     Return a file from the current directory as a string
     """
-    cwd, _ = os.path.split(__file__)
-    path = os.path.join(cwd, filename)
-    with open(path, "r", encoding="utf-8") as json_file:
-        json_data = json_file.read()
-        return json_data
+    path = CUR_DIR / directory / filename
+    with open(path, "r", encoding="utf-8") as f:
+        data = f.read()
+        return data
 
 
 class TestDataFactory:
@@ -91,9 +92,9 @@ class TestDataFactory:
         prj_id: str = "prj-mvp01-20220923-00001",
         version: int = 1,
     ) -> Project:
-        prj = Project.model_validate_json(
-            load_string_from_file("files/testfile_sample_project.json")
-        )
+
+        data = load_string_from_file("project.json")
+        prj = Project.model_validate_json(data)
 
         set_identifier(prj, prj_id)
         prj.metadata.version = version
@@ -106,12 +107,18 @@ class TestDataFactory:
         Load a valid Proposal object from file and override prsl_id,
         """
 
-        proposal = Proposal.model_validate_json(
-            load_string_from_file("files/create_proposal.json")
-        )
+        data = load_string_from_file("create_proposal.json")
+        proposal = Proposal.model_validate_json(data)
         proposal.prsl_id = prsl_id
 
         return proposal
+
+    @staticmethod
+    def complete_proposal():
+        filename = "complete_proposal.json"
+        data = load_string_from_file(filename)
+        p = Proposal.model_validate_json(data)
+        return p
 
     @staticmethod
     def email_payload(email="test@example.com", prsl_id="SKAO123"):

@@ -55,5 +55,7 @@ def validate_proposal(proposal: Proposal) -> dict:
 
     except ValueError as err:
         messages.append("Exception: " + str(err))
-        return {"result": False, "validation_errors": messages}
-    return {"result": validate_result, "validation_errors": messages}
+        validate_result = False
+
+    res = {"result": validate_result, "validation_errors": messages}
+    return res
