@@ -3,6 +3,7 @@ from http import HTTPStatus
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
@@ -173,6 +174,27 @@ async def send_email(request: EmailRequest):
     """
     await send_email_async(request.email, request.prsl_id)
     return {"message": "Email sent successfully"}
+
+
+@router.get(
+    "/respond",
+    response_class=HTMLResponse,
+    summary="Record accept/reject and show confirmation",
+)
+async def respond(prsl_id: str, action: str):
+    """
+    immediately records the choice and returns a thank-you page.
+    """
+
+    accepted = action == "accept"
+    rejected = action == "reject"
+
+    if accepted:
+        return "accepted"
+    elif rejected:
+        return "rejected"
+    else:
+        return prsl_id
 
 
 @router.post("/signed-url/upload/{filename}", summary="Create upload PDF URL")

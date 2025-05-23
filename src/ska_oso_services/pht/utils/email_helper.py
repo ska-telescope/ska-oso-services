@@ -8,23 +8,41 @@ from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRef
 from fastapi import HTTPException
 from jinja2 import Template
 
+from ska_oso_services.app import KUBE_NAMESPACE, OSO_SERVICES_MAJOR_VERSION
 from ska_oso_services.common.error_handling import UnprocessableEntityError
 
 LOGGER = logging.getLogger(__name__)
 
-# HTML email template
-HTML_TEMPLATE = """
+EMAIL_TEMPLATE = """
 <html>
-<body>
+  <body>
     <p>SKAO proposal with ID <strong>{{ prsl_id }}</strong>.</p>
-    <p><a href="{{ link }}">Click here</a> to accept or reject the invitation.</p>
-</body>
+    <p>
+      <a href="{{ accept_link }}">Accept</a>
+      &nbsp;|&nbsp;
+      <a href="{{ reject_link }}">Reject</a>
+    </p>
+  </body>
+</html>
+"""
+
+RESULT_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+  <body>
+    {% if accepted %}
+      <h1>Thank you for accepting!</h1>
+    {% else %}
+      <h1>We're sorry to see you decline.</h1>
+    {% endif %}
+    <p>Proposal <strong>{{ prsl_id }}</strong> has been recorded.</p>
+  </body>
 </html>
 """
 
 
 # Email rendering
-def render_email(prsl_id: str, link: str) -> str:
+def render_email(prsl_id: str, accept_link: str, reject_link: str) -> str:
     """
     Renders an HTML email template with dynamic data.
 
@@ -35,8 +53,12 @@ def render_email(prsl_id: str, link: str) -> str:
     Returns:
         str: Rendered HTML content.
     """
-    template = Template(HTML_TEMPLATE)
-    return template.render(prsl_id=prsl_id, link=link)
+    template = Template(EMAIL_TEMPLATE)
+    return template.render(
+        prsl_id=prsl_id,
+        accept_link=accept_link,
+        reject_link=reject_link,
+    )
 
 
 async def send_email_async(email: str, prsl_id: str):
@@ -49,7 +71,8 @@ async def send_email_async(email: str, prsl_id: str):
         HTTPException: If there is an error in sending the email.
     """
     subject = f"Invitation to participate in the SKAO proposal - {prsl_id}"
-    link = f"https://example.com/respond?prsl_id={prsl_id}"
+    accept_link = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}/respond?prsl_id={prsl_id}&action=accept"  # noqa: E501
+    reject_link = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}/respond?prsl_id={prsl_id}&action=reject"  # noqa: E501
     smtp_server = "eu-smtp-outbound-1.mimecast.com"
     smtp_port = 587
     smtp_user = "proposal-preparation-tool@skao.int"
@@ -61,13 +84,12 @@ async def send_email_async(email: str, prsl_id: str):
     msg["Subject"] = subject
 
     plain_text = (
-        f"You have been invited to participate in the SKAO proposal with ID {prsl_id}. "
-        f"Visit {link} to respond."
+        f"You have been invited (ID {prsl_id}).\n"
+        f"Accept: {accept_link}\n"
+        f"Reject: {reject_link}\n"
     )
-    html_content = render_email(prsl_id, link)
-
     msg.attach(MIMEText(plain_text, "plain"))
-    msg.attach(MIMEText(html_content, "html"))
+    msg.attach(MIMEText(render_email(prsl_id, accept_link, reject_link), "html"))
 
     try:
         await aiosmtplib.send(
