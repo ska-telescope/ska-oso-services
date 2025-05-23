@@ -18,14 +18,14 @@ OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 
 HTML_TEMPLATE = """
 <html>
-<body>
+  <body>
     <p>SKAO proposal with ID <strong>{{ prsl_id }}</strong>.</p>
     <p>
       <a href="{{ accept_link }}">Accept</a>
       &nbsp;|&nbsp;
       <a href="{{ reject_link }}">Reject</a>
     </p>
-</body>
+  </body>
 </html>
 """
 
@@ -86,13 +86,12 @@ async def send_email_async(email: str, prsl_id: str):
     msg["Subject"] = subject
 
     plain_text = (
-        f"You have been invited to participate in the SKAO proposal with ID {prsl_id}.\n"  # noqa: E501
+        f"You have been invited to participate in the SKAO proposal with ID {prsl_id}.\n"
         f"Accept: {accept_link}\n"
         f"Reject: {reject_link}\n"
     )
     msg.attach(MIMEText(plain_text, "plain"))
 
-    # now matches the updated signature
     html_content = render_email(prsl_id, accept_link, reject_link)
     msg.attach(MIMEText(html_content, "html"))
 
