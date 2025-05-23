@@ -2,17 +2,22 @@ import logging
 import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from importlib.metadata import version
 
 import aiosmtplib
 from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRefused
 from fastapi import HTTPException
 from jinja2 import Template
 
-from ska_oso_services.app import KUBE_NAMESPACE, OSO_SERVICES_MAJOR_VERSION
 from ska_oso_services.common.error_handling import UnprocessableEntityError
 
 LOGGER = logging.getLogger(__name__)
+KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
+OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
+# The base path includes the namespace which is known at runtime
+# to avoid clashes in deployments, for example in CICD
 
+API_PREFIX = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
 EMAIL_TEMPLATE = """
 <html>
   <body>
