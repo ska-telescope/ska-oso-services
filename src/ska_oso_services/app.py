@@ -79,7 +79,3 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 main = create_app()
 oda.init_app(main)
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("app:main", host="127.0.0.1", port=8000, reload=True)
