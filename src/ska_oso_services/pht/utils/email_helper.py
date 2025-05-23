@@ -76,8 +76,8 @@ async def send_email_async(email: str, prsl_id: str):
         HTTPException: If there is an error in sending the email.
     """
     subject = f"Invitation to participate in the SKAO proposal - {prsl_id}"
-    accept_link = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}/respond?prsl_id={prsl_id}&action=accept"  # noqa: E501
-    reject_link = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}/respond?prsl_id={prsl_id}&action=reject"  # noqa: E501
+    accept_link = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}/pht/prsls/respond?prsl_id={prsl_id}&action=accept"  # noqa: E501
+    reject_link = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}/pht/prsls/respond?prsl_id={prsl_id}&action=reject"  # noqa: E501
     smtp_server = "eu-smtp-outbound-1.mimecast.com"
     smtp_port = 587
     smtp_user = "proposal-preparation-tool@skao.int"
