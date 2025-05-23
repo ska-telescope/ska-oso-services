@@ -184,8 +184,8 @@ async def respond(prsl_id: str, action: str):
     immediately records the choice and returns a thank-you page.
     """
 
-    accepted = action == "accept"
-    rejected = action == "reject"
+    accepted = (action == "accept")
+    rejected = (action == "reject")
 
     if accepted:
         return "accepted"
