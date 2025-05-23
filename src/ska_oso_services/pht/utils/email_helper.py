@@ -84,7 +84,7 @@ async def send_email_async(email: str, prsl_id: str):
     msg["Subject"] = subject
 
     plain_text = (
-        f"You have been invited (ID {prsl_id}).\n"
+        f"You have been invited to participate in the SKAO proposal with ID {prsl_id}.\n"
         f"Accept: {accept_link}\n"
         f"Reject: {reject_link}\n"
     )
