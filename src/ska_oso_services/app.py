@@ -44,6 +44,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
         docs_url=f"{API_PREFIX}/ui",
         lifespan=watchdog(
             allow_unsecured=[
+                "get_systemcoordinates",
                 "create_proposal",
                 "get_proposal",
                 "get_proposals_for_user",
