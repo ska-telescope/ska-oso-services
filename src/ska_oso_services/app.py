@@ -54,6 +54,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "create_upload_pdf_url",
                 "create_download_pdf_url",
                 "create_delete_pdf_url",
+                "respond",
             ]
         ),
     )
