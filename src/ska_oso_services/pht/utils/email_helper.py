@@ -16,16 +16,16 @@ KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 
 
-EMAIL_TEMPLATE = """
+HTML_TEMPLATE = """
 <html>
-  <body>
+<body>
     <p>SKAO proposal with ID <strong>{{ prsl_id }}</strong>.</p>
     <p>
       <a href="{{ accept_link }}">Accept</a>
       &nbsp;|&nbsp;
       <a href="{{ reject_link }}">Reject</a>
     </p>
-  </body>
+</body>
 </html>
 """
 
@@ -56,13 +56,12 @@ def render_email(prsl_id: str, accept_link: str, reject_link: str) -> str:
     Returns:
         str: Rendered HTML content.
     """
-    template = Template(EMAIL_TEMPLATE)
+    template = Template(HTML_TEMPLATE)
     return template.render(
         prsl_id=prsl_id,
         accept_link=accept_link,
         reject_link=reject_link,
     )
-
 
 async def send_email_async(email: str, prsl_id: str):
     """
@@ -92,7 +91,10 @@ async def send_email_async(email: str, prsl_id: str):
         f"Reject: {reject_link}\n"
     )
     msg.attach(MIMEText(plain_text, "plain"))
-    msg.attach(MIMEText(render_email(prsl_id, accept_link, reject_link), "html"))
+
+    # now matches the updated signature
+    html_content = render_email(prsl_id, accept_link, reject_link)
+    msg.attach(MIMEText(html_content, "html"))
 
     try:
         await aiosmtplib.send(
