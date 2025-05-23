@@ -51,10 +51,10 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "update_proposal",
                 "validate_proposal",
                 "send_email",
+                "respond",
                 "create_upload_pdf_url",
                 "create_download_pdf_url",
                 "create_delete_pdf_url",
-                "respond",
             ]
         ),
     )

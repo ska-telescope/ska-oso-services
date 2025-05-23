@@ -177,9 +177,7 @@ async def send_email(request: EmailRequest):
 
 
 @router.get(
-    "/respond",
-    response_class=HTMLResponse,
-    summary="Record accept/reject",
+    "/respond", summary="Record accept/reject",
 )
 async def respond(prsl_id: str, action: str):
     """
