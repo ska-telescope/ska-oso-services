@@ -6,9 +6,7 @@ import logging
 from enum import Enum
 
 from fastapi import APIRouter
-from ska_aaa_authhelpers import Role
 
-from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.coordinateslookup import (
     Equatorial,
     Galactic,
@@ -40,8 +38,6 @@ class GalacticResponse(AppModel):
     "/{identifier}/{reference_frame}",
     summary="Look up the coordinates for the given object "
     "identifier in astronomy catalogs.",
-    # Anyone can look up coordinates, with any scope:
-    dependencies=[Permissions(roles={Role.ANY}, scopes=Scope)],
 )
 def get_systemcoordinates(
     identifier: str, reference_frame: ReferenceFrame
