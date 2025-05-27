@@ -8,7 +8,7 @@ CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-services
 KUBE_NAMESPACE ?= ska-oso-services
-RELEASE_NAME = testing
+RELEASE_NAME ?= test
 MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 OSO_SERVICES_URL ?= http://ska-oso-services-rest-test:5000/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 
@@ -23,7 +23,7 @@ PIPELINE_TEST_DEPLOYMENT ?= false
 DOCS_SPHINXOPTS ?= -W --keep-going
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
-K8S_CHART = ska-oso-services
+K8S_CHART = ska-oso-services-umbrella
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 K8S_CHART_PARAMS += \
