@@ -3,6 +3,8 @@ global:
 
 ska-db-oda-umbrella:
   enabled: true
+  vault:
+    enabled: true
   ska-db-oda:
     enabled: false # ska-oso-services doesn't need the ODA rest server
   postgresql:
@@ -12,3 +14,4 @@ ska-db-oda-umbrella:
   ska-ser-skuid:
     skuid:
       enabled: true
+  

@@ -23,7 +23,7 @@ PIPELINE_TEST_DEPLOYMENT ?= false
 DOCS_SPHINXOPTS ?= -W --keep-going
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
-K8S_CHART = ska-oso-services
+K8S_CHART = ska-oso-services-umbrella
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 K8S_CHART_PARAMS += \
@@ -35,8 +35,8 @@ ifeq ($(CI_ENVIRONMENT_SLUG),)
 OSO_SERVICES_URL=http://`minikube ip`/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 K8S_CHART_PARAMS += \
   --set global.cluster_domain="cluster.local" \
-  --set ska-db-oda-umbrella.vault.enabled=true \
-  --set ska-oso-services.vault.enabled=true
+  --set ska-db-oda-umbrella.vault.enabled=false \
+  --set ska-oso-services.vault.enabled=false
 endif
 
 # For the test, dev and integration environment, use the freshly built image in the GitLab registry
