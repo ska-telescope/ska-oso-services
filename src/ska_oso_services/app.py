@@ -44,6 +44,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
         docs_url=f"{API_PREFIX}/ui",
         lifespan=watchdog(
             allow_unsecured=[
+                "get_systemcoordinates",
                 "create_proposal",
                 "get_proposal",
                 "get_proposals_for_user",
@@ -79,7 +80,3 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 main = create_app()
 oda.init_app(main)
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("app:main", host="127.0.0.1", port=8000, reload=True)
