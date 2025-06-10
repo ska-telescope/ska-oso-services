@@ -62,6 +62,7 @@ ska-aaa-authhelpers = "^1.0.0"
 # Need to pin as otherwise pip cannot resolve the dependencies in the tests.
 # This dependency comes through the osd > telmodel, so reasses when updating those.
 argcomplete = "^1.9.4"
+ska-ser-xray = "^0.6.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"

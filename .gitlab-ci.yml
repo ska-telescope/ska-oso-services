@@ -97,8 +97,6 @@ test-chart-templates:
       junit: build/reports/chart_template_tests.xml
 
 xray-publish:
-  variables:
-    XRAY_TEST_RESULT_FILE: build/cucumber.json
   rules:
   - if: '$CI_COMMIT_REF_NAME == "main"'
     when: always
