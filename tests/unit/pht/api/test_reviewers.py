@@ -16,7 +16,7 @@ class TestReviewersAPI:
         """
         Check the get_reviewers method returns the expected reviewers data.
         """
-        response = client.post(
+        response = client.get(
             f"{REVIEWERS_API_URL}",
             headers={"Content-type": "application/json"},
         )
