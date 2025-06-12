@@ -25,10 +25,10 @@
     "id": "XTP",
     "issuetype_id": 12345,
     "customfield_mapping": {
-      "start_date": "customfield_11918",
-      "end_date": "customfield_11917",
-      "test_plans": "customfield_11927",
-      "test_environments": "customfield_11925"
+      "start_date": "",
+      "end_date": "",
+      "test_plans": "",
+      "test_environments": ""
     }
   },
   "description": "Test execution results as generated from git@gitlab.com:ska-telescope/oso/ska-oso-services\n",
