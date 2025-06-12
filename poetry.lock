@@ -3617,13 +3617,13 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-ser-xray"
-version = "0.6.1+dev.c0701991c"
+version = "0.7.0"
 description = "SKAO package to facilitate upload of test results to JIRA XRAY"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "ska_ser_xray-0.6.1+dev.c0701991c-py3-none-any.whl", hash = "sha256:f7f44bbe0964375b4c74e4a5f85f1e056a3063688a30ba3c6722f24fd4c429bf"},
-    {file = "ska_ser_xray-0.6.1+dev.c0701991c.tar.gz", hash = "sha256:69fec9a5148c2d19820632810c2c09d27333b7c741cd9876d02ba5c9e9d1233b"},
+    {file = "ska_ser_xray-0.7.0-py3-none-any.whl", hash = "sha256:096fd730e1932c8120da9dab4051d52673b6558e19b51aaaa930a48bb6bb6456"},
+    {file = "ska_ser_xray-0.7.0.tar.gz", hash = "sha256:98fce2e414b4b9f051ae36fcb872be5d7b5a121510e7568a66fd6bec206e3668"},
 ]
 
 [package.dependencies]
@@ -3640,8 +3640,8 @@ robotframework = ["robotframework (>=6.0.2,<7.0.0)"]
 
 [package.source]
 type = "legacy"
-url = "https://gitlab.com/api/v4/projects/39434823/packages/pypi/simple"
-reference = "gitlab-ska-ser-xray"
+url = "https://artefact.skao.int/repository/pypi-internal/simple"
+reference = "ska-nexus"
 
 [[package]]
 name = "ska-telmodel"
@@ -4565,4 +4565,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "8010a668f62303dbfccdd123ea5e1c665fd09df532143534b7473715ddbe6da1"
+content-hash = "6b4dad3c442c7460736fdc0b32404f92430cec5a473b5f3e739bd22f96dfd197"
