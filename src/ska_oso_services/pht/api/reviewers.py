@@ -12,5 +12,5 @@ def get_reviewers() -> list[dict]:
     Returns:
         list[dict]
     """
-    #once aaa is implemented, this will be replaced with a call to the MS graph API
+    # once aaa is implemented, this will be replaced with a call to the MS graph API
     return REVIEWERS
