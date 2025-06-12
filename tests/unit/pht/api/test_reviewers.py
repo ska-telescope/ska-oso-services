@@ -5,7 +5,6 @@ Unit tests for ska_oso_pht_services.api
 import json
 from http import HTTPStatus
 
-from ska_oso_services.pht.utils.constants import REVIEWERS
 from tests.unit.conftest import PHT_BASE_API_URL
 
 REVIEWERS_API_URL = f"{PHT_BASE_API_URL}/reviewers"
