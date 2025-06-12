@@ -104,9 +104,8 @@ xray-publish:
     when: manual
   script:
     - poetry config virtualenvs.create false
-    - poetry install --with dev
+    - poetry install --only dev
     - make xray-publish
-
 
 include:
   # Python
