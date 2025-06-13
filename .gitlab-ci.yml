@@ -96,6 +96,17 @@ test-chart-templates:
     reports:
       junit: build/reports/chart_template_tests.xml
 
+xray-publish:
+  rules:
+  - if: '$CI_COMMIT_REF_NAME == "main"'
+    when: always
+  - if: '$CI_COMMIT_REF_NAME != "main"'
+    when: manual
+  script:
+    - poetry config virtualenvs.create false
+    - poetry install --only dev
+    - make xray-publish
+
 include:
   # Python
   - project: "ska-telescope/templates-repository"
