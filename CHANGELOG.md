@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Added ska-ser-xray as a dev dependency
 
 1.1.0
 ****** 

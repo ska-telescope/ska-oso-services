@@ -42,6 +42,10 @@ priority = "primary"
 #url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
 #priority = "explicit"
 
+#[[tool.poetry.source]]
+#name = "gitlab-ska-ser-xray"
+#url = "https://gitlab.com/api/v4/projects/39434823/packages/pypi/simple"
+#priority = "explicit"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -74,6 +78,7 @@ isort = "^5.10.1"
 pylint-junit = "^0.3.2"
 flake8 = "^7.0.0"
 deepdiff = "^7.0.0"
+ska-ser-xray = "^0.7.0"
 
 [tool.poetry.group.docs]
 optional = true

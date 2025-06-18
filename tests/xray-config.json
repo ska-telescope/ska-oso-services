@@ -16,7 +16,7 @@
   "chart_info": {
     "env": "DEPLOYMENT_CONFIGURATION",
     "maps_to": {
-      "default": "charts/ska-oso-odt-services/Chart.yaml"
+      "default": "charts/ska-oso-services/Chart.yaml"
     }
   },
   "test_report": "build/report.xml",
@@ -31,7 +31,7 @@
       "test_environments": ""
     }
   },
-  "description": "Test execution results as generated from git@gitlab.com:ska-telescope/oso/ska-oso-odt-services\n",
+  "description": "Test execution results as generated from git@gitlab.com:ska-telescope/oso/ska-oso-services\n",
   "test_environments": [
     {
       "env": "TEST_ENV",
