@@ -55,6 +55,9 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "create_download_pdf_url",
                 "create_delete_pdf_url",
                 "get_reviewers",
+                "create_panel",
+                "get_panel",
+                "get_panels",
             ]
         ),
     )
@@ -81,3 +84,8 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 main = create_app()
 oda.init_app(main)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(main, host="localhost", port=8000)
