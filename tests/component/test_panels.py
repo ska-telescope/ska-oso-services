@@ -3,8 +3,8 @@ from http import HTTPStatus
 import requests
 
 from ska_oso_services.pht.utils.constants import REVIEWERS
-from tests.unit.util import TestDataFactory
 
+from ..unit.util import TestDataFactory
 from . import PHT_URL
 
 PANELS_API_URL = f"{PHT_URL}/panels"
