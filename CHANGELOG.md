@@ -8,7 +8,7 @@ Unreleased
 ***********
 * Added ska-ser-xray as a dev dependency
 * Added panel post/get endpoints
-* Updated the ska-oso-oda version to v8.0.2
+* Updated the ska-oso-oda version to v9.0.0
 
 1.1.0
 ****** 
