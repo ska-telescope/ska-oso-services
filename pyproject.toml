@@ -124,7 +124,7 @@ extend-exclude = '''
 '''
 
 [tool.pylint]
-disable = "C,R,W3101,W0511"
+disable = "C,R,W3101,W0511,W0707"
 ignore = "ska-oso-pdm,generated"
 
 [build-system]

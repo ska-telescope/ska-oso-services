@@ -2,12 +2,9 @@
 Unit tests for ska_oso_pht_services.api
 """
 
-import json
 from http import HTTPStatus
 from unittest import mock
-from unittest.mock import MagicMock, patch
 
-import pytest
 from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRefused
 from fastapi import status
 
@@ -20,7 +17,6 @@ from tests.unit.util import (
     VALID_NEW_PROPOSAL,
     TestDataFactory,
     assert_json_is_equal,
-    load_string_from_file,
 )
 
 PROPOSAL_API_URL = f"{PHT_BASE_API_URL}/prsls"

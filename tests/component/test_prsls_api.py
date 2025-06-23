@@ -5,7 +5,6 @@ These will run from a test pod inside a kubernetes cluster, making requests
 to a deployment of ska-oso-services in the same cluster
 """
 
-# pylint: disable=missing-timeout
 import json
 import uuid
 from http import HTTPStatus
