@@ -65,7 +65,7 @@ PYTHON_LINE_LENGTH = 88
 # Set the k8s test command run inside the testing pod to only run the component
 # tests (no k8s pod deployment required for unit tests)
 K8S_RUN_TEST_FOLDER = ./tests/component
-PYTHON_VARS_BEFORE_PYTEST = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL)
+PYTHON_VARS_BEFORE_PYTEST = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) PYTHONPATH=$(PYTHONPATH):/app/src
 PYTHON_VARS_AFTER_PYTEST = --junitxml=build/reports/report.xml
 K8S_TEST_TEST_COMMAND ?= $(PYTHON_VARS_BEFORE_PYTEST) $(PYTHON_RUNNER) \
 						pytest \
