@@ -27,7 +27,7 @@ def create_panel(param: Panel) -> str:
 
         for reviewer_id in reviewer_ids:
             if not any([r["id"] == reviewer_id for r in REVIEWERS]):
-                raise BadRequestError(f"Not existing reviewer detected: {reviewer_id}")
+                raise BadRequestError(f"Reviewer '{reviewer_id}' does not exist")
 
         proposal_ids = [r.prsl_id for r in param.proposals]
         if len(proposal_ids) != len(set(proposal_ids)):
@@ -37,7 +37,7 @@ def create_panel(param: Panel) -> str:
             try:
                 uow.prsls.get(proposal_id)
             except ODANotFound:
-                raise BadRequestError(f"Not existing proposal detected: {proposal_id}")
+                raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
 
         panel: Panel = uow.panels.add(param)  # pylint: disable=no-member
         uow.commit()

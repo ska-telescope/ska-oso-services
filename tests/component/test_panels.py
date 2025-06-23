@@ -63,7 +63,7 @@ def test_panels_post_not_existing_reviewer():
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     result = response.json()
-    expected = {"detail": "Not existing reviewer detected: rev-001"}
+    expected = {"detail": "Reviewer 'rev-001' does not exist"}
     assert expected == result
 
 
@@ -77,5 +77,5 @@ def test_panels_post_not_existing_proposal():
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     result = response.json()
-    expected = {"detail": "Not existing proposal detected: prop-astro-01"}
+    expected = {"detail": "Proposal 'prop-astro-01' does not exist"}
     assert expected == result

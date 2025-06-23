@@ -102,7 +102,7 @@ class TestPanelsAPI:
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
         result = response.json()
-        expected = {"detail": "Not existing reviewer detected: rev-001"}
+        expected = {"detail": "Reviewer 'rev-001' does not exist"}
         assert expected == result
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
@@ -121,5 +121,5 @@ class TestPanelsAPI:
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
         result = response.json()
-        expected = {"detail": "Not existing proposal detected: prop-astro-01"}
+        expected = {"detail": "Proposal 'prop-astro-01' does not exist"}
         assert expected == result
