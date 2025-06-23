@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 * Added ska-ser-xray as a dev dependency
+* Added panel post/get endpoints
+* Updated the ska-oso-oda version to v8.0.2
 
 1.1.0
 ****** 
