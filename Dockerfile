@@ -44,7 +44,6 @@ RUN mkdir -p /var/lib/oda && chown -R ${APP_USER} /var/lib/oda
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
     GIT_PYTHON_REFRESH=quiet
-ENV PYTHONPATH="${PYTHONPATH}:/app/src"
 
 COPY --chown=$APP_USER:$APP_USER --from=buildenv ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 

@@ -2,13 +2,13 @@ from http import HTTPStatus
 
 import requests
 
-from ska_oso_services.pht.utils.constants import REVIEWERS
-
 from ..unit.util import TestDataFactory
 from . import PHT_URL
 
 PANELS_API_URL = f"{PHT_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
+
+VALID_REVIEWER_ID = "c8f8f18a-3c70-4c39-8ed9-2d8d180d99a1"
 
 
 def test_create_panel():
@@ -39,7 +39,7 @@ def test_panels_post_duplicate_reviewer():
 
 
 def test_panels_post_duplicate_proposal():
-    panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0]["id"])
+    panel = TestDataFactory.panel(reviewer_id=VALID_REVIEWER_ID)
     panel.proposals.append(panel.proposals[0])
 
     data = panel.json()
@@ -68,7 +68,7 @@ def test_panels_post_not_existing_reviewer():
 
 
 def test_panels_post_not_existing_proposal():
-    panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0]["id"])
+    panel = TestDataFactory.panel(reviewer_id=VALID_REVIEWER_ID)
 
     data = panel.json()
 
