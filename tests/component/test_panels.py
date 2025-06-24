@@ -34,7 +34,7 @@ def test_panels_post_duplicate_reviewer():
     assert response.status_code == HTTPStatus.CONFLICT
 
     result = response.json()
-    expected = {"detail": "Duplicates present in reviewers collection"}
+    expected = {"detail": "Duplicate reviewer_id are not allowed: {'rev-001'}"}
     assert expected == result
 
 
@@ -49,7 +49,7 @@ def test_panels_post_duplicate_proposal():
     assert response.status_code == HTTPStatus.CONFLICT
 
     result = response.json()
-    expected = {"detail": "Duplicates present in proposals collection"}
+    expected = {"detail": "Duplicate prsl_id are not allowed: {'prop-astro-01'}"}
     assert expected == result
 
 

@@ -16,28 +16,53 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+def validate_duplicates(collection: list, field: str) -> list:
+    """ Validates the collection does not have field attributes duplicates 
+        and if so raises the DuplicateError.
+    """
+
+    res = []
+    seen = set()
+    dupes = set()
+
+    for obj in collection:
+        try:
+            elem = getattr(obj, field)
+        except:
+            raise
+
+        res.append(elem)
+
+        if elem in seen:
+            dupes.add(elem)
+        else:
+            seen.add(elem)
+
+    if dupes:
+        msg = f"Duplicate {field} are not allowed: {dupes}"
+        raise DuplicateError(msg)
+
+    return res
+
+
 @router.post("/panels", summary="Create a panel")
 def create_panel(param: Panel) -> str:
     logger.debug("POST panel")
 
     with oda.uow() as uow:
-        reviewer_ids = [r.reviewer_id for r in param.reviewers]
-        if len(reviewer_ids) != len(set(reviewer_ids)):
-            raise DuplicateError("Duplicates present in reviewers collection")
-
+        reviewer_ids = validate_duplicates(param.reviewers, "reviewer_id")
         for reviewer_id in reviewer_ids:
             if not any([r["id"] == reviewer_id for r in REVIEWERS]):
-                raise BadRequestError(f"Reviewer '{reviewer_id}' does not exist")
+                raise BadRequestError(
+                    f"Reviewer '{reviewer_id}' does not exist")
 
-        proposal_ids = [r.prsl_id for r in param.proposals]
-        if len(proposal_ids) != len(set(proposal_ids)):
-            raise DuplicateError("Duplicates present in proposals collection")
-
+        proposal_ids = validate_duplicates(param.proposals, "prsl_id")
         for proposal_id in proposal_ids:
             try:
                 uow.prsls.get(proposal_id)
             except ODANotFound:
-                raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
+                raise BadRequestError(
+                    f"Proposal '{proposal_id}' does not exist")
 
         panel: Panel = uow.panels.add(param)  # pylint: disable=no-member
         uow.commit()
