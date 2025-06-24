@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 def validate_duplicates(collection: list, field: str) -> list:
-    """ Validates the collection does not have field attributes duplicates 
-        and if so raises the DuplicateError.
+    """Validates the collection does not have field attributes duplicates
+    and if so raises the DuplicateError.
     """
 
     res = []
@@ -26,10 +26,7 @@ def validate_duplicates(collection: list, field: str) -> list:
     dupes = set()
 
     for obj in collection:
-        try:
-            elem = getattr(obj, field)
-        except:
-            raise
+        elem = getattr(obj, field)
 
         res.append(elem)
 
@@ -53,16 +50,14 @@ def create_panel(param: Panel) -> str:
         reviewer_ids = validate_duplicates(param.reviewers, "reviewer_id")
         for reviewer_id in reviewer_ids:
             if not any([r["id"] == reviewer_id for r in REVIEWERS]):
-                raise BadRequestError(
-                    f"Reviewer '{reviewer_id}' does not exist")
+                raise BadRequestError(f"Reviewer '{reviewer_id}' does not exist")
 
         proposal_ids = validate_duplicates(param.proposals, "prsl_id")
         for proposal_id in proposal_ids:
             try:
                 uow.prsls.get(proposal_id)
             except ODANotFound:
-                raise BadRequestError(
-                    f"Proposal '{proposal_id}' does not exist")
+                raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
 
         panel: Panel = uow.panels.add(param)  # pylint: disable=no-member
         uow.commit()

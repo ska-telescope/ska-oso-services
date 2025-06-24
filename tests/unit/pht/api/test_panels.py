@@ -65,8 +65,7 @@ class TestPanelsAPI:
         assert response.status_code == HTTPStatus.CONFLICT
 
         result = response.json()
-        expected = {
-            "detail": "Duplicate reviewer_id are not allowed: {'rev-001'}"}
+        expected = {"detail": "Duplicate reviewer_id are not allowed: {'rev-001'}"}
         assert expected == result
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
@@ -85,8 +84,7 @@ class TestPanelsAPI:
         assert response.status_code == HTTPStatus.CONFLICT
 
         result = response.json()
-        expected = {
-            "detail": "Duplicate prsl_id are not allowed: {'prop-astro-01'}"}
+        expected = {"detail": "Duplicate prsl_id are not allowed: {'prop-astro-01'}"}
         assert expected == result
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
