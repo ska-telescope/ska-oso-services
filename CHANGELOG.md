@@ -8,12 +8,12 @@ Unreleased
 ***********
 * Added ska-ser-xray as a dev dependency
 * Added panel post/get endpoints
-* Updated the ska-oso-oda version to v9.0.0
+* Updated the ska-db-oda version to v9.0.0
 
 1.1.0
 ****** 
 * Added all pht endpoints:
-  - Updated the ska-oso-oda version to v8.0.0
+  - Updated the ska-db-oda version to v8.0.0
   - POST endpoint to create a proposal
   - PUT endpoint to update a proposal
   - GET endpoint to retrieve a proposal by proposal ID
