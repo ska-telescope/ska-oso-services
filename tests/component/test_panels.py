@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 import requests
 
-from ..unit.util import TestDataFactory, REVIEWERS
+from ..unit.util import REVIEWERS, TestDataFactory
 from . import PHT_URL
 
 PANELS_API_URL = f"{PHT_URL}/panels"
