@@ -3,9 +3,8 @@ from unittest import mock
 
 from ska_db_oda.persistence.domain.errors import ODANotFound, UniqueConstraintViolation
 
-from ska_oso_services.pht.utils.constants import REVIEWERS
 from tests.unit.conftest import PHT_BASE_API_URL
-from tests.unit.util import TestDataFactory
+from tests.unit.util import TestDataFactory, REVIEWERS
 
 PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
@@ -65,7 +64,8 @@ class TestPanelsAPI:
         assert response.status_code == HTTPStatus.CONFLICT
 
         result = response.json()
-        expected = {"detail": "Duplicate reviewer_id are not allowed: {'rev-001'}"}
+        expected = {
+            "detail": "Duplicate reviewer_id are not allowed: {'rev-001'}"}
         assert expected == result
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
@@ -84,7 +84,8 @@ class TestPanelsAPI:
         assert response.status_code == HTTPStatus.CONFLICT
 
         result = response.json()
-        expected = {"detail": "Duplicate prsl_id are not allowed: {'prop-astro-01'}"}
+        expected = {
+            "detail": "Duplicate prsl_id are not allowed: {'prop-astro-01'}"}
         assert expected == result
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")

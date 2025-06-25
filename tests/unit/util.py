@@ -14,6 +14,7 @@ from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
+
 CUR_DIR = Path(__file__).parent
 
 
@@ -31,7 +32,8 @@ def assert_json_is_equal(json_a, json_b, exclude_paths=None):
         assert obj_a == obj_b
     except AssertionError:
         # raise a more useful exception that shows *where* the JSON differs
-        diff = DeepDiff(obj_a, obj_b, ignore_order=True, exclude_paths=exclude_paths)
+        diff = DeepDiff(obj_a, obj_b, ignore_order=True,
+                        exclude_paths=exclude_paths)
         assert {} == diff, f"JSON not equal: {diff}"
 
 
@@ -172,7 +174,8 @@ SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON = TestDataFactory.sbdefinition(
     sbd_id=None, without_metadata=True
 ).model_dump_json()
 
-VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(prj_id=None).model_dump_json()
+VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(
+    prj_id=None).model_dump_json()
 
 # proposal entry
 VALID_NEW_PROPOSAL = TestDataFactory.proposal().model_dump_json()
@@ -184,3 +187,4 @@ PAYLOAD_BAD_TO = TestDataFactory.email_payload("badto@example.com", "PRSLBAD")
 PAYLOAD_GENERIC_FAIL = TestDataFactory.email_payload(
     "genericfail@example.com", "GENERICFAIL"
 )
+REVIEWERS = json.loads(load_string_from_file("get_reviewers.json"))
