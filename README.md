@@ -109,3 +109,4 @@ To build the html version of the documentation, start
 from the root directory and first install the dependency using 
 ``poetry install --only docs`` and then type ``make docs-build html``. Read the documentation by pointing your browser
 at ``docs/build/html/index.html``.
+
