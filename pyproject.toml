@@ -47,6 +47,11 @@ priority = "primary"
 #url = "https://gitlab.com/api/v4/projects/39434823/packages/pypi/simple"
 #priority = "explicit"
 
+
+[[tool.poetry.source]]
+name = "gitlab"
+url = 'https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple'
+
 [tool.poetry.dependencies]
 python = "^3.10"
 python-dateutil = "^2.8.2"
@@ -58,7 +63,7 @@ ska-db-oda = "^8.0.0"
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
-ska-ost-osd = { git = "https://gitlab.com/ska-telescope/ost/ska-ost-osd.git", branch = "test-osd" }
+ska-ost-osd = "3.1.1+dev.c68789eaf"
 aiosmtplib = "^4.0.1"
 boto3 = "^1.38.13"
  

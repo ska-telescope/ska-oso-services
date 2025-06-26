@@ -3015,36 +3015,37 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-ost-osd"
-version = "3.1.1"
+version = "3.1.1+dev.c68789eaf"
 description = "Simplest form OSD consists of configuration files that are required by OSO tools."
 optional = false
-python-versions = "^3.10.0"
-files = []
-develop = false
+python-versions = ">=3.10.0,<4.0.0"
+files = [
+    {file = "ska_ost_osd-3.1.1+dev.c68789eaf-py3-none-any.whl", hash = "sha256:3b11d15fd3fa28cb5b4b6353de53f94142ef42f0ac4706636d5e1ecf5796f7c3"},
+    {file = "ska_ost_osd-3.1.1+dev.c68789eaf.tar.gz", hash = "sha256:b0bee5e618cc2a22694e512bbdbc99e23c739a337d7a044b801812e99132ffe5"},
+]
 
 [package.dependencies]
-astropy = "^6.1"
+astropy = ">=6.1,<7.0"
 connexion = {version = "2.14.0", extras = ["swagger-ui"]}
-deepdiff = "^7.0.0"
-fire = "^0.5.0"
+deepdiff = ">=7.0.0,<8.0.0"
+fire = ">=0.5.0,<0.6.0"
 flask = "2.2.5"
 Flask-Cors = "5.0.0"
-gunicorn = "^20.1.0"
+gunicorn = ">=20.1.0,<21.0.0"
 jsonschema = "4.17.3"
-prance = {version = "^23.6.21.0", extras = ["osv"]}
-pydantic = "^2.10.3"
-python-dateutil = "^2.8.2"
-requests = "^2.27.1"
-simpleeval = "^0.9.13"
-ska-ser-logging = "^0.4.1"
-ska-ser-skuid = "^3.3.3"
-ska-telmodel = "^1.19.4"
+prance = {version = ">=23.6.21.0,<24.0.0.0", extras = ["osv"]}
+pydantic = ">=2.10.3,<3.0.0"
+python-dateutil = ">=2.8.2,<3.0.0"
+requests = ">=2.27.1,<3.0.0"
+simpleeval = ">=0.9.13,<0.10.0"
+ska-ser-logging = ">=0.4.1,<0.5.0"
+ska-ser-skuid = ">=3.3.3,<4.0.0"
+ska-telmodel = ">=1.19.4,<2.0.0"
 
 [package.source]
-type = "git"
-url = "https://gitlab.com/ska-telescope/ost/ska-ost-osd.git"
-reference = "test-osd"
-resolved_reference = "68789eafff50c6e5cf2730698910e7d9e6005439"
+type = "legacy"
+url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
+reference = "gitlab"
 
 [[package]]
 name = "ska-ser-logging"
@@ -3969,4 +3970,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "daa6edf02edafb908b3dce6b9172122a4ab643da56fea3fd8e6e52c765d2940c"
+content-hash = "ed6431e26ec2ceded29f62e4b722dfedcc4af813006da4ea67a94b550b1600d1"
