@@ -37,9 +37,9 @@ priority = "primary"
 #name = "gitlab-ska-db-oda"
 #url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
 #
-#[[tool.poetry.source]]
-#name = "gitlab-ska-ost-osd"
-#url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
+[[tool.poetry.source]]
+name = "gitlab-ska-ost-osd"
+url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
 #priority = "explicit"
 
 #[[tool.poetry.source]]
@@ -59,7 +59,9 @@ pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
 # ska-ost-osd = "3.1.1"
-ska-ost-osd = { git = "https://gitlab.com/ska-telescope/ost/ska-ost-osd.git", branch = "star-1432-create-panel-test-connexion" }
+# ska-ost-osd = { git = "https://gitlab.com/ska-telescope/ost/ska-ost-osd.git", branch = "star-1432-create-panel-test-connexion" }
+ska-ost-osd = {version = "3.1.1+dev.c68789eaf", source = "gitlab.ska-ost-osd"}
+
 aiosmtplib = "^4.0.1"
 boto3 = "^1.38.13"
 
