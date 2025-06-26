@@ -2,7 +2,7 @@
 name = "ska-oso-services"
 version = "1.1.0"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
-authors = ["Team Buttons"]
+authors = ["Team Buttons", "Stargazers Team"]
 license = "BSD-3-Clause"
 readme = "README.md"
 repository = "https://gitlab.com/ska-telescope/oso/ska-oso-services"
