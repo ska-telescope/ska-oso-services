@@ -61,9 +61,11 @@ astroquery = "0.4.9"
 # ska-ost-osd = "3.1.1"
 # ska-ost-osd = { git = "https://gitlab.com/ska-telescope/ost/ska-ost-osd.git", branch = "star-1432-create-panel-test-connexion" }
 ska-ost-osd = {version = "3.1.1+dev.c68789eaf", source = "gitlab.ska-ost-osd"}
-
 aiosmtplib = "^4.0.1"
 boto3 = "^1.38.13"
+connexion = {extras = ["swagger-ui"], version = "2.14.0"}
+flask = "2.2.5"
+Flask-Cors="5.0.0"
 
 ska-aaa-authhelpers = "^1.0.0"
 # Need to pin as otherwise pip cannot resolve the dependencies in the tests.
