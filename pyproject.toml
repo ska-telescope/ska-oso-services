@@ -49,7 +49,7 @@ priority = "primary"
 
 
 [[tool.poetry.source]]
-name = "gitlab"
+name = "gitlab-ska-ost-osd"
 url = 'https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple'
 
 [tool.poetry.dependencies]

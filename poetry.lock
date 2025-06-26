@@ -3045,7 +3045,7 @@ ska-telmodel = ">=1.19.4,<2.0.0"
 [package.source]
 type = "legacy"
 url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
-reference = "gitlab"
+reference = "gitlab-ska-ost-osd"
 
 [[package]]
 name = "ska-ser-logging"
@@ -3970,4 +3970,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "ed6431e26ec2ceded29f62e4b722dfedcc4af813006da4ea67a94b550b1600d1"
+content-hash = "90db4dc1094751be41406db2256325694cfa0ba2d4d18548d7fb6bd0eabe1b0e"
