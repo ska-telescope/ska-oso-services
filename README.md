@@ -26,16 +26,16 @@ Install dependencies with Poetry and activate the virtual environment
 
 ```
 poetry install
-poetry shell
+eval $(poetry env activate)
 ```
 
-To build a new Docker image for the OET, run
+To build a new Docker image for the OSO services, run
 
 ```
 make oci-build
 ```
 
-Execute the test suite and lint the project with:
+Execute the test suite and lint the project with
 
 ```
 make python-test
