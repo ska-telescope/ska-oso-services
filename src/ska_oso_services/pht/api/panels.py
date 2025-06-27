@@ -8,7 +8,7 @@ from ska_db_oda.rest.model import ApiQueryParameters
 from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.error_handling import BadRequestError, DuplicateError
+from ska_oso_services.common.error_handling import BadRequestError, DuplicateError, NotFoundError
 from ska_oso_services.pht.utils.constants import REVIEWERS
 
 router = APIRouter()
@@ -67,12 +67,17 @@ def create_panel(param: Panel) -> str:
 
 @router.get("/panels/{panel_id}", summary="Retrieve an existing panel by panel_id")
 def get_panel(panel_id: str) -> Panel:
-    logger.debug("GET panel: %s", panel_id)
+    logger.debug("GET panel panel_id: %s", panel_id)
 
-    with oda.uow() as uow:
-        panel = uow.panels.get(panel_id)  # pylint: disable=no-member
-    logger.info("Panel retrieved successfully: %s", panel_id)
-    return panel
+    try:
+        with oda.uow() as uow:
+            panel = uow.panels.get(panel_id)
+        logger.info("Panel retrieved successfully: %s", panel_id)
+        return panel
+
+    except KeyError as err:
+        logger.warning("Panel not found: %s", panel_id)
+        raise NotFoundError(f"Could not find panel: {panel_id}") from err
 
 
 @router.get("/panels", summary="Get all panels")
@@ -84,6 +89,11 @@ def get_panels() -> list[Panel]:
     )
     query_param = get_qry_params(query_params)
 
-    with oda.uow() as uow:
-        panels = uow.panels.query(query_param)  # pylint: disable=no-member
-    return panels
+    try:
+        with oda.uow() as uow:
+            panels = uow.panels.query(query_param)  # pylint: disable=no-member
+        return panels
+    
+    except KeyError as err:
+        logger.warning("No Panels found")
+        raise NotFoundError(f"Could not find panels") from err
