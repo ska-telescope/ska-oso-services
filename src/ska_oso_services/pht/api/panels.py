@@ -65,13 +65,13 @@ def create_panel(param: Panel) -> str:
     return panel.panel_id
 
 
-@router.get("/panels/{panel_id}", summary="Retrieve an existing panel")
+@router.get("/panels/{panel_id}", summary="Retrieve an existing panel by panel_id")
 def get_panel(panel_id: str) -> Panel:
     logger.debug("GET panel: %s", panel_id)
 
     with oda.uow() as uow:
         panel = uow.panels.get(panel_id)  # pylint: disable=no-member
-    logger.info("Proposal retrieved successfully: %s", panel_id)
+    logger.info("Panel retrieved successfully: %s", panel_id)
     return panel
 
 
