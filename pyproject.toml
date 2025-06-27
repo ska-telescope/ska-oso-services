@@ -23,6 +23,9 @@ classifiers = [
     'Programming Language :: Python :: 3.7',
 ]
 
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
 [[tool.poetry.source]]
 name = 'ska-nexus'
 url = 'https://artefact.skao.int/repository/pypi-internal/simple'
