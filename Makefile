@@ -4,6 +4,8 @@
 # value for CAR_OCI_REGISTRY_HOST (=artefact.skao.int) and overwrites
 # PROJECT_NAME to give a final Docker tag of artefact.skao.int/ska-oso-services
 
+# OCI_BUILD_ADDITIONAL_ARGS ?= --progress=plain --no-cache
+
 CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-services
