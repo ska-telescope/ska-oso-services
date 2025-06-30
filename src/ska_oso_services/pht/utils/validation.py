@@ -1,5 +1,7 @@
 from ska_oso_pdm.proposal import Proposal
 
+from ska_oso_services.common.error_handling import DuplicateError
+
 # from ska_oso_pht_services.api_clients.osd_api import osd_client
 
 # TODO: use values from OSD after connection is ready
@@ -58,4 +60,30 @@ def validate_proposal(proposal: Proposal) -> dict:
         validate_result = False
 
     res = {"result": validate_result, "validation_errors": messages}
+    return res
+
+
+def validate_duplicates(collection: list, field: str) -> list:
+    """Validates the collection does not have field attributes duplicates
+    and if so raises the DuplicateError.
+    """
+
+    res = []
+    seen = set()
+    dupes = set()
+
+    for obj in collection:
+        elem = getattr(obj, field)
+
+        res.append(elem)
+
+        if elem in seen:
+            dupes.add(elem)
+        else:
+            seen.add(elem)
+
+    if dupes:
+        msg = f"Duplicate {field} are not allowed: {dupes}"
+        raise DuplicateError(msg)
+
     return res
