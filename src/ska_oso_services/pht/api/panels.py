@@ -1,10 +1,11 @@
 import datetime
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from ska_db_oda.persistence.domain.errors import ODANotFound
+from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_db_oda.rest.api import get_qry_params
-from ska_db_oda.rest.model import ApiQueryParameters
+from ska_db_oda.rest.model import ApiQueryParameters 
 from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.common import oda
@@ -77,23 +78,30 @@ def get_panel(panel_id: str) -> Panel:
 
     except KeyError as err:
         logger.warning("Panel not found: %s", panel_id)
-        raise NotFoundError(f"Could not find panel: {panel_id}") from err
-
-
-@router.get("/panels", summary="Get all panels")
-def get_panels() -> list[Panel]:
-    logger.debug("GET all panels")
-
-    query_params = ApiQueryParameters(
-        created_after=datetime.datetime(2025, 1, 1, 0, 0),
-    )
-    query_param = get_qry_params(query_params)
-
-    try:
-        with oda.uow() as uow:
-            panels = uow.panels.query(query_param)  # pylint: disable=no-member
-        return panels
+        raise NotFoundError(f"Could not find panel: {panel_id}") from err 
     
-    except KeyError as err:
-        logger.warning("No Panels found")
-        raise NotFoundError(f"Could not find panels") from err
+
+@router.get("/panels", summary="Get all panels matching the given query parameters",  response_model=list[Panel])
+def get_panels_for_user(user_id: str) -> list[Panel]:
+    """
+    Function that requests to GET /panels are mapped to
+
+    Retrieves the Panels for the given user ID from the
+    underlying data store, if available
+
+    :param user_id: identifier of the Panel
+    :return: a tuple of a list of Panel
+    """
+
+    logger.debug("GET PANEL LIST query for the user: %s", user_id)
+
+    with oda.uow() as uow:
+        query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
+        panels = uow.panels.query(query_param)
+
+        if panels is None:
+            logger.info("No panels found for user: %s", user_id)
+            return []
+
+        logger.debug("Found %d panels for user: %s", len(panels), user_id)
+        return panels
