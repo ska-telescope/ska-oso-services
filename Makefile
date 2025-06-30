@@ -136,5 +136,6 @@ dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deplo
 docs-pre-build:
 	poetry install --only-root
 
-k8s-pre-test:
-	@poetry export --format requirements.txt --output tests/requirements.txt --without-hashes --dev
+#k8s-pre-test:
+#	poetry export --format requirements.txt --output tests/requirements.txt --without-hashes --with dev
+#	pip install -qUr tests/requirements.txt

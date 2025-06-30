@@ -9,38 +9,14 @@ from ska_db_oda.rest.model import ApiQueryParameters
 from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.error_handling import BadRequestError, DuplicateError, NotFoundError
+from ska_oso_services.common.error_handling import BadRequestError, NotFoundError
+from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.utils.constants import REVIEWERS
+from ska_oso_services.pht.utils.validation import validate_duplicates
 
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
-
-
-def validate_duplicates(collection: list, field: str) -> list:
-    """Validates the collection does not have field attributes duplicates
-    and if so raises the DuplicateError.
-    """
-
-    res = []
-    seen = set()
-    dupes = set()
-
-    for obj in collection:
-        elem = getattr(obj, field)
-
-        res.append(elem)
-
-        if elem in seen:
-            dupes.add(elem)
-        else:
-            seen.add(elem)
-
-    if dupes:
-        msg = f"Duplicate {field} are not allowed: {dupes}"
-        raise DuplicateError(msg)
-
-    return res
 
 
 @router.post("/panels", summary="Create a panel")
