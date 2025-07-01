@@ -37,7 +37,7 @@ def test_panels_post_duplicate_reviewer():
 
 
 def test_panels_post_duplicate_proposal():
-    panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0])
+    panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0]["id"])
     panel.proposals.append(panel.proposals[0])
 
     data = panel.json()
@@ -66,7 +66,7 @@ def test_panels_post_not_existing_reviewer():
 
 
 def test_panels_post_not_existing_proposal():
-    panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0])
+    panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0]["id"])
 
     data = panel.json()
 
