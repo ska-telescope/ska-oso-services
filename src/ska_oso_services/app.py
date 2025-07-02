@@ -61,8 +61,6 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "create_delete_pdf_url",
                 "get_reviewers",
                 "create_panel",
-                "get_panel",
-                "get_panels",
             ]
         ),
     )
@@ -81,7 +79,8 @@ def create_app(production=PRODUCTION) -> FastAPI:
     app.include_router(pht.router, prefix=API_PREFIX)
     app.exception_handler(ODANotFound)(oda_not_found_handler)
     app.exception_handler(ODAError)(oda_error_handler)
-    app.exception_handler(UniqueConstraintViolation)(oda_unique_constraint_handler)
+    app.exception_handler(UniqueConstraintViolation)(
+        oda_unique_constraint_handler)
 
     if not production:
         app.exception_handler(Exception)(dangerous_internal_server_handler)
