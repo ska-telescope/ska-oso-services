@@ -4,6 +4,7 @@
 # value for CAR_OCI_REGISTRY_HOST (=artefact.skao.int) and overwrites
 # PROJECT_NAME to give a final Docker tag of artefact.skao.int/ska-oso-services
 
+# Use next line to see verbose messages
 # OCI_BUILD_ADDITIONAL_ARGS ?= --progress=plain --no-cache
 
 CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
@@ -14,7 +15,6 @@ RELEASE_NAME ?= test
 MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 OSO_SERVICES_URL ?= http://ska-oso-services-rest-test:5000/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 
-SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.13.6
 K8S_TEST_IMAGE_TO_TEST=$(SKA_K8S_TOOLS_BUILD_DEPLOY)
 
 PIPELINE_TEST_DEPLOYMENT ?= false
@@ -137,5 +137,6 @@ docs-pre-build:
 	poetry install --only-root
 
 #k8s-pre-test:
+#	poetry --version
 #	poetry export --format requirements.txt --output tests/requirements.txt --without-hashes --with dev
 #	pip install -qUr tests/requirements.txt
