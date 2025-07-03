@@ -24,9 +24,6 @@ RUN touch README.md
 # Install no-root here so we get a docker layer cached with dependencies
 # but not app code, to rebuild quickly.
 
-#RUN poetry self update
-# RUN poetry self add poetry-plugin-export
-RUN poetry --version
 RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
 
 # The runtime image, used to just run the code provided its virtual environment

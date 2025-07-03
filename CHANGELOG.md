@@ -9,6 +9,7 @@ Unreleased
 * Added ska-ser-xray as a dev dependency
 * Added panel post/get endpoints
 * Updated the ska-db-oda version to v9.0.0
+* Upgraded repo to poetry 2.0+
 
 1.1.0
 ****** 
