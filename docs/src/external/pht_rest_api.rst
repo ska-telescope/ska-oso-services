@@ -16,8 +16,8 @@ The API supports resources for:
 * Update an existing Proposal
 * Retrieve a list of proposals for a specified user
 * Validate a proposal
-* Send SKAO email asynchronously via SMTP
-* Upload PDF
-* Download PDF
-* Delete PDF
-* Retrieve a list of reviewers
+* Send SKAO email asynchronously
+* Generate presigned S3 upload URL for the given filename
+* Generate presigned S3 download URL for the given filename
+* Generate presigned S3 delete URL for the given filename
+* Retrieve a list of reviewers (Currently mocked)
