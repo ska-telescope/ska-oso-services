@@ -73,14 +73,14 @@ def validate_duplicates(collection: list, field: str) -> list:
     dupes = set()
 
     for obj in collection:
-        elem = getattr(obj, field)
+        element = getattr(obj, field)
 
-        result.append(elem)
+        result.append(element)
 
-        if elem in seen:
-            dupes.add(elem)
+        if element in seen:
+            dupes.add(element)
         else:
-            seen.add(elem)
+            seen.add(element)
 
     if dupes:
         msg = f"Duplicate {field} are not allowed: {dupes}"
