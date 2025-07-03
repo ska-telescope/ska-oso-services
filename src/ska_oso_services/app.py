@@ -56,6 +56,13 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "create_delete_pdf_url",
                 "get_reviewers",
                 "create_review",
+                "get_review",
+                "get_reviews_for_user",
+                "update_review",
+                "create_panel_decision",
+                "get_panel_decision",
+                "get_panel_decisions_for_user",
+                "update_panel_decision",
             ]
         ),
     )

@@ -3661,14 +3661,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-db-oda"
-version = "9.0.1"
+version = "9.1.0"
 description = "SKA Database OSO Data Archive"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_db_oda-9.0.1-py3-none-any.whl", hash = "sha256:8f55d239b18675fb13155df54401fcf0afb7428aceebe6be159a97847b0569d2"},
-    {file = "ska_db_oda-9.0.1.tar.gz", hash = "sha256:c2adab7932468a97bbd03e51f8c87114c5c1da2cf8e329662fb9b798a5fff33a"},
+    {file = "ska_db_oda-9.1.0-py3-none-any.whl", hash = "sha256:e97880f48b420d4f96e63c3cc86209ee04cfc30bf3a58a9e8f0b8fd3be847028"},
+    {file = "ska_db_oda-9.1.0.tar.gz", hash = "sha256:ec2de9dcace897a8329e4fb26c8060294d8cbf0ee95041e7cdbe35d73220819e"},
 ]
 
 [package.dependencies]
@@ -3679,7 +3679,7 @@ psycopg-pool = ">=3.1.1,<4.0.0"
 pydantic = ">=2.9,<3.0"
 python-dateutil = ">=2.8.2,<3.0.0"
 requests = ">=2.27.1,<3.0.0"
-ska-oso-pdm = ">=18.2.0,<19.0.0"
+ska-oso-pdm = ">=18.3.0,<19.0.0"
 ska-ser-logging = ">=0.4.1,<0.5.0"
 ska-ser-skuid = ">=3.3.3,<4.0.0"
 
@@ -4948,4 +4948,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "80641d28ce45922273c88c83eb0a2609ecaab73c438d132bb0405180c70205dc"
+content-hash = "4055ef0a57506461e0af8bf06aedb6d666cb0535ffc0886bcdc24455049aae6f"
