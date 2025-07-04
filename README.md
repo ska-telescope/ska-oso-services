@@ -54,7 +54,7 @@ make k8s-chart-test
 Install the Helm umbrella chart into a Kubernetes cluster with ingress enabled:
 
 ```
-make k8s-install-chart
+make k8s-install-chart PIPELINE_TEST_DEPLOYMENT=true
 ```
 
 The Swagger UI should be available external to the cluster at `http://<KUBE_HOST>/<KUBE_NAMESPACE>/oso/api/v0/ui/` and the API accessible via the same URL.
