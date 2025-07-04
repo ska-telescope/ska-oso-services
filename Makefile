@@ -28,7 +28,7 @@ K8S_CHART = ska-oso-services-umbrella
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 K8S_CHART_PARAMS += \
   --set ska-db-oda-umbrella.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST) \
-   --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
+  --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
 
 # CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline, so these variables are set for a local deployment
 # Set cluster_domain to minikube default (cluster.local) in local development
@@ -44,8 +44,7 @@ endif
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')
 ifneq ($(ENV_CHECK),)
 K8S_CHART_PARAMS += --set ska-oso-services.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
-	--set ska-oso-services.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-services \
-	--set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
+	--set ska-oso-services.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-services
 endif
 
 # For the staging environment, make k8s-install-chart-car will pull the chart from CAR so we do not need to
