@@ -129,7 +129,3 @@ dev-up: K8S_CHART_PARAMS = \
 dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment
 
 dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deployment
-
-# The docs build fails unless the ska-oso-services package is installed locally as importlib.metadata.version requires it.
-docs-pre-build:
-	poetry install --only-root
