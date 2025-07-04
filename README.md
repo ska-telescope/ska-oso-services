@@ -53,6 +53,11 @@ make k8s-chart-test
 
 Install the Helm umbrella chart into a Kubernetes cluster with ingress enabled:
 
+Short version for local runs:
+```
+make k8s-uninstall-chart && make k8s-install-chart PIPELINE_TEST_DEPLOYMENT=true && make k8s-wait
+```
+
 ```
 make k8s-install-chart
 ```

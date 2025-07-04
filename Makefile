@@ -50,6 +50,10 @@ K8S_CHART_PARAMS += --set ska-oso-services.rest.image.tag=$(VERSION)-dev.c$(CI_C
 	--set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
 endif
 
+# This line is needed for local runs, but you can turn of off / change if you want using different keys
+# The one above is seemingly a duplication of this. FIXME later
+K8S_CHART_PARAMS += --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
+
 # For the staging environment, make k8s-install-chart-car will pull the chart from CAR so we do not need to
 # change any values
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'staging')
