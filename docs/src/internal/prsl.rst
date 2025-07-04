@@ -48,3 +48,11 @@ Sequence diagram function flow when calling email invite endpoint /prsls/send-em
 .. image:: diagrams/send_email_api.svg
   :width: 400
   :alt: Sequence diagram for email invite API  
+
+Generate presigned S3 upload URL
+===========================
+Sequence diagram function flow when calling email invite endpoint /prsls/send-email
+
+.. image:: diagrams/upload_pdf_api.svg
+  :width: 400
+  :alt: Sequence diagram for generate presigned S3 upload URL API  
