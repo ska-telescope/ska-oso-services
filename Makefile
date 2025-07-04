@@ -136,3 +136,18 @@ docs-pre-build:
 
 k8s-pre-test:
 	@poetry export --format requirements.txt --output tests/requirements.txt --without-hashes --dev
+
+diagrams:  ## recreate PlantUML diagrams whose source has been modified
+# 	@for i in $$(git diff --name-only -- '*.puml'); \
+# 	do \
+# 		echo "Recreating $${i%%.*}.png"; \
+# 		cat $$i | docker run --rm -i think/plantuml -tsvg $$i > $${i%%.*}.svg; \
+# 	done
+
+	@for file in $$(git diff --staged --name-only -- '*.puml'; git diff --name-only -- '*.puml'); \
+	do \
+		if [ -e "$$file" ]; then \
+			echo "Processing $$file"; \
+			cat $$file | docker run --rm -i think/plantuml -tsvg $$file > $${file%.puml}.svg; \
+		fi; \
+	done

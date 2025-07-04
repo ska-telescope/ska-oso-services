@@ -1,0 +1,6 @@
+@startuml
+API -> API: HTTP GET (/prsls/{proposal_id})
+API -> API: Validated params: Proposal
+API -> API: Response
+API --> ODA: Store valid proposal
+@enduml
