@@ -6,7 +6,7 @@ Creating Proposals
 Sequence diagram function flow when calling create proposal endpoint /prsls/create
 
 .. image:: diagrams/create_proposal_api.svg
-   :align: center
+   :width: 400
    :alt: Sequence diagram for create proposal API
 
 Retrieve Proposals 
@@ -32,3 +32,11 @@ Sequence diagram function flow when calling get list of proposals endpoint /prsl
 .. image:: diagrams/get_list_of_proposals_by_user_id_api.svg
   :width: 400
   :alt: Sequence diagram for get list of proposals by user id API  
+
+Validate Proposal
+===========================
+Sequence diagram function flow when calling validate proposal endpoint /prsls/validate
+
+.. image:: diagrams/validate_proposal_api.svg
+  :width: 400
+  :alt: Sequence diagram for validate proposal API  
