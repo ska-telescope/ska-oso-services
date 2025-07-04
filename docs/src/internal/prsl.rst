@@ -22,3 +22,10 @@ Sequence diagram function flow when calling edit proposal endpoint /prsls/{propo
 .. image::docs/src/images/EditProposalAPI.png
   :width: 400
   :alt: Sequence diagram for edit proposal API  
+
+
+Sequence diagram function flow when calling get list of proposals endpoint /prsls/list/{user_id}
+
+.. image::docs/src/images/GetListOfProposalsByUserIdAPI.png
+  :width: 400
+  :alt: Sequence diagram for edit proposal API  
