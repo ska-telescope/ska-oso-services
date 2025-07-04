@@ -105,7 +105,7 @@
 		"investigators": [
 			{
 				"investigator_id": "prp-ska01-202204-01",
-				"status": "pending",
+				"status": "Pending",
 				"given_name": "Tony",
 				"family_name": "Bennet",
 				"email": "somewhere.vague@example.com",
