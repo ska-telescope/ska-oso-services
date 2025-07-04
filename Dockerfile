@@ -46,6 +46,8 @@ COPY --chown=$APP_USER:$APP_USER --from=buildenv ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # Now we copy and install the application code:
 COPY --chown=$APP_USER:$APP_USER . ./
 
+RUN python -m pip --require-virtualenv install --no-deps -e .
+
 USER ${APP_USER}
 
 CMD ["fastapi", \
