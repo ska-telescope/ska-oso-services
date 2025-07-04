@@ -4,9 +4,6 @@
 # value for CAR_OCI_REGISTRY_HOST (=artefact.skao.int) and overwrites
 # PROJECT_NAME to give a final Docker tag of artefact.skao.int/ska-oso-services
 
-# Use next line to see verbose messages
-# OCI_BUILD_ADDITIONAL_ARGS ?= --progress=plain --no-cache
-
 CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-services
@@ -30,7 +27,8 @@ K8S_CHART = ska-oso-services-umbrella
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 K8S_CHART_PARAMS += \
-  --set ska-db-oda-umbrella.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST)
+  --set ska-db-oda-umbrella.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST) \
+  --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
 
 # CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline, so these variables are set for a local deployment
 # Set cluster_domain to minikube default (cluster.local) in local development
@@ -46,13 +44,8 @@ endif
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')
 ifneq ($(ENV_CHECK),)
 K8S_CHART_PARAMS += --set ska-oso-services.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
-	--set ska-oso-services.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-services \
-	--set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
+	--set ska-oso-services.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-services
 endif
-
-# This line is needed for local runs, but you can turn of off / change if you want using different keys
-# The one above is seemingly a duplication of this. FIXME later
-K8S_CHART_PARAMS += --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
 
 # For the staging environment, make k8s-install-chart-car will pull the chart from CAR so we do not need to
 # change any values
@@ -136,7 +129,3 @@ dev-up: K8S_CHART_PARAMS = \
 dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment
 
 dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deployment
-
-# The docs build fails unless the ska-oso-services package is installed locally as importlib.metadata.version requires it.
-docs-pre-build:
-	poetry install --only-root

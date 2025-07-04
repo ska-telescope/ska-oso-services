@@ -20,10 +20,9 @@ ENV APP_DIR="/app"
 WORKDIR $APP_DIR
 
 COPY pyproject.toml poetry.lock ./
-RUN touch README.md
+
 # Install no-root here so we get a docker layer cached with dependencies
 # but not app code, to rebuild quickly.
-
 RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
 
 # The runtime image, used to just run the code provided its virtual environment
@@ -39,11 +38,8 @@ WORKDIR $APP_DIR
 # Used by the FilesystemRepository implementation of the ODA
 RUN mkdir -p /var/lib/oda && chown -R ${APP_USER} /var/lib/oda
 
-# GIT_PYTHON_REFRESH=quiet is required for now due to ska-telmodel
-# requiring git even when git functionality is not used (see SKB-891)
 ENV VIRTUAL_ENV=/app/.venv \
-    PATH="/app/.venv/bin:$PATH" \
-    GIT_PYTHON_REFRESH=quiet
+    PATH="/app/.venv/bin:$PATH"
 
 COPY --chown=$APP_USER:$APP_USER --from=buildenv ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
