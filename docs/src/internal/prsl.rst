@@ -40,3 +40,11 @@ Sequence diagram function flow when calling validate proposal endpoint /prsls/va
 .. image:: diagrams/validate_proposal_api.svg
   :width: 400
   :alt: Sequence diagram for validate proposal API  
+
+Email invite
+===========================
+Sequence diagram function flow when calling email invite endpoint /prsls/send-email
+
+.. image:: diagrams/send_email_api.svg
+  :width: 400
+  :alt: Sequence diagram for email invite API  

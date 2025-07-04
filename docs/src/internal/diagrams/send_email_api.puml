@@ -1,0 +1,5 @@
+@startuml
+API -> API: HTTP POST (/prsls/send-email)
+API -> API: Validated params: EmailRequest
+API -> API: Response
+@enduml
