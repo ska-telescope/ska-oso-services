@@ -28,4 +28,4 @@ Sequence diagram function flow when calling get list of proposals endpoint /prsl
 
 .. image::docs/src/images/GetListOfProposalsByUserIdAPI.png
   :width: 400
-  :alt: Sequence diagram for edit proposal API  
+  :alt: Sequence diagram for get list of proposals by user id API  
