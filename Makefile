@@ -12,7 +12,7 @@ RELEASE_NAME ?= test
 MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 OSO_SERVICES_URL ?= http://ska-oso-services-rest-test:5000/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 
-SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.13.6
+SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.14.1
 K8S_TEST_IMAGE_TO_TEST=$(SKA_K8S_TOOLS_BUILD_DEPLOY)
 
 PIPELINE_TEST_DEPLOYMENT ?= false
@@ -27,7 +27,8 @@ K8S_CHART = ska-oso-services-umbrella
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 K8S_CHART_PARAMS += \
-  --set ska-db-oda-umbrella.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST)
+  --set ska-db-oda-umbrella.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST) \
+   --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
 
 # CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline, so these variables are set for a local deployment
 # Set cluster_domain to minikube default (cluster.local) in local development
@@ -133,6 +134,3 @@ dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deplo
 # The docs build fails unless the ska-oso-services package is installed locally as importlib.metadata.version requires it.
 docs-pre-build:
 	poetry install --only-root
-
-k8s-pre-test:
-	@poetry export --format requirements.txt --output tests/requirements.txt --without-hashes --dev
