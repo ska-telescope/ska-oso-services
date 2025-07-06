@@ -19,9 +19,7 @@ from tests.unit.util import (
     PAYLOAD_SUCCESS,
     VALID_NEW_PROPOSAL,
     TestDataFactory,
-    assert_json_is_equal,
-    load_string_from_file,
-)
+    assert_json_is_equal)
 
 PROPOSAL_API_URL = f"{PHT_BASE_API_URL}/prsls"
 
