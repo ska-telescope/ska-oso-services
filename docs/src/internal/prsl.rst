@@ -1,6 +1,6 @@
 .. _prsl:
 
-Sequence diagrams showcasing function flow when utilising PPTendpoints
+Sequence diagrams showcasing function flow when utilising PPT endpoints
 =======================================================================
 
 .. image:: diagrams/create_proposal_api.svg
