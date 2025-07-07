@@ -45,18 +45,13 @@ def create_panel(param: Panel) -> str:
 def get_panel(panel_id: str) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 
-    try:
-        with oda.uow() as uow:
-            panel = uow.panels.get(panel_id)
-        logger.info("Panel retrieved successfully: %s", panel_id)
-        return panel
-
-    except KeyError as err:
-        logger.warning("Panel not found: %s", panel_id)
-        raise NotFoundError(f"Could not find panel: {panel_id}") from err 
+    with oda.uow() as uow:
+        panel = uow.panels.get(panel_id)
+    logger.info("Panel retrieved successfully: %s", panel_id)
+    return panel
     
 
-@router.get("/list/{user_id}", summary="Get all panels matching the given query parameters")
+@router.get("/{user_id}", summary="Get all panels matching the given query parameters")
 def get_panels_for_user(user_id: str) -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
@@ -73,10 +68,6 @@ def get_panels_for_user(user_id: str) -> list[Panel]:
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
         panels = uow.panels.query(query_param)
-
-        if panels is None:
-            logger.info("No panels found for user: %s", user_id)
-            return []
 
         logger.debug("Found %d panels for user: %s", len(panels), user_id)
         return panels

@@ -161,14 +161,14 @@ typing = ["typing_extensions (>=4.0.0)"]
 
 [[package]]
 name = "astropy-iers-data"
-version = "0.2025.6.30.0.39.40"
+version = "0.2025.7.7.0.39.39"
 description = "IERS Earth Rotation and Leap Second tables for the astropy core package"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "astropy_iers_data-0.2025.6.30.0.39.40-py3-none-any.whl", hash = "sha256:dea5e1a1d4125246efcb7a58322569f9174371f0ad4d48963a5c3d8ded0dcc3e"},
-    {file = "astropy_iers_data-0.2025.6.30.0.39.40.tar.gz", hash = "sha256:511a1bb0185b5eef28dc05d8aecd7d5a7201156370d7bb9bbf439e76ffc33b00"},
+    {file = "astropy_iers_data-0.2025.7.7.0.39.39-py3-none-any.whl", hash = "sha256:770221844e56c4cafba8c65659438bde5c96041d246dc4eb13cbc63890e33299"},
+    {file = "astropy_iers_data-0.2025.7.7.0.39.39.tar.gz", hash = "sha256:e29bf3e16816a92282a39edd587150296047b7b08ac6b8048b429a7d1ef1c386"},
 ]
 
 [package.extras]
@@ -1478,14 +1478,14 @@ files = [
 
 [[package]]
 name = "joserfc"
-version = "1.1.0"
+version = "1.2.0"
 description = "The ultimate Python library for JOSE RFCs, including JWS, JWE, JWK, JWA, JWT"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "joserfc-1.1.0-py3-none-any.whl", hash = "sha256:9493512cfffb9bc3001e8f609fe0eb7e95b71f3d3b374ede93de94b4b6b520f5"},
-    {file = "joserfc-1.1.0.tar.gz", hash = "sha256:a8f3442b04c233f742f7acde0d0dcd926414e9542a6337096b2b4e5f435f36c1"},
+    {file = "joserfc-1.2.0-py3-none-any.whl", hash = "sha256:0d7ecdb8dd106f385d7bfd61494ef226d61e3bb9cdb62cf62b51e73e97eeba3b"},
+    {file = "joserfc-1.2.0.tar.gz", hash = "sha256:7708fec6bfcc76a58ea393fceb26e51e0de882975ec5ee1bc7d26cc15176bcdb"},
 ]
 
 [package.dependencies]
@@ -3794,14 +3794,14 @@ typing-extensions = ">=3.7.4.3"
 
 [[package]]
 name = "typing-extensions"
-version = "4.14.0"
+version = "4.14.1"
 description = "Backported and Experimental Type Hints for Python 3.9+"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "dev"]
 files = [
-    {file = "typing_extensions-4.14.0-py3-none-any.whl", hash = "sha256:a1514509136dd0b477638fc68d6a91497af5076466ad0fa6c338e44e359944af"},
-    {file = "typing_extensions-4.14.0.tar.gz", hash = "sha256:8676b788e32f02ab42d9e7c61324048ae4c6d844a399eebace3d4979d75ceef4"},
+    {file = "typing_extensions-4.14.1-py3-none-any.whl", hash = "sha256:d1e1e3b58374dc93031d6eda2420a48ea44a36c2b4766a4fdeb3710755731d76"},
+    {file = "typing_extensions-4.14.1.tar.gz", hash = "sha256:38b39f4aeeab64884ce9f74c94263ef78f3c22467c8724005483154c26648d36"},
 ]
 
 [[package]]
@@ -4232,4 +4232,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "3dbeab17eca34dcd71700eb7cb0edd5caee9c2b67136e57886567217e1ccb819"
+content-hash = "9c9b6a7862e3b788b9dceb2601d26cae84ccb40ae83e14700371b4634745bda0"

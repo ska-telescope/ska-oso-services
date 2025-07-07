@@ -84,7 +84,7 @@ def test_get_list_panels_for_user():
     Integration test:
     - Create multiple panels
     - Fetch created_by from one
-    - Use GET /list/{user_id} to retrieve them
+    - Use GET /{user_id} to retrieve them
     - Ensure all created panels are returned
     """
 
@@ -111,7 +111,7 @@ def test_get_list_panels_for_user():
     user_id = get_response.json()["metadata"]["created_by"]
 
     # GET /list/{user_id}
-    list_response = requests.get(f"{PANELS_API_URL}/list/{user_id}")
+    list_response = requests.get(f"{PANELS_API_URL}/{user_id}")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     panels = list_response.json()
@@ -123,4 +123,4 @@ def test_get_list_panels_for_user():
     for panel_id in created_ids:
         assert (
             panel_id in returned_ids
-        ), f"Missing panel {panel_id} in GET /list/{user_id}"
+        ), f"Missing panel {panel_id} in GET /{user_id}"
