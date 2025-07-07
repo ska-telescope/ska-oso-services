@@ -34,7 +34,7 @@ class Testpanel_decisionAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.post(
-            f"{panel_decision_API_URL}/create",
+            f"{panel_decision_API_URL}/",
             data=VALID_PANEL_DECISION,
             headers={"Content-type": "application/json"},
         )
@@ -56,7 +56,7 @@ class Testpanel_decisionAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.post(
-            f"{panel_decision_API_URL}/create",
+            f"{panel_decision_API_URL}/",
             data=VALID_PANEL_DECISION,
             headers={"Content-Type": "application/json"},
         )
