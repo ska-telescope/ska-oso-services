@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import status
+from ska_db_oda.persistence.domain.errors import ODANotFound
 
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import VALID_REVIEW, TestDataFactory, assert_json_is_equal
@@ -62,18 +63,18 @@ class TestReviewAPI:
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_get_review_not_found(self, mock_oda, client):
         """
-        Ensure KeyError during get() raises NotFoundError (404).
+        Ensure ODANotFound during get() raises NotFoundError (404).
         """
         review_id = "prsl-missing-9999"
 
         uow_mock = mock.MagicMock()
-        uow_mock.rvws.get.side_effect = KeyError(review_id)
+        uow_mock.rvws.get.side_effect = ODANotFound(identifier=review_id)
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.get(f"{REVIEWS_API_URL}/{review_id}")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
-        assert "Could not find Review" in response.json()["detail"]
+        assert "could not be found" in response.json()["detail"]
 
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_get_review_success(self, mock_oda, client):
@@ -115,7 +116,7 @@ class TestReviewAPI:
         Should return empty list if no reviews are found.
         """
         uow_mock = mock.MagicMock()
-        uow_mock.rvws.query.return_value = None
+        uow_mock.rvws.query.return_value = []
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         user_id = "user123"

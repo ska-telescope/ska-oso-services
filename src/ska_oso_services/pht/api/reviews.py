@@ -43,27 +43,16 @@ def create_review(reviews: PanelReview) -> str:
 def get_review(review_id: str) -> PanelReview:
     LOGGER.debug("GET Review review_id: %s", review_id)
 
-    try:
-        with oda.uow() as uow:
-            Review = uow.rvws.get(review_id)
-        LOGGER.info("Review retrieved successfully: %s", review_id)
-        return Review
-
-    except KeyError as err:
-        LOGGER.warning("Review not found: %s", review_id)
-        raise NotFoundError(f"Could not find Review: {review_id}") from err
+    with oda.uow() as uow:
+        Review = uow.rvws.get(review_id)
+    return Review
 
 
 @router.get("/list/{user_id}", summary="Get a list of Reviews created by a user")
 def get_reviews_for_user(user_id: str) -> list[PanelReview]:
     """
-    Function that requests to GET /Reviews/list are mapped to
-
     Retrieves the Reviews for the given user ID from the
     underlying data store, if available
-
-    :param user_id: identifier of the Review
-    :return: a tuple of a list of Review and a
     """
 
     LOGGER.debug("GET Review LIST query for the user: %s", user_id)
@@ -71,12 +60,6 @@ def get_reviews_for_user(user_id: str) -> list[PanelReview]:
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
         Reviews = uow.rvws.query(query_param)
-
-        if Reviews is None:
-            LOGGER.info("No Reviews found for user: %s", user_id)
-            return []
-
-        LOGGER.debug("Found %d Reviews for user: %s", len(Reviews), user_id)
         return Reviews
 
 

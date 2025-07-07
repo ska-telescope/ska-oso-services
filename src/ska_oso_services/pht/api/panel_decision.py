@@ -33,7 +33,9 @@ def create_panel_decision(decisions: PanelDecision) -> str:
             uow.commit()
         return created_decision.decision_id
     except ValueError as err:
-        LOGGER.exception("ValueError when adding Decision to the ODA: %s", err)
+        LOGGER.exception(
+            "ValueError when adding Decision for a panel to the ODA: %s", err
+        )
         raise BadRequestError(
             detail=f"Failed when attempting to create a Decision: '{err.args[0]}'",
         ) from err
@@ -41,60 +43,40 @@ def create_panel_decision(decisions: PanelDecision) -> str:
 
 @router.get("/{decision_id}", summary="Retrieve an existing decision")
 def get_panel_decision(decision_id: str) -> PanelDecision:
-    LOGGER.debug("GET PANEL DECISION decision_id: %s", decision_id)
+    """Retrieves a decision for a panel from the ODA based on the decision_id."""
+    LOGGER.debug("GET panel DECISION decision_id: %s", decision_id)
 
-    try:
-        with oda.uow() as uow:
-            Decision = uow.pnlds.get(decision_id)
-        LOGGER.info("Decision retrieved successfully: %s", decision_id)
-        return Decision
-
-    except KeyError as err:
-        LOGGER.warning("Decision not found: %s", decision_id)
-        raise NotFoundError(f"Could not find Decision: {decision_id}") from err
+    with oda.uow() as uow:
+        decision = uow.pnlds.get(decision_id)
+    return decision
 
 
 @router.get("/list/{user_id}", summary="Get a list of Decisions created by a user")
 def get_panel_decisions_for_user(user_id: str) -> list[PanelDecision]:
     """
-    Function that requests to GET /Decisions/list are mapped to
-
-    Retrieves the Decisions for the given user ID from the
-    underlying data store, if available
-
-    :param user_id: identifier of the Decision
-    :return: a tuple of a list of Decision and a
+    Retrieves the panel Decision for the given user ID from the
+    ODA, if available
     """
 
     LOGGER.debug("GET Decision LIST query for the user: %s", user_id)
 
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        Decisions = uow.pnlds.query(query_param)
-
-        if Decisions is None:
-            LOGGER.info("No Decisions found for user: %s", user_id)
-            return []
-
-        LOGGER.debug("Found %d Decisions for user: %s", len(Decisions), user_id)
-        return Decisions
+        decisions = uow.pnlds.query(query_param)
+    return decisions
 
 
 @router.put("/{decision_id}", summary="Update an existing Decision")
 def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDecision:
     """
-    Updates a Decision in the underlying data store.
-
-    :param Decision_id: identifier of the Decision in the URL
-    :param decision: Decision object payload from the request body
-    :return: the updated Decision object
+    Updates a decision in the ODA.
     """
     LOGGER.debug("PUT Decision - Attempting update for Decision_id: %s", decision_id)
 
     # Ensure ID match
     if decision.decision_id != decision_id:
         LOGGER.warning(
-            "Decision ID mismatch: Decision ID=%s in path, body ID=%s",
+            "Decision ID mismatch: decision ID=%s in path, body ID=%s",
             decision_id,
             decision.decision_id,
         )

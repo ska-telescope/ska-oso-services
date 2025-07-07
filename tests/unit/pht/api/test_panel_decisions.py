@@ -9,11 +9,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import status
+from ska_db_oda.persistence.domain.errors import ODANotFound
 
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import VALID_PANEL_DECISION, TestDataFactory, assert_json_is_equal
 
-panel_decision_API_URL = f"{PHT_BASE_API_URL}/panel-decisions"
+PANEL_DECISION_API_URL = f"{PHT_BASE_API_URL}/panel-decisions"
 
 
 def has_validation_error(detail, field: str) -> bool:
@@ -24,7 +25,7 @@ class Testpanel_decisionAPI:
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
     def test_create_panel_decision(self, mock_oda, client):
         """
-        Panel_decision_create method returns the expected decision_id and status code.
+        Panel_decision create method returns the expected decision_id and status code.
         """
 
         panel_decision_obj = TestDataFactory.panel_decision()
@@ -34,7 +35,7 @@ class Testpanel_decisionAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.post(
-            f"{panel_decision_API_URL}/",
+            f"{PANEL_DECISION_API_URL}/",
             data=VALID_PANEL_DECISION,
             headers={"Content-type": "application/json"},
         )
@@ -56,7 +57,7 @@ class Testpanel_decisionAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.post(
-            f"{panel_decision_API_URL}/",
+            f"{PANEL_DECISION_API_URL}/",
             data=VALID_PANEL_DECISION,
             headers={"Content-Type": "application/json"},
         )
@@ -68,18 +69,18 @@ class Testpanel_decisionAPI:
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
     def test_get_panel_decision_not_found(self, mock_oda, client):
         """
-        Ensure KeyError during get() raises NotFoundError (404).
+        Ensure ODANotFound during get() raises NotFoundError (404).
         """
         decision_id = "prsl-missing-9999"
 
         uow_mock = mock.MagicMock()
-        uow_mock.pnlds.get.side_effect = KeyError(decision_id)
+        uow_mock.pnlds.get.side_effect = ODANotFound(identifier=decision_id)
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        response = client.get(f"{panel_decision_API_URL}/{decision_id}")
+        response = client.get(f"{PANEL_DECISION_API_URL}/{decision_id}")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
-        assert "Could not find Decision" in response.json()["detail"]
+        assert "could not be found" in response.json()["detail"]
 
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
     def test_get_panel_decision_success(self, mock_oda, client):
@@ -93,7 +94,7 @@ class Testpanel_decisionAPI:
         uow_mock.pnlds.get.return_value = panel_decision
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        response = client.get(f"{panel_decision_API_URL}/{decision_id}")
+        response = client.get(f"{PANEL_DECISION_API_URL}/{decision_id}")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -113,7 +114,7 @@ class Testpanel_decisionAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         user_id = "DefaultUser"
-        response = client.get(f"{panel_decision_API_URL}/list/{user_id}")
+        response = client.get(f"{PANEL_DECISION_API_URL}/list/{user_id}")
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(panel_decision_objs)
@@ -124,11 +125,11 @@ class Testpanel_decisionAPI:
         Should return empty list if no panel decisions are found.
         """
         uow_mock = mock.MagicMock()
-        uow_mock.pnlds.query.return_value = None
+        uow_mock.pnlds.query.return_value = []
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         user_id = "user123"
-        response = client.get(f"{panel_decision_API_URL}/list/{user_id}")
+        response = client.get(f"{PANEL_DECISION_API_URL}/list/{user_id}")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
@@ -147,7 +148,7 @@ class Testpanel_decisionAPI:
         mock_uow().__enter__.return_value = uow_mock
 
         result = client.put(
-            f"{panel_decision_API_URL}/{decision_id}",
+            f"{PANEL_DECISION_API_URL}/{decision_id}",
             data=panel_decision_obj.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
@@ -168,7 +169,7 @@ class Testpanel_decisionAPI:
         mock_uow.return_value.__enter__.return_value = uow_mock
 
         response = client.put(
-            f"{panel_decision_API_URL}/{decision_id}",
+            f"{PANEL_DECISION_API_URL}/{decision_id}",
             data=panel_decision_obj.model_dump_json(),
             headers={"Content-Type": "application/json"},
         )
@@ -185,7 +186,7 @@ class Testpanel_decisionAPI:
         path_id = "diff-id"
 
         response = client.put(
-            f"{panel_decision_API_URL}/{path_id}",
+            f"{PANEL_DECISION_API_URL}/{path_id}",
             data=panel_decision_obj.model_dump_json(),
             headers={"Content-Type": "application/json"},
         )
@@ -207,7 +208,7 @@ class Testpanel_decisionAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.put(
-            f"{panel_decision_API_URL}/{decision_id}",
+            f"{PANEL_DECISION_API_URL}/{decision_id}",
             data=panel_decision_obj.model_dump_json(),
             headers={"Content-Type": "application/json"},
         )
