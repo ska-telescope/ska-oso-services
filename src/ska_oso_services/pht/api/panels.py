@@ -1,4 +1,3 @@
-import datetime
 import logging
 
 from fastapi import APIRouter, Depends
@@ -57,7 +56,7 @@ def get_panel(panel_id: str) -> Panel:
         raise NotFoundError(f"Could not find panel: {panel_id}") from err 
     
 
-@router.get("/panels", summary="Get all panels matching the given query parameters",  response_model=list[Panel])
+@router.get("/list/{user_id}", summary="Get all panels matching the given query parameters",  response_model=list[Panel])
 def get_panels_for_user(user_id: str) -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to

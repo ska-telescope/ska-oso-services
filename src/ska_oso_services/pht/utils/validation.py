@@ -68,22 +68,22 @@ def validate_duplicates(collection: list, field: str) -> list:
     and if so raises the DuplicateError.
     """
 
-    res = []
+    result = []
     seen = set()
-    dupes = set()
+    duplicates = set()
 
     for obj in collection:
-        elem = getattr(obj, field)
+        element = getattr(obj, field)
 
-        res.append(elem)
+        result.append(element)
 
-        if elem in seen:
-            dupes.add(elem)
+        if element in seen:
+            duplicates.add(element)
         else:
-            seen.add(elem)
+            seen.add(element)
 
-    if dupes:
-        msg = f"Duplicate {field} are not allowed: {dupes}"
+    if duplicates:
+        msg = f"Duplicate {field} are not allowed: {duplicates}"
         raise DuplicateError(msg)
 
-    return res
+    return result

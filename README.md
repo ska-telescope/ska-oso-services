@@ -26,16 +26,16 @@ Install dependencies with Poetry and activate the virtual environment
 
 ```
 poetry install
-poetry shell
+eval $(poetry env activate)
 ```
 
-To build a new Docker image for the OET, run
+To build a new Docker image for the OSO services, run
 
 ```
 make oci-build
 ```
 
-Execute the test suite and lint the project with:
+Execute the test suite and lint the project with
 
 ```
 make python-test
@@ -53,11 +53,16 @@ make k8s-chart-test
 
 Install the Helm umbrella chart into a Kubernetes cluster with ingress enabled:
 
+Short version for local runs:
 ```
-make k8s-install-chart
+make k8s-uninstall-chart && make k8s-install-chart PIPELINE_TEST_DEPLOYMENT=true && make k8s-wait
 ```
 
-The Swagger UI should be available external to the cluster at `http://<KUBE_HOST>/<KUBE_NAMESPACE>/oso/api/v0/ui/` and the API accessible via the same URL.
+```
+make k8s-install-chart PIPELINE_TEST_DEPLOYMENT=true
+```
+
+The Swagger UI should be available external to the cluster at `http://<KUBE_HOST>/<KUBE_NAMESPACE>/oso/api/v1/ui/` and the API accessible via the same URL.
 
 If using minikube, `KUBE_HOST` can be found by running `minikube ip`. 
 `KUBE_NAMESPACE` is the namespace the chart was deployed to, likely `ska-oso-services`

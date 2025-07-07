@@ -16,9 +16,3 @@ Proposal management panel:
 POST /panels
 "Create a new panel or update the existing panel. Validation prevents duplicates in reviewers and proposals collections. Also, proposals and reviewers must have valid and existing IDs
 Returns the panel_id."
-
-GET /panels/{panel_id}
-"Returns the last version of the existing panel"
-
-GET /panels
-"Get all versions of all panels available"

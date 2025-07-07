@@ -142,7 +142,7 @@ class TestDataFactory:
                 {
                     "reviewer_id": reviewer_id,
                     "assigned_on": "2025-06-16T11:23:01Z",
-                    "status": "pending",
+                    "status": "Pending",
                 }
             ],
         }
