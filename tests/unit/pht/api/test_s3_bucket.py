@@ -1,11 +1,7 @@
 from unittest import mock
-from urllib.parse import quote
 
-import pytest
-from aiosmtplib.errors import SMTPException
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import status
-from fastapi.testclient import TestClient
 
 from tests.unit.conftest import PHT_BASE_API_URL
 

@@ -9,7 +9,11 @@ from importlib.metadata import version
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from ska_aaa_authhelpers import AuditLogFilter, watchdog
-from ska_db_oda.persistence.domain.errors import ODAError, ODANotFound
+from ska_db_oda.persistence.domain.errors import (
+    ODAError,
+    ODANotFound,
+    UniqueConstraintViolation,
+)
 from ska_ser_logging import configure_logging
 
 from ska_oso_services import odt, pht
@@ -18,6 +22,7 @@ from ska_oso_services.common.error_handling import (
     dangerous_internal_server_handler,
     oda_error_handler,
     oda_not_found_handler,
+    oda_unique_constraint_handler,
 )
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
@@ -55,6 +60,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "create_download_pdf_url",
                 "create_delete_pdf_url",
                 "get_reviewers",
+                "create_panel",
             ]
         ),
     )
@@ -73,6 +79,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
     app.include_router(pht.router, prefix=API_PREFIX)
     app.exception_handler(ODANotFound)(oda_not_found_handler)
     app.exception_handler(ODAError)(oda_error_handler)
+    app.exception_handler(UniqueConstraintViolation)(oda_unique_constraint_handler)
 
     if not production:
         app.exception_handler(Exception)(dangerous_internal_server_handler)
@@ -81,3 +88,8 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 main = create_app()
 oda.init_app(main)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(main, host="localhost", port=8000)

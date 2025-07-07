@@ -21,3 +21,11 @@ The API supports resources for:
 * Generate presigned S3 download URL for the given filename
 * Generate presigned S3 delete URL for the given filename
 * Retrieve a list of reviewers (Currently mocked)
+
+Existing endpoints:
+
+Proposal management panel:
+
+POST /panels
+"Create a new panel or update the existing panel. Validation prevents duplicates in reviewers and proposals collections. Also, proposals and reviewers must have valid and existing IDs
+Returns the panel_id."
