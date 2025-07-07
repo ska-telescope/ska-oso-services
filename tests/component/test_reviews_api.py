@@ -25,7 +25,7 @@ def test_create_and_get_review():
 
     # POST using JSON string
     post_response = requests.post(
-        f"{PHT_URL}/reviews/create",
+        f"{PHT_URL}/reviews/",
         data=VALID_REVIEW,
         headers={"Content-Type": "application/json"},
     )
@@ -52,7 +52,7 @@ def test_create_and_get_review():
     assert actual_payload == expected_payload
 
 
-def testreview_create_then_put():
+def test_review_create_then_put():
     """
     Test that an entity POSTed to /reviews/create
     can then be updated with PUT /reviews/{identifier},
@@ -95,7 +95,7 @@ def testreview_create_then_put():
     assert put_response.json()["metadata"]["version"] == initial_version + 1
 
 
-def test_get_listreviews_for_user():
+def test_get_list_reviews_for_user():
     """
     Integration test:
     - Create multiple reviews
@@ -108,13 +108,13 @@ def test_get_listreviews_for_user():
 
     # Create 2 reviews with unique review_ids
     for _ in range(2):
-        review_id = f"prsl-test-{uuid.uuid4().hex[:8]}"
-        proposal = TestDataFactory.proposal(review_id=review_id)
-        proposal_json = proposal.model_dump_json()
+        review_id = f"rvw-test-{uuid.uuid4().hex[:8]}"
+        review = TestDataFactory.reviews(review_id=review_id)
+        review_json = review.model_dump_json()
 
         response = requests.post(
-            f"{PHT_URL}/reviews/create",
-            data=proposal_json,
+            f"{PHT_URL}/reviews/",
+            data=review_json,
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == HTTPStatus.OK, response.content

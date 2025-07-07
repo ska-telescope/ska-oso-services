@@ -17,7 +17,7 @@ router = APIRouter(prefix="/reviews")
 
 
 @router.post(
-    "/create",
+    "/",
     summary="Create a new Review",
 )
 def create_review(reviews: PanelReview) -> str:
