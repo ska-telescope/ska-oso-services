@@ -39,7 +39,7 @@ def create_panel_decision(decisions: PanelDecision) -> str:
         ) from err
 
 
-@router.get("/{decision_id}", summary="Retrieve an existing Decision")
+@router.get("/{decision_id}", summary="Retrieve an existing decision")
 def get_panel_decision(decision_id: str) -> PanelDecision:
     LOGGER.debug("GET PANEL DECISION decision_id: %s", decision_id)
 

@@ -30,7 +30,7 @@ def test_create_and_get_panel_decision():
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
-    decision_id= post_response.json()
+    decision_id = post_response.json()
     assert isinstance(
         decision_id, str
     ), f"Expected string, got {type(decision_id)}: {decision_id}"
@@ -69,9 +69,9 @@ def test_panel_decision_create_then_put():
     assert post_response.status_code == HTTPStatus.OK, post_response.content
 
     # The POST endpoint returns only the decision_idas a string
-    returned_decision_id= post_response.json()
-    expected_decision_id= json.loads(VALID_PANEL_DECISION)["decision_id"]
-    assert returned_decision_id== expected_decision_id
+    returned_decision_id = post_response.json()
+    expected_decision_id = json.loads(VALID_PANEL_DECISION)["decision_id"]
+    assert returned_decision_id == expected_decision_id
 
     # GET proposal to fetch latest state
     get_response = requests.get(f"{PHT_URL}/panel-decisions/{returned_decision_id}")
@@ -107,7 +107,7 @@ def test_get_list_panel_decision_for_user():
 
     # Create 2 reviews with unique decision_ids
     for _ in range(2):
-        decision_id= f"pnld-test-{uuid.uuid4().hex[:8]}"
+        decision_id = f"pnld-test-{uuid.uuid4().hex[:8]}"
         proposal = TestDataFactory.panel_decision(decision_id=decision_id)
         proposal_json = proposal.model_dump_json()
 
@@ -120,7 +120,7 @@ def test_get_list_panel_decision_for_user():
         created_ids.append(response.json())
 
     # Get created_by from one of the created reviews
-    example_decision_id= created_ids[0]
+    example_decision_id = created_ids[0]
     get_response = requests.get(f"{PHT_URL}/panel-decisions/{example_decision_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     user_id = get_response.json()["metadata"]["created_by"]
