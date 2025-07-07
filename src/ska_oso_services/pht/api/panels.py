@@ -51,7 +51,7 @@ def get_panel(panel_id: str) -> Panel:
     return panel
     
 
-@router.get("/users/{user_id}", summary="Get all panels matching the given query parameters")
+@router.get("/list/{user_id}", summary="Get all panels matching the given query parameters")
 def get_panels_for_user(user_id: str) -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
