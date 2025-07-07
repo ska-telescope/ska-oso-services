@@ -43,7 +43,7 @@ def get_panel(panel_id: str) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 
     with oda.uow() as uow:
-        panel = uow.panels.get(panel_id)
+        panel = uow.panels.get(panel_id)  # pylint: disable=no-member
     logger.info("Panel retrieved successfully: %s", panel_id)
     return panel
 
@@ -66,7 +66,7 @@ def get_panels_for_user(user_id: str) -> list[Panel]:
 
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        panels = uow.panels.query(query_param)
+        panels = uow.panels.query(query_param)  # pylint: disable=no-member
 
         logger.debug("Found %d panels for user: %s", len(panels), user_id)
         return panels
