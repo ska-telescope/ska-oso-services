@@ -13,12 +13,12 @@ from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.utils.constants import REVIEWERS
 from ska_oso_services.pht.utils.validation import validate_duplicates
 
-router = APIRouter()
+router = APIRouter(prefix="/panels")
 
 logger = logging.getLogger(__name__)
 
 
-@router.post("/panels", summary="Create a panel")
+@router.post("/", summary="Create a panel")
 def create_panel(param: Panel) -> str:
     logger.debug("POST panel")
 
@@ -41,7 +41,7 @@ def create_panel(param: Panel) -> str:
     return panel.panel_id
 
 
-@router.get("/panels/{panel_id}", summary="Retrieve an existing panel by panel_id")
+@router.get("/{panel_id}", summary="Retrieve an existing panel by panel_id")
 def get_panel(panel_id: str) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 
@@ -56,7 +56,7 @@ def get_panel(panel_id: str) -> Panel:
         raise NotFoundError(f"Could not find panel: {panel_id}") from err 
     
 
-@router.get("/list/{user_id}", summary="Get all panels matching the given query parameters",  response_model=list[Panel])
+@router.get("/list/{user_id}", summary="Get all panels matching the given query parameters")
 def get_panels_for_user(user_id: str) -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
