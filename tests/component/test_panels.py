@@ -79,6 +79,7 @@ def test_panels_post_not_existing_proposal():
     expected = {"detail": "Proposal 'prop-astro-01' does not exist"}
     assert expected == result
 
+
 def test_get_list_panels_for_user():
     """
     Integration test:
@@ -91,9 +92,9 @@ def test_get_list_panels_for_user():
     created_ids = []
 
     # Create 2 panels with unique panel_ids
-    for _ in range(2):
+    for i in range(2):
         panel_id = f"panel-test-{uuid.uuid4().hex[:8]}"
-        panel = TestDataFactory.panel(panel_id=panel_id, reviewer_id=REVIEWERS[0]["id"])
+        panel = TestDataFactory.panel_basic(panel_id=panel_id, name=f"Star{i+1}")
         panel_json = panel.model_dump_json()
 
         response = requests.post(
@@ -111,7 +112,7 @@ def test_get_list_panels_for_user():
     user_id = get_response.json()["metadata"]["created_by"]
 
     # GET /list/{user_id}
-    list_response = requests.get(f"{PANELS_API_URL}/{user_id}")
+    list_response = requests.get(f"{PANELS_API_URL}/list/{user_id}")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     panels = list_response.json()
@@ -121,6 +122,4 @@ def test_get_list_panels_for_user():
     # Check that all created panels are returned
     returned_ids = {p["panel_id"] for p in panels}
     for panel_id in created_ids:
-        assert (
-            panel_id in returned_ids
-        ), f"Missing panel {panel_id} in GET /{user_id}"
+        assert panel_id in returned_ids, f"Missing panel {panel_id} in GET /{user_id}"

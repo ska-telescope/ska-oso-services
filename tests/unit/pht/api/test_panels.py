@@ -128,7 +128,7 @@ class TestPanelsAPI:
         """
         Ensure valid panel ID returns the Panel object.
         """
-        panel = TestDataFactory.panel(panel_id = "panel-Galactic-2025.2")
+        panel = TestDataFactory.panel(panel_id="panel-Galactic-2025.2")
         panel_id = panel.panel_id
 
         uow_mock = mock.MagicMock()
@@ -156,4 +156,3 @@ class TestPanelsAPI:
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(panels_objs)
-        

@@ -1,14 +1,11 @@
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
-from ska_db_oda.rest.api import get_qry_params
-from ska_db_oda.rest.model import ApiQueryParameters 
 from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.error_handling import BadRequestError, NotFoundError
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.utils.constants import REVIEWERS
 from ska_oso_services.pht.utils.validation import validate_duplicates
@@ -49,9 +46,11 @@ def get_panel(panel_id: str) -> Panel:
         panel = uow.panels.get(panel_id)
     logger.info("Panel retrieved successfully: %s", panel_id)
     return panel
-    
 
-@router.get("/list/{user_id}", summary="Get all panels matching the given query parameters")
+
+@router.get(
+    "/list/{user_id}", summary="Get all panels matching the given query parameters"
+)
 def get_panels_for_user(user_id: str) -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
@@ -62,7 +61,7 @@ def get_panels_for_user(user_id: str) -> list[Panel]:
     :param user_id: identifier of the Panel
     :return: a tuple of a list of Panel
     """
-    #TODO: Agree on path name and remove the list in the path and also in proposals path as well: Tonye
+    # TODO: Agree on path name and fix list ion path -also in proposal  Tonye
     logger.debug("GET PANEL LIST query for the user: %s", user_id)
 
     with oda.uow() as uow:
