@@ -53,6 +53,11 @@ make k8s-chart-test
 
 Install the Helm umbrella chart into a Kubernetes cluster with ingress enabled:
 
+Short version for local runs:
+```
+make k8s-uninstall-chart && make k8s-install-chart PIPELINE_TEST_DEPLOYMENT=true && make k8s-wait
+```
+
 ```
 make k8s-install-chart PIPELINE_TEST_DEPLOYMENT=true
 ```
@@ -109,3 +114,4 @@ To build the html version of the documentation, start
 from the root directory and first install the dependency using 
 ``poetry install --only docs`` and then type ``make docs-build html``. Read the documentation by pointing your browser
 at ``docs/build/html/index.html``.
+

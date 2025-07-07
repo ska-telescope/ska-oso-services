@@ -2,10 +2,10 @@
 Unit tests for ska_oso_pht_services.api
 """
 
-import json
 from http import HTTPStatus
 
 from tests.unit.conftest import PHT_BASE_API_URL
+from tests.unit.util import REVIEWERS
 
 REVIEWERS_API_URL = f"{PHT_BASE_API_URL}/reviewers"
 
@@ -21,8 +21,5 @@ class TestReviewersAPI:
             headers={"Content-type": "application/json"},
         )
 
-        with open("tests/unit/files/get_reviewers.json", "r") as file:
-            data = json.load(file)
-
         assert response.status_code == HTTPStatus.OK
-        assert response.json() == data
+        assert response.json() == REVIEWERS
