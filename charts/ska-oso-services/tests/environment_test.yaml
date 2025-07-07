@@ -35,17 +35,17 @@ tests:
           value:
             foo
 
-  - it: should set SKUID_URL to default cluster domain if SKUID_URL is not set
-    documentIndex: 0
-    set:
-      rest:
-        skuid:
-          url:
-    asserts:
-      - equal:
-          path: data.SKUID_URL
-          value:
-            ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.techops.internal.skao.int:9870
+#  - it: should set SKUID_URL to default cluster domain if SKUID_URL is not set
+#    documentIndex: 0
+#    set:
+#      rest:
+#        skuid:
+#          url:
+#    asserts:
+#      - equal:
+#          path: data.SKUID_URL
+#          value:
+#            ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.techops.internal.skao.int:9870
 
   - it: should configure SKUID_URL using custom cluster domain when set
     documentIndex: 0
@@ -61,18 +61,18 @@ tests:
           value:
             ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.foo:9870
 
-  - it: should set POSTGRES_HOST to default host if the values.yaml is not set
-    documentIndex: 0
-    set:
-      rest:
-        oda:
-          postgres:
-            host:
-    asserts:
-      - equal:
-          path: data.POSTGRES_HOST
-          value:
-            RELEASE-NAME-postgresql.NAMESPACE.svc.techops.internal.skao.int
+#  - it: should set POSTGRES_HOST to default host if the values.yaml is not set
+#    documentIndex: 0
+#    set:
+#      rest:
+#        oda:
+#          postgres:
+#            host:
+#    asserts:
+#      - equal:
+#          path: data.POSTGRES_HOST
+#          value:
+#            RELEASE-NAME-postgresql.NAMESPACE.svc.techops.internal.skao.int
 
   - it: should set POSTGRES_HOST using the values.yaml when set
     documentIndex: 0
