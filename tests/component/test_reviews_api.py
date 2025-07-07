@@ -61,7 +61,7 @@ def test_review_create_then_put():
 
     # POST a new proposal
     post_response = requests.post(
-        f"{PHT_URL}/reviews/create",
+        f"{PHT_URL}/reviews/",
         data=VALID_REVIEW,
         headers={"Content-Type": "application/json"},
     )
