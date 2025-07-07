@@ -1,6 +1,7 @@
 @startuml
+API: Validated params: Proposal
 API -> API: HTTP POST (/prsls/validate)
-API -> API: Response {
+API -> API: Response dict: {
             "result": bool,
             "validation_errors": list[str]
         }
