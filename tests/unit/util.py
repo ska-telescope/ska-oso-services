@@ -11,8 +11,8 @@ from ska_db_oda.persistence.domain import set_identifier
 from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal
-from ska_oso_pdm.proposal_management import PanelReview
-from ska_oso_pdm.proposal_management import PanelDecision
+from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
+from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
 CUR_DIR = Path(__file__).parent
@@ -114,7 +114,7 @@ class TestDataFactory:
         review.review_id = review_id
 
         return review
-    
+
     @staticmethod
     def panel_decision(decision_id: str = "pnld-mvp01-20220923-00001") -> PanelDecision:
         """
@@ -126,7 +126,7 @@ class TestDataFactory:
         decision.decision_id = decision_id
 
         return decision
-    
+
     @staticmethod
     def proposal(prsl_id: str = "prsl-mvp01-20220923-00001") -> Proposal:
         """
@@ -138,6 +138,43 @@ class TestDataFactory:
         proposal.prsl_id = prsl_id
 
         return proposal
+
+    @staticmethod
+    def panel_basic(
+        panel_id: str = "panel-test-20250616-00001",
+        name: str = "Stargazers",
+    ) -> Panel:
+        data = {"panel_id": "panel-Galactic-2025", "name": name}
+        panel = Panel.model_validate_json(json.dumps(data))
+        set_identifier(panel, panel_id)
+
+        return panel
+
+    @staticmethod
+    def panel(
+        panel_id: str = "panel-test-20250616-00002",
+        name: str = "Stargazers",
+        reviewer_id="rev-001",
+    ) -> Panel:
+        data = {
+            "panel_id": "panel-Galactic-2025.2",
+            "name": name,
+            "proposals": [
+                {"prsl_id": "prop-astro-01", "assigned_on": "2025-05-21T09:30:00Z"},
+                {"prsl_id": "prop-astro-02", "assigned_on": "2025-05-21T09:45:00Z"},
+            ],
+            "reviewers": [
+                {
+                    "reviewer_id": reviewer_id,
+                    "assigned_on": "2025-06-16T11:23:01Z",
+                    "status": "Pending",
+                }
+            ],
+        }
+        panel = Panel.model_validate_json(json.dumps(data))
+        set_identifier(panel, panel_id)
+
+        return panel
 
     @staticmethod
     def complete_proposal():
@@ -174,3 +211,4 @@ PAYLOAD_BAD_TO = TestDataFactory.email_payload("badto@example.com", "PRSLBAD")
 PAYLOAD_GENERIC_FAIL = TestDataFactory.email_payload(
     "genericfail@example.com", "GENERICFAIL"
 )
+REVIEWERS = json.loads(load_string_from_file("get_reviewers.json"))

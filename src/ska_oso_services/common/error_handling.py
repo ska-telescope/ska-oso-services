@@ -5,7 +5,11 @@ from typing import Optional
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
-from ska_db_oda.persistence.domain.errors import ODAError, ODANotFound
+from ska_db_oda.persistence.domain.errors import (
+    ODAError,
+    ODANotFound,
+    UniqueConstraintViolation,
+)
 
 from ska_oso_services.common.model import ErrorDetails, ErrorResponseTraceback
 
@@ -37,6 +41,10 @@ class BadRequestError(HTTPException):
         detail = detail or self.code.description
 
         super().__init__(status_code=status_code, detail=detail)
+
+
+class DuplicateError(BadRequestError):
+    code = HTTPStatus.CONFLICT
 
 
 class UnprocessableEntityError(BadRequestError):
@@ -87,6 +95,21 @@ async def oda_error_handler(_: Request, err: ODAError) -> JSONResponse:
     LOGGER.error("ODAError with message %s", err.message)
     return JSONResponse(
         status_code=HTTPStatus.INTERNAL_SERVER_ERROR, content={"detail": err.message}
+    )
+
+
+async def oda_unique_constraint_handler(
+    request: Request, err: UniqueConstraintViolation
+) -> JSONResponse:
+    """
+    A custom handler function to deal with UniqueConstraintViolation raised by the ODA
+    and return the correct HTTP 400 response.
+    """
+    LOGGER.debug(
+        "UniqueConstraintViolation for path parameters %s", request.path_params
+    )
+    return JSONResponse(
+        status_code=HTTPStatus.BAD_REQUEST, content={"detail": err.args[0]}
     )
 
 

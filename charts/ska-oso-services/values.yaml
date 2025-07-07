@@ -12,7 +12,7 @@ pipeline_test_deployment: false
 
 global:
   minikube: true
-  cluster_domain: techops.internal.skao.int
+  cluster_domain: cluster.local
 
 
 rest:

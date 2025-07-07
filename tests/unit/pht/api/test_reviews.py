@@ -11,10 +11,7 @@ import pytest
 from fastapi import status
 
 from tests.unit.conftest import PHT_BASE_API_URL
-from tests.unit.util import (
-    VALID_REVIEW,
-    TestDataFactory,
-    assert_json_is_equal)
+from tests.unit.util import VALID_REVIEW, TestDataFactory, assert_json_is_equal
 
 REVIEWS_API_URL = f"{PHT_BASE_API_URL}/reviews"
 
@@ -186,6 +183,3 @@ class TestReviewAPI:
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
         assert "do not match" in response.json()["detail"].lower()
-
-
-

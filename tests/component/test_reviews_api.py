@@ -31,7 +31,9 @@ def test_create_and_get_review():
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     review_id = post_response.json()
-    assert isinstance(review_id, str), f"Expected string, got {type(review_id)}: {review_id}"
+    assert isinstance(
+        review_id, str
+    ), f"Expected string, got {type(review_id)}: {review_id}"
 
     # GET created proposal
     get_response = requests.get(f"{PHT_URL}/reviews/{review_id}")

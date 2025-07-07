@@ -2,7 +2,7 @@
 name = "ska-oso-services"
 version = "1.1.0"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
-authors = ["Team Buttons"]
+authors = ["Team Buttons", "Stargazers Team"]
 license = "BSD-3-Clause"
 readme = "README.md"
 repository = "https://gitlab.com/ska-telescope/oso/ska-oso-services"
@@ -37,8 +37,8 @@ priority = "primary"
 #name = "gitlab-ska-db-oda"
 #url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
 #
-#[[tool.poetry.source]]
-#name = "gitlab-ska-ost-osd"
+#[[tool.poetry.source]]  
+#name = "gitlab.ska-ost-osd"  
 #url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
 #priority = "explicit"
 
@@ -54,7 +54,7 @@ ska-ser-logging = "^0.4.1"
 # PDM dependency is pulled in via the ODA rather than being explicitly set here
 # If updating this, also remember to update the Helm dependency in the umbrella chart
 ska-db-oda = "^9.1.0"
-# ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
+# ska-db-oda = { git = "https://gitlab.com/ska-telescope/db/ska-db-oda.git", branch = "main" }
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
@@ -124,9 +124,12 @@ extend-exclude = '''
 '''
 
 [tool.pylint]
-disable = "C,R,W3101,W0511"
+disable = "C,R,W3101,W0511,W0707"
 ignore = "ska-oso-pdm,generated"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"

@@ -11,10 +11,7 @@ import pytest
 from fastapi import status
 
 from tests.unit.conftest import PHT_BASE_API_URL
-from tests.unit.util import (
-    VALID_PANEL_DECISION,
-    TestDataFactory,
-    assert_json_is_equal)
+from tests.unit.util import VALID_PANEL_DECISION, TestDataFactory, assert_json_is_equal
 
 panel_decision_API_URL = f"{PHT_BASE_API_URL}/panel-decisions"
 
@@ -27,7 +24,7 @@ class Testpanel_decisionAPI:
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
     def test_create_panel_decision(self, mock_oda, client):
         """
-        Check the panel_decision_create method returns the expected decision_id and status code.
+        Panel_decision_create method returns the expected decision_id and status code.
         """
 
         panel_decision_obj = TestDataFactory.panel_decision()
@@ -46,9 +43,11 @@ class Testpanel_decisionAPI:
         assert response.json() == panel_decision_obj.decision_id
 
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
-    def test_create_panel_decision_value_error_raises_bad_request(self, mock_oda, client):
+    def test_create_panel_decision_value_error_raises_bad_request(
+        self, mock_oda, client
+    ):
         """
-        Simulate ValueError in panel_decision creation and ensure it raises BadRequestError.
+        ValueError in panel_decision creation and ensure it raises BadRequestError.
         """
 
         uow_mock = mock.MagicMock()
@@ -105,7 +104,10 @@ class Testpanel_decisionAPI:
         """
         Check if the get_panel_decisions_for_user returns panel_decisions correctly.
         """
-        panel_decision_objs = [TestDataFactory.panel_decision(), TestDataFactory.panel_decision()]
+        panel_decision_objs = [
+            TestDataFactory.panel_decision(),
+            TestDataFactory.panel_decision(),
+        ]
         uow_mock = mock.MagicMock()
         uow_mock.pnlds.query.return_value = panel_decision_objs
         mock_oda.return_value.__enter__.return_value = uow_mock
@@ -212,5 +214,3 @@ class Testpanel_decisionAPI:
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "validation error" in response.json()["detail"].lower()
-
-
