@@ -17,7 +17,7 @@ router = APIRouter(prefix="/panel-decisions")
 
 
 @router.post(
-    "/create",
+    "/",
     summary="Create a new Panel decision",
 )
 def create_panel_decision(decisions: PanelDecision) -> str:

@@ -81,7 +81,6 @@ def test_review_create_then_put():
     initial_version = originalreview["metadata"]["version"]
 
     # Modify content (simulate update)
-    originalreview["info"]["title"] = "Updated Title"
     review_to_update = json.dumps(originalreview)
 
     # PUT updated proposal

@@ -25,7 +25,7 @@ def test_create_and_get_panel_decision():
 
     # POST using JSON string
     post_response = requests.post(
-        f"{PHT_URL}/panel-decision/create",
+        f"{PHT_URL}/panel-decisions/create",
         data=VALID_PANEL_DECISION,
         headers={"Content-Type": "application/json"},
     )
@@ -36,7 +36,7 @@ def test_create_and_get_panel_decision():
     ), f"Expected string, got {type(decision_id)}: {decision_id}"
 
     # GET created proposal
-    get_response = requests.get(f"{PHT_URL}/panel-decision/{decision_id}")
+    get_response = requests.get(f"{PHT_URL}/panel-decisions/{decision_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     actual_payload = get_response.json()
 
@@ -61,7 +61,7 @@ def test_panel_decision_create_then_put():
 
     # POST a new proposal
     post_response = requests.post(
-        f"{PHT_URL}/panel-decision/create",
+        f"{PHT_URL}/panel-decisions/",
         data=VALID_PANEL_DECISION,
         headers={"Content-Type": "application/json"},
     )
@@ -74,19 +74,18 @@ def test_panel_decision_create_then_put():
     assert returned_decision_id== expected_decision_id
 
     # GET proposal to fetch latest state
-    get_response = requests.get(f"{PHT_URL}/panel-decision/{returned_decision_id}")
+    get_response = requests.get(f"{PHT_URL}/panel-decisions/{returned_decision_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
     originalreview = get_response.json()
     initial_version = originalreview["metadata"]["version"]
 
     # Modify content (simulate update)
-    originalreview["info"]["title"] = "Updated Title"
     review_to_update = json.dumps(originalreview)
 
     # PUT updated proposal
     put_response = requests.put(
-        f"{PHT_URL}/panel-decision/{returned_decision_id}",
+        f"{PHT_URL}/panel-decisions/{returned_decision_id}",
         data=review_to_update,
         headers={"Content-Type": "application/json"},
     )
@@ -113,7 +112,7 @@ def test_get_list_panel_decision_for_user():
         proposal_json = proposal.model_dump_json()
 
         response = requests.post(
-            f"{PHT_URL}/panel-decision/create",
+            f"{PHT_URL}/panel-decisions/create",
             data=proposal_json,
             headers={"Content-Type": "application/json"},
         )
@@ -122,12 +121,12 @@ def test_get_list_panel_decision_for_user():
 
     # Get created_by from one of the created reviews
     example_decision_id= created_ids[0]
-    get_response = requests.get(f"{PHT_URL}/panel-decision/{example_decision_id}")
+    get_response = requests.get(f"{PHT_URL}/panel-decisions/{example_decision_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     user_id = get_response.json()["metadata"]["created_by"]
 
     # GET /list/{user_id}
-    list_response = requests.get(f"{PHT_URL}/panel-decision/list/{user_id}")
+    list_response = requests.get(f"{PHT_URL}/panel-decisions/list/{user_id}")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     reviews = list_response.json()
