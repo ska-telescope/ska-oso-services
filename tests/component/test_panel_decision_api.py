@@ -18,14 +18,14 @@ from . import PHT_URL
 
 def test_create_and_get_panel_decision():
     """
-    Integration test for the POST /panel-decision/create endpoint
+    Integration test for the POST /panel-decision/ endpoint
     and GET /panel-decision/{decision_id}.
     Assumes the server is running and accessible.
     """
 
     # POST using JSON string
     post_response = requests.post(
-        f"{PHT_URL}/panel-decisions/create",
+        f"{PHT_URL}/panel-decisions/",
         data=VALID_PANEL_DECISION,
         headers={"Content-Type": "application/json"},
     )
@@ -112,7 +112,7 @@ def test_get_list_panel_decision_for_user():
         proposal_json = proposal.model_dump_json()
 
         response = requests.post(
-            f"{PHT_URL}/panel-decisions/create",
+            f"{PHT_URL}/panel-decisions/",
             data=proposal_json,
             headers={"Content-Type": "application/json"},
         )
