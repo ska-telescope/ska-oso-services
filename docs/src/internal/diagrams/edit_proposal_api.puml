@@ -1,5 +1,6 @@
 @startuml
 API -> API: Validate params: proposal_id
+API -> API: HTTP GET (/prsls/{proposal_id})
 API -> ODA: Validate existing proposal: Proposal
 API -> API: HTTP PUT (/prsls/{proposal_id})
 API -> API: Response

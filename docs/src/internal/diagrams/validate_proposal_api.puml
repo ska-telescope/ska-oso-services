@@ -1,8 +1,6 @@
 @startuml
-API: Validated params: Proposal
+API: Validate params: observation set, target and sensitivity calculator result
 API -> API: HTTP POST (/prsls/validate)
-API -> API: Response dict: {
-            "result": bool,
-            "validation_errors": list[str]
-        }
+API -> API: Validated params: dict
+API -> API: Response
 @enduml
