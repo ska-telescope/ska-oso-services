@@ -90,14 +90,14 @@ def test_get_list_panels_for_user():
 
     created_ids = []
 
-    # Create 2 proposals with unique prsl_ids
+    # Create 2 panels with unique panel_ids
     for _ in range(2):
         panel_id = f"panel-test-{uuid.uuid4().hex[:8]}"
-        panel = TestDataFactory.panel(panel_id=panel_id)
+        panel = TestDataFactory.panel(panel_id=panel_id, reviewer_id=REVIEWERS[0]["id"])
         panel_json = panel.model_dump_json()
 
         response = requests.post(
-            PANELS_API_URL,
+            f"{PANELS_API_URL}",
             data=panel_json,
             headers={"Content-Type": "application/json"},
         )
@@ -115,12 +115,12 @@ def test_get_list_panels_for_user():
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     panels = list_response.json()
-    assert isinstance(panels, list), "Expected a list of proposals"
-    assert len(panels) >= 2, f"Expected at least 2 proposals, got {len(panels)}"
+    assert isinstance(panels, list), "Expected a list of panels"
+    assert len(panels) >= 2, f"Expected at least 2 panels, got {len(panels)}"
 
-    # Check that all created proposals are returned
+    # Check that all created panels are returned
     returned_ids = {p["panel_id"] for p in panels}
     for panel_id in created_ids:
         assert (
             panel_id in returned_ids
-        ), f"Missing proposal {panel_id} in GET /list/{user_id}"
+        ), f"Missing panel {panel_id} in GET /list/{user_id}"
