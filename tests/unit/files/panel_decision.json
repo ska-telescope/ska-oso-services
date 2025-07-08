@@ -1,0 +1,17 @@
+{"metadata": {
+    "version": 1,
+    "created_by": "DefaultUser",
+    "created_on": "2022-09-23T15:43:53.971548Z",
+    "last_modified_by": "DefaultUser",
+    "last_modified_on": "2022-09-23T15:43:53.971548Z"
+  },
+  "cycle": "pep-333",
+  "decision_id": "decision-001",
+  "panel_id": "pnld-2025A",
+  "prsl_id": "prp-ska01-202204-01",
+  "rank": 9,
+  "recommendation": "Allocating 24hrs on 12-m array.",
+  "status": "In Progress",
+  "decided_by": "TestUser",
+  "decided_on": "2022-09-23T15:43:53.971548Z"
+}
