@@ -61,7 +61,7 @@ def get_panels_for_user(user_id: str) -> list[Panel]:
     :param user_id: identifier of the Panel
     :return: a tuple of a list of Panel
     """
-    # TODO: Agree on path name and fix list ion path -also in proposal  Tonye
+    # TODO: Agree on path name and fix list in path - also in proposals  Tonye
     logger.debug("GET PANEL LIST query for the user: %s", user_id)
 
     with oda.uow() as uow:
