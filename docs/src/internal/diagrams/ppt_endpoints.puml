@@ -1,3 +1,4 @@
+@startuml
 actor Client
 participant "API Service" as Service
 database "Database" as DB
@@ -10,7 +11,6 @@ DB --> Service: Insert failure (Validation ERROR)
 Service --> Client: 422 Validation Error
 DB --> Service: Insert failure (ERROR)
 Service --> Client: 400 (Failed when attempting to create a proposal)
-
 == GET: Retrieve Proposal ==
 Client -> Service: GET /prsls/{proposal_id}
 Service -> DB: SELECT record by proposal ID
@@ -18,7 +18,6 @@ DB --> Service: Return record
 Service --> Client: 200 OK (proposal data)
 DB --> Service: Query failure (ERROR)
 Service --> Client: 404 (The requested identifier {proposal_id} could not be found) 
-
 == PUT: Update Proposal ==
 Client -> Service: PUT /prsls/{proposal_id} (payload)
 Service -> DB: Verify proposal is valid 
@@ -33,45 +32,39 @@ DB --> Service: Update success (updated proposal)
 Service --> Client: 200 OK (updated proposal data)
 DB --> Service: Update failure (error)
 Service --> Client: 400 BAD REQUEST (Validation error while saving proposal)
-
 == GET: List all proposals ==
 Client -> Service: GET /prsls/{user_id}
 Service -> DB: SELECT all records by user ID
 DB --> Service: Return record(s)
 Service --> Client: 200 OK (List[proposal data])
-
 == POST: Validate proposal ==
 Client -> Service: POST /prsls/validate (payload)
 Service -> Service: Verify observation set exists
 Service -> Service: Verify each observation target has a valid sensitivity calculation result
 Service -> Service: Verify each observation sets has at least one target
 Service --> Client: 200 OK (dict: { "result": bool, "validation_errors": list[str] })
-
-
 == POST: Send email ==
 Client -> Service: POST /prsls/send-email
 Service -> Service: Verify valid email address
-Service --> Client: 422 Unprocessable Entity (value is not a valid email address: An email address must have an @-sign.)
-Service -> Email server: Connect to email server
-Service -> Email server: Send email
+Service --> Client: 422 Unprocessable Entity (value is not a valid email address)
+Service -> Email_Server: Connect to email server
+Service -> Email_Server: Send email
 Service --> Client: 200 Success (Email sent succesfully)
-
 == POST: Generate signed url for file upload ==
 Client -> Service: POST /prsls/signed-url/upload/{filename}
 Client -> Service: Validate filename
 Service --> Client: 422 Unprocessable Entity (Invalid filename)
-Service -> AWS(S3): Connect to AWS client
-AWS(S3) -> Service: Generate url (filename)
+Service -> AWS_S3: Connect to AWS client
+AWS_S3 -> Service: Generate url (filename)
 Service --> Client: 200 Success (url)
-
 == POST: Generate signed url for file download ==
 Client -> Service: POST /prsls/signed-url/download/{filename}
-Service -> AWS(S3): Connect to AWS client
-AWS(S3) -> Service: Generate url (filename)
+Service -> AWS_S3: Connect to AWS client
+AWS_S3 -> Service: Generate url (filename)
 Service --> Client: 200 Success (url)
-
 == POST: Generate signed url for file delete ==
 Client -> Service: POST /prsls/signed-url/delete/{filename}
-Service -> AWS(S3): Connect to AWS client
-AWS(S3) -> Service: Generate url (filename)
+Service -> AWS_S3: Connect to AWS client
+AWS_S3 -> Service: Generate url (filename)
 Service --> Client: 200 Success (url)
+@enduml
