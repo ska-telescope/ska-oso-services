@@ -1,6 +1,0 @@
-@startuml
-API: Validate params: observation set, target and sensitivity calculator result
-API -> API: HTTP POST (/prsls/validate)
-API -> API: Validated params: dict
-API -> API: Response
-@enduml

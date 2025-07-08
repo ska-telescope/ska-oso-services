@@ -1,5 +1,0 @@
-@startuml
-API --> ODA: Query user_id
-API -> API: HTTP GET (/prsls/list/{user_id})
-API -> API: Response List[Proposal]
-@enduml

@@ -1,5 +1,0 @@
-@startuml
-API -> API: HTTP POST (/prsls/signed-url/upload/{filename})
-API -> API: Validated params: filename
-API -> API: Response
-@enduml
