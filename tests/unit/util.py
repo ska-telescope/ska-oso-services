@@ -11,6 +11,7 @@ from ska_db_oda.persistence.domain import set_identifier
 from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal
+from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
@@ -103,6 +104,30 @@ class TestDataFactory:
         return prj
 
     @staticmethod
+    def reviews(review_id: str = "rvw-mvp01-20220923-00001") -> PanelReview:
+        """
+        Load a valid proposal review object from file and override review_id,
+        """
+
+        data = load_string_from_file("panel_review.json")
+        review = PanelReview.model_validate_json(data)
+        review.review_id = review_id
+
+        return review
+
+    @staticmethod
+    def panel_decision(decision_id: str = "pnld-mvp01-20220923-00001") -> PanelDecision:
+        """
+        Load a valid proposal panel decision object from file and override decision_id,
+        """
+
+        data = load_string_from_file("panel_decision.json")
+        decision = PanelDecision.model_validate_json(data)
+        decision.decision_id = decision_id
+
+        return decision
+
+    @staticmethod
     def proposal(prsl_id: str = "prsl-mvp01-20220923-00001") -> Proposal:
         """
         Load a valid Proposal object from file and override prsl_id,
@@ -155,8 +180,8 @@ class TestDataFactory:
     def complete_proposal():
         filename = "complete_proposal.json"
         data = load_string_from_file(filename)
-        p = Proposal.model_validate_json(data)
-        return p
+        prsl = Proposal.model_validate_json(data)
+        return prsl
 
     @staticmethod
     def email_payload(email="test@example.com", prsl_id="SKAO123"):
@@ -176,6 +201,8 @@ VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(prj_id=None).model_dump_jso
 
 # proposal entry
 VALID_NEW_PROPOSAL = TestDataFactory.proposal().model_dump_json()
+VALID_REVIEW = TestDataFactory.reviews().model_dump_json()
+VALID_PANEL_DECISION = TestDataFactory.panel_decision().model_dump_json()
 PAYLOAD_SUCCESS = TestDataFactory.email_payload()
 PAYLOAD_CONNECT_FAIL = TestDataFactory.email_payload(
     "connectfail@example.com", "PRSL999"
