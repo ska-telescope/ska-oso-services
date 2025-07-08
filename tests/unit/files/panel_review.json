@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "version": 1,
+    "created_by": "DefaultUser",
+    "created_on": "2022-09-23T15:43:53.971548Z",
+    "last_modified_by": "DefaultUser",
+    "last_modified_on": "2022-09-23T15:43:53.971548Z"
+  },
+  "panel_id": "pnld-2025A",
+  "prsl_id": "prp-ska01-202204-01",
+  "review_id": "string",
+  "cycle": "string",
+  "reviewer_id": "string",
+  "rank": 8,
+  "conflict": {
+    "has_conflict": false,
+    "reason": "string"
+  },
+  "comments": "string",
+  "submitted_on": "2025-06-25T19:50:48.815Z",
+  "submitted_by": "string",
+  "status": "To Do"
+}
