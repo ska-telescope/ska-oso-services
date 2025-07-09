@@ -27,10 +27,21 @@ from ska_oso_services.pht.utils.s3_bucket import (
     create_presigned_url_upload_pdf,
     get_aws_client,
 )
+from ska_ost_osd.osd.osd import get_osd_data
+from ska_ost_osd.rest.api.resources import get_osd
 
 LOGGER = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/prsls")
+
+
+@router.get("/osd/{cycle}", summary="Retrieve OSD data for a particular cycle")
+def get_osd_by_cycle(cycle: str) -> dict:
+    LOGGER.debug("GET OSD data cycle: %s", cycle)
+
+    # res = get_osd_data(capabilities=["mid", "low"],cycle_id=cycle)
+    res = get_osd(capabilities="mid", source="car", cycle_id=cycle)
+    return res
 
 
 @router.post(
