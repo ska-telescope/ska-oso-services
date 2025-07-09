@@ -1,3 +1,4 @@
+import uuid
 from http import HTTPStatus
 
 import requests
@@ -77,3 +78,48 @@ def test_panels_post_not_existing_proposal():
     result = response.json()
     expected = {"detail": "Proposal 'prop-astro-01' does not exist"}
     assert expected == result
+
+
+def test_get_list_panels_for_user():
+    """
+    Integration test:
+    - Create multiple panels
+    - Fetch created_by from one
+    - Use GET /{user_id} to retrieve them
+    - Ensure all created panels are returned
+    """
+
+    created_ids = []
+
+    # Create 2 panels with unique panel_ids
+    for i in range(2):
+        panel_id = f"panel-test-{uuid.uuid4().hex[:8]}"
+        panel = TestDataFactory.panel_basic(panel_id=panel_id, name=f"Star{i+1}")
+        panel_json = panel.model_dump_json()
+
+        response = requests.post(
+            f"{PANELS_API_URL}",
+            data=panel_json,
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        created_ids.append(response.json())
+
+    # Get created_by from one of the created panels
+    example_panel_id = created_ids[0]
+    get_response = requests.get(f"{PANELS_API_URL}/{example_panel_id}")
+    assert get_response.status_code == HTTPStatus.OK, get_response.content
+    user_id = get_response.json()["metadata"]["created_by"]
+
+    # GET /list/{user_id}
+    list_response = requests.get(f"{PANELS_API_URL}/list/{user_id}")
+    assert list_response.status_code == HTTPStatus.OK, list_response.content
+
+    panels = list_response.json()
+    assert isinstance(panels, list), "Expected a list of panels"
+    assert len(panels) >= 2, f"Expected at least 2 panels, got {len(panels)}"
+
+    # Check that all created panels are returned
+    returned_ids = {p["panel_id"] for p in panels}
+    for panel_id in created_ids:
+        assert panel_id in returned_ids, f"Missing panel {panel_id} in GET /{user_id}"

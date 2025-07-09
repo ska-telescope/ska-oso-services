@@ -9,7 +9,7 @@ from ska_oso_pdm.proposal import Proposal
 
 EXAMPLE_PROPOSAL = {
     "prsl_id": "prp-ska01-202204-02",
-    "status": "",
+    "status": "draft",
     "cycle": "5000_2023",
     "info": {
         "title": "The Milky Way View",

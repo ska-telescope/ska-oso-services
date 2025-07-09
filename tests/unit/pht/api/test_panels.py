@@ -122,3 +122,37 @@ class TestPanelsAPI:
         result = response.json()
         expected = {"detail": "Proposal 'prop-astro-01' does not exist"}
         assert expected == result
+
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_get_panel_success(self, mock_oda, client):
+        """
+        Ensure valid panel ID returns the Panel object.
+        """
+        panel = TestDataFactory.panel(panel_id="panel-Galactic-2025.2")
+        panel_id = panel.panel_id
+
+        uow_mock = mock.MagicMock()
+        uow_mock.panels.get.return_value = panel
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        response = client.get(f"{PANELS_API_URL}/{panel_id}")
+
+        assert response.status_code == HTTPStatus.OK
+        data = response.json()
+        assert data["panel_id"] == panel_id
+
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_get_panel_list_success(self, mock_oda, client):
+        """
+        Check if the get_panels_for_user returns panels correctly.
+        """
+        panels_objs = [TestDataFactory.panel(), TestDataFactory.panel()]
+        uow_mock = mock.MagicMock()
+        uow_mock.panels.query.return_value = panels_objs
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        user_id = "DefaultUser"
+        response = client.get(f"{PANELS_API_URL}/list/{user_id}")
+        assert response.status_code == HTTPStatus.OK
+        assert isinstance(response.json(), list)
+        assert len(response.json()) == len(panels_objs)
