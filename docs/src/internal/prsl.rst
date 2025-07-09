@@ -1,8 +1,10 @@
 .. _prsl:
 
-Creating Proposals 
-===================
+Sequence diagrams for PPT endpoints
+====================================
 
-TODO: add a sequence diagram for the prsl api
+The diagram below showcases the interaction between a client (someone interacting with a PPT API), the API service as well as any interaction with the database, email server and AWS. 
 
-
+.. image:: diagrams/ppt_endpoints.svg
+   :width: 800
+   :alt: Sequence diagram for Proposal Preparation Tool endpoints

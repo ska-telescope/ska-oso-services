@@ -129,3 +129,21 @@ dev-up: K8S_CHART_PARAMS = \
 dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment
 
 dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deployment
+
+# The docs build fails unless the ska-oso-services package is installed locally as importlib.metadata.version requires it.
+docs-pre-build:
+	poetry install --only-root
+
+k8s-pre-test:
+	@poetry export --format requirements.txt --output tests/requirements.txt --without-hashes --dev
+
+diagrams:  ## recreate PlantUML diagrams whose source has been modified
+
+	@for file in $$(git diff --staged --name-only -- '*.puml'; git diff --name-only -- '*.puml'); \
+	do \
+		if [ -e "$$file" ]; then \
+			echo "Processing $$file"; \
+			cat $$file | docker run --rm -i think/plantuml -tsvg $$file > $${file%.puml}.svg; \
+		fi; \
+	done
+dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deployment
