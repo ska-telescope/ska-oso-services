@@ -50,3 +50,13 @@ def transform_update_proposal(data: Proposal) -> Proposal:
         info=data.info,
         investigator_refs=investigator_refs,
     )
+
+
+
+
+def report_etl_pipeline():
+    """
+    Placeholder function for the report ETL pipeline.
+    This function is intended to be implemented later.
+    """
+    raise NotImplementedError("Report ETL pipeline is not yet implemented.")
