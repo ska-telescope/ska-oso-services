@@ -31,12 +31,24 @@ from faker import Faker
 
 fake = Faker()
 
-# 1. Pydantic Output Model
+# ----- CONFIG -----
+SCIENCE_CATEGORIES = ['Cosmology', 'Star Formation', 'Exoplanets', 'Galactic Dynamics']
+PROPOSAL_TYPES = ['director_time_proposal', 'special_time_proposal']
+ARRAYS = ['LOW', 'MID', 'BOTH']
+RECOMMENDATIONS = [
+    'Recommend for observation time.',
+    'Not recommended at this time.',
+    'Recommend for observation time with minor changes.'
+]
+
+# ----- SCHEMAS -----
+class Reviewer(BaseModel):
+    reviewer_id: str
+    name: str
 
 class ProposalReviewPanelDecisionRow(BaseModel):
-    science_category: str
-    dummy_col: List[Any] = Field(default_factory=list)
     proposal_id: str
+    science_category: str
     proposal_status: str
     array: str
     reviewer_comment: str
@@ -59,139 +71,136 @@ class ProposalReviewPanelDecisionRow(BaseModel):
     cycle: str
     decision_on: Optional[str]
 
-# 2. Data Creation
+# ----- DATA CREATION -----
+def get_reviewer_master(faker: Faker) -> List[Reviewer]:
+    """Return master reviewer list for demo (id+name)."""
+    return [
+        Reviewer(reviewer_id="rev-1", name=faker.name()),
+        Reviewer(reviewer_id="rev-2", name=faker.name()),
+        Reviewer(reviewer_id="rev-3", name=faker.name()),
+        Reviewer(reviewer_id="rev-4", name=faker.name()),
+        Reviewer(reviewer_id="rev-5", name=faker.name()),
+    ]
 
-science_categories = ['Cosmology', 'Star Formation', 'Exoplanets', 'Galactic Dynamics']
-main_types = ['director_time_proposal', 'special_time_proposal']
-status_options = ['submitted', 'decided', 'under review', 'in progress', 'todo', 'draft', 'rejected']
-panel_names = ['Stargazers A', 'Stargazers B', 'Stargazers C', 'Stargazers D', 'Stargazers E']
-arrays = ['LOW', 'MID', 'BOTH']
-recommendations = [
-    'Recommend for observation time.',
-    'Not recommended at this time.',
-    'Recommend for observation time with minor changes.'
-]
-reviewer_comments = [
-    'Well motivated and significant.',
-    'Interesting approach, but needs more data.',
-    'Strong proposal with clear goals.',
-    'Lacks detail in methodology.'
-]
-reviewers_master = [f"rev-{i}" for i in range(11, 61)]
-reviewer_names = [f"Reviewer{i}" for i in range(11, 61)]
+def create_sample_data(
+    faker: Faker,
+    deterministic: bool = False
+):
+    """Creates demo panels, proposals, reviews, and decisions."""
+    reviewers = get_reviewer_master(faker)
+    categories = (["Star Formation", "Cosmology"] if deterministic
+                  else random.sample(SCIENCE_CATEGORIES, 2))
+    titles = (
+        ["Tracing Magnetic Fields in the ISM", "Mapping High-z Galaxies"]
+        if deterministic
+        else [faker.sentence(nb_words=4) for _ in range(2)]
+    )
+    proposal_types = (
+        ["director_time_proposal", "special_time_proposal"] if deterministic
+        else [random.choice(PROPOSAL_TYPES) for _ in range(2)]
+    )
+    proposal_arrays = (
+        ["LOW", "MID"] if deterministic
+        else [random.choice(ARRAYS) for _ in range(2)]
+    )
 
-def random_datetime(start_days_ago=30):
-    dt = fake.date_time_between(start_date=f"-{start_days_ago}d", end_date="now")
-    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-def random_date(start_days_ago=30):
-    dt = fake.date_between(start_date=f"-{start_days_ago}d", end_date="today")
-    return dt.strftime("%a %b %d %Y")
-
-def make_proposal_id(i):
-    return f"prsl-t{str(i).zfill(4)}-20250523-000{str(i).zfill(2)}"
-
-def create_sample_data(n_proposals=7):
-    proposals, panels, reviews, decisions = [], [], [], []
-
-    # Proposals
-    for i in range(1, n_proposals + 1):
-        proposals.append({
-            "proposal_id": make_proposal_id(i),
-            "status": random.choice(status_options),
-            "submitted_on": random_date(),
-            "info": {
-                "title": f"Proposal Title {i}",
-                "science_category": random.choice(science_categories),
-                "proposal_type": {"main_type": random.choice(main_types)}
-            },
-            "cycle": "SKA_1962_2024",
-            "panel": panel_names[i % len(panel_names)],
-            "array": random.choice(arrays)
-        })
-
-    # Panels
-    for i, p in enumerate(proposals):
-        reviewers_in_panel = random.sample(reviewers_master, 4)
+    # Panel assignments (with reviewer overlap)
+    panel_reviewers = [
+        [reviewers[0], reviewers[1], reviewers[2]],   # Panel A
+        [reviewers[2], reviewers[3], reviewers[4]],   # Panel B
+    ]
+    panels = []
+    for i, (panel_revs, panel_name) in enumerate(zip(panel_reviewers, ["Stargazers A", "Stargazers B"])):
         panels.append({
-            "panel_id": f"panel-{chr(65 + (i%5))}-2025",
-            "name": panel_names[i % len(panel_names)],
+            "panel_id": f"panel-{chr(65+i)}-2025",
+            "name": panel_name,
             "cycle": "pep-333",
-            "proposals": [{
-                "proposal_id": p["proposal_id"],
-                "assigned_on": random_datetime()
-            }],
+            "proposals": [{"proposal_id": f"prsl-t000{i+1}-20250523-0000{i+1}", "assigned_on": faker.iso8601()}],
             "reviewers": [
                 {
-                    "reviewer_id": rid,
-                    "assigned_on": random_datetime(),
-                    "status": random.choice(["Accepted", "Declined"])
-                } for rid in reviewers_in_panel
+                    "reviewer_id": r.reviewer_id,
+                    "assigned_on": faker.iso8601(),
+                    "status": "Accepted"
+                } for r in panel_revs
             ]
         })
 
-    # Reviews (many per proposal)
-    for i, p in enumerate(proposals):
-        n_reviews = random.randint(2, 3)
-        reviewers_for_this_proposal = random.sample(reviewers_master, n_reviews)
-        for j, rid in enumerate(reviewers_for_this_proposal):
-            idx = reviewers_master.index(rid)
+    proposals = []
+    for i in range(2):
+        proposals.append({
+            "proposal_id": f"prsl-t000{i+1}-20250523-0000{i+1}",
+            "status": "submitted" if i == 0 else "under review",
+            "submitted_on": faker.date_this_decade().strftime("%a %b %d %Y"),
+            "info": {
+                "title": titles[i],
+                "science_category": categories[i],
+                "proposal_type": {"main_type": proposal_types[i]}
+            },
+            "cycle": "SKA_1962_2024",
+            "panel": panels[i]["name"],
+            "array": proposal_arrays[i]
+        })
+
+    reviews = []
+    comments_bank = [
+        faker.sentence(nb_words=6),
+        faker.sentence(nb_words=7),
+        faker.sentence(nb_words=8),
+    ]
+    for i, panel in enumerate(panels):
+        proposal_id = panel["proposals"][0]["proposal_id"]
+        for reviewer in panel["reviewers"]:
+            reviewer_name = next(r.name for r in reviewers if r.reviewer_id == reviewer["reviewer_id"])
             reviews.append({
-                "review_id": f"revw-{i+1}-{j+1}",
-                "panel_id": panels[i]["panel_id"],
-                "cycle": panels[i]["cycle"],
-                "reviewer_id": rid,
-                "proposal_id": p["proposal_id"],
-                "rank": round(random.uniform(60, 99), 2),
-                "comments": random.choice(reviewer_comments),
-                "conflict": {
-                    "has_conflict": random.choice([True, False]),
-                    "reason": random.choice(["Job", "Ethical", "Lack of knowledge", "None"])
-                },
-                "submitted_on": random_datetime(),
-                "submitted_by": reviewer_names[idx],
-                "status": random.choice(['in progress', 'finalized', 'to do', 'decided'])
+                "review_id": faker.uuid4(),
+                "panel_id": panel["panel_id"],
+                "cycle": panel["cycle"],
+                "reviewer_id": reviewer["reviewer_id"],
+                "proposal_id": proposal_id,
+                "rank": round(70 + 10 * random.random(), 1),
+                "comments": random.choice(comments_bank),
+                "conflict": {"has_conflict": False, "reason": "None"},
+                "submitted_on": faker.iso8601(),
+                "submitted_by": reviewer_name,
+                "status": "decided" if i == 0 else "under review"
             })
 
-    # Decisions (one per proposal)
-    for i, p in enumerate(proposals):
+    decisions = []
+    for i, proposal in enumerate(proposals):
         panel_id = panels[i]["panel_id"]
         decisions.append({
-            "cycle": panels[i]["cycle"],
+            "cycle": "pep-333",
             "panel_id": panel_id,
-            "proposal_id": p["proposal_id"],
-            "rank": random.randint(0, 9),
-            "recommendation": random.choice(recommendations),
-            "status": random.choice(['decided', 'in progress']),
-            "decided_by": f"tac-chair-{random.randint(1,20)}",
-            "decided_on": random_datetime()
+            "proposal_id": proposal["proposal_id"],
+            "rank": random.randint(1, 5),
+            "recommendation": random.choice(RECOMMENDATIONS),
+            "status": "decided",
+            "decided_by": faker.name(),
+            "decided_on": faker.iso8601()
         })
     return proposals, panels, reviews, decisions
 
-# 3. Join/Merge Function (returns list of Pydantic models)
-
+# ----- JOIN FUNCTION -----
 def join_proposals_panels_reviews_decisions(
     proposals, panels, reviews, decisions
 ) -> List[ProposalReviewPanelDecisionRow]:
+    """Joins all input data into output rows."""
     rows = []
     panel_by_id = {p["panel_id"]: p for p in panels}
     proposal_by_id = {p["proposal_id"]: p for p in proposals}
     decision_by_pid = {d["proposal_id"]: d for d in decisions}
-
     for review in reviews:
         proposal = proposal_by_id.get(review["proposal_id"])
         if not proposal:
-            continue
+            continue  # Robustness: skip unmatched
         panel = panel_by_id.get(review["panel_id"])
         decision = decision_by_pid.get(review["proposal_id"])
         reviewer_panel_entry = None
         if panel:
             reviewer_panel_entry = next((r for r in panel["reviewers"] if r["reviewer_id"] == review["reviewer_id"]), None)
         reviewer_status = reviewer_panel_entry["status"] if reviewer_panel_entry else "Pending"
-
-        row = ProposalReviewPanelDecisionRow(
+        rows.append(ProposalReviewPanelDecisionRow(
             science_category = proposal["info"]["science_category"],
-            dummy_col = [],
             proposal_id = proposal["proposal_id"],
             proposal_status = proposal["status"],
             array = proposal["array"],
@@ -214,34 +223,54 @@ def join_proposals_panels_reviews_decisions(
             reviewer_accepted = reviewer_status == "Accepted",
             cycle = proposal["cycle"],
             decision_on = decision["decided_on"] if decision else None
-        )
-        rows.append(row)
+        ))
     return rows
 
-@router.get(
-    "/",
-    summary="Create a report for admin",
-)
-def get_report() -> str:
-    """
-    Creates a new proposal in the ODA
-    """
 
-    LOGGER.debug("GET REPORT create")
-    #get proposals using Andrey's new query -- need to add an endpoint for this
-    #get all panels
-    #get all reviews
-    #get panel decision
+# @router.get(
+#     "/",
+#     summary="Create a report for admin",
+# )
+# def get_report() -> List[ProposalReviewPanelDecisionRow]:
+#     """
+#     Creates a new proposal in the ODA
+#     """
+
+#     LOGGER.debug("GET REPORT create")
+#     #get proposals using Andrey's new query -- need to add an endpoint for this
+#     #get all panels
+#     #get all reviews
+#     #get panel decision
 
   
-    # with oda.uow() as uow:
-        # query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        # proposals = uow.prsls.query(query_param)
-        # panels = uow.panels.query(query_param)
-        # reviews = uow.rvws.query(query_param)
-        # panel_decisions = uow.pnlds.query(query_param)
-    proposals, panels, reviews, panel_decisions = create_sample_data()
-    report = join_proposals_panels_reviews_decisions(proposals, panels, reviews, panel_decisions)
-    return report 
+#     # with oda.uow() as uow:
+#         # query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
+#         # proposals = uow.prsls.query(query_param)
+#         # panels = uow.panels.query(query_param)
+#         # reviews = uow.rvws.query(query_param)
+#         # panel_decisions = uow.pnlds.query(query_param)
+#     proposals, panels, reviews, panel_decisions = create_sample_data()
+#     report = join_proposals_panels_reviews_decisions(proposals, panels, reviews, panel_decisions)
+#     return report 
+
+from fastapi import FastAPI, Query
+
+@router.get("/", response_model=List[ProposalReviewPanelDecisionRow])
+def get_report(
+    deterministic: bool = Query(False, description="Return a deterministic (repeatable) demo dataset"),
+    seed: Optional[int] = Query(None, description="Random seed (for reproducible demo output)")
+):
+    """
+    Get the flattened proposal/panel/review/decision data for the dashboard.
+    """
+    # Use the provided seed for reproducibility
+    if seed is not None:
+        random.seed(seed)
+        faker = Faker()
+        faker.seed_instance(seed)
+    else:
+        faker = Faker()
+    proposals, panels, reviews, decisions = create_sample_data(faker, deterministic=deterministic)
+    return join_proposals_panels_reviews_decisions(proposals, panels, reviews, decisions)
 
 
