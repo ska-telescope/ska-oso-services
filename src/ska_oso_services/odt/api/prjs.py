@@ -21,6 +21,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.odt.api.sbds import _create_sbd_status_entity
+from ska_oso_services.odt.service.project_generator import generate_project
 
 LOGGER = logging.getLogger(__name__)
 
@@ -197,6 +198,29 @@ def prjs_sbds_post(
         uow.commit()
 
     return {"sbd": sbd, "prj": prj}
+
+
+@router.post(
+    "/prsl/{prsl_id}",
+    summary="Create a new Project from the Proposal, creating a Observing Block for "
+    "each group of Observation Sets in the Proposal "
+    "and copying over the science data",
+    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
+)
+def prjs_prsl_post(prsl_id: str) -> Project:
+    LOGGER.debug("POST PRJS from prsl_id: %s", prsl_id)
+    with oda.uow() as uow:
+        proposal = uow.prsls.get(prsl_id)
+        project = generate_project(proposal)
+
+        persisted_project = uow.prjs.add(project)
+
+        prj_status = _create_prj_status_entity(persisted_project)
+        uow.prjs_status_history.add(prj_status)
+
+        uow.commit()
+
+    return persisted_project
 
 
 def _create_prj_status_entity(prj: Project) -> ProjectStatusHistory:

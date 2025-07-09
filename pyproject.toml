@@ -51,9 +51,11 @@ priority = "primary"
 python = "^3.10"
 python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
-# PDM dependency is pulled in via the ODA rather than being explicitly set here
 # If updating this, also remember to update the Helm dependency in the umbrella chart
 ska-db-oda = "^9.1.0"
+# The PDM dependency could be is pulled in via the ODA rather than being explicitly set here,
+# however this gives the flexibility to define a different minor version without needing an ODA release
+ska-oso-pdm = "^18.4.0"
 # ska-db-oda = { git = "https://gitlab.com/ska-telescope/db/ska-db-oda.git", branch = "main" }
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
