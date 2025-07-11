@@ -20,7 +20,7 @@ def test_project_generated_from_proposal(authrequests):
     prsl_id = post_response.json()
 
     # Generate the Project
-    generate_response = authrequests.post(f"{ODT_URL}/prjs/prsl/{prsl_id}")
+    generate_response = authrequests.post(f"{ODT_URL}/prsls/{prsl_id}/generateProject")
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text
     assert prsl_id == generate_response.json()["prsl_ref"]

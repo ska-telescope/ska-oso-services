@@ -8,6 +8,7 @@ Unreleased
 ***********
 * Added ska-ser-xray as a dev dependency
 * Updated docker base images to ska-build-python v0.3.1 and ska-python v0.2.3 and regenerated poetry.lock
+* Added a POST /odt/prsls/{prsl_id}/generateProject API endpoint 
 
 1.1.0
 ****** 

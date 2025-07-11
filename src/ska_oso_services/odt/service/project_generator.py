@@ -74,29 +74,26 @@ def science_programme_from_observation_set(
     """
     observation_set_id = observation_set.observation_set_id
 
-    results_for_observation_set = list(
-        filter(
-            lambda result_detail: result_detail.observation_set_ref
-            == observation_set_id,
-            proposal_info.result_details,
-        )
-    )
+    results_for_observation_set = [
+        result_detail
+        for result_detail in proposal_info.result_details
+        if result_detail.observation_set_ref == observation_set_id
+    ]
 
     # The ObservationSet <-> Target link is via the Results
-    target_ids = list(
-        map(lambda result_detail: result_detail.target_ref, results_for_observation_set)
-    )
-    targets_for_observation_set = list(
-        filter(lambda target: target.target_id in target_ids, proposal_info.targets)
-    )
+    target_ids = [
+        result_detail.target_ref for result_detail in results_for_observation_set
+    ]
 
-    sdp_data_products_for_observation_set = list(
-        filter(
-            lambda data_product: observation_set_id
-            in data_product.observation_set_refs,
-            proposal_info.data_product_sdps,
-        )
-    )
+    targets_for_observation_set = [
+        target for target in proposal_info.targets if target.target_id in target_ids
+    ]
+
+    sdp_data_products_for_observation_set = [
+        data_product
+        for data_product in proposal_info.data_product_sdps
+        if observation_set_id in data_product.observation_set_refs
+    ]
 
     return ScienceProgramme(
         observation_sets=[observation_set.model_copy(deep=True)],
