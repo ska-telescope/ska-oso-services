@@ -3,7 +3,9 @@ Model specific for the pht
 """
 
 from typing import List
-from pydantic import  AwareDatetime, EmailStr, Field
+
+from pydantic import EmailStr
+
 from ska_oso_services.common.model import AppModel
 
 
@@ -15,14 +17,14 @@ class EmailRequest(AppModel):
         email (EmailStr): The recipient's email address.
         prsl_id (str): The SKAO proposal ID.
     """
+
     email: EmailStr
     prsl_id: str
 
 
-
 class ProposalReport(AppModel):
     prsl_id: str
-    title: str 
+    title: str
     science_category: str | None = None
     proposal_status: str
     proposal_type: str

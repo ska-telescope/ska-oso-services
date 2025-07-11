@@ -1,6 +1,13 @@
 from fastapi import APIRouter
 
-from ska_oso_services.pht.api import panel_decision, panels, prsls, reviewers, reviews, report
+from ska_oso_services.pht.api import (
+    panel_decision,
+    panels,
+    prsls,
+    report,
+    reviewers,
+    reviews,
+)
 
 router = APIRouter(prefix="/pht", tags=["PHT API"])
 router.include_router(prsls.router)
