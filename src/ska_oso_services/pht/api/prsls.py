@@ -1,9 +1,12 @@
 import logging
 from http import HTTPStatus
+from typing import Any
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
+from pydantic.fields import Field
+from pydantic.root_model import RootModel
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
 from ska_ost_osd.rest.api.resources import get_osd
@@ -18,6 +21,7 @@ from ska_oso_services.pht.model import EmailRequest
 from ska_oso_services.pht.utils import validation
 from ska_oso_services.pht.utils.email_helper import send_email_async
 from ska_oso_services.pht.utils.pht_handler import (
+    EXAMPLE_OSD_DATA,
     EXAMPLE_PROPOSAL,
     transform_update_proposal,
 )
@@ -34,7 +38,15 @@ LOGGER = logging.getLogger(__name__)
 router = APIRouter(prefix="/prsls")
 
 
-@router.get("/osd/{cycle}", summary="Retrieve OSD data for a particular cycle")
+class OsdDataModel(RootModel):
+    root: dict[str, Any] = Field(example=EXAMPLE_OSD_DATA)
+
+
+@router.get(
+    "/osd/{cycle}",
+    summary="Retrieve OSD data for a particular cycle",
+    response_model=OsdDataModel,
+)
 def get_osd_by_cycle(cycle: int) -> dict:
     LOGGER.debug("GET OSD data cycle: %s", cycle)
 
