@@ -8,9 +8,9 @@ from ska_oso_services.pht.utils.pht_handler import create_sample_data, join_prop
 from ska_oso_services.common import oda
 from ska_oso_services.pht.model import ProposalReport
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
-from faker import Faker
+# from faker import Faker
 
-fake = Faker()
+# fake = Faker()
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,23 +47,23 @@ def get_report(user_id: str,) -> List[ProposalReport]:
     return report 
 
 
-@router.get("/", response_model=List[ProposalReport])
-def get_report(
-    deterministic: bool = Query(False, description="Return a deterministic (repeatable) demo dataset"),
-    seed: int | None = Query(None, description="Random seed (for reproducible demo output)")
-):
-    """
-    Get the flattened proposal/panel/review/decision data for the PHT dashboard.
-    """
+# @router.get("/", response_model=List[ProposalReport])
+# def get_report2(
+#     deterministic: bool = Query(False, description="Return a deterministic (repeatable) demo dataset"),
+#     seed: int | None = Query(None, description="Random seed (for reproducible demo output)")
+# ):
+#     """
+#     Get the flattened proposal/panel/review/decision data for the PHT dashboard.
+#     """
    
-    # Use the provided seed for reproducibility
-    if seed is not None:
-        random.seed(seed)
-        faker = Faker()
-        faker.seed_instance(seed)
-    else:
-        faker = Faker()
-    proposals, panels, reviews, decisions = create_sample_data(faker, deterministic=deterministic)
-    return join_proposals_panels_reviews_decisions(proposals, panels, reviews, decisions)
+#     # Use the provided seed for reproducibility
+#     if seed is not None:
+#         random.seed(seed)
+#         faker = Faker()
+#         faker.seed_instance(seed)
+#     else:
+#         faker = Faker()
+#     proposals, panels, reviews, decisions = create_sample_data(faker, deterministic=deterministic)
+#     return join_proposals_panels_reviews_decisions(proposals, panels, reviews, decisions)
 
 
