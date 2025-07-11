@@ -50,8 +50,8 @@ class OsdDataModel(RootModel):
 def get_osd_by_cycle(cycle: int) -> dict:
     LOGGER.debug("GET OSD data cycle: %s", cycle)
 
-    res = get_osd(cycle_id=cycle, source="car")
-    return res
+    data = get_osd(cycle_id=cycle, source="car")
+    return data
 
 
 @router.post(
