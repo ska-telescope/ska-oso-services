@@ -2,12 +2,12 @@
 This module contains functions to transform and update proposal data
 for submission and creation processes.
 """
-import random
+# import random
 from datetime import datetime, timezone
 from typing import List
-from faker import Faker
+# from faker import Faker
 
-fake = Faker()
+# fake = Faker()
 from pydantic import BaseModel
 from ska_oso_pdm.proposal import Proposal
 
@@ -109,129 +109,129 @@ def join_proposals_panels_reviews_decisions(
 
 
 
-class Reviewer(BaseModel):
-    reviewer_id: str
-    name: str
+# class Reviewer(BaseModel):
+#     reviewer_id: str
+#     name: str
 
 
-# ----- CONFIG -----
-SCIENCE_CATEGORIES = ['Cosmology', 'Star Formation', 'Exoplanets', 'Galactic Dynamics']
-PROPOSAL_TYPES = ['director_time_proposal', 'special_time_proposal']
-ARRAYS = ['LOW', 'MID', 'BOTH']
-RECOMMENDATIONS = [
-    'Recommend for observation time.',
-    'Not recommended at this time.',
-    'Recommend for observation time with minor changes.'
-]
+# # ----- CONFIG -----
+# SCIENCE_CATEGORIES = ['Cosmology', 'Star Formation', 'Exoplanets', 'Galactic Dynamics']
+# PROPOSAL_TYPES = ['director_time_proposal', 'special_time_proposal']
+# ARRAYS = ['LOW', 'MID', 'BOTH']
+# RECOMMENDATIONS = [
+#     'Recommend for observation time.',
+#     'Not recommended at this time.',
+#     'Recommend for observation time with minor changes.'
+# ]
 
 
-# ----- MOCKED DATA CREATION with some randomness -----
-def get_reviewer_master(faker: Faker) -> List[Reviewer]:
-    """Return master reviewer list for demo (id+name)."""
-    return [
-        Reviewer(reviewer_id="rev-1", name=faker.name()),
-        Reviewer(reviewer_id="rev-2", name=faker.name()),
-        Reviewer(reviewer_id="rev-3", name=faker.name()),
-        Reviewer(reviewer_id="rev-4", name=faker.name()),
-        Reviewer(reviewer_id="rev-5", name=faker.name()),
-    ]
+# # ----- MOCKED DATA CREATION with some randomness -----
+# def get_reviewer_master(faker: Faker) -> List[Reviewer]:
+#     """Return master reviewer list for demo (id+name)."""
+#     return [
+#         Reviewer(reviewer_id="rev-1", name=faker.name()),
+#         Reviewer(reviewer_id="rev-2", name=faker.name()),
+#         Reviewer(reviewer_id="rev-3", name=faker.name()),
+#         Reviewer(reviewer_id="rev-4", name=faker.name()),
+#         Reviewer(reviewer_id="rev-5", name=faker.name()),
+#     ]
 
-def create_sample_data(
-    faker: Faker,
-    deterministic: bool = False
-):
-    """Creates demo panels, proposals, reviews, and decisions."""
-    reviewers = get_reviewer_master(faker)
-    categories = (["Star Formation", "Cosmology"] if deterministic
-                  else random.sample(SCIENCE_CATEGORIES, 2))
-    titles = (
-        ["Tracing Magnetic Fields in the ISM", "Mapping High-z Galaxies"]
-        if deterministic
-        else [faker.sentence(nb_words=4) for _ in range(2)]
-    )
-    proposal_types = (
-        ["director_time_proposal", "special_time_proposal"] if deterministic
-        else [random.choice(PROPOSAL_TYPES) for _ in range(2)]
-    )
-    proposal_arrays = (
-        ["LOW", "MID"] if deterministic
-        else [random.choice(ARRAYS) for _ in range(2)]
-    )
+# def create_sample_data(
+#     faker: Faker,
+#     deterministic: bool = False
+# ):
+#     """Creates demo panels, proposals, reviews, and decisions."""
+#     reviewers = get_reviewer_master(faker)
+#     categories = (["Star Formation", "Cosmology"] if deterministic
+#                   else random.sample(SCIENCE_CATEGORIES, 2))
+#     titles = (
+#         ["Tracing Magnetic Fields in the ISM", "Mapping High-z Galaxies"]
+#         if deterministic
+#         else [faker.sentence(nb_words=4) for _ in range(2)]
+#     )
+#     proposal_types = (
+#         ["director_time_proposal", "special_time_proposal"] if deterministic
+#         else [random.choice(PROPOSAL_TYPES) for _ in range(2)]
+#     )
+#     proposal_arrays = (
+#         ["LOW", "MID"] if deterministic
+#         else [random.choice(ARRAYS) for _ in range(2)]
+#     )
 
-    # Panel assignments (with reviewer overlap)
-    panel_reviewers = [
-        [reviewers[0], reviewers[1], reviewers[2]],   # Panel A
-        [reviewers[2], reviewers[3], reviewers[4]],   # Panel B
-    ]
-    panels = []
-    for i, (panel_revs, panel_name) in enumerate(zip(panel_reviewers, ["Stargazers A", "Stargazers B"])):
-        panels.append({
-            "panel_id": f"panel-{chr(65+i)}-2025",
-            "name": panel_name,
-            "cycle": "pep-333",
-            "proposals": [{"prsl_id": f"prsl-t000{i+1}-20250523-0000{i+1}", "assigned_on": faker.iso8601()}],
-            "reviewers": [
-                {
-                    "reviewer_id": r.reviewer_id,
-                    "assigned_on": faker.iso8601(),
-                    "status": "Accepted"
-                } for r in panel_revs
-            ]
-        })
+#     # Panel assignments (with reviewer overlap)
+#     panel_reviewers = [
+#         [reviewers[0], reviewers[1], reviewers[2]],   # Panel A
+#         [reviewers[2], reviewers[3], reviewers[4]],   # Panel B
+#     ]
+#     panels = []
+#     for i, (panel_revs, panel_name) in enumerate(zip(panel_reviewers, ["Stargazers A", "Stargazers B"])):
+#         panels.append({
+#             "panel_id": f"panel-{chr(65+i)}-2025",
+#             "name": panel_name,
+#             "cycle": "pep-333",
+#             "proposals": [{"prsl_id": f"prsl-t000{i+1}-20250523-0000{i+1}", "assigned_on": faker.iso8601()}],
+#             "reviewers": [
+#                 {
+#                     "reviewer_id": r.reviewer_id,
+#                     "assigned_on": faker.iso8601(),
+#                     "status": "Accepted"
+#                 } for r in panel_revs
+#             ]
+#         })
 
-    proposals = []
-    for i in range(2):
-        proposals.append({
-            "prsl_id": f"prsl-t000{i+1}-20250523-0000{i+1}",
-            "status": "submitted" if i == 0 else "under review",
-            "submitted_on": faker.date_this_decade().strftime("%a %b %d %Y"),
-            "info": {
-                "title": titles[i],
-                "science_category": categories[i],
-                "proposal_type": {"main_type": proposal_types[i], "attributes": ["coordinated_proposal"]},
-            },
-            "cycle": "SKA_1962_2024",
-            "panel": panels[i]["name"],
-            "array": proposal_arrays[i]
-        })
+#     proposals = []
+#     for i in range(2):
+#         proposals.append({
+#             "prsl_id": f"prsl-t000{i+1}-20250523-0000{i+1}",
+#             "status": "submitted" if i == 0 else "under review",
+#             "submitted_on": faker.date_this_decade().strftime("%a %b %d %Y"),
+#             "info": {
+#                 "title": titles[i],
+#                 "science_category": categories[i],
+#                 "proposal_type": {"main_type": proposal_types[i], "attributes": ["coordinated_proposal"]},
+#             },
+#             "cycle": "SKA_1962_2024",
+#             "panel": panels[i]["name"],
+#             "array": proposal_arrays[i]
+#         })
 
-    reviews = []
-    comments_bank = [
-        faker.sentence(nb_words=6),
-        faker.sentence(nb_words=7),
-        faker.sentence(nb_words=8),
-    ]
-    for i, panel in enumerate(panels):
-        prsl_id = panel["proposals"][0]["prsl_id"]
-        for reviewer in panel["reviewers"]:
-            reviewer_name = next(r.name for r in reviewers if r.reviewer_id == reviewer["reviewer_id"])
-            reviews.append({
-                "review_id": faker.uuid4(),
-                "panel_id": panel["panel_id"],
-                "cycle": panel["cycle"],
-                "reviewer_id": reviewer["reviewer_id"],
-                "prsl_id": prsl_id,
-                "rank": round(70 + 10 * random.random(), 1),
-                "comments": random.choice(comments_bank),
-                "conflict": {"has_conflict": False, "reason": "None"},
-                "submitted_on": faker.iso8601(),
-                "submitted_by": reviewer_name,
-                "status": "decided" if i == 0 else "under review"
-            })
+#     reviews = []
+#     comments_bank = [
+#         faker.sentence(nb_words=6),
+#         faker.sentence(nb_words=7),
+#         faker.sentence(nb_words=8),
+#     ]
+#     for i, panel in enumerate(panels):
+#         prsl_id = panel["proposals"][0]["prsl_id"]
+#         for reviewer in panel["reviewers"]:
+#             reviewer_name = next(r.name for r in reviewers if r.reviewer_id == reviewer["reviewer_id"])
+#             reviews.append({
+#                 "review_id": faker.uuid4(),
+#                 "panel_id": panel["panel_id"],
+#                 "cycle": panel["cycle"],
+#                 "reviewer_id": reviewer["reviewer_id"],
+#                 "prsl_id": prsl_id,
+#                 "rank": round(70 + 10 * random.random(), 1),
+#                 "comments": random.choice(comments_bank),
+#                 "conflict": {"has_conflict": False, "reason": "None"},
+#                 "submitted_on": faker.iso8601(),
+#                 "submitted_by": reviewer_name,
+#                 "status": "decided" if i == 0 else "under review"
+#             })
 
-    decisions = []
-    for i, proposal in enumerate(proposals):
-        panel_id = panels[i]["panel_id"]
-        decisions.append({
-            "cycle": "pep-333",
-            "panel_id": panel_id,
-            "prsl_id": proposal["prsl_id"],
-            "rank": random.randint(1, 5),
-            "recommendation": random.choice(RECOMMENDATIONS),
-            "status": "decided",
-            "decided_by": faker.name(),
-            "decided_on": faker.iso8601()
-        })
-    return proposals, panels, reviews, decisions
+#     decisions = []
+#     for i, proposal in enumerate(proposals):
+#         panel_id = panels[i]["panel_id"]
+#         decisions.append({
+#             "cycle": "pep-333",
+#             "panel_id": panel_id,
+#             "prsl_id": proposal["prsl_id"],
+#             "rank": random.randint(1, 5),
+#             "recommendation": random.choice(RECOMMENDATIONS),
+#             "status": "decided",
+#             "decided_by": faker.name(),
+#             "decided_on": faker.iso8601()
+#         })
+#     return proposals, panels, reviews, decisions
 
 
