@@ -4,7 +4,7 @@ import random
 from typing import List
 
 from fastapi import APIRouter, Query
-from ska_oso_services.pht.utils.pht_handler import create_sample_data, join_proposals_panels_reviews_decisions
+from ska_oso_services.pht.utils.pht_handler import join_proposals_panels_reviews_decisions
 from ska_oso_services.common import oda
 from ska_oso_services.pht.model import ProposalReport
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
