@@ -21,6 +21,7 @@ The API supports resources for:
 * Generate presigned S3 download URL for the given filename
 * Generate presigned S3 delete URL for the given filename
 * Retrieve a list of reviewers (Currently mocked)
+* Get OSD data per cycle
 
 Existing endpoints:
 
