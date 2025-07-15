@@ -10,6 +10,7 @@ Unreleased
 * Added documentation for proposal endpoints
 * Updated docker base images to ska-build-python v0.3.1 and ska-python v0.2.3 and regenerated poetry.lock
 * Added PHT GET endpoint to retrieve osd data by cycle
+* Added a POST /odt/prsls/{prsl_id}/generateProject API endpoint 
 
 1.1.0
 ****** 
