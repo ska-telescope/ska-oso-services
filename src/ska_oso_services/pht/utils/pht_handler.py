@@ -57,11 +57,11 @@ def transform_update_proposal(data: Proposal) -> Proposal:
 
 
 def get_latest_entity_by_id(entities, entity_id: str) -> list:
-    """AI is creating summary for get_latest_entity_by_id
+    """Returns the latest version of each entity based on a unique identifier.
 
     Args:
         entities ([type]): The list of entities to filter
-        entity_id (str): The attribute name to use as the unique identifier for each entity
+        entity_id (str): The unique identifier for each entity
 
     Returns:
         list: of entities with the latest version for each unique entity ID
@@ -73,7 +73,6 @@ def get_latest_entity_by_id(entities, entity_id: str) -> list:
         if key not in latest or version > latest[key].metadata.version:
             latest[key] = entity
     return list(latest.values())
-
 
 
 def _get_array_class(proposal) -> str:

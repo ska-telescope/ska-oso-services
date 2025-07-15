@@ -16,7 +16,6 @@ LOGGER = logging.getLogger(__name__)
 router = APIRouter(prefix="/report")
 
 
-
 @router.get(
     "/{user_id}",
     summary="Create a report for admin/coordinator",
@@ -37,7 +36,7 @@ def get_report(
         proposals = get_latest_entity_by_id(uow.prsls.query(query_param), "prsl_id")
         panels = get_latest_entity_by_id(
             uow.panels.query(query_param), "panel_id"  # pylint: disable=no-member
-        ) 
+        )
         reviews = get_latest_entity_by_id(uow.rvws.query(query_param), "review_id")
         decisions = get_latest_entity_by_id(uow.pnlds.query(query_param), "prsl_id")
     report = join_proposals_panels_reviews_decisions(

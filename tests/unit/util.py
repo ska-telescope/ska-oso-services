@@ -104,7 +104,11 @@ class TestDataFactory:
         return prj
 
     @staticmethod
-    def reviews(review_id: str = "rvw-mvp01-20220923-00001", prsl_id: str = "prsl-mvp01-20220923-00001") -> PanelReview:
+    def reviews(
+        review_id: str = "rvw-mvp01-20220923-00001",
+        prsl_id: str = "prsl-mvp01-20220923-00001",
+        reviewer_id="string",
+    ) -> PanelReview:
         """
         Load a valid proposal review object from file and override review_id,
         """
@@ -113,11 +117,15 @@ class TestDataFactory:
         review = PanelReview.model_validate_json(data)
         review.review_id = review_id
         review.prsl_id = prsl_id
+        review.reviewer_id = reviewer_id
 
         return review
 
     @staticmethod
-    def panel_decision(decision_id: str = "pnld-mvp01-20220923-00001", prsl_id: str = "prsl-mvp01-20220923-00001") -> PanelDecision:
+    def panel_decision(
+        decision_id: str = "pnld-mvp01-20220923-00001",
+        prsl_id: str = "prsl-mvp01-20220923-00001",
+    ) -> PanelDecision:
         """
         Load a valid proposal panel decision object from file and override decision_id,
         """
@@ -156,7 +164,9 @@ class TestDataFactory:
     def panel(
         panel_id: str = "panel-test-20250616-00002",
         name: str = "Stargazers",
-        reviewer_id="rev-001", prsl_id_1 = "prsl-mvp01-20220923-00001", prsl_id_2 = "prsl-mvp01-20220923-00002"
+        reviewer_id="rev-001",
+        prsl_id_1="prsl-mvp01-20220923-00001",
+        prsl_id_2="prsl-mvp01-20220923-00002",
     ) -> Panel:
         data = {
             "panel_id": "panel-Galactic-2025.2",

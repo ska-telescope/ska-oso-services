@@ -48,7 +48,9 @@ def test_panels_post_duplicate_proposal():
     assert response.status_code == HTTPStatus.CONFLICT
 
     result = response.json()
-    expected = {"detail": "Duplicate prsl_id are not allowed: {'prsl-mvp01-20220923-00001'}"}
+    expected = {
+        "detail": "Duplicate prsl_id are not allowed: {'prsl-mvp01-20220923-00001'}"
+    }
     assert expected == result
 
 

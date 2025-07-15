@@ -83,7 +83,9 @@ class TestPanelsAPI:
         assert response.status_code == HTTPStatus.CONFLICT
 
         result = response.json()
-        expected = {"detail": "Duplicate prsl_id are not allowed: {'prsl-mvp01-20220923-00001'}"}
+        expected = {
+            "detail": "Duplicate prsl_id are not allowed: {'prsl-mvp01-20220923-00001'}"
+        }
         assert expected == result
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
