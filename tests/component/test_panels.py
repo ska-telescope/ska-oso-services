@@ -48,7 +48,7 @@ def test_panels_post_duplicate_proposal():
     assert response.status_code == HTTPStatus.CONFLICT
 
     result = response.json()
-    expected = {"detail": "Duplicate prsl_id are not allowed: {'prop-astro-01'}"}
+    expected = {"detail": "Duplicate prsl_id are not allowed: {'prsl-mvp01-20220923-00001'}"}
     assert expected == result
 
 
@@ -76,7 +76,7 @@ def test_panels_post_not_existing_proposal():
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     result = response.json()
-    expected = {"detail": "Proposal 'prop-astro-01' does not exist"}
+    expected = {"detail": "Proposal 'prsl-mvp01-20220923-00001' does not exist"}
     assert expected == result
 
 

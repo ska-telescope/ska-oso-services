@@ -104,7 +104,7 @@ class TestDataFactory:
         return prj
 
     @staticmethod
-    def reviews(review_id: str = "rvw-mvp01-20220923-00001") -> PanelReview:
+    def reviews(review_id: str = "rvw-mvp01-20220923-00001", prsl_id: str = "prsl-mvp01-20220923-00001") -> PanelReview:
         """
         Load a valid proposal review object from file and override review_id,
         """
@@ -112,11 +112,12 @@ class TestDataFactory:
         data = load_string_from_file("panel_review.json")
         review = PanelReview.model_validate_json(data)
         review.review_id = review_id
+        review.prsl_id = prsl_id
 
         return review
 
     @staticmethod
-    def panel_decision(decision_id: str = "pnld-mvp01-20220923-00001") -> PanelDecision:
+    def panel_decision(decision_id: str = "pnld-mvp01-20220923-00001", prsl_id: str = "prsl-mvp01-20220923-00001") -> PanelDecision:
         """
         Load a valid proposal panel decision object from file and override decision_id,
         """
@@ -124,6 +125,7 @@ class TestDataFactory:
         data = load_string_from_file("panel_decision.json")
         decision = PanelDecision.model_validate_json(data)
         decision.decision_id = decision_id
+        decision.prsl_id = prsl_id
 
         return decision
 
@@ -154,14 +156,14 @@ class TestDataFactory:
     def panel(
         panel_id: str = "panel-test-20250616-00002",
         name: str = "Stargazers",
-        reviewer_id="rev-001",
+        reviewer_id="rev-001", prsl_id_1 = "prsl-mvp01-20220923-00001", prsl_id_2 = "prsl-mvp01-20220923-00002"
     ) -> Panel:
         data = {
             "panel_id": "panel-Galactic-2025.2",
             "name": name,
             "proposals": [
-                {"prsl_id": "prop-astro-01", "assigned_on": "2025-05-21T09:30:00Z"},
-                {"prsl_id": "prop-astro-02", "assigned_on": "2025-05-21T09:45:00Z"},
+                {"prsl_id": prsl_id_1, "assigned_on": "2025-05-21T09:30:00Z"},
+                {"prsl_id": prsl_id_2, "assigned_on": "2025-05-21T09:45:00Z"},
             ],
             "reviewers": [
                 {
@@ -177,10 +179,11 @@ class TestDataFactory:
         return panel
 
     @staticmethod
-    def complete_proposal():
+    def complete_proposal(prsl_id: str = "prsl-mvp01-20220923-00001"):
         filename = "complete_proposal.json"
         data = load_string_from_file(filename)
         prsl = Proposal.model_validate_json(data)
+        prsl.prsl_id = prsl_id
         return prsl
 
     @staticmethod

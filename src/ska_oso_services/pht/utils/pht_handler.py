@@ -56,6 +56,26 @@ def transform_update_proposal(data: Proposal) -> Proposal:
     )
 
 
+def get_latest_entity_by_id(entities, entity_id: str) -> list:
+    """AI is creating summary for get_latest_entity_by_id
+
+    Args:
+        entities ([type]): The list of entities to filter
+        entity_id (str): The attribute name to use as the unique identifier for each entity
+
+    Returns:
+        list: of entities with the latest version for each unique entity ID
+    """
+    latest = {}
+    for entity in entities:
+        key = getattr(entity, entity_id)
+        version = entity.metadata.version
+        if key not in latest or version > latest[key].metadata.version:
+            latest[key] = entity
+    return list(latest.values())
+
+
+
 def _get_array_class(proposal) -> str:
     arrays = set()
 
@@ -80,7 +100,7 @@ def _get_array_class(proposal) -> str:
 def join_proposals_panels_reviews_decisions(
     proposals, panels, reviews, decisions
 ) -> List[ProposalReport]:
-    """Joins all input data into output rows, handling partial data gracefully."""
+    """Joins all input data into output rows, handling unavailable entities."""
     rows = []
 
     panel_by_id = {p.panel_id: p for p in panels} if panels else {}
@@ -135,7 +155,6 @@ def join_proposals_panels_reviews_decisions(
                         review_id=review.review_id if review else None,
                         review_rank=review.rank if review else None,
                         comments=review.comments if review else None,
-                        # review_submitted_on=review.submitted_on if review else None,
                         review_submitted_on=(
                             review.submitted_on.isoformat()
                             if review and review.submitted_on
