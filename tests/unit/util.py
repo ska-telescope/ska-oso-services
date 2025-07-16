@@ -104,6 +104,34 @@ class TestDataFactory:
         return prj
 
     @staticmethod
+    def project_with_two_mid_observation_groups(
+        prj_id: str | None = "prj-mvp01-20220923-00001",
+        version: int = 1,
+    ) -> Project:
+
+        data = load_string_from_file("project_with_mid_observation_set.json")
+        prj = Project.model_validate_json(data)
+
+        set_identifier(prj, prj_id)
+        prj.metadata.version = version
+
+        return prj
+
+    @staticmethod
+    def project_with_two_low_targets(
+        prj_id: str | None = "prj-mvp01-20220923-00001",
+        version: int = 1,
+    ) -> Project:
+
+        data = load_string_from_file("project_with_low_observation_set.json")
+        prj = Project.model_validate_json(data)
+
+        set_identifier(prj, prj_id)
+        prj.metadata.version = version
+
+        return prj
+
+    @staticmethod
     def reviews(
         review_id: str = "rvw-mvp01-20220923-00001",
         prsl_id: str = "prsl-mvp01-20220923-00001",

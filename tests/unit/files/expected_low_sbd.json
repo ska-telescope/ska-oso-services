@@ -1,0 +1,214 @@
+{
+  "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
+  "telescope": "ska_low",
+  "activities": {
+    "observe": {
+      "kind": "git",
+      "repo": "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
+      "path": "git://scripts/allocate_and_observe_sb.py",
+      "branch": "master"
+    }
+  },
+  "targets": [
+    {
+      "target_id": "47 tuc",
+      "name": "",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0.5,
+            "offset_y_arcsec": 0.5
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "equatorial",
+        "ra": "00:24:05.3590",
+        "dec": "-72:04:53.200",
+        "reference_frame": "icrs",
+        "epoch": 2000,
+        "unit": [
+          "hourangle",
+          "deg"
+        ]
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": -17.2,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0
+      }
+    },
+    {
+      "target_id": "target42",
+      "name": "",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0.5,
+            "offset_y_arcsec": 0.5
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "equatorial",
+        "ra": "00:24:05.3590",
+        "dec": "-72:04:53.200",
+        "reference_frame": "icrs",
+        "epoch": 2000,
+        "unit": [
+          "hourangle",
+          "deg"
+        ]
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0
+      }
+    }
+  ],
+  "scan_definitions": [
+    {
+      "scan_definition_id": "scan-definition-00001",
+      "scan_duration_ms": 3.6e+6,
+      "target_ref": "47 tuc",
+      "mccs_allocation_ref": "mccs-allocation-00001",
+      "csp_configuration_ref": "csp-configuration-00001",
+      "pointing_correction": "MAINTAIN"
+    },
+    {
+      "scan_definition_id": "scan-definition-00002",
+      "scan_duration_ms": 3.6e+6,
+      "target_ref": "target42",
+      "mccs_allocation_ref": "mccs-allocation-00001",
+      "csp_configuration_ref": "csp-configuration-00001",
+      "pointing_correction": "MAINTAIN"
+    }
+  ],
+  "scan_sequence": [
+    "scan-definition-00001",
+    "scan-definition-00002"
+  ],
+  "csp_configurations": [
+    {
+      "config_id": "csp-configuration-00001",
+      "name": "",
+      "lowcbf": {
+        "do_pst": false,
+        "correlation_spws": [
+          {
+            "spw_id": 1,
+            "logical_fsp_ids": [],
+            "zoom_factor": 0,
+            "centre_frequency": 200000000,
+            "number_of_channels": 38,
+            "integration_time_ms": 849
+          }
+        ]
+      }
+    }
+  ],
+  "mccs_allocation": {
+    "mccs_allocation_id": "mccs-allocation-00001",
+    "selected_subarray_definition": "AA1",
+    "subarray_beams": [
+      {
+        "apertures": [
+          {
+            "station_id": 345,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 346,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 347,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 348,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 349,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 350,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 351,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 352,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 353,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 354,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 429,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 430,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 431,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 432,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 433,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 434,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          }
+        ],
+        "subarray_beam_id": 1
+      }
+    ]
+  }
+}
