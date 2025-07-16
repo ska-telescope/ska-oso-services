@@ -19,7 +19,7 @@ def test_get_osd_data_fail():
     cycle = "-1"
     response = requests.get(f"{PHT_URL}/prsls/osd/{cycle}")
 
-    assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+    assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
 def test_get_osd_data_success():

@@ -10,6 +10,7 @@ from pydantic.root_model import RootModel
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
 from ska_ost_osd.rest.api.resources import get_osd
+from starlette.status import HTTP_400_BAD_REQUEST
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.error_handling import (
@@ -51,6 +52,11 @@ def get_osd_by_cycle(cycle: int) -> dict:
     LOGGER.debug("GET OSD data cycle: %s", cycle)
 
     data = get_osd(cycle_id=cycle, source="car")
+    if data is tuple and len(data) == 2:
+        # Error happened at OSD
+        detail = data[0]["detail"]
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=detail)
+
     return data
 
 
