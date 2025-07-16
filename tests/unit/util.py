@@ -15,8 +15,6 @@ from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
-from ska_oso_services.pht.model import ProposalReport
-
 CUR_DIR = Path(__file__).parent
 
 
@@ -220,7 +218,7 @@ class TestDataFactory:
             "recommendation": "Accept",
         }
 
-        return ProposalReport.model_validate_json(json.dumps(data))
+        return data
 
     @staticmethod
     def email_payload(email="test@example.com", prsl_id="SKAO123"):

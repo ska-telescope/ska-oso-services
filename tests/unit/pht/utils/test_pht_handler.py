@@ -1,4 +1,7 @@
+from types import SimpleNamespace
+
 from ska_oso_services.pht.utils.pht_handler import (
+    get_latest_entity_by_id,
     join_proposals_panels_reviews_decisions,
 )
 from tests.unit.util import REVIEWERS, TestDataFactory
@@ -33,3 +36,30 @@ def test_join_proposals_panels_reviews_decisions():
     assert rows[0].panel_id == panel.panel_id
     assert rows[0].review_id == reviews.review_id
     assert rows[0].prsl_id == decision.prsl_id
+
+
+def test_get_latest_entity_by_id():
+    # Each entity is a SimpleNamespace with the needed fields
+    entities = [
+        SimpleNamespace(prsl_id="id1", metadata=SimpleNamespace(version=1)),
+        SimpleNamespace(
+            prsl_id="id1", metadata=SimpleNamespace(version=3)
+        ),  # latest for id1
+        SimpleNamespace(prsl_id="id1", metadata=SimpleNamespace(version=2)),
+        SimpleNamespace(
+            prsl_id="id2", metadata=SimpleNamespace(version=1)
+        ),  # only one for id2
+        SimpleNamespace(prsl_id="id3", metadata=SimpleNamespace(version=2)),
+        SimpleNamespace(
+            prsl_id="id3", metadata=SimpleNamespace(version=5)
+        ),  # latest for id3
+        SimpleNamespace(prsl_id="id3", metadata=SimpleNamespace(version=1)),
+    ]
+
+    result = get_latest_entity_by_id(entities, "prsl_id")
+    result = sorted(result, key=lambda x: x.prsl_id)
+
+    assert len(result) == 3
+    assert any(e.prsl_id == "id1" and e.metadata.version == 3 for e in result)
+    assert any(e.prsl_id == "id2" and e.metadata.version == 1 for e in result)
+    assert any(e.prsl_id == "id3" and e.metadata.version == 5 for e in result)

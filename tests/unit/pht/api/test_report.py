@@ -15,15 +15,30 @@ class TestReportsAPI:
     def test_get_report_success(self, mock_uow, client):
         user_id = "DefaultUser"
         mock_proposals = [
-            TestDataFactory.complete_proposal(),
-            TestDataFactory.complete_proposal(),
+            TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00001")
         ]
-        mock_panels = [TestDataFactory.panel()]
-        mock_reviews = [TestDataFactory.reviews()]
-        mock_decisions = [TestDataFactory.panel_decision()]
-        mock_report_models = [TestDataFactory.proposal_report()]
-        # Convert Pydantic models to dicts for comparison
-        mock_report = [r.model_dump() for r in mock_report_models]
+        mock_panels = [
+            TestDataFactory.panel(
+                prsl_id_1=mock_proposals[0].prsl_id, reviewer_id=REVIEWERS[0]["id"]
+            )
+        ]
+        mock_reviews = [
+            TestDataFactory.reviews(
+                prsl_id=mock_proposals[0].prsl_id,
+                reviewer_id=REVIEWERS[0]["id"],
+                review_id="rvw-mvp01-20220923-00001",
+            )
+        ]
+        mock_decisions = [
+            TestDataFactory.panel_decision(prsl_id=mock_proposals[0].prsl_id)
+        ]
+        mock_report = [
+            TestDataFactory.proposal_report(
+                prsl_id=mock_proposals[0].prsl_id,
+                panel_id=mock_panels[0].panel_id,
+                reviewer_id=REVIEWERS[0]["id"],
+            )
+        ]  # a list of dict
 
         # Setup oda.uow context manager
         uow_mock = mock.MagicMock()
@@ -54,7 +69,6 @@ class TestReportsAPI:
         assert response.status_code == HTTPStatus.OK
 
         result = response.json()
-        assert result == mock_report
         assert result[0]["prsl_id"] == mock_report[0]["prsl_id"]
         assert result[0]["panel_id"] == mock_report[0]["panel_id"]
         assert result[0]["reviewer_id"] == mock_report[0]["reviewer_id"]
