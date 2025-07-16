@@ -15,6 +15,8 @@ from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
+from ska_oso_services.pht.model import ProposalReport
+
 CUR_DIR = Path(__file__).parent
 
 
@@ -195,6 +197,30 @@ class TestDataFactory:
         prsl = Proposal.model_validate_json(data)
         prsl.prsl_id = prsl_id
         return prsl
+
+    @staticmethod
+    def proposal_report(
+        prsl_id: str = "prsl-mvp01-20220923-00001",
+        panel_id: str = "panel-test-20250616-00001",
+        reviewer_id: str = "rev-001",
+        review_id: str = "rvw-mvp01-20220923-00001",
+    ):
+        data = {
+            "prsl_id": prsl_id,
+            "panel_id": panel_id,
+            "reviewer_id": reviewer_id,
+            "review_id": review_id,
+            "science_category": "Imaging",
+            "proposal_status": "Accepted",
+            "proposal_type": "Large",
+            "array": "Mid",
+            "proposal_attributes": ["coordinated_proposal"],
+            "cycle": "2025-2",
+            "title": "The Milky Way View",
+            "recommendation": "Accept",
+        }
+
+        return ProposalReport.model_validate_json(json.dumps(data))
 
     @staticmethod
     def email_payload(email="test@example.com", prsl_id="SKAO123"):
