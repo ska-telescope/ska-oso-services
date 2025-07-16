@@ -71,6 +71,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "create_panel",
                 "get_panel",
                 "get_panels_for_user",
+                "get_osd_by_cycle",
             ]
         ),
     )
