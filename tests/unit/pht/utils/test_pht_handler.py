@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 from ska_oso_services.pht.utils.pht_handler import (
+    _get_array_class,
     get_latest_entity_by_id,
     join_proposals_panels_reviews_decisions,
 )
@@ -39,7 +40,7 @@ def test_join_proposals_panels_reviews_decisions():
 
 
 def test_get_latest_entity_by_id():
-    # Each entity is a SimpleNamespace with the needed fields
+    # Use SimpleNamespace with the needed fields for each mocked proposal with metadata
     entities = [
         SimpleNamespace(prsl_id="id1", metadata=SimpleNamespace(version=1)),
         SimpleNamespace(
@@ -63,3 +64,63 @@ def test_get_latest_entity_by_id():
     assert any(e.prsl_id == "id1" and e.metadata.version == 3 for e in result)
     assert any(e.prsl_id == "id2" and e.metadata.version == 1 for e in result)
     assert any(e.prsl_id == "id3" and e.metadata.version == 5 for e in result)
+
+
+class TestGetArrayClass:
+    def test_low_only(self):
+        """Test when only Low array is present"""
+        proposal = SimpleNamespace(
+            info=SimpleNamespace(
+                observation_sets=[
+                    SimpleNamespace(array_details=SimpleNamespace(array="Low")),
+                    SimpleNamespace(array_details=SimpleNamespace(array="LOW-EXTRA")),
+                ]
+            )
+        )
+        assert _get_array_class(proposal) == "LOW"
+
+    def test_mid_only(self):
+        """Test when only Mid array is present"""
+        proposal = SimpleNamespace(
+            info=SimpleNamespace(
+                observation_sets=[
+                    SimpleNamespace(array_details=SimpleNamespace(array="Mid")),
+                    SimpleNamespace(array_details=SimpleNamespace(array="MID-OTHER")),
+                ]
+            )
+        )
+        assert _get_array_class(proposal) == "MID"
+
+    def test_both_arrays(self):
+        """Test when both Low and Mid arrays are present"""
+        proposal = SimpleNamespace(
+            info=SimpleNamespace(
+                observation_sets=[
+                    SimpleNamespace(array_details=SimpleNamespace(array="Low")),
+                    SimpleNamespace(array_details=SimpleNamespace(array="Mid")),
+                ]
+            )
+        )
+        assert _get_array_class(proposal) == "BOTH"
+
+    def test_unknown_empty_obs(self):
+        """Test when no observation sets are present"""
+        proposal = SimpleNamespace(info=SimpleNamespace(observation_sets=[]))
+        assert _get_array_class(proposal) == "UNKNOWN"
+
+    def test_unknown_none_array(self):
+        """Test when array is None in observation set"""
+        proposal = SimpleNamespace(
+            info=SimpleNamespace(
+                observation_sets=[
+                    SimpleNamespace(array_details=None),
+                    SimpleNamespace(array_details=SimpleNamespace(array=None)),
+                ]
+            )
+        )
+        assert _get_array_class(proposal) == "UNKNOWN"
+
+    def test_unknown_no_info(self):
+        """Test with no info attribute in proposal"""
+        proposal = SimpleNamespace(info=None)
+        assert _get_array_class(proposal) == "UNKNOWN"
