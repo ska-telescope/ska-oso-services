@@ -52,7 +52,7 @@ def get_osd_by_cycle(cycle: int) -> dict:
     LOGGER.debug("GET OSD data cycle: %s", cycle)
 
     data = get_osd(cycle_id=cycle, source="car")
-    if data is tuple and len(data) == 2:
+    if type(data) is tuple and len(data) == 2:
         # Error happened at OSD
         detail = data[0]["detail"]
         raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=detail)
