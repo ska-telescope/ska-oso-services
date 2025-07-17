@@ -104,7 +104,11 @@ class TestDataFactory:
         return prj
 
     @staticmethod
-    def reviews(review_id: str = "rvw-mvp01-20220923-00001") -> PanelReview:
+    def reviews(
+        review_id: str = "rvw-mvp01-20220923-00001",
+        prsl_id: str = "prsl-mvp01-20220923-00001",
+        reviewer_id="string",
+    ) -> PanelReview:
         """
         Load a valid proposal review object from file and override review_id,
         """
@@ -112,11 +116,16 @@ class TestDataFactory:
         data = load_string_from_file("panel_review.json")
         review = PanelReview.model_validate_json(data)
         review.review_id = review_id
+        review.prsl_id = prsl_id
+        review.reviewer_id = reviewer_id
 
         return review
 
     @staticmethod
-    def panel_decision(decision_id: str = "pnld-mvp01-20220923-00001") -> PanelDecision:
+    def panel_decision(
+        decision_id: str = "pnld-mvp01-20220923-00001",
+        prsl_id: str = "prsl-mvp01-20220923-00001",
+    ) -> PanelDecision:
         """
         Load a valid proposal panel decision object from file and override decision_id,
         """
@@ -124,6 +133,7 @@ class TestDataFactory:
         data = load_string_from_file("panel_decision.json")
         decision = PanelDecision.model_validate_json(data)
         decision.decision_id = decision_id
+        decision.prsl_id = prsl_id
 
         return decision
 
@@ -155,13 +165,15 @@ class TestDataFactory:
         panel_id: str = "panel-test-20250616-00002",
         name: str = "Stargazers",
         reviewer_id="rev-001",
+        prsl_id_1="prsl-mvp01-20220923-00001",
+        prsl_id_2="prsl-mvp01-20220923-00002",
     ) -> Panel:
         data = {
             "panel_id": "panel-Galactic-2025.2",
             "name": name,
             "proposals": [
-                {"prsl_id": "prop-astro-01", "assigned_on": "2025-05-21T09:30:00Z"},
-                {"prsl_id": "prop-astro-02", "assigned_on": "2025-05-21T09:45:00Z"},
+                {"prsl_id": prsl_id_1, "assigned_on": "2025-05-21T09:30:00Z"},
+                {"prsl_id": prsl_id_2, "assigned_on": "2025-05-21T09:45:00Z"},
             ],
             "reviewers": [
                 {
@@ -177,13 +189,36 @@ class TestDataFactory:
         return panel
 
     @staticmethod
-    def complete_proposal(prsl_id: str = None) -> Proposal:
+    def complete_proposal(prsl_id: str = "prsl-mvp01-20220923-00001") -> Proposal:
         filename = "complete_proposal.json"
         data = load_string_from_file(filename)
         prsl = Proposal.model_validate_json(data)
-        if prsl_id is not None:
-            prsl.prsl_id = prsl_id
+        prsl.prsl_id = prsl_id
         return prsl
+
+    @staticmethod
+    def proposal_report(
+        prsl_id: str = "prsl-mvp01-20220923-00001",
+        panel_id: str = "panel-test-20250616-00001",
+        reviewer_id: str = "rev-001",
+        review_id: str = "rvw-mvp01-20220923-00001",
+    ):
+        data = {
+            "prsl_id": prsl_id,
+            "panel_id": panel_id,
+            "reviewer_id": reviewer_id,
+            "review_id": review_id,
+            "science_category": "Imaging",
+            "proposal_status": "Accepted",
+            "proposal_type": "Large",
+            "array": "Mid",
+            "proposal_attributes": ["coordinated_proposal"],
+            "cycle": "2025-2",
+            "title": "The Milky Way View",
+            "recommendation": "Accept",
+        }
+
+        return data
 
     @staticmethod
     def email_payload(email="test@example.com", prsl_id="SKAO123"):
