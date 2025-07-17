@@ -177,10 +177,12 @@ class TestDataFactory:
         return panel
 
     @staticmethod
-    def complete_proposal():
+    def complete_proposal(prsl_id: str = None) -> Proposal:
         filename = "complete_proposal.json"
         data = load_string_from_file(filename)
         prsl = Proposal.model_validate_json(data)
+        if prsl_id is not None:
+            prsl.prsl_id = prsl_id
         return prsl
 
     @staticmethod

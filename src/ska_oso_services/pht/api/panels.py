@@ -2,15 +2,14 @@ import logging
 
 from fastapi import APIRouter
 from ska_db_oda.persistence.domain.errors import ODANotFound
-from ska_db_oda.persistence.domain.query import MatchType, UserQuery,\
-    CustomQuery
+from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm.proposal_management.panel import Panel
+from ska_oso_pdm.proposal_management.review import PanelReview
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.utils.constants import REVIEWERS
 from ska_oso_services.pht.utils.validation import validate_duplicates
-from ska_oso_pdm.proposal_management.review import PanelReview
 
 router = APIRouter(prefix="/panels")
 
@@ -49,16 +48,15 @@ def get_panel(panel_id: str) -> Panel:
     logger.info("Panel retrieved successfully: %s", panel_id)
     return panel
 
-@router.get(
-    "/reviews/{panel_id}", summary="Get all reviews for a particular panel"
-)
+
+@router.get("/reviews/{panel_id}", summary="Get all reviews for a particular panel")
 def get_reviews_for_panel(panel_id: str) -> list[PanelReview]:
     logger.debug("GET reviews for a panel_id: %s", panel_id)
-    
+
     with oda.uow() as uow:
         query = CustomQuery(panel_id=panel_id)
-        reviews = uow.rvws.query(query) 
-    
+        reviews = uow.rvws.query(query)
+
     return reviews
 
 

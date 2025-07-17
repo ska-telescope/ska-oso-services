@@ -2,6 +2,7 @@ import uuid
 from http import HTTPStatus
 
 import requests
+from ska_oso_pdm.proposal_management.review import Conflict, PanelReview, ReviewStatus
 
 from ..unit.util import REVIEWERS, TestDataFactory
 from . import PHT_URL
@@ -78,6 +79,67 @@ def test_panels_post_not_existing_proposal():
     result = response.json()
     expected = {"detail": "Proposal 'prop-astro-01' does not exist"}
     assert expected == result
+
+
+def test_get_reviews_for_panel_with_wrong_id():
+    panel_id = "wrong id"
+    response = requests.get(f"{PHT_URL}/panels/reviews/{panel_id}")
+    assert response.status_code == HTTPStatus.OK
+    res = response.json()
+    assert [] == res
+
+
+def test_get_reviews_for_panel_with_valid_id():
+    proposal = TestDataFactory.complete_proposal("my proposal")
+    response = requests.post(
+        f"{PHT_URL}/prsls/create", data=proposal.json(), headers=HEADERS
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    panel_id = "panel-test-20250717-00001"
+    panel = TestDataFactory.panel_basic(panel_id=panel_id, name="New name")
+    data = panel.json()
+    response = requests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
+    assert response.status_code == HTTPStatus.OK
+
+    conflict = Conflict(has_conflict=False, reason="")
+    review = PanelReview(
+        panel_id=panel_id,
+        review_id="my review id",
+        reviewer_id=REVIEWERS[0]["id"],
+        prsl_id="my proposal",
+        rank=5,
+        conflict=conflict,
+        status=ReviewStatus.DECIDED,
+        submitted_by="Andrey",
+    )
+    response = requests.post(f"{PHT_URL}/reviews/", data=review.json(), headers=HEADERS)
+    assert response.status_code == HTTPStatus.OK
+
+    response = requests.get(f"{PHT_URL}/panels/reviews/{panel_id}")
+    assert response.status_code == HTTPStatus.OK
+    res = response.json()
+    expected = [
+        {
+            "metadata": {
+                "version": 1,
+                "created_by": "DefaultUser",
+                "created_on": "2025-07-17T13:40:34.757492Z",
+                "last_modified_by": "DefaultUser",
+                "last_modified_on": "2025-07-17T13:40:34.757492Z",
+                "pdm_version": "18.4.0",
+            },
+            "panel_id": "panel-test-20250717-00001",
+            "review_id": "my review id",
+            "reviewer_id": "c8f8f18a-3c70-4c39-8ed9-2d8d180d99a1",
+            "prsl_id": "my proposal",
+            "rank": 5,
+            "conflict": {"has_conflict": False, "reason": ""},
+            "submitted_by": "Andrey",
+            "status": "Decided",
+        }
+    ]
+    assert expected == res
 
 
 def test_get_list_panels_for_user():
