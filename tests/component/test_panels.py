@@ -121,16 +121,9 @@ def test_get_reviews_for_panel_with_valid_id():
     response = requests.get(f"{PHT_URL}/panels/reviews/{panel_id}")
     assert response.status_code == HTTPStatus.OK
     res = response.json()
+    del res[0]["metadata"]
     expected = [
         {
-            "metadata": {
-                "version": 1,
-                "created_by": "DefaultUser",
-                "created_on": "2025-07-17T13:40:34.757492Z",
-                "last_modified_by": "DefaultUser",
-                "last_modified_on": "2025-07-17T13:40:34.757492Z",
-                "pdm_version": "18.4.0",
-            },
             "panel_id": "panel-test-20250717-00001",
             "review_id": "my review id",
             "reviewer_id": "c8f8f18a-3c70-4c39-8ed9-2d8d180d99a1",
