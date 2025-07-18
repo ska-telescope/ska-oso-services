@@ -1,4 +1,5 @@
 # pylint: disable=no-member
+from random import randint
 from typing import Optional
 
 import astropy.units as u
@@ -59,9 +60,9 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
 
     scan_definitions = []
     scan_sequence = []
-    for index, target in enumerate(science_programme.targets):
+    for target in science_programme.targets:
         scan_definition = ScanDefinition(
-            scan_definition_id=f"scan-definition-{(index + 1):05}",
+            scan_definition_id=_sbd_internal_id(ScanDefinition),
             scan_duration_ms=_scan_time_ms_from_science_programme(
                 science_programme, target.target_id
             ),
@@ -191,7 +192,7 @@ def _csp_configuration_from_science_programme(
             raise ValueError(f"Unsupported TelescopeType {telescope}")
 
     return CSPConfiguration(
-        config_id="csp-configuration-00001", midcbf=midcbf, lowcbf=lowcbf
+        config_id=_sbd_internal_id(CSPConfiguration), midcbf=midcbf, lowcbf=lowcbf
     )
 
 
@@ -233,7 +234,7 @@ def _dish_allocation(subarray: SubArrayMID) -> DishAllocation:
     dish_ids = osd_data["capabilities"]["mid"][subarray.value]["number_dish_ids"]
 
     return DishAllocation(
-        dish_allocation_id="dish-allocation-00001",
+        dish_allocation_id=_sbd_internal_id(DishAllocation),
         selected_subarray_definition=subarray,
         dish_ids=dish_ids,
     )
@@ -250,7 +251,7 @@ def _mccs_allocation(subarray: SubArrayLOW) -> MCCSAllocation:
     ]
 
     return MCCSAllocation(
-        mccs_allocation_id="mccs-allocation-00001",
+        mccs_allocation_id=_sbd_internal_id(MCCSAllocation),
         selected_subarray_definition=subarray,
         subarray_beams=[
             SubarrayBeamConfiguration(apertures=apertures, subarray_beam_id=1)
@@ -276,3 +277,18 @@ def _proposal_observing_band_to_mid_receiver_band(observing_band: str) -> Receiv
             return ReceiverBand.BAND_5B
         case _:
             raise ValueError(f"Mid Band {observing_band} not supported")
+
+
+def _sbd_internal_id(pdm_type: type):
+    random_int = randint(10000, 99999)
+
+    if pdm_type is MCCSAllocation:
+        return f"mccs-allocation-{random_int}"
+    if pdm_type is DishAllocation:
+        return f"dish-allocation-{random_int}"
+    if pdm_type is ScanDefinition:
+        return f"scan-definition-{random_int}"
+    if pdm_type is CSPConfiguration:
+        return f"csp-configuration-{random_int}"
+
+    raise ValueError(f"Unsupported type {type} for an internal SBDefintion id")
