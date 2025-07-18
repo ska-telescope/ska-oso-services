@@ -1,0 +1,173 @@
+@startuml
+top to bottom direction
+
+package "ska_oso_services" {
+
+    package "app" <<Rectangle>> {
+        class create_app <<function>>
+    }
+
+    package "odt" as odt_pkg {
+        note as odt_note
+        "ODT section minimized in this view"
+        end note
+    }
+
+    package "common" as common_pkg {
+
+    package "api" <<Rectangle>> {
+        class get_coordinates <<endpoint>>
+    }
+
+    package "auth" <<Rectangle>> {
+        class Scope
+    }
+
+    package "coordinateslookup" <<Rectangle>> {
+        object coordinateslookup_items {
+            + Equatorial
+            + Galactic
+            + convert_ra_dec_deg()
+            + convert_to_galactic()
+            + get_coordinates()
+            + round_coord()
+        }
+    }
+
+    package "error_handling" <<Rectangle>> {
+        object error_handling_items {
+            + BadRequestError
+            + DuplicateError
+            + NotFoundError
+            + UnprocessableEntityError
+            + _make_response()
+            + dangerous_internal_server_handler()
+            + error_details()
+            + oda_error_handler()
+            + oda_not_found_handler()
+            + oda_unique_constraint_handler()
+        }
+    }
+
+    package "model" <<Rectangle>> {
+        object model_items {
+            + AppModel
+            + ErrorDetails
+            + ErrorResponseTraceback
+            + ValidationResponse
+        }
+    }
+
+    package "osdmapper" <<Rectangle>> {
+        object osdmapper_items {
+            + Configuration
+            + FrequencyBand
+            + LowConfiguration
+            + MidConfiguration
+            + Subarray
+            + _get_low_telescope_configuration()
+            + _get_mid_telescope_configuration()
+            + configuration_from_osd()
+        }
+    }
+}
+
+    package "pht" as pht_pkg {
+
+        package "api" <<Rectangle>> {
+            package "panel_reviews" <<Rectangle>> {
+                class panel_review_get <<endpoint>>
+            }
+            package "reviewers" <<Rectangle>> {
+                class reviewers <<endpoint>>
+            }
+            package "panel_decision" <<Rectangle>> {
+                class panel_decision_post <<endpoint>>
+            }
+            package "panels" <<Rectangle>> {
+                object panels_api_endpoints {
+                    + GET /panels
+                    + GET /panels/{id}
+                    + GET /panels/by_user/{user_id}
+                }
+            }
+            package "reports" <<Rectangle>> {
+                class report_get <<endpoint>>
+            }
+            package "prsls" <<Rectangle>> {
+                class send_email <<endpoint>>
+                class proposals <<endpoint>>
+                object pdf_api_endpoints {
+                    + POST /pdf/upload
+                    + GET /pdf/download
+                    + DELETE /pdf/delete
+                }
+            }
+            reports.report_get -down[hidden]- prsls.send_email
+        }
+
+        package "model" <<Rectangle>> {
+            class EmailRequest
+            class ProposalReport
+        }
+
+        package "utils" <<Rectangle>> {
+            package "email_helper" <<Rectangle>> {
+                object email_helper_functions {
+                    + render_email()
+                    + send_email_async()
+                }
+            }
+            package "pht_handler" <<Rectangle>> {
+                class join_proposals_panels_reviews_decisions <<function>>
+                object join_helpers {
+                    + _get_array_class()
+                    + get_latest_entity_by_id()
+                }
+                class transform_update_proposal <<function>>
+            }
+            package "s3_bucket" <<Rectangle>> {
+                object s3_bucket_functions {
+                    + S3Method (Enum)
+                    + S3Config
+                    + get_aws_client()
+                    + generate_presigned_url()
+                    + create_presigned_url_upload_pdf()
+                    + create_presigned_url_download_pdf()
+                    + create_presigned_url_delete_pdf()
+                }
+            }
+            package "validation" <<Rectangle>> {
+                class validate_duplicates <<function>>
+                class validate_proposal <<function>>
+            }
+            class constants
+        }
+
+        api.panel_reviews.panel_review_get -down[hidden]- model.EmailRequest
+        model.EmailRequest -down[hidden]- utils.email_helper.email_helper_functions
+        model.EmailRequest -down[hidden]- utils.email_helper.email_helper_functions
+
+        ' --- Visible relationships ---
+        api.prsls.proposals --> utils.validation.validate_proposal : validates proposal
+        api.prsls.proposals --> utils.pht_handler.transform_update_proposal : transforms data
+        api.prsls.pdf_api_endpoints --> utils.s3_bucket.s3_bucket_functions : manages PDF
+        api.panels.panels_api_endpoints --> utils.validation.validate_duplicates : checks duplicates
+        api.reports.report_get --> model.ProposalReport : loads report
+        api.reports.report_get --> utils.pht_handler.join_proposals_panels_reviews_decisions : joins proposals, panels, reviews, decisions
+        api.prsls.send_email --> utils.email_helper.email_helper_functions : uses email helper
+        api.prsls.send_email --> model.EmailRequest : builds email request
+        api.reviewers.reviewers --> utils.constants : gets review constants
+        utils.pht_handler.join_proposals_panels_reviews_decisions --> utils.pht_handler.join_helpers : uses helpers
+
+    }
+
+    ' -- Connect odt, common, and pht to app --
+    odt_pkg -up-> app.create_app
+    pht_pkg -up-> app.create_app
+    common_pkg -up-> app.create_app
+
+}
+@enduml
+
+
