@@ -134,7 +134,7 @@ class TestProposalAPI:
                 },
             },
         }
-        
+
         fake_get_osd.return_value = expected
         cycle = 1
         response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
