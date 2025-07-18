@@ -33,7 +33,7 @@ The API supports resources for:
     POST `/presigned-url/delete` "The request body contains the filename. Returns the presigned URL for deletion."
   - Retrieve a list of reviewers (Currently mocked):
     GET `/reviewers` "Returns a list of reviewers with their IDs and names."
-  - Get OSD data per cycle
+  - GET `/osd/{cycle}` "Get OSD data per cycle""
 
 * Proposal Management:
   
