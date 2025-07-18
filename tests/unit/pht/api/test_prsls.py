@@ -27,17 +27,18 @@ def has_validation_error(detail, field: str) -> bool:
 
 
 class TestProposalAPI:
-    def test_get_osd_data_fail(self, client):
+    @mock.patch("ska_oso_services.pht.api.prsls.get_osd")
+    def test_get_osd_data_fail(self, fake_get_osd, client):
+        fake_get_osd.return_value = ({"detail": "some error"}, None)
         cycle = "-1"
         response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
-
-    def test_get_osd_data_success(self, client):
-        cycle = 1
-        response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
-
         res = response.json()
+        assert {"detail": "some error"} == res
+
+    @mock.patch("ska_oso_services.pht.api.prsls.get_osd")
+    def test_get_osd_data_success(self, fake_get_osd, client):
         expected = {
             "observatory_policy": {
                 "cycle_number": 1,
@@ -133,6 +134,13 @@ class TestProposalAPI:
                 },
             },
         }
+        
+        fake_get_osd.return_value = expected
+        cycle = 1
+        response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
+
+        assert response.status_code == HTTPStatus.OK
+        res = response.json()
         assert expected == res
 
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
