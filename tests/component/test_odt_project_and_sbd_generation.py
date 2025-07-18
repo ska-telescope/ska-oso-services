@@ -45,7 +45,9 @@ def test_sbds_generated_from_project(authrequests):
     prj_id = post_response.json()["prj_id"]
 
     # Generate the SBDefinitions
-    generate_response = authrequests.post(f"{ODT_URL}/prjs/{prj_id}/generateSbds")
+    generate_response = authrequests.post(
+        f"{ODT_URL}/prjs/{prj_id}/generateSBDefinitions"
+    )
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text
     project = Project.model_validate_json(generate_response.text)
@@ -72,7 +74,8 @@ def test_sbds_generated_from_project_obs_block(authrequests):
 
     # Generate the SBDefinitions
     generate_response = authrequests.post(
-        f"{ODT_URL}/prjs/{prj_id}/{project.obs_blocks[0].obs_block_id}/generateSbds"
+        f"{ODT_URL}/prjs"
+        f"/{prj_id}/{project.obs_blocks[0].obs_block_id}/generateSBDefinitions"
     )
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text

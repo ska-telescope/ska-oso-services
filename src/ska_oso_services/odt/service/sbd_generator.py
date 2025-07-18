@@ -112,20 +112,20 @@ def _receptor_field_from_science_programme(
 
     telescope = observation_set.array_details.array
 
-    if telescope == TelescopeType.SKA_LOW:
+    match telescope:
+        case TelescopeType.SKA_LOW:
+            mccs_allocation = _mccs_allocation(
+                SubArrayLOW(observation_set.array_details.subarray.upper())
+            )
 
-        mccs_allocation = _mccs_allocation(
-            SubArrayLOW(observation_set.array_details.subarray.upper())
-        )
-
-        dish_allocations = None
-    elif telescope == TelescopeType.SKA_MID:
-        mccs_allocation = None
-        dish_allocations = _dish_allocation(
-            SubArrayMID(observation_set.array_details.subarray.upper())
-        )
-    else:
-        raise ValueError(f"Unsupported TelescopeType {telescope}")
+            dish_allocations = None
+        case TelescopeType.SKA_MID:
+            mccs_allocation = None
+            dish_allocations = _dish_allocation(
+                SubArrayMID(observation_set.array_details.subarray.upper())
+            )
+        case _:
+            raise ValueError(f"Unsupported TelescopeType {telescope}")
 
     return mccs_allocation, dish_allocations
 
@@ -136,59 +136,59 @@ def _csp_configuration_from_science_programme(
     observation_set = science_programme.observation_sets[0]
 
     telescope = observation_set.array_details.array
-
-    if telescope == TelescopeType.SKA_LOW:
-        midcbf = None
-        observation_type_details = observation_set.observation_type_details
-        lowcbf = LowCBFConfiguration(
-            do_pst=False,
-            correlation_spws=[
-                Correlation(
-                    spw_id=1,
-                    number_of_channels=int(
-                        observation_type_details.bandwidth.to(u.Hz).value
-                        / (LOW_STATION_CHANNEL_WIDTH_MHZ * 10e6)
-                    ),
-                    centre_frequency=observation_type_details.central_frequency.to(
-                        u.Hz
-                    ).value,
-                    integration_time_ms=849,
-                    logical_fsp_ids=[],
-                    zoom_factor=0,
-                )
-            ],
-        )
-    elif telescope == TelescopeType.SKA_MID:
-        observation_type_details = observation_set.observation_type_details
-        midcbf = MidCBFConfiguration(
-            frequency_band=_proposal_observing_band_to_mid_receiver_band(
-                observation_set.observing_band
-            ),
-            subbands=[
-                Subband(
-                    correlation_spws=[
-                        CorrelationSPWConfiguration(
-                            spw_id=1,
-                            logical_fsp_ids=[],
-                            centre_frequency=(
-                                observation_type_details.central_frequency.to(
-                                    u.Hz
-                                ).value
-                            ),
-                            number_of_channels=int(
-                                observation_type_details.bandwidth.to(u.Hz).value
-                                / (MID_CHANNEL_WIDTH_KHZ * 10e3)
-                            ),
-                            zoom_factor=0,
-                            time_integration_factor=10,
-                        )
-                    ]
-                )
-            ],
-        )
-        lowcbf = None
-    else:
-        raise ValueError(f"Unsupported TelescopeType {telescope}")
+    match telescope:
+        case TelescopeType.SKA_LOW:
+            midcbf = None
+            observation_type_details = observation_set.observation_type_details
+            lowcbf = LowCBFConfiguration(
+                do_pst=False,
+                correlation_spws=[
+                    Correlation(
+                        spw_id=1,
+                        number_of_channels=int(
+                            observation_type_details.bandwidth.to(u.Hz).value
+                            / (LOW_STATION_CHANNEL_WIDTH_MHZ * 10e6)
+                        ),
+                        centre_frequency=observation_type_details.central_frequency.to(
+                            u.Hz
+                        ).value,
+                        integration_time_ms=849,
+                        logical_fsp_ids=[],
+                        zoom_factor=0,
+                    )
+                ],
+            )
+        case TelescopeType.SKA_MID:
+            observation_type_details = observation_set.observation_type_details
+            midcbf = MidCBFConfiguration(
+                frequency_band=_proposal_observing_band_to_mid_receiver_band(
+                    observation_set.observing_band
+                ),
+                subbands=[
+                    Subband(
+                        correlation_spws=[
+                            CorrelationSPWConfiguration(
+                                spw_id=1,
+                                logical_fsp_ids=[],
+                                centre_frequency=(
+                                    observation_type_details.central_frequency.to(
+                                        u.Hz
+                                    ).value
+                                ),
+                                number_of_channels=int(
+                                    observation_type_details.bandwidth.to(u.Hz).value
+                                    / (MID_CHANNEL_WIDTH_KHZ * 10e3)
+                                ),
+                                zoom_factor=0,
+                                time_integration_factor=10,
+                            )
+                        ]
+                    )
+                ],
+            )
+            lowcbf = None
+        case _:
+            raise ValueError(f"Unsupported TelescopeType {telescope}")
 
     return CSPConfiguration(
         config_id="csp-configuration-00001", midcbf=midcbf, lowcbf=lowcbf

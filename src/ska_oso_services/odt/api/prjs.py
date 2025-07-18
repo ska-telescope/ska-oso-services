@@ -201,7 +201,7 @@ def prjs_sbds_post(
 
 
 @router.post(
-    "/{identifier}/{obs_block_id}/generateSbds",
+    "/{identifier}/{obs_block_id}/generateSBDefinitions",
     summary="Generate SBDefintions for an ObservingBlock within a Project",
     description="Generates SBDefinitions using the ScienceProgramme data in the "
     "ObservingBlock, persists those SBDefintions in the ODA, adds a "
@@ -249,7 +249,7 @@ def prjs_ob_generate_sbds(identifier: str, obs_block_id: str) -> Project:
 
 
 @router.post(
-    "/{identifier}/generateSbds",
+    "/{identifier}/generateSBDefinitions",
     summary="Generate SBDefintions for all ObservingBlocks within a Project",
     description="Generates SBDefinitions for each ObservingBlock in the Project, "
     "persists those SBDefintions in the ODA, adds a link to the "

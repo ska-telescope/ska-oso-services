@@ -457,7 +457,7 @@ class TestProjectGenerateSBDefinitions:
         mock_generate_sbds.return_value = [sbd]
 
         response = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/generateSbds",
+            f"{PRJS_API_URL}/{project.prj_id}/generateSBDefinitions",
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -475,7 +475,7 @@ class TestProjectGenerateSBDefinitions:
         mock_uow().__enter__.return_value = uow_mock
 
         resp = client.post(
-            f"{PRJS_API_URL}/{prj_id}/generateSbds",
+            f"{PRJS_API_URL}/{prj_id}/generateSBDefinitions",
         )
 
         assert resp.status_code == HTTPStatus.NOT_FOUND
@@ -493,7 +493,7 @@ class TestProjectGenerateSBDefinitions:
 
         with pytest.raises(IOError):
             resp = client.post(
-                f"{PRJS_API_URL}/prj-123/generateSbds",
+                f"{PRJS_API_URL}/prj-123/generateSBDefinitions",
             )
 
             assert resp.json()["detail"] == "OSError('test error')"
@@ -523,7 +523,7 @@ class TestProjectGenerateSBDefinitions:
         uow_mock.sbds_status_history.add = add_status_mock
 
         response = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/generateSbds",
+            f"{PRJS_API_URL}/{project.prj_id}/generateSBDefinitions",
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -550,7 +550,7 @@ class TestProjectObsBlockGenerateSBDefinitions:
         mock_generate_sbds.return_value = [sbd]
 
         resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/generateSbds",
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/generateSBDefinitions",
         )
 
         assert resp.status_code == HTTPStatus.OK
@@ -565,7 +565,7 @@ class TestProjectObsBlockGenerateSBDefinitions:
         mock_uow().__enter__.return_value = uow_mock
 
         resp = client.post(
-            f"{PRJS_API_URL}/{prj_id}/obs-block-00001/generateSbds",
+            f"{PRJS_API_URL}/{prj_id}/obs-block-00001/generateSBDefinitions",
         )
 
         assert resp.status_code == HTTPStatus.NOT_FOUND
@@ -583,7 +583,7 @@ class TestProjectObsBlockGenerateSBDefinitions:
         mock_uow().__enter__.return_value = uow_mock
 
         resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateSbds",
+            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateSBDefinitions",
         )
 
         assert resp.status_code == HTTPStatus.NOT_FOUND
@@ -601,7 +601,7 @@ class TestProjectObsBlockGenerateSBDefinitions:
 
         with pytest.raises(IOError):
             resp = client.post(
-                f"{PRJS_API_URL}/prj-123/obs-block-00001/generateSbds",
+                f"{PRJS_API_URL}/prj-123/obs-block-00001/generateSBDefinitions",
             )
 
             assert resp.json()["detail"] == "OSError('test error')"
@@ -631,7 +631,7 @@ class TestProjectObsBlockGenerateSBDefinitions:
         uow_mock.sbds_status_history.add = add_status_mock
 
         response = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateSbds",
+            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateSBDefinitions",
         )
 
         assert response.status_code == HTTPStatus.OK
