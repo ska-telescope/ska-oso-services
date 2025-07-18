@@ -9,7 +9,7 @@ Unreleased
 * Added ska-ser-xray as a dev dependency
 * Added documentation for proposal endpoints
 * Updated docker base images to ska-build-python v0.3.1 and ska-python v0.2.3 and regenerated poetry.lock
-* Added PHT GET endpoint to retrieve osd data by cycle
+* Added PHT GET endpoint to retrieve osd data by cycle and introduce a model to OSD dict
 * Added a POST /odt/prsls/{prsl_id}/generateProject API endpoint 
 * Added a GET API endpoint `/report` to retrieve needed data for admin PHT dashboard
 * Added a API endpoints to create, retrieve and update `panels` for the PHT
