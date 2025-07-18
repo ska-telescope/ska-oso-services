@@ -75,6 +75,9 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "get_osd_by_cycle",
             ]
         ),
+        # Need this param for code generation - see
+        # https://fastapi.tiangolo.com/how-to/separate-openapi-schemas
+        separate_input_output_schemas=False,
     )
 
     app.add_middleware(
