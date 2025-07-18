@@ -54,7 +54,7 @@ ska-ser-logging = "^0.4.1"
 # PDM dependency is pulled in via the ODA rather than being explicitly set here
 # If updating this, also remember to update the Helm dependency in the umbrella chart
 ska-db-oda = "^9.2.0"
-# ska-db-oda = { git = "https://gitlab.com/ska-telescope/db/ska-db-oda.git", branch = "star-1388-filter-by-custom-field" }
+# ska-db-oda = { git = "https://gitlab.com/ska-telescope/db/ska-db-oda.git", branch = "main" }
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
