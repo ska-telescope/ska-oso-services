@@ -1,0 +1,99 @@
+@startuml
+top to bottom direction
+
+package "pht" as pht_pkg {
+
+    package "api" <<Rectangle>> {
+
+        package "prsls" <<Rectangle>> {
+            class send_email <<endpoint>> {
+                returns: EmailRequest
+            }
+            class proposals <<endpoint>>
+            object proposals_api_endpoints {
+                + GET /prsl/{user_id}
+                + GET /prsl/{proposal_id}
+                + POST /prsl/create
+                + UPDATE /prsl/{proposal_id}
+            }
+            object pdf_api_endpoints {
+                + POST /pdf/upload
+                + GET /pdf/download
+                + DELETE /pdf/delete
+            }
+        }
+
+        package "panel_reviews" <<Rectangle>> {
+            class panel_review_get <<endpoint>>
+        }
+        package "reviewers" <<Rectangle>> {
+            class reviewers <<endpoint>>
+        }
+        package "panel_decision" <<Rectangle>> {
+            class panel_decision_post <<endpoint>>
+        }
+        package "panels" <<Rectangle>> {
+            object panels_api_endpoints {
+                + GET /panels
+                + GET /panels/{id}
+                + GET /panels/by_user/{user_id}
+            }
+        }
+        package "reports" <<Rectangle>> {
+            class report_get <<endpoint>> {
+                returns: ProposalReport
+            }
+        }
+        reports.report_get -down[hidden]- prsls.send_email
+    }
+
+    package "utils" <<Rectangle>> {
+        package "email_helper" <<Rectangle>> {
+            object email_helper_functions {
+                + render_email()
+                + send_email_async()
+            }
+        }
+        package "pht_handler" <<Rectangle>> {
+            class join_proposals_panels_reviews_decisions <<function>>
+            object join_helpers {
+                + _get_array_class()
+                + get_latest_entity_by_id()
+            }
+            class transform_update_proposal <<function>>
+        }
+        package "s3_bucket" <<Rectangle>> {
+            object s3_bucket_functions {
+                + S3Method (Enum)
+                + S3Config
+                + get_aws_client()
+                + generate_presigned_url()
+                + create_presigned_url_upload_pdf()
+                + create_presigned_url_download_pdf()
+                + create_presigned_url_delete_pdf()
+            }
+        }
+        package "validation" <<Rectangle>> {
+            class validate_duplicates <<function>>
+            class validate_proposal <<function>>
+        }
+        class constants
+    }
+
+    ' --- FORCE LAYOUT: Utils under API ---
+    api.panel_reviews.panel_review_get -down[hidden]- utils.email_helper.email_helper_functions
+
+    ' --- Relationships, return types only ---
+    api.prsls.proposals --> utils.validation.validate_proposal
+    api.prsls.proposals --> utils.pht_handler.transform_update_proposal
+    api.prsls.pdf_api_endpoints --> utils.s3_bucket.s3_bucket_functions : PDF file
+    api.panels.panels_api_endpoints --> utils.validation.validate_duplicates : List[Panel]
+    api.reports.report_get --> utils.pht_handler.join_proposals_panels_reviews_decisions
+    api.prsls.send_email --> utils.email_helper.email_helper_functions
+    api.reviewers.reviewers --> utils.constants : ReviewerConstants
+    utils.pht_handler.join_proposals_panels_reviews_decisions --> utils.pht_handler.join_helpers : ProposalReport
+
+}
+
+@enduml
+

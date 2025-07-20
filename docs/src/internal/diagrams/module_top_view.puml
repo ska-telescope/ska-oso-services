@@ -1,0 +1,111 @@
+@startuml
+top to bottom direction
+
+package "common" as common_pkg {
+
+    package "api" <<Rectangle>> {
+        class get_coordinates <<endpoint>>
+    }
+
+    package "auth" <<Rectangle>> {
+        class Scope
+    }
+
+    package "coordinateslookup" <<Rectangle>> {
+        object coordinateslookup_items {
+            + Equatorial
+            + Galactic
+            + convert_ra_dec_deg()
+            + convert_to_galactic()
+            + get_coordinates()
+            + round_coord()
+        }
+    }
+
+    package "error_handling" <<Rectangle>> {
+        object error_handling_items {
+            + BadRequestError
+            + DuplicateError
+            + NotFoundError
+            + UnprocessableEntityError
+            + _make_response()
+            + dangerous_internal_server_handler()
+            + error_details()
+            + oda_error_handler()
+            + oda_not_found_handler()
+            + oda_unique_constraint_handler()
+        }
+    }
+
+    package "model" <<Rectangle>> {
+        object model_items {
+            + AppModel
+            + ErrorDetails
+            + ErrorResponseTraceback
+            + ValidationResponse
+        }
+    }
+
+    package "osdmapper" <<Rectangle>> {
+        object osdmapper_items {
+            + FrequencyBand
+            + Subarray
+            + MidConfiguration
+            + LowConfiguration
+            + Configuration
+            + configuration_from_osd()
+            + _get_mid_telescope_configuration()
+            + _get_low_telescope_configuration()
+        }
+    }
+}
+
+package "odt" as odt_pkg {
+    note as odt_note
+    "ODT section minimized in this view"
+    end note
+    package "api" <<Rectangle>> {
+        ' (Add odt API endpoints here if you want)
+    }
+}
+
+package "pht" as pht_pkg {
+    package "api" <<Rectangle>> {
+        package "panel_reviews" <<Rectangle>> {
+            class panel_review_get <<endpoint>>
+        }
+        package "reviewers" <<Rectangle>> {
+            class reviewers <<endpoint>>
+        }
+        package "panel_decision" <<Rectangle>> {
+            class panel_decision_post <<endpoint>>
+        }
+        package "panels" <<Rectangle>> {
+            class panels_endpoint <<endpoint>>
+        }
+        package "reports" <<Rectangle>> {
+            class report_get <<endpoint>>
+        }
+        package "prsls" <<Rectangle>> {
+            class send_email <<endpoint>>
+            class proposals <<endpoint>>
+            class pdf <<endpoint>>
+        }
+    }
+}
+
+common_pkg -down[hidden]- odt_pkg
+common_pkg -down[hidden]- odt_pkg
+odt_pkg -down[hidden]- pht_pkg
+odt_pkg -down[hidden]- pht_pkg
+
+package "app" <<Rectangle>> {
+    class create_app <<function>>
+}
+
+
+common_pkg -up-> app.create_app
+odt_pkg -up-> app.create_app
+pht_pkg -up-> app.create_app
+
+@enduml

@@ -41,6 +41,7 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages']
 
+
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
@@ -81,7 +82,13 @@ pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+numfig = True
 
+numfig_format={
+    'figure': 'Figure %s :',
+    'table': 'Table %s',
+    'code-block': 'Listing %s'
+}
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -199,3 +206,4 @@ epub_exclude_files = ['search.html']
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'python': ('https://docs.python.org/3/', None)}
+
