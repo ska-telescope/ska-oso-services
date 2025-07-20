@@ -82,13 +82,13 @@ pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
-numfig = True
+# numfig = True
 
-numfig_format={
-    'figure': 'Figure %s :',
-    'table': 'Table %s',
-    'code-block': 'Listing %s'
-}
+# numfig_format={
+#     'figure': 'Figure %s :',
+#     'table': 'Table %s',
+#     'code-block': 'Listing %s'
+# }
 
 # -- Options for HTML output ----------------------------------------------
 
