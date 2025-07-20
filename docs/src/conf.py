@@ -82,13 +82,7 @@ pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
-# numfig = True
 
-# numfig_format={
-#     'figure': 'Figure %s :',
-#     'table': 'Table %s',
-#     'code-block': 'Listing %s'
-# }
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -96,7 +90,7 @@ todo_include_todos = True
 # a list of builtin themes.
 #
 html_theme = 'ska_ser_sphinx_theme'
-plantuml = 'plantuml'
+# plantuml = 'plantuml'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -123,7 +117,13 @@ html_theme_options = {
 #    ]
 #}
 
+numfig = True
 
+numfig_format={
+    'figure': 'Figure %s :',
+    'table': 'Table %s',
+    'code-block': 'Listing %s'
+}
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
