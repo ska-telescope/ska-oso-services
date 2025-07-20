@@ -84,6 +84,13 @@ pygments_style = 'sphinx'
 todo_include_todos = True
 
 
+numfig = True
+
+numfig_format={
+    'figure': 'Figure %s :',
+    'table': 'Table %s',
+    'code-block': 'Listing %s'
+}
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -117,13 +124,6 @@ html_theme_options = {
 #    ]
 #}
 
-numfig = True
-
-numfig_format={
-    'figure': 'Figure %s :',
-    'table': 'Table %s',
-    'code-block': 'Listing %s'
-}
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.

@@ -1,3 +1,4 @@
+.. _module_view:
 
 Module View
 ============
@@ -7,9 +8,10 @@ Module View
    project evolves and when a final structure is established and agreed upon.
 
 
-The module view in :numref:`Figure %s <figure1>` provides a high-level overview of the main components of the oso-services and major interactions between them. A detailed view 
+The module view in :numref:`figure1` provides a high-level overview of the main components of the oso-services and major interactions between them. A detailed view 
 module views of the osdmapper and pht and provided in  :numref:`osdmapper_view` and :numref:`pht_view` respectively. The module view
 of the pht shows interactions for the proposals and proposal.
+
 
 
 .. _figure1:
@@ -23,6 +25,7 @@ of the pht shows interactions for the proposals and proposal.
 
 .. image:: diagrams/module_view_osd.svg
    :width: 800
+   :align: center
    :alt: Module View Diagram of the OsdMapper
 
 
@@ -30,4 +33,5 @@ of the pht shows interactions for the proposals and proposal.
 
 .. image:: diagrams/module_view_pht.svg
    :width: 800
+   :align: center
    :alt: Module View Diagram of the PHT
