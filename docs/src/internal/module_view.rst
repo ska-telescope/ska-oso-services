@@ -16,14 +16,14 @@ of the pht shows interactions for the proposals and proposal.
 
 .. _figure1:
 
-.. image:: diagrams/module_top_view.svg
+.. figure:: diagrams/module_top_view.svg
    :width: 800
    :alt: Module View Diagram of the oso-services
 
 
 .. _osdmapper_view:
 
-.. image:: diagrams/module_view_osd.svg
+.. figure:: diagrams/module_view_osd.svg
    :width: 800
    :align: center
    :alt: Module View Diagram of the OsdMapper
@@ -31,7 +31,7 @@ of the pht shows interactions for the proposals and proposal.
 
 .. _pht_view:
 
-.. image:: diagrams/module_view_pht.svg
+.. figure:: diagrams/module_view_pht.svg
    :width: 800
    :align: center
    :alt: Module View Diagram of the PHT
