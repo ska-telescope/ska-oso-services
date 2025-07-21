@@ -148,7 +148,7 @@ def _csp_configuration_from_science_programme(
                         spw_id=1,
                         number_of_channels=int(
                             observation_type_details.bandwidth.to(u.Hz).value
-                            / (LOW_STATION_CHANNEL_WIDTH_MHZ * 10e6)
+                            / (LOW_STATION_CHANNEL_WIDTH_MHZ * 1e6)
                         ),
                         centre_frequency=observation_type_details.central_frequency.to(
                             u.Hz
@@ -178,7 +178,7 @@ def _csp_configuration_from_science_programme(
                                 ),
                                 number_of_channels=int(
                                     observation_type_details.bandwidth.to(u.Hz).value
-                                    / (MID_CHANNEL_WIDTH_KHZ * 10e3)
+                                    / (MID_CHANNEL_WIDTH_KHZ * 1e3)
                                 ),
                                 zoom_factor=0,
                                 time_integration_factor=10,
