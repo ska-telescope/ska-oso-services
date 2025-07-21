@@ -15,6 +15,8 @@ Unreleased
 * Added a API endpoints to create, retrieve and update `panels` for the PHT
 * Added a API endpoint to create, retrieve and update `reviews` for the PHT
 * Added a API endpoint to create, retrieve and update `panel decision` for the PHT
+* Add API /odt/prjs/{prj_id}/generateSBDefinitions & /odt/prjs/{prj_id}/{obs_block_id}/generateSBDefinitions 
+  endpoints to generates SBDefinitions from Projects
 
 1.1.0
 ****** 

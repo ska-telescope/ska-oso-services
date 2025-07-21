@@ -71,10 +71,14 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "create_panel",
                 "get_panel",
                 "get_panels_for_user",
+                "get_reviews_for_panel",
                 "get_report",
                 "get_osd_by_cycle",
             ]
         ),
+        # Need this param for code generation - see
+        # https://fastapi.tiangolo.com/how-to/separate-openapi-schemas
+        separate_input_output_schemas=False,
     )
 
     app.add_middleware(
