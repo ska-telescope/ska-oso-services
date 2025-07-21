@@ -12,9 +12,14 @@
   "cycle": "string",
   "reviewer_id": "string",
   "rank": 8,
-  "conflict": {
-    "has_conflict": false,
-    "reason": "string"
+  "review_type": {
+    "kind": "Science Review",
+    "rank": 9,
+    "conflict": {
+      "has_conflict": false,
+      "reason": "string"
+    },
+    "excluded_from_decision": false
   },
   "comments": "string",
   "submitted_on": "2025-06-25T19:50:48.815Z",

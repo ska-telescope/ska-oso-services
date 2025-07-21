@@ -5,7 +5,6 @@ from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal_management.panel import Panel
 
-
 from ska_oso_services.common import oda
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.utils.constants import REVIEWERS
@@ -47,8 +46,6 @@ def get_panel(panel_id: str) -> Panel:
         panel = uow.panels.get(panel_id)  # pylint: disable=no-member
     logger.info("Panel retrieved successfully: %s", panel_id)
     return panel
-
-
 
 
 @router.get(

@@ -9,9 +9,9 @@ from pydantic.fields import Field
 from pydantic.root_model import RootModel
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
+from ska_oso_pdm.proposal_management.review import PanelReview
 from ska_ost_osd.rest.api.resources import get_osd
 from starlette.status import HTTP_400_BAD_REQUEST
-from ska_oso_pdm.proposal_management.review import PanelReview
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.error_handling import (
@@ -101,9 +101,33 @@ def get_proposal(proposal_id: str) -> Proposal:
         raise NotFoundError(f"Could not find proposal: {proposal_id}") from err
 
 
+@router.get("/status/{status}", summary="Get a list of proposals created by a user")
+def get_proposals_by_status(status: str) -> list[Proposal]:
+    """
+    Function that requests to GET /proposals/status are mapped to
+
+    Retrieves the Proposals for the given status from the
+    underlying data store, if available
+
+    :param status: status of the proposal
+    :return: a tuple of a list of Proposal
+    """
+    LOGGER.debug("GET PROPOSAL status: %s", status)
+
+    with oda.uow() as uow:
+        query_param = CustomQuery(status=status)
+        proposals = uow.prsls.query(query_param)
+        LOGGER.info("Proposal retrieved successfully for: %s", status)
+
+        if proposals is None:
+            return []
+
+        return proposals
+
+
 @router.get("/reviews/{prsl_id}", summary="Get all reviews for a particular proposal")
-def get_reviews_for_panel(prsl_id: str) -> list[PanelReview]:
-    """ Function that requests to GET /reviews/{prsl_id} are mapped to
+def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
+    """Function that requests to GET /reviews/{prsl_id} are mapped to
     Get reviews for a given proposal ID from the
     underlying data store, if available
 

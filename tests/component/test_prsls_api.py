@@ -14,6 +14,8 @@ import requests
 from ..unit.util import VALID_NEW_PROPOSAL, TestDataFactory
 from . import PHT_URL
 
+PANELS_API_URL = f"{PHT_URL}/panels"
+
 
 def test_get_osd_data_fail():
     cycle = "-1"
@@ -242,3 +244,47 @@ def test_get_list_proposals_for_user():
         assert (
             prsl_id in returned_ids
         ), f"Missing proposal {prsl_id} in GET /list/{user_id}"
+
+
+def test_get_reviews_for_panel_with_wrong_id():
+    prsl_id = "wrong id"
+    response = requests.get(f"{PHT_URL}/prsls/reviews/{prsl_id}")
+    assert response.status_code == HTTPStatus.OK
+    res = response.json()
+    assert [] == res
+
+
+def test_get_reviews_for_panel_with_valid_id():
+    proposal = TestDataFactory.complete_proposal("my proposal")
+    response = requests.post(
+        f"{PHT_URL}/prsls/create",
+        data=proposal.json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    panel_id = "panel-test-20250717-00001"
+    panel = TestDataFactory.panel_basic(panel_id=panel_id, name="New name")
+    data = panel.json()
+    response = requests.post(
+        f"{PANELS_API_URL}", data=data, headers={"Content-Type": "application/json"}
+    )
+    assert response.status_code == HTTPStatus.OK
+    review = [
+        TestDataFactory.reviews(
+            prsl_id=proposal.prsl_id,
+        )
+    ]
+    response = requests.post(
+        f"{PHT_URL}/reviews/",
+        data=review[0].json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    response = requests.get(f"{PHT_URL}/prsls/reviews/{proposal.prsl_id}")
+    assert response.status_code == HTTPStatus.OK
+    res = response.json()
+    del res[0]["metadata"]
+    expected = [obj.model_dump(mode="json", exclude={"metadata"}) for obj in review]
+    assert expected == res

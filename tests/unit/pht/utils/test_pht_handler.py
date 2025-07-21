@@ -61,9 +61,9 @@ def test_get_latest_entity_by_id():
     result = sorted(result, key=lambda x: x.prsl_id)
 
     assert len(result) == 3
-    assert any(e.prsl_id == "id1" and e.metadata.version == 3 for e in result)
-    assert any(e.prsl_id == "id2" and e.metadata.version == 1 for e in result)
-    assert any(e.prsl_id == "id3" and e.metadata.version == 5 for e in result)
+    assert any(obj.prsl_id == "id1" and obj.metadata.version == 3 for obj in result)
+    assert any(obj.prsl_id == "id2" and obj.metadata.version == 1 for obj in result)
+    assert any(obj.prsl_id == "id3" and obj.metadata.version == 5 for obj in result)
 
 
 class TestGetArrayClass:
