@@ -28,8 +28,8 @@ def has_validation_error(detail, field: str) -> bool:
 
 class TestProposalAPI:
     @mock.patch("ska_oso_services.pht.api.prsls.get_osd")
-    def test_get_osd_data_fail(self, fake_get_osd, client):
-        fake_get_osd.return_value = ({"detail": "some error"}, None)
+    def test_get_osd_data_fail(self, mock_get_osd, client):
+        mock_get_osd.return_value = ({"detail": "some error"}, None)
         cycle = "-1"
         response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
 
@@ -38,7 +38,7 @@ class TestProposalAPI:
         assert {"detail": "some error"} == res
 
     @mock.patch("ska_oso_services.pht.api.prsls.get_osd")
-    def test_get_osd_data_success(self, fake_get_osd, client):
+    def test_get_osd_data_success(self, mock_get_osd, client):
         expected = {
             "observatory_policy": {
                 "cycle_number": 1,
@@ -135,7 +135,7 @@ class TestProposalAPI:
             },
         }
 
-        fake_get_osd.return_value = expected
+        mock_get_osd.return_value = expected
         cycle = 1
         response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
 
