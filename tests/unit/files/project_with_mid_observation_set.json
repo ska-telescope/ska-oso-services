@@ -1,0 +1,247 @@
+{
+  "name": "Mid Project with two grouped observation sets",
+  "prsl_ref": "prsl-t0001-20250715-00002",
+  "metadata": {
+    "version": 1,
+    "created_by": "DefaultUser",
+    "created_on": "2022-03-28T15:43:53.971548+00:00",
+    "last_modified_on": "2022-03-28T15:43:53.971548+00:00",
+    "last_modified_by": "DefaultUser"
+  },
+  "obs_blocks": [
+    {
+      "obs_block_id": "obs-block-00001",
+      "science_programmes": [
+        {
+          "observation_sets": [
+            {
+              "observation_set_id": "obs-02o2ac",
+              "group_id": "mid-group",
+              "observing_band": "mid_band_1",
+              "elevation": 45,
+              "array_details": {
+                "array": "ska_mid",
+                "subarray": "aa0.5",
+                "weather": 10,
+                "number_15_antennas": 4,
+                "number_13_antennas": 0,
+                "number_sub_bands": 1,
+                "tapering": "0"
+              },
+              "observation_type_details": {
+                "observation_type": "continuum",
+                "bandwidth": {
+                  "value": 0.435,
+                  "unit": "GHz"
+                },
+                "central_frequency": {
+                  "value": 0.7975,
+                  "unit": "GHz"
+                },
+                "supplied": {
+                  "supplied_type": "sensitivity",
+                  "quantity": {
+                    "value": 600,
+                    "unit": "mJy"
+                  }
+                },
+                "spectral_resolution": "13.44 kHz (5.1 km/s)",
+                "effective_resolution": "13.44 kHz (5.1 km/s)",
+                "image_weighting": "uniform",
+                "robust": "0",
+                "spectral_averaging": "1"
+              }
+            }
+          ],
+          "targets": [
+            {
+              "target_id": "47 tuc",
+              "name": "",
+              "pointing_pattern": {
+                "active": "SinglePointParameters",
+                "parameters": [
+                  {
+                    "kind": "SinglePointParameters",
+                    "offset_x_arcsec": 0.5,
+                    "offset_y_arcsec": 0.5
+                  }
+                ]
+              },
+              "reference_coordinate": {
+                "kind": "equatorial",
+                "ra": "00:24:05.3590",
+                "dec": "-72:04:53.200",
+                "reference_frame": "icrs",
+                "epoch": 2000,
+                "unit": [
+                  "hourangle",
+                  "deg"
+                ]
+              },
+              "radial_velocity": {
+                "quantity": {
+                  "value": -17.2,
+                  "unit": "km / s"
+                },
+                "definition": "RADIO",
+                "reference_frame": "LSRK",
+                "redshift": 0
+              }
+            }
+          ],
+          "result_details": [
+            {
+              "observation_set_ref": "obs-02o2ac",
+              "target_ref": "47 tuc",
+              "result": {
+                "supplied_type": "sensitivity",
+                "continuum": {
+                  "value": 1,
+                  "unit": "h"
+                },
+                "spectral": {
+                  "value": 1,
+                  "unit": "h"
+                }
+              },
+              "continuum_confusion_noise": {
+                "value": 0,
+                "unit": "Jy / beam"
+              },
+              "synthesized_beam_size": {
+                "continuum": "0.42 x 0.28",
+                "spectral": "0.68 x 0.44",
+                "unit": "arcsec²"
+              },
+              "spectral_confusion_noise": {
+                "value": 0,
+                "unit": "Jy / beam"
+              }
+            }
+          ]
+        },
+        {
+          "observation_sets": [
+            {
+              "observation_set_id": "obs-WdyixQ",
+              "group_id": "mid-group",
+              "observing_band": "mid_band_2",
+              "elevation": 45,
+              "array_details": {
+                "array": "ska_mid",
+                "subarray": "aa0.5",
+                "weather": 10,
+                "number_15_antennas": 4,
+                "number_13_antennas": 0,
+                "number_sub_bands": 1,
+                "tapering": "0"
+              },
+              "observation_type_details": {
+                "observation_type": "continuum",
+                "bandwidth": {
+                  "value": 0.3,
+                  "unit": "GHz"
+                },
+                "central_frequency": {
+                  "value": 1.2,
+                  "unit": "GHz"
+                },
+                "supplied": {
+                  "supplied_type": "integration_time",
+                  "quantity": {
+                    "value": 200,
+                    "unit": "s"
+                  }
+                },
+                "spectral_resolution": "13.44 kHz (3.4 km/s)",
+                "effective_resolution": "13.44 kHz (3.4 km/s)",
+                "image_weighting": "uniform",
+                "robust": "0",
+                "spectral_averaging": "1"
+              }
+            }
+          ],
+          "targets": [
+            {
+              "target_id": "target42",
+              "name": "",
+              "pointing_pattern": {
+                "active": "SinglePointParameters",
+                "parameters": [
+                  {
+                    "kind": "SinglePointParameters",
+                    "offset_x_arcsec": 0.5,
+                    "offset_y_arcsec": 0.5
+                  }
+                ]
+              },
+              "reference_coordinate": {
+                "kind": "equatorial",
+                "ra": "00:24:05.3590",
+                "dec": "-72:04:53.200",
+                "reference_frame": "icrs",
+                "epoch": 2000,
+                "unit": [
+                  "hourangle",
+                  "deg"
+                ]
+              },
+              "radial_velocity": {
+                "quantity": {
+                  "value": 0,
+                  "unit": "km / s"
+                },
+                "definition": "RADIO",
+                "reference_frame": "LSRK",
+                "redshift": 0
+              }
+            }
+          ],
+          "result_details": [
+            {
+              "observation_set_ref": "obs-WdyixQ",
+              "target_ref": "target42",
+              "result": {
+                "supplied_type": "integration_time",
+                "weighted_continuum_sensitivity": {
+                  "value": 91.53111077397777,
+                  "unit": "uJy / beam"
+                },
+                "weighted_spectral_sensitivity": {
+                  "value": 6.389083028672795,
+                  "unit": "mJy / beam"
+                },
+                "total_continuum_sensitivity": {
+                  "value": 91.53111077397777,
+                  "unit": "uJy / beam"
+                },
+                "total_spectral_sensitivity": {
+                  "value": 6.389083028672795,
+                  "unit": "mJy / beam"
+                },
+                "surface_brightness_sensitivity": {
+                  "continuum": 1478.532987240515,
+                  "spectral": 40411.17063085373,
+                  "unit": "K"
+                }
+              },
+              "continuum_confusion_noise": {
+                "value": 0,
+                "unit": "Jy / beam"
+              },
+              "synthesized_beam_size": {
+                "continuum": "0.28 x 0.19",
+                "spectral": "0.45 x 0.30",
+                "unit": "arcsec²"
+              },
+              "spectral_confusion_noise": {
+                "value": 0,
+                "unit": "Jy / beam"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

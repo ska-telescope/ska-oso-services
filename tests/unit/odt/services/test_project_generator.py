@@ -13,7 +13,7 @@ def test_project_from_proposal_without_groups():
     """
 
     proposal = TestDataFactory.complete_proposal()
-    proposal.info.observation_sets[0].group_id = "1"
+    proposal.info.observation_sets[0].group_id = None
     proposal.info.observation_sets[1].group_id = None
 
     project = generate_project(proposal)
@@ -22,6 +22,7 @@ def test_project_from_proposal_without_groups():
 
     # Check the first observing block contents
     first_obs_block = project.obs_blocks[0]
+    assert first_obs_block.obs_block_id == "obs-block-00001"
     assert len(first_obs_block.science_programmes) == 1
     first_ob_science_programme = first_obs_block.science_programmes[0]
 
