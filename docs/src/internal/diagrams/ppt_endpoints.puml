@@ -67,4 +67,9 @@ Client -> Service: POST /prsls/signed-url/delete/{filename}
 Service -> AWS_S3: Connect to AWS client
 AWS_S3 -> Service: Generate url (filename)
 Service --> Client: 200 Success (url)
+== GET: Reviews for the panel ==
+Client -> Service: GET /reviews/{panel_id}
+Service -> DB: SELECT all reviews by panel ID
+DB --> Service: Return record(s)
+Service --> Client: 200 OK (List[reviews])
 @enduml
