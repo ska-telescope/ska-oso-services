@@ -101,6 +101,26 @@ def get_proposal(proposal_id: str) -> Proposal:
         raise NotFoundError(f"Could not find proposal: {proposal_id}") from err
 
 
+@router.post(
+    "/batch",
+    summary="Retrieve multiple proposals in batch",
+    response_model=list[Proposal],
+)
+def get_proposals_batch(
+    prsl_ids: list[str] = Body(..., embed=True, description="List of proposal IDs"),
+):
+    LOGGER.debug("GET BATCH PROPOSAL(s): %s", prsl_ids)
+    proposals = []
+    with oda.uow() as uow:
+        for prsl_id in prsl_ids:
+            proposal = uow.prsls.get(prsl_id)
+            if proposal is not None:
+                proposals.append(proposal)
+            else:
+                LOGGER.warning("Proposal not found: %s", prsl_id)
+    return proposals
+
+
 @router.get("/status/{status}", summary="Get a list of proposals created by a user")
 def get_proposals_by_status(status: str) -> list[Proposal]:
     """
@@ -116,13 +136,13 @@ def get_proposals_by_status(status: str) -> list[Proposal]:
 
     with oda.uow() as uow:
         query_param = CustomQuery(status=status)
-        proposals = uow.prsls.query(query_param)
+        proposals = get_latest_entity_by_id(uow.prsls.query(query_param), "prsl_id")
         LOGGER.info("Proposal retrieved successfully for: %s", status)
 
         if proposals is None:
             return []
 
-        return proposals
+        return get_latest_entity_by_id(proposals, "prsl_id")
 
 
 @router.get("/reviews/{prsl_id}", summary="Get all reviews for a particular proposal")
