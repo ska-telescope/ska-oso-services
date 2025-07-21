@@ -202,16 +202,16 @@ def prjs_sbds_post(
 
 @router.post(
     "/{identifier}/{obs_block_id}/generateSBDefinitions",
-    summary="Generate SBDefintions for an ObservingBlock within a Project",
+    summary="Generate SBDefinitions for an ObservingBlock within a Project",
     description="Generates SBDefinitions using the ScienceProgramme data in the "
-    "ObservingBlock, persists those SBDefintions in the ODA, adds a "
-    "link to the SBDefintions to the ObservingBlock then persists"
+    "ObservingBlock, persists those SBDefinitions in the ODA, adds a "
+    "link to the SBDefinitions to the ObservingBlock then persists"
     "the updated Project/ObservingBlock",
     dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_ob_generate_sbds(identifier: str, obs_block_id: str) -> Project:
     LOGGER.debug(
-        "POST PRJS generate SBDefintions for prj_id: %s and obs_block_id: %s",
+        "POST PRJS generate SBDefinitions for prj_id: %s and obs_block_id: %s",
         identifier,
         obs_block_id,
     )
@@ -229,7 +229,7 @@ def prjs_ob_generate_sbds(identifier: str, obs_block_id: str) -> Project:
                 detail=f"Observing Block '{obs_block_id}' not found in Project"
             )
 
-        # Overwrite any existing SBDefintions that were linked to the ObservingBlock
+        # Overwrite any existing SBDefinitions that were linked to the ObservingBlock
         obs_block.sbd_ids = []
 
         sbds = generate_sbds(obs_block)
@@ -250,19 +250,20 @@ def prjs_ob_generate_sbds(identifier: str, obs_block_id: str) -> Project:
 
 @router.post(
     "/{identifier}/generateSBDefinitions",
-    summary="Generate SBDefintions for all ObservingBlocks within a Project",
+    summary="Generate SBDefinitions for all ObservingBlocks within a Project",
     description="Generates SBDefinitions for each ObservingBlock in the Project, "
-    "persists those SBDefintions in the ODA, adds a link to the "
-    "SBDefintions to the ObservingBlock then persists the updated "
+    "persists those SBDefinitions in the ODA, adds a link to the "
+    "SBDefinitions to the ObservingBlock then persists the updated "
     "Project/ObservingBlock",
     dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_generate_sbds(identifier: str) -> Project:
-    LOGGER.debug("POST PRJS generate SBDefintions for prj_id: %s", identifier)
+    LOGGER.debug("POST PRJS generate SBDefinitions for prj_id: %s", identifier)
     with oda.uow() as uow:
         prj = uow.prjs.get(identifier)
         for obs_block in prj.obs_blocks:
-            # Overwrite any existing SBDefintions that were linked to the ObservingBlock
+            # Overwrite any existing SBDefinitions that were
+            # linked to the ObservingBlock
             obs_block.sbd_ids = []
 
             sbds = generate_sbds(obs_block)
