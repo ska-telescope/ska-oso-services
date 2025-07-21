@@ -291,4 +291,4 @@ def _sbd_internal_id(pdm_type: type):
     if pdm_type is CSPConfiguration:
         return f"csp-configuration-{random_int}"
 
-    raise ValueError(f"Unsupported type {type} for an internal SBDefintion id")
+    raise ValueError(f"Unsupported type {type} for an internal SBDefinition id")
