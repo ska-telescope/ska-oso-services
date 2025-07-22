@@ -1,8 +1,8 @@
+import json
 import uuid
 from http import HTTPStatus
 
 import requests
-from ska_oso_pdm.proposal_management.review import Conflict, PanelReview, ReviewStatus
 
 from ..unit.util import REVIEWERS, TestDataFactory
 from . import PHT_URL
@@ -104,16 +104,11 @@ def test_get_reviews_for_panel_with_valid_id():
     response = requests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
     assert response.status_code == HTTPStatus.OK
 
-    conflict = Conflict(has_conflict=False, reason="")
-    review = PanelReview(
+    review = TestDataFactory.reviews(
         panel_id=panel_id,
         review_id="my review id",
-        reviewer_id=REVIEWERS[0]["id"],
         prsl_id="my proposal",
-        rank=5,
-        conflict=conflict,
-        status=ReviewStatus.DECIDED,
-        submitted_by="Andrey",
+        reviewer_id=REVIEWERS[0]["id"],
     )
     response = requests.post(f"{PHT_URL}/reviews/", data=review.json(), headers=HEADERS)
     assert response.status_code == HTTPStatus.OK
@@ -122,18 +117,11 @@ def test_get_reviews_for_panel_with_valid_id():
     assert response.status_code == HTTPStatus.OK
     res = response.json()
     del res[0]["metadata"]
-    expected = [
-        {
-            "panel_id": "panel-test-20250717-00001",
-            "review_id": "my review id",
-            "reviewer_id": "c8f8f18a-3c70-4c39-8ed9-2d8d180d99a1",
-            "prsl_id": "my proposal",
-            "rank": 5,
-            "conflict": {"has_conflict": False, "reason": ""},
-            "submitted_by": "Andrey",
-            "status": "Decided",
-        }
-    ]
+
+    review = json.loads(review.json())
+    del review["metadata"]
+    expected = [review]
+
     assert expected == res
 
 

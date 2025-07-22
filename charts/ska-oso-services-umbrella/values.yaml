@@ -1,5 +1,5 @@
 global:
-  cluster_domain: cluster.local
+  cluster_domain: techops.internal.skao.int
 
 ska-db-oda-umbrella:
   enabled: true
