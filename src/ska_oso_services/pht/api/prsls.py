@@ -112,7 +112,7 @@ def get_proposals_batch(
     return proposals
 
 
-@router.get("/status/{status}", summary="Get a list of proposals created by a user")
+@router.get("/status/{status}", summary="Get a list of proposals by status")
 def get_proposals_by_status(status: str) -> list[Proposal]:
     """
     Function that requests to GET /proposals/status are mapped to

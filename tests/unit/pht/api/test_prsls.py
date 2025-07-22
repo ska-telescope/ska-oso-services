@@ -7,7 +7,9 @@ from unittest import mock
 
 from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRefused
 from fastapi import status
+from ska_db_oda.persistence.domain.query import CustomQuery
 
+from ska_oso_services.pht.api.prsls import get_proposals_by_status
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
     PAYLOAD_BAD_TO,
@@ -515,3 +517,49 @@ class TestProposalEmailAPI:
 
         assert response.status_code == status.HTTP_502_BAD_GATEWAY
         assert "SMTP send failed" in response.text
+
+
+class TestGetProposalsByStatus:
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.get_latest_entity_by_id")
+    def test_get_proposals_by_status_success(self, mock_get_latest, mock_uow):
+        sample_proposal = TestDataFactory.complete_proposal(
+            prsl_id="prsl-ska-00002", status="draft"
+        )
+        mock_query_result = [sample_proposal]
+
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.query.return_value = mock_query_result
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        # Call returns raw proposal
+        # Returns filtered/latest
+        mock_get_latest.side_effect = [mock_query_result, mock_query_result]
+
+        result = get_proposals_by_status("draft")
+
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0].prsl_id == "prsl-ska-00002"
+        uow_mock.prsls.query.assert_called_once_with(CustomQuery(status="draft"))
+        assert mock_get_latest.call_count == 2
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.get_latest_entity_by_id")
+    def test_get_proposals_by_status_empty(self, mock_get_latest, mock_uow):
+        empty_result = []
+
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.query.return_value = empty_result
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        mock_get_latest.side_effect = [None]
+
+        result = get_proposals_by_status("non-existent-status")
+
+        assert result == []
+        uow_mock.prsls.query.assert_called_once_with(
+            CustomQuery(status="non-existent-status")
+        )
+        mock_get_latest.assert_called_once()

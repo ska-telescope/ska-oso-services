@@ -331,3 +331,66 @@ def test_get_reviews_for_panel_with_valid_id():
     del res[0]["metadata"]
     expected = [obj.model_dump(mode="json", exclude={"metadata"}) for obj in review]
     assert expected == res
+
+
+def test_get_proposals_by_status():
+    """
+    - Create proposals with various statuses (e.g. 'pending', 'rejected', 'submitted')
+    - Fetch proposals using GET /prsls/status/{status}
+    - Check that only proposals with the requested status are returned
+    """
+
+    status_to_test = "submitted"
+    created_ids_with_target_status = []
+    created_ids_with_other_status = []
+
+    # Create proposals with the target status to test
+    for _ in range(3):
+        prsl_id = f"prsl-pending-{uuid.uuid4().hex[:8]}"
+        proposal = TestDataFactory.complete_proposal(
+            prsl_id=prsl_id, status=status_to_test
+        )
+        proposal_json = proposal.model_dump_json()
+
+        response = requests.post(
+            f"{PHT_URL}/prsls/create",
+            data=proposal_json,
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        created_ids_with_target_status.append(prsl_id)
+
+    # Create proposals with different statuses additionally
+    for status in ["draft", "rejected"]:
+        prsl_id = f"prsl-{status}-{uuid.uuid4().hex[:8]}"
+        proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id, status=status)
+        proposal_json = proposal.model_dump_json()
+
+        response = requests.post(
+            f"{PHT_URL}/prsls/create",
+            data=proposal_json,
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        created_ids_with_other_status.append(prsl_id)
+
+    # Get proposals by 'draft' status
+    status_response = requests.get(f"{PHT_URL}/prsls/status/{status_to_test}")
+    assert status_response.status_code == HTTPStatus.OK, status_response.content
+
+    proposals = status_response.json()
+    assert isinstance(proposals, list)
+
+    returned_ids = {p["prsl_id"] for p in proposals}
+
+    # All with 'draft' should be returned
+    for prsl_id in created_ids_with_target_status:
+        assert (
+            prsl_id in returned_ids
+        ), f"Missing {prsl_id} from GET /status/{status_to_test}"
+
+    # Other statuses should not be returned
+    for prsl_id in created_ids_with_other_status:
+        assert (
+            prsl_id not in returned_ids
+        ), f"Unexpected proposal {prsl_id} in GET /status/{status_to_test}"
