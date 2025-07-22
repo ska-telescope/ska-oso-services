@@ -27,17 +27,18 @@ def has_validation_error(detail, field: str) -> bool:
 
 
 class TestProposalAPI:
-    def test_get_osd_data_fail(self, client):
+    @mock.patch("ska_oso_services.pht.api.prsls.get_osd")
+    def test_get_osd_data_fail(self, mock_get_osd, client):
+        mock_get_osd.return_value = ({"detail": "some error"}, None)
         cycle = "-1"
         response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
-
-    def test_get_osd_data_success(self, client):
-        cycle = 1
-        response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
-
         res = response.json()
+        assert {"detail": "some error"} == res
+
+    @mock.patch("ska_oso_services.pht.api.prsls.get_osd")
+    def test_get_osd_data_success(self, mock_get_osd, client):
         expected = {
             "observatory_policy": {
                 "cycle_number": 1,
@@ -133,6 +134,13 @@ class TestProposalAPI:
                 },
             },
         }
+
+        mock_get_osd.return_value = expected
+        cycle = 1
+        response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
+
+        assert response.status_code == HTTPStatus.OK
+        res = response.json()
         assert expected == res
 
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
@@ -366,6 +374,64 @@ class TestProposalAPI:
         assert response[0]["review_id"] == expected[0]["review_id"]
         assert response[0]["panel_id"] == expected[0]["panel_id"]
 
+class TestProposalBatch:
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_get_proposals_batch_all_found(self, mock_oda, client):
+        proposal1 = TestDataFactory.proposal(prsl_id="prsl-ska-00001")
+        proposal2 = TestDataFactory.proposal(prsl_id="prsl-ska-00002")
+        prsl_map = {"prsl-ska-00001": proposal1, "prsl-ska-00002": proposal2}
+
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.get.side_effect = prsl_map.get
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        response = client.post(f"{PROPOSAL_API_URL}/batch", json={"prsl_ids": ["prsl-ska-00001", "prsl-ska-00002"]})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) == 2
+        assert {obj["prsl_id"] for obj in data} == {"prsl-ska-00001", "prsl-ska-00002"}
+
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_get_proposals_batch_partial_found(self, mock_oda, client):
+        proposal1 = TestDataFactory.proposal(prsl_id="prsl-ska-00001")
+        prsl_map = {"prsl-ska-00001": proposal1}
+
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.get.side_effect = prsl_map.get
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        response = client.post(f"{PROPOSAL_API_URL}/batch", json={"prsl_ids": ["prsl-ska-00001", "prsl-ska-00004"]})
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["prsl_id"] == "prsl-ska-00001"
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_get_proposals_batch_none_found(self, mock_oda, client):
+        """
+        Test when proposal ids are not found
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.get.return_value = None
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        response = client.post(f"{PROPOSAL_API_URL}/batch", json={"prsl_ids": ["PRSL999", "PRSL888"]})
+        assert response.status_code == 200
+        assert response.json() == []
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_get_proposals_batch_invalid_input(self, mock_oda, client):
+        """
+        Test invalid input
+        """
+        response = client.post(f"{PROPOSAL_API_URL}/batch", json={})
+        assert response.status_code == 422
+
+        response = client.post(f"{PROPOSAL_API_URL}/batch", json={"prsl_ids": "not-a-list"})
+        assert response.status_code == 422
 
 class TestProposalEmailAPI:
     @mock.patch("ska_oso_services.pht.api.prsls.send_email_async", autospec=True)
@@ -384,6 +450,7 @@ class TestProposalEmailAPI:
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {"message": "Email sent successfully"}
         mock_send.assert_called_once()
+
 
     @mock.patch(
         "ska_oso_services.pht.utils.email_helper.aiosmtplib.send",

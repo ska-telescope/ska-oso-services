@@ -113,7 +113,7 @@
             "logical_fsp_ids": [],
             "zoom_factor": 0,
             "centre_frequency": 200000000,
-            "number_of_channels": 38,
+            "number_of_channels": 384,
             "integration_time_ms": 849
           }
         ]

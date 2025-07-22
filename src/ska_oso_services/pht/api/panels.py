@@ -10,7 +10,7 @@ from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.utils.constants import REVIEWERS
 from ska_oso_services.pht.utils.validation import validate_duplicates
 
-router = APIRouter(prefix="/panels")
+router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 
 logger = logging.getLogger(__name__)
 

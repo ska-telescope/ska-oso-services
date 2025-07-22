@@ -13,7 +13,7 @@ from ska_oso_services.pht.utils.pht_handler import (
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/report")
+router = APIRouter(prefix="/report", tags=["PHT API - Report"])
 
 
 @router.get(
