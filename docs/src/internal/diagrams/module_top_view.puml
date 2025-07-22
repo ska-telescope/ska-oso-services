@@ -13,36 +13,34 @@ package "common" as common_pkg {
 
     package "coordinateslookup" <<Rectangle>> {
         object coordinateslookup_items {
-            + Equatorial
-            + Galactic
-            + convert_ra_dec_deg()
-            + convert_to_galactic()
-            + get_coordinates()
-            + round_coord()
+            + ReferenceFrame
+            + EquatorialResponse
+            + GalacticResponse
+            + get_systemcoordinates()
         }
     }
 
     package "error_handling" <<Rectangle>> {
         object error_handling_items {
+            + error_details()
             + BadRequestError
             + DuplicateError
-            + NotFoundError
             + UnprocessableEntityError
+            + NotFoundError
             + _make_response()
-            + dangerous_internal_server_handler()
-            + error_details()
-            + oda_error_handler()
             + oda_not_found_handler()
+            + oda_error_handler()
             + oda_unique_constraint_handler()
+            + dangerous_internal_server_handler()
         }
     }
 
     package "model" <<Rectangle>> {
         object model_items {
             + AppModel
-            + ErrorDetails
-            + ErrorResponseTraceback
             + ValidationResponse
+            + ErrorResponseTraceback
+            + ErrorDetails
         }
     }
 
