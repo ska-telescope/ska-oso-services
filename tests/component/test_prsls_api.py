@@ -246,6 +246,49 @@ def test_get_list_proposals_for_user():
         ), f"Missing proposal {prsl_id} in GET /list/{user_id}"
 
 
+def test_get_proposals_batch():
+    """
+    Integration test:
+    - Create multiple proposals with unique IDs
+    - Use POST /batch to retrieve them
+    - Ensure all created proposals are returned
+    """
+
+    created_ids = []
+
+    # Create 3 proposals with unique prsl_ids
+    for _ in range(3):
+        prsl_id = f"prsl-test-{uuid.uuid4().hex[:8]}"
+        proposal = TestDataFactory.proposal(prsl_id=prsl_id)
+        proposal_json = proposal.model_dump_json()
+
+        response = requests.post(
+            f"{PHT_URL}/prsls/create",
+            data=proposal_json,
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        created_ids.append(response.json())
+
+    # Use POST /batch to retrieve them
+    batch_response = requests.post(
+        f"{PHT_URL}/prsls/batch",
+        json={"prsl_ids": created_ids},
+    )
+
+    assert batch_response.status_code == HTTPStatus.OK, batch_response.content
+
+    proposals = batch_response.json()
+    assert isinstance(proposals, list), "Expected a list of proposals"
+    assert len(proposals) == len(
+        created_ids
+    ), f"Expected {len(created_ids)} proposals, got {len(proposals)}"
+
+    returned_ids = {p["prsl_id"] for p in proposals}
+    for prsl_id in created_ids:
+        assert prsl_id in returned_ids, f"Missing proposal {prsl_id} in POST /batch"
+
+
 def test_get_reviews_for_panel_with_wrong_id():
     prsl_id = "wrong id"
     response = requests.get(f"{PHT_URL}/prsls/reviews/{prsl_id}")
