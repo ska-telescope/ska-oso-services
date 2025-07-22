@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Updated OSD data endpoint and introduced a model to OSD dict
 
 1.2.0
 ***********
@@ -16,10 +17,11 @@ Unreleased
 * Added a POST `/odt/prsls/{prsl_id}/generateProject` API endpoint 
 * Added a GET API endpoint `/report` to retrieve needed data for admin PHT dashboard
 * Added a API endpoints to create, retrieve and update `panels` for the PHT
-* Added a API endpoint to create, retrieve and update `reviews` for the PHT
-* Added a API endpoint to create, retrieve and update `panel decision` for the PHT
+* Added a API endpoints to create, retrieve and update `reviews` for the PHT
+* Added a API endpoints to create, retrieve and update `panel decision` for the PHT
 * Added API `/odt/prjs/{prj_id}/generateSBDefinitions` & `/odt/prjs/{prj_id}/{obs_block_id}/generateSBDefinitions` 
   endpoints to generates SBDefinitions from Projects
+* Added a GET `/reviews/{panel_id}` endpoint to retrieve all the reviews for a particular panel
 
 1.1.0
 ****** 

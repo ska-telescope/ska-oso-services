@@ -12,10 +12,10 @@ HEADERS = {"Content-type": "application/json"}
 
 class TestPanelsAPI:
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    def test_get_reviews_for_panel_with_wrong_id(self, fake_uow, client):
+    def test_get_reviews_for_panel_with_wrong_id(self, mock_uow, client):
         context_mock = mock.MagicMock()
         context_mock.rvws.query.return_value = []
-        fake_uow().__enter__.return_value = context_mock
+        mock_uow().__enter__.return_value = context_mock
 
         panel_id = "wrong id"
         response = client.get(f"{PHT_BASE_API_URL}/panels/reviews/{panel_id}")
@@ -24,7 +24,7 @@ class TestPanelsAPI:
         assert [] == res
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    def test_get_reviews_for_panel_with_valid_id(self, fake_uow, client):
+    def test_get_reviews_for_panel_with_valid_id(self, mock_uow, client):
         context_mock = mock.MagicMock()
         expected = [
             {
@@ -40,7 +40,7 @@ class TestPanelsAPI:
         ]
 
         context_mock.rvws.query.return_value = expected
-        fake_uow().__enter__.return_value = context_mock
+        mock_uow().__enter__.return_value = context_mock
 
         panel_id = "my panel id"
         response = client.get(f"{PHT_BASE_API_URL}/panels/reviews/{panel_id}")
