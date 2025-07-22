@@ -133,6 +133,7 @@ class TestDataFactory:
 
     @staticmethod
     def reviews(
+        panel_id: str = "panel-test-20250717-00001",
         review_id: str = "rvw-mvp01-20220923-00001",
         prsl_id: str = "prsl-mvp01-20220923-00001",
         reviewer_id="string",
@@ -143,6 +144,7 @@ class TestDataFactory:
 
         data = load_string_from_file("panel_review.json")
         review = PanelReview.model_validate_json(data)
+        review.panel_id = panel_id
         review.review_id = review_id
         review.prsl_id = prsl_id
         review.reviewer_id = reviewer_id

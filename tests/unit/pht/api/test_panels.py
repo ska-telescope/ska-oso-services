@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 from unittest import mock
 
@@ -26,18 +27,15 @@ class TestPanelsAPI:
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_get_reviews_for_panel_with_valid_id(self, mock_uow, client):
         context_mock = mock.MagicMock()
-        expected = [
-            {
-                "panel_id": "panel-test-20250717-00001",
-                "review_id": "my review id",
-                "reviewer_id": "c8f8f18a-3c70-4c39-8ed9-2d8d180d99a1",
-                "prsl_id": "my proposal",
-                "rank": 5,
-                "conflict": {"has_conflict": False, "reason": ""},
-                "submitted_by": "Andrey",
-                "status": "Decided",
-            }
-        ]
+        review = TestDataFactory.reviews(
+            review_id="my review id",
+            prsl_id="my proposal",
+            reviewer_id="c8f8f18a-3c70-4c39-8ed9-2d8d180d99a1",
+        ).json()
+        review = json.loads(review)
+        del review["metadata"]
+
+        expected = [review]
 
         context_mock.rvws.query.return_value = expected
         mock_uow().__enter__.return_value = context_mock
