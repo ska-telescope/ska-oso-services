@@ -3,14 +3,15 @@ This module contains functions to transform and update proposal data
 for submission and creation processes.
 """
 
+import logging
+
 # import random
 from datetime import datetime, timezone
-import logging
 from typing import Any, List, Optional
 
 from ska_oso_pdm.proposal import Proposal
 
-from ska_oso_services.pht.model import ProposalReport, PanelCreateResponse
+from ska_oso_services.pht.model import PanelCreateResponse, ProposalReport
 
 logger = logging.getLogger(__name__)
 
@@ -205,6 +206,7 @@ def join_proposals_panels_reviews_decisions(
                     recommendation=decision.recommendation if decision else None,
                     decision_status=decision.status if decision else None,
                     panel_rank=decision.rank if decision else None,
+                    panel_score=decision.score if decision else None,
                     decision_on=(
                         decision.decided_on.isoformat()
                         if decision and decision.decided_on
@@ -216,13 +218,10 @@ def join_proposals_panels_reviews_decisions(
     return rows
 
 
-
-def build_enriched_panel_response(panel_objs: dict) -> List[PanelCreateResponse]:
+def build_panel_response(panel_objs: dict) -> List[PanelCreateResponse]:
     return [
         PanelCreateResponse(
-            panel_id=panel.panel_id,
-            name=name,
-            proposal_count=len(panel.proposals)
+            panel_id=panel.panel_id, name=name, proposal_count=len(panel.proposals)
         )
         for name, panel in panel_objs.items()
     ]
@@ -230,23 +229,38 @@ def build_enriched_panel_response(panel_objs: dict) -> List[PanelCreateResponse]
 
 def build_sv_panel_proposals(proposals: list) -> list[dict]:
     """Builds the proposals list for a Science Verification panel."""
-    now = datetime.now(timezone.utc)
-    return [{"prsl_id": p.prsl_id, "assigned_on": now} for p in proposals]
+    return [
+        {"prsl_id": proposal.prsl_id, "assigned_on": datetime.now(timezone.utc)}
+        for proposal in proposals
+    ]
 
-def group_proposals_by_science_category(proposals: List, panel_names: List[str]) -> dict[str, List]:
+
+def group_proposals_by_science_category(
+    proposals: list, panel_names: list[str]
+) -> dict[str, list]:
     """
-    Groups proposals by science_category, only including those that match panel_names.
-    Logs and skips proposals with unmatched or missing science_category.
+    Groups proposals by science_category (inside proposal.info),
+    only including those that match panel_names.
+    Skips proposals with unmatched or missing science_category.
     """
     grouped = {name: [] for name in panel_names}
     skipped = 0
-    for p in proposals:
-        science_category = getattr(p, "science_category", None)
+    for proposal in proposals:
+        info = getattr(proposal, "info", None)
+        science_category = (
+            info.get("science_category")
+            if isinstance(info, dict)
+            else getattr(info, "science_category", None)
+        )
         if science_category not in grouped:
             skipped += 1
-            logger.warning("Skipping proposal '%s' (science_category '%s' not in panel list)", p.prsl_id, science_category)
+            logger.warning(
+                "Skipping proposal '%s' (science_category '%s' not in panel list)",
+                proposal.prsl_id,
+                science_category,
+            )
             continue
-        grouped[science_category].append(p)
+        grouped[science_category].append(proposal)
     if skipped:
-        logger.warning("%d proposals skipped due to invalid or missing science_category.", skipped)
+        logger.warning("%d proposals skipped due to missing science_category.", skipped)
     return grouped
