@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 from fastapi import APIRouter
-from ska_db_oda.persistence.domain.query import MatchType, UserQuery, CustomQuery
+from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 
 from ska_oso_services.common import oda
@@ -22,8 +22,7 @@ router = APIRouter(prefix="/report", tags=["PHT API - Report"])
     summary="Create a report for admin/coordinator",
     response_model=list[ProposalReport],
 )
-def get_report(
-) -> List[ProposalReport]:
+def get_report() -> List[ProposalReport]:
     """
     Creates a new report for the PHT admin/coordinator.
     """
@@ -34,7 +33,9 @@ def get_report(
     with oda.uow() as uow:
         proposal_query_param = CustomQuery(status=ProposalStatus.SUBMITTED)
         query_param = CustomQuery()
-        proposals = get_latest_entity_by_id(uow.prsls.query(proposal_query_param), "prsl_id")
+        proposals = get_latest_entity_by_id(
+            uow.prsls.query(proposal_query_param), "prsl_id"
+        )
         panels = get_latest_entity_by_id(
             uow.panels.query(query_param), "panel_id"  # pylint: disable=no-member
         )
