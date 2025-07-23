@@ -14,7 +14,8 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.model import PanelCreateResponse
-from ska_oso_services.pht.utils.constants import REVIEWERS
+from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, REVIEWERS
+from ska_oso_services.pht.utils.panel_helper import generate_panel_id, upsert_panel
 from ska_oso_services.pht.utils.pht_handler import (
     build_panel_response,
     build_sv_panel_proposals,
@@ -34,92 +35,36 @@ logger = logging.getLogger(__name__)
 def create_panel(param: Panel) -> Union[str, list[PanelCreateResponse]]:
     """
     Creates panels:
-    - If science verification create a single
-    'Science Verification' panel with all submitted proposals assigned to it.
-    - Else: Create panels for PANEL_NAME_POOL and assigns
-    proposals based on science_category type.
+    - If science verification, create a single
+      'Science Verification' panel with all submitted proposals assigned.
+    - Else: Create panels for PANEL_NAME_POOL and assign proposals by science_category.
     """
-    # Get this panel name pool from OSD data when available
-    PANEL_NAME_POOL = [
-        "Cosmology",
-        "Cradle of Life",
-        "Epoch of Re-ionization",
-        "Extragalactic continuum",
-        "Extragalactic Spectral line",
-        "Gravitational Waves",
-        "High Energy Cosmic Particles",
-        "HI Galaxy science",
-        "Magnetism",
-        "Our Galaxy",
-        "Pulsars",
-        "Solar, Heliospheric and Ionospheric Physics",
-        "Transients",
-        "VLBI",
-    ]
     with oda.uow() as uow:
-        # Fetch proposals (may be empty)
-        query_param = CustomQuery(status=ProposalStatus.SUBMITTED)
         proposals = (
-            get_latest_entity_by_id(uow.prsls.query(query_param), "prsl_id") or []
+            get_latest_entity_by_id(
+                uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)), "prsl_id"
+            ) or []
         )
-
-        is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
         reviewers = param.reviewers or []
+        is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
 
         if is_sv:
-            # Science Verification panel
             panel = Panel(
-                panel_id=f"panel-{str(uuid.uuid4())[:9]}",
+                panel_id=generate_panel_id(),
                 name="Science Verification",
                 reviewers=reviewers,
                 proposals=build_sv_panel_proposals(proposals),
             )
-            created_panel = uow.panels.add(panel)  # pylint: disable=no-member
+            created_panel = uow.panels.add(panel)
             uow.commit()
             return created_panel.panel_id
 
-        # science category-type panels (always create all if does not exist)
+        # Science category-type panels
         grouped = group_proposals_by_science_category(proposals, PANEL_NAME_POOL)
-        panel_objs = {}
-        for panel_name in PANEL_NAME_POOL:
-            proposal_list = grouped.get(panel_name, [])
-
-            existing_panel = get_latest_entity_by_id(
-                uow.panels.query(  # pylint: disable=no-member
-                    CustomQuery(name=panel_name)
-                ),
-                "panel_id",
-            )
-            now = datetime.now(timezone.utc)
-            existing_panel = existing_panel[0] if existing_panel else None
-            if existing_panel:
-                logger.info(
-                    "Panel '%s' exists (ID: %s). Adding %d proposals.",
-                    panel_name,
-                    existing_panel.panel_id,
-                    len(proposal_list),
-                )
-                existing_ids = {
-                    proposal["prsl_id"] for proposal in existing_panel.proposals
-                }
-                for proposal in proposal_list:
-                    if proposal.prsl_id not in existing_ids:
-                        existing_panel.proposals.append(
-                            {"prsl_id": proposal.prsl_id, "assigned_on": now}
-                        )
-                panel_objs[panel_name] = existing_panel
-            else:
-                new_panel = Panel(
-                    panel_id=f"panel-{str(uuid.uuid4())[:9]}",
-                    name=panel_name,
-                    reviewers=reviewers,
-                    proposals=[
-                        {"prsl_id": proposal.prsl_id, "assigned_on": now}
-                        for proposal in proposal_list
-                    ],
-                )
-                created_panel = uow.panels.add(new_panel)  # pylint: disable=no-member
-                panel_objs[panel_name] = created_panel
+        panel_objs = {
+            panel_name: upsert_panel(uow, panel_name, reviewers, grouped.get(panel_name, []))
+            for panel_name in PANEL_NAME_POOL
+        }
 
         uow.commit()
         return build_panel_response(panel_objs)

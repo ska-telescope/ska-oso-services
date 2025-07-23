@@ -13,21 +13,6 @@ from ska_oso_pdm.proposal import Proposal
 
 from ska_oso_services.pht.model import PanelCreateResponse, ProposalReport
 
-logger = logging.getLogger(__name__)
-
-EXAMPLE_PROPOSAL = {
-    "prsl_id": "prp-ska01-202204-02",
-    "status": "draft",
-    "cycle": "5000_2023",
-    "info": {
-        "title": "The Milky Way View",
-        "proposal_type": {
-            "main_type": "standard_proposal",
-            "attributes": ["coordinated_proposal"],
-        },
-    },
-}
-
 
 def transform_update_proposal(data: Proposal) -> Proposal:
     """
@@ -218,49 +203,3 @@ def join_proposals_panels_reviews_decisions(
     return rows
 
 
-def build_panel_response(panel_objs: dict) -> List[PanelCreateResponse]:
-    return [
-        PanelCreateResponse(
-            panel_id=panel.panel_id, name=name, proposal_count=len(panel.proposals)
-        )
-        for name, panel in panel_objs.items()
-    ]
-
-
-def build_sv_panel_proposals(proposals: list) -> list[dict]:
-    """Builds the proposals list for a Science Verification panel."""
-    return [
-        {"prsl_id": proposal.prsl_id, "assigned_on": datetime.now(timezone.utc)}
-        for proposal in proposals
-    ]
-
-
-def group_proposals_by_science_category(
-    proposals: list, panel_names: list[str]
-) -> dict[str, list]:
-    """
-    Groups proposals by science_category (inside proposal.info),
-    only including those that match panel_names.
-    Skips proposals with unmatched or missing science_category.
-    """
-    grouped = {name: [] for name in panel_names}
-    skipped = 0
-    for proposal in proposals:
-        info = getattr(proposal, "info", None)
-        science_category = (
-            info.get("science_category")
-            if isinstance(info, dict)
-            else getattr(info, "science_category", None)
-        )
-        if science_category not in grouped:
-            skipped += 1
-            logger.warning(
-                "Skipping proposal '%s' (science_category '%s' not in panel list)",
-                proposal.prsl_id,
-                science_category,
-            )
-            continue
-        grouped[science_category].append(proposal)
-    if skipped:
-        logger.warning("%d proposals skipped due to missing science_category.", skipped)
-    return grouped

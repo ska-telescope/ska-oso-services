@@ -1,3 +1,35 @@
+PANEL_NAME_POOL = [
+        "Cosmology",
+        "Cradle of Life",
+        "Epoch of Re-ionization",
+        "Extragalactic continuum",
+        "Extragalactic Spectral line",
+        "Gravitational Waves",
+        "High Energy Cosmic Particles",
+        "HI Galaxy science",
+        "Magnetism",
+        "Our Galaxy",
+        "Pulsars",
+        "Solar, Heliospheric and Ionospheric Physics",
+        "Transients",
+        "VLBI",
+    ]
+
+
+EXAMPLE_PROPOSAL = {
+    "prsl_id": "prp-ska01-202204-02",
+    "status": "draft",
+    "cycle": "5000_2023",
+    "info": {
+        "title": "The Milky Way View",
+        "proposal_type": {
+            "main_type": "standard_proposal",
+            "attributes": ["coordinated_proposal"],
+        },
+    },
+}
+
+
 REVIEWERS = [
     {
         "id": "c8f8f18a-3c70-4c39-8ed9-2d8d180d99a1",
