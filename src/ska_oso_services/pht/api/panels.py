@@ -5,6 +5,7 @@ from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal_management.panel import Panel
 
+
 from ska_oso_services.common import oda
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.utils.constants import REVIEWERS

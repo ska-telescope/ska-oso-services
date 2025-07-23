@@ -77,19 +77,19 @@ def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) ->
         ) from err
 
 
-@router.get("/{proposal_id}", summary="Retrieve an existing proposal")
-def get_proposal(proposal_id: str) -> Proposal:
-    LOGGER.debug("GET PROPOSAL prsl_id: %s", proposal_id)
+@router.get("/{prsl_id}", summary="Retrieve an existing proposal")
+def get_proposal(prsl_id: str) -> Proposal:
+    LOGGER.debug("GET PROPOSAL prsl_id: %s", prsl_id)
 
     try:
         with oda.uow() as uow:
-            proposal = uow.prsls.get(proposal_id)
-        LOGGER.info("Proposal retrieved successfully: %s", proposal_id)
+            proposal = uow.prsls.get(prsl_id)
+        LOGGER.info("Proposal retrieved successfully: %s", prsl_id)
         return proposal
 
     except KeyError as err:
-        LOGGER.warning("Proposal not found: %s", proposal_id)
-        raise NotFoundError(f"Could not find proposal: {proposal_id}") from err
+        LOGGER.warning("Proposal not found: %s", prsl_id)
+        raise NotFoundError(f"Could not find proposal: {prsl_id}") from err
 
 
 @router.post(
@@ -179,12 +179,12 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
         return proposals
 
 
-@router.put("/{proposal_id}", summary="Update an existing proposal")
-def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
+@router.put("/{prsl_id}", summary="Update an existing proposal")
+def update_proposal(prsl_id: str, prsl: Proposal) -> Proposal:
     """
     Updates a proposal in the underlying data store.
 
-    :param proposal_id: identifier of the Proposal in the URL
+    :param prsl_id: identifier of the Proposal in the URL
     :param prsl: Proposal object payload from the request body
     :return: the updated Proposal object
     """
@@ -197,13 +197,13 @@ def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
             detail=f"Validation error after transforming proposal: {err.args[0]}"
         ) from err
 
-    LOGGER.debug("PUT PROPOSAL - Attempting update for proposal_id: %s", proposal_id)
+    LOGGER.debug("PUT PROPOSAL - Attempting update for prsl_id: %s", prsl_id)
 
     # Ensure ID match
-    if prsl.prsl_id != proposal_id:
+    if prsl.prsl_id != prsl_id:
         LOGGER.warning(
             "Proposal ID mismatch: Proposal ID=%s in path, body ID=%s",
-            proposal_id,
+            prsl_id,
             prsl.prsl_id,
         )
         raise UnprocessableEntityError(
@@ -212,19 +212,19 @@ def update_proposal(proposal_id: str, prsl: Proposal) -> Proposal:
 
     with oda.uow() as uow:
         # Verify proposal exists
-        existing = uow.prsls.get(proposal_id)
+        existing = uow.prsls.get(prsl_id)
         if not existing:
-            LOGGER.info("Proposal not found for update: %s", proposal_id)
-            raise NotFoundError(detail="Proposal not found: {proposal_id}")
+            LOGGER.info("Proposal not found for update: %s", prsl_id)
+            raise NotFoundError(detail="Proposal not found: {prsl_id}")
 
         try:
             updated_prsl = uow.prsls.add(prsl)  # Add is used for update
             uow.commit()
-            LOGGER.info("Proposal %s updated successfully", proposal_id)
+            LOGGER.info("Proposal %s updated successfully", prsl_id)
             return updated_prsl
 
         except ValueError as err:
-            LOGGER.error("Validation failed for proposal %s: %s", proposal_id, err)
+            LOGGER.error("Validation failed for proposal %s: %s", prsl_id, err)
             raise BadRequestError(
                 detail="Validation error while saving proposal: {err.args[0]}"
             ) from err

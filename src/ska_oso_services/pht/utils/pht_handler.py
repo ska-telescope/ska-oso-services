@@ -155,6 +155,14 @@ def join_proposals_panels_reviews_decisions(
                         cycle=proposal.cycle,
                         array=_get_array_class(proposal),
                         panel_id=panel.panel_id,
+                        assigned_proposal=(
+                            "Yes"
+                            if panel
+                            and any(
+                                pp.prsl_id == prsl_id for pp in (panel.proposals or [])
+                            )
+                            else "No"
+                        ),
                         panel_name=panel.name,
                         reviewer_id=reviewer_id,
                         reviewer_status=reviewer_status,
@@ -197,11 +205,18 @@ def join_proposals_panels_reviews_decisions(
                     cycle=proposal.cycle,
                     array=_get_array_class(proposal),
                     panel_id=panel.panel_id if panel else None,
+                    assigned_proposal=(
+                        "Yes"
+                        if panel
+                        and any(pp.prsl_id == prsl_id for pp in (panel.proposals or []))
+                        else "No"
+                    ),
                     panel_name=panel.name if panel else None,
                     decision_id=decision.prsl_id if decision else None,
                     recommendation=decision.recommendation if decision else None,
                     decision_status=decision.status if decision else None,
                     panel_rank=decision.rank if decision else None,
+                    panel_score=decision.score if decision else None,
                     decision_on=(
                         decision.decided_on.isoformat()
                         if decision and decision.decided_on
