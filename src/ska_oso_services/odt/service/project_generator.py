@@ -41,7 +41,7 @@ def generate_project(proposal: Proposal) -> Project:
 
         observing_blocks.append(
             ObservingBlock(
-                obs_block_id=f"obs-block-{index:5}",
+                obs_block_id=f"obs-block-{(index + 1):05}",
                 science_programmes=science_programmes,
             )
         )
@@ -58,11 +58,15 @@ def _group_observation_sets(proposal: Proposal) -> list[list[ObservationSets]]:
     being the grouped ObservationSets
     """
     grouped_observation_sets = defaultdict(list)
+    ungrouped_observation_sets = []
     for observation_set in proposal.info.observation_sets:
         group_id = observation_set.group_id
-        grouped_observation_sets[group_id].append(observation_set)
+        if group_id is None:
+            ungrouped_observation_sets.append([observation_set])
+        else:
+            grouped_observation_sets[group_id].append(observation_set)
 
-    return list(grouped_observation_sets.values())
+    return list(grouped_observation_sets.values()) + ungrouped_observation_sets
 
 
 def science_programme_from_observation_set(

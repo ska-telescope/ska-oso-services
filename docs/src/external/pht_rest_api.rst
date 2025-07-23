@@ -33,7 +33,7 @@ The API supports resources for:
     POST `/presigned-url/delete` "The request body contains the filename. Returns the presigned URL for deletion."
   - Retrieve a list of reviewers (Currently mocked):
     GET `/reviewers` "Returns a list of reviewers with their IDs and names."
-  - Get OSD data per cycle
+  - GET `/osd/{cycle}` "Get OSD data per cycle""
 
 * Proposal Management:
   
@@ -58,4 +58,5 @@ The API supports resources for:
   - Retrieve a list of panels for a specified user:
     GET `/panels/{user_id}` "The response includes panel IDs, names, reviewer IDs, and proposal IDs for each panel."
   - Retrieve a report for the PHT admin dashboard: GET `/report` "Returns a list of proposals with their associated panels, reviews, and decisions. The response includes proposal IDs, titles, panel IDs, review statuses, and decision statuses for each proposal. This endpoint is intended for administrative use to monitor proposal handling activities."
+  - GET `/reviews/{panel_id}` to retrieve all the reviews for a particular panel
 
