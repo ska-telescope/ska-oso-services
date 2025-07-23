@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from ska_oso_services.pht.utils.constants import REVIEWERS
 
-router = APIRouter()
+router = APIRouter(tags=["PMT API - Reviewers"])
 
 
 @router.get("/reviewers", summary="Retrieve a list of reviewers")

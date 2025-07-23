@@ -5,7 +5,7 @@ for submission and creation processes.
 
 # import random
 from datetime import datetime, timezone
-from typing import List
+from typing import Any, List, Optional
 
 from ska_oso_pdm.proposal import Proposal
 
@@ -56,22 +56,35 @@ def transform_update_proposal(data: Proposal) -> Proposal:
     )
 
 
-def get_latest_entity_by_id(entities, entity_id: str) -> list:
-    """Returns the latest version of each entity based on a unique identifier.
+def _get_attr_or_key(obj, key, default=None):
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
 
-    Args:
-        entities ([type]): The list of entities to filter
-        entity_id (str): The unique identifier for each entity
 
-    Returns:
-        list: of entities with the latest version for each unique entity ID
+def get_latest_entity_by_id(entities: Optional[List[Any]], entity_id: str) -> List[Any]:
     """
+    Returns the latest version of each entity based on a unique identifier.
+    Works for dicts and objects.
+    """
+    if not entities:
+        return []
+
     latest = {}
     for entity in entities:
-        key = getattr(entity, entity_id)
-        version = entity.metadata.version
-        if key not in latest or version > latest[key].metadata.version:
+        key = _get_attr_or_key(entity, entity_id)
+        metadata = _get_attr_or_key(entity, "metadata", {})
+        version = _get_attr_or_key(metadata, "version", 0)
+        if key is None:
+            continue  # skip entities with no key
+        # Only keep new version
+        old_version = 0
+        if key in latest:
+            old_metadata = _get_attr_or_key(latest[key], "metadata", {})
+            old_version = _get_attr_or_key(old_metadata, "version", 0)
+        if key not in latest or version > old_version:
             latest[key] = entity
+
     return list(latest.values())
 
 
@@ -147,12 +160,12 @@ def join_proposals_panels_reviews_decisions(
                         reviewer_status=reviewer_status,
                         review_status=review.status if review else None,
                         conflict=(
-                            review.conflict.has_conflict
-                            if review and review.conflict
+                            review.review_type.conflict.has_conflict
+                            if review and review.review_type.conflict
                             else False
                         ),
                         review_id=review.review_id if review else None,
-                        review_rank=review.rank if review else None,
+                        review_rank=review.review_type.rank if review else None,
                         comments=review.comments if review else None,
                         review_submitted_on=(
                             review.submitted_on.isoformat()
@@ -163,6 +176,7 @@ def join_proposals_panels_reviews_decisions(
                         recommendation=decision.recommendation if decision else None,
                         decision_status=decision.status if decision else None,
                         panel_rank=decision.rank if decision else None,
+                        panel_score=decision.score if decision else None,
                         decision_on=(
                             decision.decided_on.isoformat()
                             if decision and decision.decided_on

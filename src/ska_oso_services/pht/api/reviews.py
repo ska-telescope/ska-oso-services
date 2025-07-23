@@ -13,7 +13,7 @@ from ska_oso_services.common.error_handling import (
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/reviews")
+router = APIRouter(prefix="/reviews", tags=["PMT API - Reviews"])
 
 
 @router.post(

@@ -71,9 +71,11 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "create_panel",
                 "get_panel",
                 "get_panels_for_user",
-                "get_reviews_for_panel",
+                "get_reviews_for_proposal",
                 "get_report",
                 "get_osd_by_cycle",
+                "get_proposals_by_status",
+                "get_proposals_batch",
             ]
         ),
         # Need this param for code generation - see

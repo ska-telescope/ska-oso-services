@@ -4,8 +4,9 @@ from http import HTTPStatus
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
-from ska_db_oda.persistence.domain.query import MatchType, UserQuery
+from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
+from ska_oso_pdm.proposal_management.review import PanelReview
 from ska_ost_osd.rest.api.resources import get_osd
 from starlette.status import HTTP_400_BAD_REQUEST
 
@@ -20,6 +21,7 @@ from ska_oso_services.pht.utils import validation
 from ska_oso_services.pht.utils.email_helper import send_email_async
 from ska_oso_services.pht.utils.pht_handler import (
     EXAMPLE_PROPOSAL,
+    get_latest_entity_by_id,
     transform_update_proposal,
 )
 from ska_oso_services.pht.utils.s3_bucket import (
@@ -32,7 +34,7 @@ from ska_oso_services.pht.utils.s3_bucket import (
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/prsls")
+router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 
 
 @router.get(
@@ -90,6 +92,67 @@ def get_proposal(proposal_id: str) -> Proposal:
         raise NotFoundError(f"Could not find proposal: {proposal_id}") from err
 
 
+@router.post(
+    "/batch",
+    summary="Retrieve multiple proposals in batch",
+    response_model=list[Proposal],
+)
+def get_proposals_batch(
+    prsl_ids: list[str] = Body(..., embed=True, description="List of proposal IDs"),
+):
+    LOGGER.debug("GET BATCH PROPOSAL(s): %s", prsl_ids)
+    proposals = []
+    with oda.uow() as uow:
+        for prsl_id in prsl_ids:
+            proposal = uow.prsls.get(prsl_id)
+            if proposal is not None:
+                proposals.append(proposal)
+            else:
+                LOGGER.warning("Proposal not found: %s", prsl_id)
+    return proposals
+
+
+@router.get("/status/{status}", summary="Get a list of proposals by status")
+def get_proposals_by_status(status: str) -> list[Proposal]:
+    """
+    Function that requests to GET /proposals/status are mapped to
+
+    Retrieves the Proposals for the given status from the
+    underlying data store, if available
+
+    :param status: status of the proposal
+    :return: a tuple of a list of Proposal
+    """
+    LOGGER.debug("GET PROPOSAL status: %s", status)
+
+    with oda.uow() as uow:
+        query_param = CustomQuery(status=status)
+        proposals = get_latest_entity_by_id(uow.prsls.query(query_param), "prsl_id")
+        LOGGER.info("Proposal retrieved successfully for: %s", status)
+
+        if proposals is None:
+            return []
+
+        return get_latest_entity_by_id(proposals, "prsl_id")
+
+
+@router.get("/reviews/{prsl_id}", summary="Get all reviews for a particular proposal")
+def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
+    """Function that requests to GET /reviews/{prsl_id} are mapped to
+    Get reviews for a given proposal ID from the
+    underlying data store, if available
+
+    :param prsl_id: identifier of the Proposal
+    :return: list[PanelReview]
+    """
+    LOGGER.debug("GET reviews for a prsl_id: %s", prsl_id)
+    with oda.uow() as uow:
+        query = CustomQuery(prsl_id=prsl_id)
+        reviews = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
+
+    return reviews
+
+
 @router.get("/list/{user_id}", summary="Get a list of proposals created by a user")
 def get_proposals_for_user(user_id: str) -> list[Proposal]:
     """
@@ -99,7 +162,7 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
     underlying data store, if available
 
     :param user_id: identifier of the Proposal
-    :return: a tuple of a list of Proposal and a
+    :return: a tuple of a list of Proposal
     """
 
     LOGGER.debug("GET PROPOSAL LIST query for the user: %s", user_id)

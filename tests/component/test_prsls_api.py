@@ -14,6 +14,8 @@ import requests
 from ..unit.util import VALID_NEW_PROPOSAL, TestDataFactory
 from . import PHT_URL
 
+PANELS_API_URL = f"{PHT_URL}/panels"
+
 
 def test_get_osd_data_fail():
     cycle = "-1"
@@ -242,3 +244,153 @@ def test_get_list_proposals_for_user():
         assert (
             prsl_id in returned_ids
         ), f"Missing proposal {prsl_id} in GET /list/{user_id}"
+
+
+def test_get_proposals_batch():
+    """
+    Integration test:
+    - Create multiple proposals with unique IDs
+    - Use POST /batch to retrieve them
+    - Ensure all created proposals are returned
+    """
+
+    created_ids = []
+
+    # Create 3 proposals with unique prsl_ids
+    for _ in range(3):
+        prsl_id = f"prsl-test-{uuid.uuid4().hex[:8]}"
+        proposal = TestDataFactory.proposal(prsl_id=prsl_id)
+        proposal_json = proposal.model_dump_json()
+
+        response = requests.post(
+            f"{PHT_URL}/prsls/create",
+            data=proposal_json,
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        created_ids.append(response.json())
+
+    # Use POST /batch to retrieve them
+    batch_response = requests.post(
+        f"{PHT_URL}/prsls/batch",
+        json={"prsl_ids": created_ids},
+    )
+
+    assert batch_response.status_code == HTTPStatus.OK, batch_response.content
+
+    proposals = batch_response.json()
+    assert isinstance(proposals, list), "Expected a list of proposals"
+    assert len(proposals) == len(
+        created_ids
+    ), f"Expected {len(created_ids)} proposals, got {len(proposals)}"
+
+    returned_ids = {p["prsl_id"] for p in proposals}
+    for prsl_id in created_ids:
+        assert prsl_id in returned_ids, f"Missing proposal {prsl_id} in POST /batch"
+
+
+def test_get_reviews_for_panel_with_wrong_id():
+    prsl_id = "wrong id"
+    response = requests.get(f"{PHT_URL}/prsls/reviews/{prsl_id}")
+    assert response.status_code == HTTPStatus.OK
+    res = response.json()
+    assert [] == res
+
+
+def test_get_reviews_for_panel_with_valid_id():
+    proposal = TestDataFactory.complete_proposal("my proposal")
+    response = requests.post(
+        f"{PHT_URL}/prsls/create",
+        data=proposal.json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    panel_id = "panel-test-20250717-00001"
+    panel = TestDataFactory.panel_basic(panel_id=panel_id, name="New name")
+    data = panel.json()
+    response = requests.post(
+        f"{PANELS_API_URL}", data=data, headers={"Content-Type": "application/json"}
+    )
+    assert response.status_code == HTTPStatus.OK
+    review = [
+        TestDataFactory.reviews(
+            prsl_id=proposal.prsl_id,
+        )
+    ]
+    response = requests.post(
+        f"{PHT_URL}/reviews/",
+        data=review[0].json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    response = requests.get(f"{PHT_URL}/prsls/reviews/{proposal.prsl_id}")
+    assert response.status_code == HTTPStatus.OK
+    res = response.json()
+    del res[0]["metadata"]
+    expected = [obj.model_dump(mode="json", exclude={"metadata"}) for obj in review]
+    assert expected == res
+
+
+def test_get_proposals_by_status():
+    """
+    - Create proposals with various statuses (e.g. 'pending', 'rejected', 'submitted')
+    - Fetch proposals using GET /prsls/status/{status}
+    - Check that only proposals with the requested status are returned
+    """
+
+    status_to_test = "submitted"
+    created_ids_with_target_status = []
+    created_ids_with_other_status = []
+
+    # Create proposals with the target status to test
+    for _ in range(3):
+        prsl_id = f"prsl-pending-{uuid.uuid4().hex[:8]}"
+        proposal = TestDataFactory.complete_proposal(
+            prsl_id=prsl_id, status=status_to_test
+        )
+        proposal_json = proposal.model_dump_json()
+
+        response = requests.post(
+            f"{PHT_URL}/prsls/create",
+            data=proposal_json,
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        created_ids_with_target_status.append(prsl_id)
+
+    # Create proposals with different statuses additionally
+    for status in ["draft", "rejected"]:
+        prsl_id = f"prsl-{status}-{uuid.uuid4().hex[:8]}"
+        proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id, status=status)
+        proposal_json = proposal.model_dump_json()
+
+        response = requests.post(
+            f"{PHT_URL}/prsls/create",
+            data=proposal_json,
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        created_ids_with_other_status.append(prsl_id)
+
+    # Get proposals by 'draft' status
+    status_response = requests.get(f"{PHT_URL}/prsls/status/{status_to_test}")
+    assert status_response.status_code == HTTPStatus.OK, status_response.content
+
+    proposals = status_response.json()
+    assert isinstance(proposals, list)
+
+    returned_ids = {p["prsl_id"] for p in proposals}
+
+    # All with 'draft' should be returned
+    for prsl_id in created_ids_with_target_status:
+        assert (
+            prsl_id in returned_ids
+        ), f"Missing {prsl_id} from GET /status/{status_to_test}"
+
+    # Other statuses should not be returned
+    for prsl_id in created_ids_with_other_status:
+        assert (
+            prsl_id not in returned_ids
+        ), f"Unexpected proposal {prsl_id} in GET /status/{status_to_test}"
