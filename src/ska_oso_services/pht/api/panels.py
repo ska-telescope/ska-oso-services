@@ -1,6 +1,4 @@
 import logging
-import uuid
-from datetime import datetime, timezone
 from typing import Union
 
 from fastapi import APIRouter
@@ -15,13 +13,14 @@ from ska_oso_services.common.error_handling import (
 )
 from ska_oso_services.pht.model import PanelCreateResponse
 from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, REVIEWERS
-from ska_oso_services.pht.utils.panel_helper import generate_panel_id, upsert_panel
-from ska_oso_services.pht.utils.pht_handler import (
+from ska_oso_services.pht.utils.panel_helper import (
     build_panel_response,
     build_sv_panel_proposals,
-    get_latest_entity_by_id,
+    generate_panel_id,
     group_proposals_by_science_category,
+    upsert_panel,
 )
+from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
 from ska_oso_services.pht.utils.validation import validate_duplicates
 
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
@@ -43,7 +42,8 @@ def create_panel(param: Panel) -> Union[str, list[PanelCreateResponse]]:
         proposals = (
             get_latest_entity_by_id(
                 uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)), "prsl_id"
-            ) or []
+            )
+            or []
         )
         reviewers = param.reviewers or []
         is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
@@ -55,14 +55,16 @@ def create_panel(param: Panel) -> Union[str, list[PanelCreateResponse]]:
                 reviewers=reviewers,
                 proposals=build_sv_panel_proposals(proposals),
             )
-            created_panel = uow.panels.add(panel)
+            created_panel = uow.panels.add(panel)  # pylint: disable=no-member
             uow.commit()
             return created_panel.panel_id
 
         # Science category-type panels
         grouped = group_proposals_by_science_category(proposals, PANEL_NAME_POOL)
         panel_objs = {
-            panel_name: upsert_panel(uow, panel_name, reviewers, grouped.get(panel_name, []))
+            panel_name: upsert_panel(
+                uow, panel_name, reviewers, grouped.get(panel_name, [])
+            )
             for panel_name in PANEL_NAME_POOL
         }
 

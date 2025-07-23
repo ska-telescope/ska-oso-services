@@ -2,16 +2,17 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from ska_oso_services.pht.model import PanelCreateResponse
-from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal_management.panel import Panel
 
+from ska_oso_services.pht.model import PanelCreateResponse
+from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
+
 logger = logging.getLogger(__name__)
+
 
 def generate_panel_id():
     return f"panel-{uuid.uuid4().hex[:9]}"
-
 
 
 def build_panel_response(panel_objs: dict) -> list[PanelCreateResponse]:
@@ -62,12 +63,12 @@ def group_proposals_by_science_category(
     return grouped
 
 
-
 def upsert_panel(uow, panel_name, reviewers, proposal_list):
     """
     Creates a new panel or updates an existing one with the given proposals.
 
-    - If a panel with `panel_name` exists, appends any new proposals (by prsl_id) to it, avoiding duplicates.
+    - If a panel with `panel_name` exists, appends any new proposals
+    (by prsl_id) to it, avoiding duplicates.
     - If no panel exists, creates a new one with the given reviewers and proposals.
 
     Args:

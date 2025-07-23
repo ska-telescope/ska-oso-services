@@ -1,19 +1,19 @@
 PANEL_NAME_POOL = [
-        "Cosmology",
-        "Cradle of Life",
-        "Epoch of Re-ionization",
-        "Extragalactic continuum",
-        "Extragalactic Spectral line",
-        "Gravitational Waves",
-        "High Energy Cosmic Particles",
-        "HI Galaxy science",
-        "Magnetism",
-        "Our Galaxy",
-        "Pulsars",
-        "Solar, Heliospheric and Ionospheric Physics",
-        "Transients",
-        "VLBI",
-    ]
+    "Cosmology",
+    "Cradle of Life",
+    "Epoch of Re-ionization",
+    "Extragalactic continuum",
+    "Extragalactic Spectral line",
+    "Gravitational Waves",
+    "High Energy Cosmic Particles",
+    "HI Galaxy science",
+    "Magnetism",
+    "Our Galaxy",
+    "Pulsars",
+    "Solar, Heliospheric and Ionospheric Physics",
+    "Transients",
+    "VLBI",
+]
 
 
 EXAMPLE_PROPOSAL = {
