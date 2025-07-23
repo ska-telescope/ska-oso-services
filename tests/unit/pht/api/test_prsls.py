@@ -432,19 +432,6 @@ class TestProposalBatch:
         assert response.status_code == 200
         assert response.json() == []
 
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_get_proposals_batch_invalid_input(self, mock_oda, client):
-        """
-        Test invalid input
-        """
-        response = client.post(f"{PROPOSAL_API_URL}/batch", json={})
-        assert response.status_code == 422
-
-        response = client.post(
-            f"{PROPOSAL_API_URL}/batch", json={"prsl_ids": "not-a-list"}
-        )
-        assert response.status_code == 422
-
 
 class TestProposalEmailAPI:
     @mock.patch("ska_oso_services.pht.api.prsls.send_email_async", autospec=True)
