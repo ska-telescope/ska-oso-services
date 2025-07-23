@@ -33,9 +33,9 @@ name = "PyPI"
 priority = "primary"
 
 # Uncomment this and the line below to include a non-released ODA version
-[[tool.poetry.source]]
-name = "gitlab-ska-db-oda"
-url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
+#[[tool.poetry.source]]
+#name = "gitlab-ska-db-oda"
+#url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
 #
 #[[tool.poetry.source]]  
 #name = "gitlab.ska-ost-osd"  
