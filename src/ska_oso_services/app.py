@@ -75,7 +75,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "get_report",
                 "get_osd_by_cycle",
                 "get_proposals_by_status",
-                "get_proposals_batch",
+                "get_proposals_batch","update_panel"
             ]
         ),
         # Need this param for code generation - see

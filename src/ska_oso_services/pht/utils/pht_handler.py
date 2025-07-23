@@ -5,11 +5,14 @@ for submission and creation processes.
 
 # import random
 from datetime import datetime, timezone
+import logging
 from typing import Any, List, Optional
 
 from ska_oso_pdm.proposal import Proposal
 
-from ska_oso_services.pht.model import ProposalReport
+from ska_oso_services.pht.model import ProposalReport, PanelCreateResponse
+
+logger = logging.getLogger(__name__)
 
 EXAMPLE_PROPOSAL = {
     "prsl_id": "prp-ska01-202204-02",
@@ -211,3 +214,39 @@ def join_proposals_panels_reviews_decisions(
             )
 
     return rows
+
+
+
+def build_enriched_panel_response(panel_objs: dict) -> List[PanelCreateResponse]:
+    return [
+        PanelCreateResponse(
+            panel_id=panel.panel_id,
+            name=name,
+            proposal_count=len(panel.proposals)
+        )
+        for name, panel in panel_objs.items()
+    ]
+
+
+def build_sv_panel_proposals(proposals: list) -> list[dict]:
+    """Builds the proposals list for a Science Verification panel."""
+    now = datetime.now(timezone.utc)
+    return [{"prsl_id": p.prsl_id, "assigned_on": now} for p in proposals]
+
+def group_proposals_by_science_category(proposals: List, panel_names: List[str]) -> dict[str, List]:
+    """
+    Groups proposals by science_category, only including those that match panel_names.
+    Logs and skips proposals with unmatched or missing science_category.
+    """
+    grouped = {name: [] for name in panel_names}
+    skipped = 0
+    for p in proposals:
+        science_category = getattr(p, "science_category", None)
+        if science_category not in grouped:
+            skipped += 1
+            logger.warning("Skipping proposal '%s' (science_category '%s' not in panel list)", p.prsl_id, science_category)
+            continue
+        grouped[science_category].append(p)
+    if skipped:
+        logger.warning("%d proposals skipped due to invalid or missing science_category.", skipped)
+    return grouped

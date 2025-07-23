@@ -19,6 +19,11 @@ class EmailRequest(AppModel):
     email: EmailStr
     prsl_id: str
 
+class PanelCreateResponse(AppModel):
+    panel_id: str
+    name: str
+    proposal_count: int
+
 
 class CycleInformation(BaseModel):
     cycle_id: str
