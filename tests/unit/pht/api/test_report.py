@@ -63,7 +63,7 @@ class TestReportsAPI:
             ]
             mock_join.return_value = mock_report
 
-            response = client.get(f"{REPORT_API_URL}")
+            response = client.get(f"{REPORT_API_URL}/")
 
         assert response.status_code == HTTPStatus.OK
 
