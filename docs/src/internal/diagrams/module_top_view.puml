@@ -3,20 +3,28 @@ top to bottom direction
 
 package "common" as common_pkg {
 
-    package "api" <<Rectangle>> {
-        class get_coordinates <<endpoint>>
+    package "api.coordinates" <<Rectangle>> {
+        class ReferenceFrame
+        class EquatorialResponse
+        class GalacticResponse
+        class get_systemcoordinates<<endpoint>>
     }
 
     package "auth" <<Rectangle>> {
         class Scope
     }
 
+    package "constants" <<Rectangle>> {
+    }
+
     package "coordinateslookup" <<Rectangle>> {
         object coordinateslookup_items {
-            + ReferenceFrame
-            + EquatorialResponse
-            + GalacticResponse
-            + get_systemcoordinates()
+            + Equatorial
+            + Galactic
+            + round_coord()
+            + convert_ra_dec_deg()
+            + convert_to_galactic()
+            + get_coordinates
         }
     }
 
@@ -69,25 +77,109 @@ package "odt" as odt_pkg {
 
 package "pht" as pht_pkg {
     package "api" <<Rectangle>> {
-        package "panel_reviews" <<Rectangle>> {
-            class panel_review_get <<endpoint>>
-        }
-        package "reviewers" <<Rectangle>> {
-            class reviewers <<endpoint>>
-        }
         package "panel_decision" <<Rectangle>> {
-            class panel_decision_post <<endpoint>>
+            object panel_decision_endpoints{
+                + create_panel_decision<<endpoint>>
+                + get_panel_decision<<endpoint>>
+                + get_panel_decisions_for_user<<endpoint>>
+                + update_panel_decision<<endpoint>>
+            }
         }
         package "panels" <<Rectangle>> {
-            class panels_endpoint <<endpoint>>
-        }
-        package "reports" <<Rectangle>> {
-            class report_get <<endpoint>>
+            object panels_endpoints{
+                + create_panel<<endpoint>>
+                + get_panel<<endpoint>>
+                + get_reviews_for_panel<<endpoint>>
+                + get_panels_for_user<<endpoint>>
+            }
         }
         package "prsls" <<Rectangle>> {
-            class send_email <<endpoint>>
-            class proposals <<endpoint>>
-            class pdf <<endpoint>>
+            object prsls_endpoints{
+                + get_osd_by_cycle<<endpoint>>
+                + create_proposal<<endpoint>>
+                + get_proposal<<endpoint>>
+                + get_proposals_for_user<<endpoint>>
+                + update_proposal<<endpoint>>
+                + validate_proposal<<endpoint>>
+                + send_email<<endpoint>>
+                + create_upload_pdf_url<<endpoint>>
+                + create_download_pdf_url<<endpoint>>
+                + create_delete_pdf_url<<endpoint>>
+            }
+        }
+        package "report" <<Rectangle>> {
+            object report_endpoints{
+                + get_report<<endpoint>>
+            }
+        }
+        package "reviewers" <<Rectangle>> {
+            object reviewers_endpoints{
+                + get_report<<endpoint>>
+            }
+        }
+        package "reviews" <<Rectangle>> {
+            object reviews_endpoints{
+                + create_review<<endpoint>>
+                + get_review<<endpoint>>
+                + get_reviews_for_user<<endpoint>>
+                + update_review<<endpoint>>
+            }
+        }
+    }
+
+    package "utils.constants" <<Rectangle>> {
+    }
+
+    package "utils.email_helper" <<Rectangle>> {
+        object email_helper_items {
+            + render_email()
+            + send_email_async()
+        }
+    }
+    package "utils.pht_handler" <<Rectangle>> {
+        object pht_handler_items {
+            + transform_update_proposal()
+            + get_latest_entity_by_id()
+            + _get_array_class()
+            + join_proposals_panels_reviews_decisions()
+        }
+    }
+    package "utils.s3_bucket" <<Rectangle>> {
+        object s3_bucket_items {
+            S3Method
+            S3Config
+            + get_aws_client()
+            + generate_presigned_url()
+            + create_presigned_url_upload_pdf()
+            + create_presigned_url_download_pdf()
+            + create_presigned_url_delete_pdf()
+        }
+    }
+    package "utils.validation" <<Rectangle>> {
+        object validation_items {
+            + validate_proposal()
+            + validate_duplicates()
+        }
+    }
+
+
+    package "model" <<Rectangle>> {
+        object models {
+            EmailRequest()
+            CycleInformation()
+            CyclePolicies()
+            TelescopeCapabilities()
+            ObservatoryPolicy()
+            ReceiverInformation()
+            BasicCapabilitiesMid()
+            AA2_MID()
+            Mid()
+            BasicCapabilitiesLow()
+            AA2_LOW()
+            Low()
+            Capabilities()
+            OsdDataModel()
+            ProposalReport()
         }
     }
 }
@@ -105,5 +197,4 @@ package "app" <<Rectangle>> {
 common_pkg -up-> app.create_app
 odt_pkg -up-> app.create_app
 pht_pkg -up-> app.create_app
-
 @enduml

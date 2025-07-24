@@ -23,14 +23,13 @@ package "pht" as pht_pkg {
             }
         }
 
-        package "panel_reviews" <<Rectangle>> {
-            class panel_review_get <<endpoint>>
-        }
-        package "reviewers" <<Rectangle>> {
-            class reviewers <<endpoint>>
-        }
         package "panel_decision" <<Rectangle>> {
-            class panel_decision_post <<endpoint>>
+            object panel_decision_api_endpoints {
+                  + panel_decision_post <<endpoint>>
+                  + panel_decision_get <<endpoint>>
+                  + panel_decisions_get <<endpoint>>
+                  + panel_decision_put <<endpoint>>
+            }
         }
         package "panels" <<Rectangle>> {
             object panels_api_endpoints {
@@ -38,6 +37,12 @@ package "pht" as pht_pkg {
                 + GET /panels/{id}
                 + GET /panels/by_user/{user_id}
             }
+        }
+        package "reviews" <<Rectangle>> {
+            class review_get <<endpoint>>
+        }
+        package "reviewers" <<Rectangle>> {
+            class reviewers <<endpoint>>
         }
         package "reports" <<Rectangle>> {
             class report_get <<endpoint>> {
@@ -94,6 +99,4 @@ package "pht" as pht_pkg {
     utils.pht_handler.join_proposals_panels_reviews_decisions --> utils.pht_handler.join_helpers : ProposalReport
 
 }
-
 @enduml
-
