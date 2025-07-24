@@ -11,7 +11,7 @@ HEADERS = {"Content-type": "application/json"}
 
 def test_get_report_for_user():
     """
-    Integration test for the GET /reports/{user_id} endpoint.
+    Integration test for the GET /reports/ endpoint.
     """
 
     proposal1 = TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00001")
@@ -64,8 +64,7 @@ def test_get_report_for_user():
     )
     assert created_review.status_code == HTTPStatus.OK, created_review.text
 
-    user_id = "DefaultUser"  # Use a fixed user ID for testing
-    url = f"{PHT_URL}/report/{user_id}"
+    url = f"{PHT_URL}/report/"
 
     response = requests.get(url)
     assert response.status_code == HTTPStatus.OK, response.text
