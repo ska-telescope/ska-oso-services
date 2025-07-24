@@ -1,3 +1,4 @@
+import json
 import uuid
 from http import HTTPStatus
 
@@ -80,6 +81,48 @@ def test_panels_post_not_existing_proposal():
     result = response.json()
     expected = {"detail": "Proposal 'prsl-mvp01-20220923-00001' does not exist"}
     assert expected == result
+
+
+def test_get_reviews_for_panel_with_wrong_id():
+    panel_id = "wrong id"
+    response = requests.get(f"{PHT_URL}/panels/reviews/{panel_id}")
+    assert response.status_code == HTTPStatus.OK
+    res = response.json()
+    assert [] == res
+
+
+def test_get_reviews_for_panel_with_valid_id():
+    proposal = TestDataFactory.complete_proposal("my proposal")
+    response = requests.post(
+        f"{PHT_URL}/prsls/create", data=proposal.json(), headers=HEADERS
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    panel_id = "panel-test-20250717-00001"
+    panel = TestDataFactory.panel_basic(panel_id=panel_id, name="New name")
+    data = panel.json()
+    response = requests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
+    assert response.status_code == HTTPStatus.OK
+
+    review = TestDataFactory.reviews(
+        panel_id=panel_id,
+        review_id="my review id",
+        prsl_id="my proposal",
+        reviewer_id=REVIEWERS[0]["id"],
+    )
+    response = requests.post(f"{PHT_URL}/reviews/", data=review.json(), headers=HEADERS)
+    assert response.status_code == HTTPStatus.OK
+
+    response = requests.get(f"{PHT_URL}/panels/reviews/{panel_id}")
+    assert response.status_code == HTTPStatus.OK
+    res = response.json()
+    del res[0]["metadata"]
+
+    review = json.loads(review.json())
+    del review["metadata"]
+    expected = [review]
+
+    assert expected == res
 
 
 def test_get_list_panels_for_user():

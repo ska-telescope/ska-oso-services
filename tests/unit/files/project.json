@@ -2,7 +2,6 @@
   "interface": "https://schema.skao.int/ska-oso-pdm-prj/0.1",
   "prj_id": "prj-mvp01-20220923-00001",
   "name": "SKA Mid Project",
-  "telescope": "ska_mid",
   "metadata": {
     "version": 1,
     "created_by": "DefaultUser",

@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 from unittest import mock
 
@@ -11,6 +12,41 @@ HEADERS = {"Content-type": "application/json"}
 
 
 class TestPanelsAPI:
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    def test_get_reviews_for_panel_with_wrong_id(self, mock_uow, client):
+        context_mock = mock.MagicMock()
+        context_mock.rvws.query.return_value = []
+        mock_uow().__enter__.return_value = context_mock
+
+        panel_id = "wrong id"
+        response = client.get(f"{PHT_BASE_API_URL}/panels/reviews/{panel_id}")
+        assert response.status_code == HTTPStatus.OK
+        res = response.json()
+        assert [] == res
+
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    def test_get_reviews_for_panel_with_valid_id(self, mock_uow, client):
+        context_mock = mock.MagicMock()
+        review = TestDataFactory.reviews(
+            review_id="my review id",
+            prsl_id="my proposal",
+            reviewer_id="c8f8f18a-3c70-4c39-8ed9-2d8d180d99a1",
+        ).json()
+        review = json.loads(review)
+        del review["metadata"]
+
+        expected = [review]
+
+        context_mock.rvws.query.return_value = expected
+        mock_uow().__enter__.return_value = context_mock
+
+        panel_id = "my panel id"
+        response = client.get(f"{PHT_BASE_API_URL}/panels/reviews/{panel_id}")
+        assert response.status_code == HTTPStatus.OK
+        res = response.json()
+        del res[0]["metadata"]
+        assert expected == res
+
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_panels_post_success(self, mock_uow, client):
         panel = TestDataFactory.panel_basic()

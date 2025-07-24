@@ -21,6 +21,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.odt.api.sbds import _create_sbd_status_entity
+from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
 
@@ -197,6 +198,88 @@ def prjs_sbds_post(
         uow.commit()
 
     return {"sbd": sbd, "prj": prj}
+
+
+@router.post(
+    "/{identifier}/{obs_block_id}/generateSBDefinitions",
+    summary="Generate SBDefinitions for an ObservingBlock within a Project",
+    description="Generates SBDefinitions using the ScienceProgramme data in the "
+    "ObservingBlock, persists those SBDefinitions in the ODA, adds a "
+    "link to the SBDefinitions to the ObservingBlock then persists"
+    "the updated Project/ObservingBlock",
+    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
+)
+def prjs_ob_generate_sbds(identifier: str, obs_block_id: str) -> Project:
+    LOGGER.debug(
+        "POST PRJS generate SBDefinitions for prj_id: %s and obs_block_id: %s",
+        identifier,
+        obs_block_id,
+    )
+    with oda.uow() as uow:
+        prj = uow.prjs.get(identifier)
+        try:
+            obs_block = next(
+                obs_block
+                for obs_block in prj.obs_blocks
+                if obs_block.obs_block_id == obs_block_id
+            )
+        except StopIteration:
+            # pylint: disable=raise-missing-from
+            raise NotFoundError(
+                detail=f"Observing Block '{obs_block_id}' not found in Project"
+            )
+
+        # Overwrite any existing SBDefinitions that were linked to the ObservingBlock
+        obs_block.sbd_ids = []
+
+        sbds = generate_sbds(obs_block)
+
+        for sbd in sbds:
+            updated_sbd = uow.sbds.add(sbd)
+
+            sbd_status = _create_sbd_status_entity(updated_sbd)
+            uow.sbds_status_history.add(sbd_status)
+
+            obs_block.sbd_ids.append(updated_sbd.sbd_id)
+
+        updated_prj = uow.prjs.add(prj)
+        uow.commit()
+
+    return updated_prj
+
+
+@router.post(
+    "/{identifier}/generateSBDefinitions",
+    summary="Generate SBDefinitions for all ObservingBlocks within a Project",
+    description="Generates SBDefinitions for each ObservingBlock in the Project, "
+    "persists those SBDefinitions in the ODA, adds a link to the "
+    "SBDefinitions to the ObservingBlock then persists the updated "
+    "Project/ObservingBlock",
+    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
+)
+def prjs_generate_sbds(identifier: str) -> Project:
+    LOGGER.debug("POST PRJS generate SBDefinitions for prj_id: %s", identifier)
+    with oda.uow() as uow:
+        prj = uow.prjs.get(identifier)
+        for obs_block in prj.obs_blocks:
+            # Overwrite any existing SBDefinitions that were
+            # linked to the ObservingBlock
+            obs_block.sbd_ids = []
+
+            sbds = generate_sbds(obs_block)
+
+            for sbd in sbds:
+                updated_sbd = uow.sbds.add(sbd)
+
+                sbd_status = _create_sbd_status_entity(updated_sbd)
+                uow.sbds_status_history.add(sbd_status)
+
+                obs_block.sbd_ids.append(updated_sbd.sbd_id)
+
+        updated_prj = uow.prjs.add(prj)
+        uow.commit()
+
+    return updated_prj
 
 
 def _create_prj_status_entity(prj: Project) -> ProjectStatusHistory:

@@ -1,0 +1,209 @@
+{
+  "name": "Low Project with two targets",
+  "prsl_ref": "prsl-t0001-20250715-00002",
+  "metadata": {
+    "version": 1,
+    "created_by": "DefaultUser",
+    "created_on": "2022-03-28T15:43:53.971548+00:00",
+    "last_modified_on": "2022-03-28T15:43:53.971548+00:00",
+    "last_modified_by": "DefaultUser"
+  },
+  "obs_blocks": [
+    {
+      "obs_block_id": "obs-block-00001",
+      "science_programmes": [
+        {
+          "observation_sets": [
+            {
+              "observation_set_id": "obs-vYzsub",
+              "observing_band": "low_band",
+              "elevation": 20,
+              "array_details": {
+                "array": "ska_low",
+                "subarray": "aa1",
+                "number_of_stations": 512
+              },
+              "observation_type_details": {
+                "observation_type": "continuum",
+                "bandwidth": {
+                  "value": 300,
+                  "unit": "MHz"
+                },
+                "central_frequency": {
+                  "value": 200,
+                  "unit": "MHz"
+                },
+                "supplied": {
+                  "supplied_type": "integration_time",
+                  "quantity": {
+                    "value": 1,
+                    "unit": "h"
+                  }
+                },
+                "spectral_resolution": "5.43 kHz (8.1 km/s)",
+                "effective_resolution": "5.43 kHz (8.1 km/s)",
+                "image_weighting": "uniform",
+                "robust": "0",
+                "spectral_averaging": "1"
+              }
+            }
+          ],
+          "targets": [
+            {
+              "target_id": "47 tuc",
+              "name": "",
+              "pointing_pattern": {
+                "active": "SinglePointParameters",
+                "parameters": [
+                  {
+                    "kind": "SinglePointParameters",
+                    "offset_x_arcsec": 0.5,
+                    "offset_y_arcsec": 0.5
+                  }
+                ]
+              },
+              "reference_coordinate": {
+                "kind": "equatorial",
+                "ra": "00:24:05.3590",
+                "dec": "-72:04:53.200",
+                "reference_frame": "icrs",
+                "epoch": 2000,
+                "unit": [
+                  "hourangle",
+                  "deg"
+                ]
+              },
+              "radial_velocity": {
+                "quantity": {
+                  "value": -17.2,
+                  "unit": "km / s"
+                },
+                "definition": "RADIO",
+                "reference_frame": "LSRK",
+                "redshift": 0
+              }
+            },
+            {
+              "target_id": "target42",
+              "name": "",
+              "pointing_pattern": {
+                "active": "SinglePointParameters",
+                "parameters": [
+                  {
+                    "kind": "SinglePointParameters",
+                    "offset_x_arcsec": 0.5,
+                    "offset_y_arcsec": 0.5
+                  }
+                ]
+              },
+              "reference_coordinate": {
+                "kind": "equatorial",
+                "ra": "00:24:05.3590",
+                "dec": "-72:04:53.200",
+                "reference_frame": "icrs",
+                "epoch": 2000,
+                "unit": [
+                  "hourangle",
+                  "deg"
+                ]
+              },
+              "radial_velocity": {
+                "quantity": {
+                  "value": 0,
+                  "unit": "km / s"
+                },
+                "definition": "RADIO",
+                "reference_frame": "LSRK",
+                "redshift": 0
+              }
+            }
+          ],
+          "result_details": [
+            {
+              "observation_set_ref": "obs-vYzsub",
+              "target_ref": "47 tuc",
+              "result": {
+                "supplied_type": "integration_time",
+                "weighted_continuum_sensitivity": {
+                  "value": 122.54483282997514,
+                  "unit": "uJy / beam"
+                },
+                "weighted_spectral_sensitivity": {
+                  "value": 23.607873762830216,
+                  "unit": "mJy / beam"
+                },
+                "total_continuum_sensitivity": {
+                  "value": 122.54869581350997,
+                  "unit": "uJy / beam"
+                },
+                "total_spectral_sensitivity": {
+                  "value": 23.607873969107114,
+                  "unit": "mJy / beam"
+                },
+                "surface_brightness_sensitivity": {
+                  "continuum": 332.46542277921816,
+                  "spectral": 27068.334957613024,
+                  "unit": "K"
+                }
+              },
+              "continuum_confusion_noise": {
+                "value": 973.0325100646,
+                "unit": "nJy / beam"
+              },
+              "synthesized_beam_size": {
+                "continuum": "4.97 x 2.27",
+                "spectral": "7.32 x 3.64",
+                "unit": "arcsec²"
+              },
+              "spectral_confusion_noise": {
+                "value": 3.1208200858979755,
+                "unit": "uJy / beam"
+              }
+            },
+            {
+              "observation_set_ref": "obs-vYzsub",
+              "target_ref": "target42",
+              "result": {
+                "supplied_type": "integration_time",
+                "weighted_continuum_sensitivity": {
+                  "value": 122.54483282997514,
+                  "unit": "uJy / beam"
+                },
+                "weighted_spectral_sensitivity": {
+                  "value": 23.607873762830216,
+                  "unit": "mJy / beam"
+                },
+                "total_continuum_sensitivity": {
+                  "value": 122.54869581350997,
+                  "unit": "uJy / beam"
+                },
+                "total_spectral_sensitivity": {
+                  "value": 23.607873969107114,
+                  "unit": "mJy / beam"
+                },
+                "surface_brightness_sensitivity": {
+                  "continuum": 332.46542277921816,
+                  "spectral": 27068.334957613024,
+                  "unit": "K"
+                }
+              },
+              "continuum_confusion_noise": {
+                "value": 973.0325100646,
+                "unit": "nJy / beam"
+              },
+              "synthesized_beam_size": {
+                "continuum": "4.97 x 2.27",
+                "spectral": "7.32 x 3.64",
+                "unit": "arcsec²"
+              },
+              "spectral_confusion_noise": {
+                "value": 3.1208200858979755,
+                "unit": "uJy / beam"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
