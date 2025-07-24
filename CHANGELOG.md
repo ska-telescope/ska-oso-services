@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 * Updated OSD data endpoint and introduced a model to OSD dict
+* Updated `/reports/{user_id}` to `/reports/` so no user_id is required
+* Updated `/reviews/{panel_id}` to `/reviews/{prsl_id}` to query by proposal id and not panel_id
+* Added `/status/{status}` so Proposal management admin/coordinator can get all submitted proposals
+* Added `/batch` to retrieve a list of proposals based on supplied list of proposal ids
 
 1.2.0
 ***********
