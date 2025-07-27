@@ -5,67 +5,75 @@ package "pht" as pht_pkg {
 
     package "api" <<Rectangle>> {
 
-        package "prsls" <<Rectangle>> {
-            class send_email <<endpoint>> {
-                returns: EmailRequest
+        package "panel_decision" <<Rectangle>> {
+            object panel_decision_endpoints{
+                + POST /panel-decisions
+                + GET /panel-decisions/{decision_id}
+                + GET /panel-decisions/list/{user_id}
+                + PUT /panel-decisions/{decision_id}
             }
-            class proposals <<endpoint>>
-            object proposals_api_endpoints {
-                + GET /prsl/{user_id}
-                + GET /prsl/{proposal_id}
-                + POST /prsl/create
-                + UPDATE /prsl/{proposal_id}
-            }
-            object pdf_api_endpoints {
-                + POST /pdf/upload
-                + GET /pdf/download
-                + DELETE /pdf/delete
+        }
+        
+        package "panels" <<Rectangle>> {
+            object panels_endpoints {
+                + POST /panels
+                + GET /panels//{panel_id}
+                + GET /panels/reviews/{panel_id}
+                + GET /panels/list/{user_id}
             }
         }
 
-        package "panel_decision" <<Rectangle>> {
-            object panel_decision_api_endpoints {
-                  + panel_decision_post <<endpoint>>
-                  + panel_decision_get <<endpoint>>
-                  + panel_decisions_get <<endpoint>>
-                  + panel_decision_put <<endpoint>>
+        package "prsls" <<Rectangle>> {
+            object prsls_endpoints{
+                + GET /prsls/osd/{cycle}
+                + POST /prsls/create
+                + GET /prsls/{proposal_id}
+                + GET /prsls/list/{user_id}
+                + PUT /prsls/{proposal_id}
+                + POST /prsls/validate
+                + POST /prsls/send-email
+                + POST /prsls/signed-url/upload/{filename}
+                + POST /prsls/signed-url/download/{filename}
+                + POST /prsls/signed-url/delete/{filename}
             }
         }
-        package "panels" <<Rectangle>> {
-            object panels_api_endpoints {
-                + GET /panels
-                + GET /panels/{id}
-                + GET /panels/by_user/{user_id}
+
+        package "report" <<Rectangle>> {
+            object report_endpoints{
+                + GET /report/{user_id}
             }
         }
-        package "reviews" <<Rectangle>> {
-            class review_get <<endpoint>>
-        }
+
         package "reviewers" <<Rectangle>> {
-            class reviewers <<endpoint>>
-        }
-        package "reports" <<Rectangle>> {
-            class report_get <<endpoint>> {
-                returns: ProposalReport
+            object reviewers_endpoints{
+                + GET /reviewers
             }
         }
-        reports.report_get -down[hidden]- prsls.send_email
+        
+        package "reviews" <<Rectangle>> {
+            object reviews_endpoints{
+                + POST /reviews
+                + GET /reviews/{review_id}
+                + GET /reviews/list/{user_id}
+                + PUT /reviews/{review_id}
+            }
+        }
     }
 
     package "utils" <<Rectangle>> {
         package "email_helper" <<Rectangle>> {
-            object email_helper_functions {
+            object email_helper_items {
                 + render_email()
                 + send_email_async()
             }
         }
         package "pht_handler" <<Rectangle>> {
-            class join_proposals_panels_reviews_decisions <<function>>
-            object join_helpers {
-                + _get_array_class()
+            object pht_handler_items {
+                + transform_update_proposal()
                 + get_latest_entity_by_id()
+                + _get_array_class()
+                + join_proposals_panels_reviews_decisions()
             }
-            class transform_update_proposal <<function>>
         }
         package "s3_bucket" <<Rectangle>> {
             object s3_bucket_functions {
@@ -85,18 +93,14 @@ package "pht" as pht_pkg {
         class constants
     }
 
-    ' --- FORCE LAYOUT: Utils under API ---
-    api.panel_reviews.panel_review_get -down[hidden]- utils.email_helper.email_helper_functions
-
     ' --- Relationships, return types only ---
-    api.prsls.proposals --> utils.validation.validate_proposal
-    api.prsls.proposals --> utils.pht_handler.transform_update_proposal
-    api.prsls.pdf_api_endpoints --> utils.s3_bucket.s3_bucket_functions : PDF file
-    api.panels.panels_api_endpoints --> utils.validation.validate_duplicates : List[Panel]
-    api.reports.report_get --> utils.pht_handler.join_proposals_panels_reviews_decisions
-    api.prsls.send_email --> utils.email_helper.email_helper_functions
-    api.reviewers.reviewers --> utils.constants : ReviewerConstants
-    utils.pht_handler.join_proposals_panels_reviews_decisions --> utils.pht_handler.join_helpers : ProposalReport
+    api.prsls.prsls_endpoints --> utils.validation.validate_proposal
+    api.prsls.prsls_endpoints --> utils.pht_handler.pht_handler_items
+    api.prsls.prsls_endpoints --> utils.s3_bucket.s3_bucket_functions : PDF file
+    api.panels.panels_endpoints --> utils.validation.validate_duplicates : List[Panel]
+    api.report.report_endpoints --> utils.pht_handler.pht_handler_items: ProposalReport
+    api.prsls.prsls_endpoints --> utils.email_helper.email_helper_items
+    api.reviewers.reviewers_endpoints --> utils.constants : REVIEWERS
 
 }
 @enduml

@@ -4,10 +4,12 @@ top to bottom direction
 package "common" as common_pkg {
 
     package "api.coordinates" <<Rectangle>> {
-        class ReferenceFrame
-        class EquatorialResponse
-        class GalacticResponse
-        class get_systemcoordinates<<endpoint>>
+        object coordinates_items {
+            + ReferenceFrame
+            + EquatorialResponse
+            + GalacticResponse
+            + get_systemcoordinates<<endpoint>>
+        }
     }
 
     package "auth" <<Rectangle>> {
@@ -24,7 +26,7 @@ package "common" as common_pkg {
             + round_coord()
             + convert_ra_dec_deg()
             + convert_to_galactic()
-            + get_coordinates
+            + get_coordinates()
         }
     }
 
@@ -114,7 +116,7 @@ package "pht" as pht_pkg {
         }
         package "reviewers" <<Rectangle>> {
             object reviewers_endpoints{
-                + get_report<<endpoint>>
+                + get_reviewers<<endpoint>>
             }
         }
         package "reviews" <<Rectangle>> {
