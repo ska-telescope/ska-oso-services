@@ -12,7 +12,7 @@ from ska_oso_services.common.error_handling import (
     BadRequestError,
     UnprocessableEntityError,
 )
-from ska_oso_services.pht.model import PanelCreateResponse
+from ska_oso_services.pht.model import PanelCreate, PanelCreateResponse
 from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, REVIEWERS
 from ska_oso_services.pht.utils.panel_helper import (
     build_panel_response,
@@ -57,7 +57,7 @@ def create_panel(param: Panel) -> str:
     summary="Create a panel",
     response_model=Union[str, list[PanelCreateResponse]],
 )
-def auto_create_panel(param: Panel) -> Union[str, list[PanelCreateResponse]]:
+def auto_create_panel(param: PanelCreate) -> str:
     """
     Creates panels:
     - If science verification, create a single
@@ -73,7 +73,8 @@ def auto_create_panel(param: Panel) -> Union[str, list[PanelCreateResponse]]:
         )
         reviewers = param.reviewers or []
         is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
-
+        print("param.name:", repr(param.name))
+        print("is_sv:", "SCIENCE VERIFICATION" in param.name.strip().upper())
         if is_sv:
             panel = Panel(
                 panel_id=generate_panel_id(),
@@ -83,9 +84,11 @@ def auto_create_panel(param: Panel) -> Union[str, list[PanelCreateResponse]]:
             )
             created_panel = uow.panels.add(panel)  # pylint: disable=no-member
             uow.commit()
+            print("created_panel:", created_panel)
+            print("created_panel.panel_id:", getattr(created_panel, "panel_id", None))
             return created_panel.panel_id
 
-        # Science category-type panels
+        # Science category panels
         grouped = group_proposals_by_science_category(proposals, PANEL_NAME_POOL)
         panel_objs = {
             panel_name: upsert_panel(

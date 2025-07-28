@@ -25,6 +25,11 @@ class PanelCreateResponse(AppModel):
     name: str
     proposal_count: int
 
+class PanelCreate(AppModel):
+    name: str
+    reviewers: list
+    proposals: list
+
 
 class CycleInformation(BaseModel):
     cycle_id: str

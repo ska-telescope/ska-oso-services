@@ -1,11 +1,13 @@
 import json
 from http import HTTPStatus
+from types import SimpleNamespace
 from unittest import mock
 
 from ska_db_oda.persistence.domain.errors import ODANotFound, UniqueConstraintViolation
 
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import REVIEWERS, TestDataFactory
+from ska_oso_pdm.proposal_management.panel import Panel
 
 PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
@@ -159,3 +161,126 @@ class TestPanelsAPI:
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(panels_objs)
+
+
+class TestPanelAutoCreateAPI:
+
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    @mock.patch("ska_oso_services.pht.utils.pht_handler.get_latest_entity_by_id")
+    @mock.patch("ska_oso_services.pht.utils.panel_helper.build_sv_panel_proposals")
+    @mock.patch("ska_oso_services.pht.utils.panel_helper.upsert_panel")
+    @mock.patch("ska_oso_services.pht.utils.panel_helper.build_panel_response")
+    def test_auto_create_panel_sv_success(
+        self,
+        mock_build_panel_response,
+        mock_upsert_panel,
+        mock_build_sv_panel_proposals,
+        mock_get_latest_entity_by_id,
+        mock_oda,
+        client
+        ):
+        # Create a real Panel object
+
+        panel_obj = Panel(
+        panel_id="panel-888",
+        name="Science Verification",
+        reviewers=[],
+        proposals=[]
+        )
+
+        uow_mock = mock.MagicMock()
+        uow_mock.panels.add.return_value = panel_obj
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        payload = {
+            "name": "Science Verification",
+            "reviewers": [],
+            "proposals": []
+        }
+
+        response = client.post(
+            f"{PANELS_API_URL}/auto-create",
+            json=payload,
+            headers={"Content-type": "application/json"},
+        )
+        print("Response JSON:", response.json())
+        assert response.status_code == HTTPStatus.OK
+        panel_id = response.json()
+        assert isinstance(panel_id, str)
+        assert panel_id == "panel-888"
+
+
+
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    @mock.patch("ska_oso_services.pht.utils.pht_handler.get_latest_entity_by_id")
+    @mock.patch("ska_oso_services.pht.utils.panel_helper.build_sv_panel_proposals")
+    @mock.patch("ska_oso_services.pht.utils.panel_helper.upsert_panel")
+    @mock.patch("ska_oso_services.pht.utils.panel_helper.build_panel_response")
+    def test_auto_create_panel_category_success(
+        self,
+        mock_build_panel_response,
+        mock_upsert_panel,
+        mock_build_sv_panel_proposals,
+        mock_get_latest_entity_by_id,
+        mock_oda,
+        client
+    ):
+        # Properly mock the context manager
+        uow_mock = mock.Mock()
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        # Robust factory: always return SimpleNamespace, never a mock!
+        def panel_factory(*args, **kwargs):
+            # Try to get the name from args or kwargs
+            name = kwargs.get('name')
+            if not name and args:
+                name = args[0]
+            if not name:
+                name = "unknown"
+            return SimpleNamespace(
+                panel_id=f"panel-{str(name).lower().replace(' ', '-')}",
+                name=name,
+                proposals=[],
+            )
+        uow_mock.panels.add.side_effect = panel_factory
+
+        # Mock queries to return empty lists
+        uow_mock.prsls.query.return_value = []
+        uow_mock.panels.query.return_value = []
+        mock_get_latest_entity_by_id.return_value = []
+        mock_build_sv_panel_proposals.return_value = []
+
+        # upsert_panel returns SimpleNamespace, never a mock!
+        def upsert_panel_side_effect(uow, panel_name, reviewers, proposals):
+            return SimpleNamespace(
+                panel_id=f"panel-{panel_name.lower()}",
+                name=panel_name,
+                reviewers=reviewers,
+                proposals=[],
+            )
+        mock_upsert_panel.side_effect = upsert_panel_side_effect
+
+        # Optionally, leave build_panel_response to real code
+        # Or keep your previous side effect if you want to control output
+
+        payload = {
+            "name": "Galaxy",
+            "reviewers": [],
+            "proposals": [],
+        }
+
+        response = client.post(
+            f"{PANELS_API_URL}/auto-create",
+            json=payload,
+            headers={"Content-type": "application/json"},
+        )
+
+        print("Response JSON:", response.json())
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert isinstance(result, list)
+        assert result[0]["panel_id"] == "panel-galaxy"
+        assert result[0]["name"] == "Galaxy"
+        assert result[0]["proposal_count"] == 0
+        mock_build_panel_response.assert_called_once()
+        uow_mock.commit.assert_called_once()

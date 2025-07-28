@@ -16,6 +16,13 @@ def generate_panel_id():
 
 
 def build_panel_response(panel_objs: dict) -> list[PanelCreateResponse]:
+    for name, panel in panel_objs.items():
+        # assert not isinstance(panel.proposals, mock.Mock), f"panel '{name}' proposals is a Mock!"
+        assert hasattr(panel, "proposals"), f"panel '{name}' has no 'proposals'"
+        assert isinstance(panel.proposals, list), f"panel '{name}' proposals is {type(panel.proposals)}"
+        PanelCreateResponse(
+            panel_id=panel.panel_id, name=name, proposal_count=len(panel.proposals)
+        )
     return [
         PanelCreateResponse(
             panel_id=panel.panel_id, name=name, proposal_count=len(panel.proposals)
