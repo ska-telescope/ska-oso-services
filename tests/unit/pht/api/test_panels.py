@@ -225,13 +225,12 @@ class TestPanelAutoCreateAPI:
         mock_oda,
         client
     ):
-        # Properly mock the context manager
         uow_mock = mock.Mock()
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        # Robust factory: always return SimpleNamespace, never a mock!
+     
         def panel_factory(*args, **kwargs):
-            # Try to get the name from args or kwargs
+
             name = kwargs.get('name')
             if not name and args:
                 name = args[0]
@@ -244,13 +243,11 @@ class TestPanelAutoCreateAPI:
             )
         uow_mock.panels.add.side_effect = panel_factory
 
-        # Mock queries to return empty lists
         uow_mock.prsls.query.return_value = []
         uow_mock.panels.query.return_value = []
         mock_get_latest_entity_by_id.return_value = []
         mock_build_sv_panel_proposals.return_value = []
 
-        # upsert_panel returns SimpleNamespace, never a mock!
         def upsert_panel_side_effect(uow, panel_name, reviewers, proposals):
             return SimpleNamespace(
                 panel_id=f"panel-{panel_name.lower()}",
@@ -259,9 +256,6 @@ class TestPanelAutoCreateAPI:
                 proposals=[],
             )
         mock_upsert_panel.side_effect = upsert_panel_side_effect
-
-        # Optionally, leave build_panel_response to real code
-        # Or keep your previous side effect if you want to control output
 
         payload = {
             "name": "Galaxy",
