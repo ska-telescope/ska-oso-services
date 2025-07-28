@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter
 from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
+from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.common import oda
@@ -28,12 +29,18 @@ def create_panel(param: Panel) -> str:
         proposal_ids = validate_duplicates(param.proposals, "prsl_id")
         for proposal_id in proposal_ids:
             try:
-                uow.prsls.get(proposal_id)
+                proposal: Proposal = uow.prsls.get(proposal_id)
+                proposal.status = "under review"
+                uow.prsls.add(proposal)
+                logger.info(
+                    "Proposal status successfully updated with ID %s", proposal.prsl_id
+                )
             except ODANotFound:
                 raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
 
         panel: Panel = uow.panels.add(param)  # pylint: disable=no-member
         uow.commit()
+
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
 
