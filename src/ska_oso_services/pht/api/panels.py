@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
+from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.common import oda
@@ -30,7 +31,8 @@ def create_panel(param: Panel) -> str:
         for proposal_id in proposal_ids:
             try:
                 proposal: Proposal = uow.prsls.get(proposal_id)
-                proposal.status = "under review"
+                proposal.status = ProposalStatus.UNDER_REVIEW
+                # Update proposal status in the ODA
                 uow.prsls.add(proposal)
                 logger.info(
                     "Proposal status successfully updated with ID %s", proposal.prsl_id
