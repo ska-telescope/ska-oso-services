@@ -31,17 +31,24 @@ def get_report() -> List[ProposalReport]:
     # TODO: get proposals using Andrey's new query so no need to pass user_id
     LOGGER.debug("GET REPORT")
     with oda.uow() as uow:
-        proposal_query_param = CustomQuery(status=ProposalStatus.SUBMITTED)
+        proposal_query_param = CustomQuery()
         query_param = CustomQuery()
         proposals = get_latest_entity_by_id(
             uow.prsls.query(proposal_query_param), "prsl_id"
         )
+        # Filter out proposals that are not submitted
+        # (i.e., those with status DRAFT or WITHDRAWN)
+        filtered_proposals = [
+            proposal
+            for proposal in proposals
+            if proposal.status not in {ProposalStatus.DRAFT, ProposalStatus.WITHDRAWN}
+        ]
         panels = get_latest_entity_by_id(
             uow.panels.query(query_param), "panel_id"  # pylint: disable=no-member
         )
         reviews = get_latest_entity_by_id(uow.rvws.query(query_param), "review_id")
         decisions = get_latest_entity_by_id(uow.pnlds.query(query_param), "prsl_id")
     report = join_proposals_panels_reviews_decisions(
-        proposals, panels, reviews, decisions
+        filtered_proposals, panels, reviews, decisions
     )
     return report
