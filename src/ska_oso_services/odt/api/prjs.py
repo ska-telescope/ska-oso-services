@@ -50,9 +50,7 @@ router = APIRouter(prefix="/prjs")
     "/{identifier}",
     summary="Get Project by identifier",
     dependencies=[
-        Permissions(
-            roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE}
-        )
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})
     ],
 )
 def prjs_get(identifier: str) -> Project:

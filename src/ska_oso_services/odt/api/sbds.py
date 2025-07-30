@@ -33,9 +33,7 @@ router = APIRouter(prefix="/sbds")
     "/create",
     summary="Create empty SBD",
     dependencies=[
-        Permissions(
-            roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE}
-        )
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})
     ],
 )
 def sbds_create() -> SBDefinition:
@@ -67,9 +65,7 @@ def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
     "/{identifier}",
     summary="Get SBD by identifier",
     dependencies=[
-        Permissions(
-            roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE}
-        )
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})
     ],
 )
 def sbds_get(identifier: str) -> SBDefinition:
