@@ -41,7 +41,7 @@ DEFAULT_SB_DEFINITION = SBDefinition(
     interface="https://schema.skao.int/ska-oso-pdm-sbd/0.1",
 )
 
-API_ROLES = {Role.SW_ENGINEER, Role.LOW_TELESCOPE_OPERATOR, Role.MID_TELESCOPE_OPERATOR}
+API_ROLES = [Role.SW_ENGINEER, Role.LOW_TELESCOPE_OPERATOR, Role.MID_TELESCOPE_OPERATOR]
 
 router = APIRouter(prefix="/prjs")
 
