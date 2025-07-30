@@ -15,7 +15,7 @@ from ska_oso_services.odt.service.project_generator import generate_project
 
 LOGGER = logging.getLogger(__name__)
 
-API_ROLES = [Role.SW_ENGINEER, Role.LOW_TELESCOPE_OPERATOR, Role.MID_TELESCOPE_OPERATOR]
+API_ROLES = {Role.SW_ENGINEER, Role.LOW_TELESCOPE_OPERATOR, Role.MID_TELESCOPE_OPERATOR}
 
 
 router = APIRouter(prefix="/prsls")
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/prsls")
     summary="Create a new Project from the Proposal, creating a Observing Block for "
     "each group of Observation Sets in the Proposal "
     "and copying over the science data",
-    dependencies=[Permissions(roles={API_ROLES}, scopes={Scope.ODT_READWRITE})],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_prsl_post(prsl_id: str) -> Project:
     LOGGER.debug("POST PRSLS generateProject from prsl_id: %s", prsl_id)

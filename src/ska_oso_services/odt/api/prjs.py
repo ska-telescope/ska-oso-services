@@ -41,7 +41,7 @@ DEFAULT_SB_DEFINITION = SBDefinition(
     interface="https://schema.skao.int/ska-oso-pdm-sbd/0.1",
 )
 
-API_ROLES = [Role.SW_ENGINEER, Role.LOW_TELESCOPE_OPERATOR, Role.MID_TELESCOPE_OPERATOR]
+API_ROLES = {Role.SW_ENGINEER, Role.LOW_TELESCOPE_OPERATOR, Role.MID_TELESCOPE_OPERATOR}
 
 router = APIRouter(prefix="/prjs")
 
@@ -51,7 +51,7 @@ router = APIRouter(prefix="/prjs")
     summary="Get Project by identifier",
     dependencies=[
         Permissions(
-            roles={API_ROLES}, scopes={Scope.ODT_READ, Scope.ODT_READWRITE}
+            roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE}
         )
     ],
 )
@@ -68,7 +68,7 @@ def prjs_get(identifier: str) -> Project:
 @router.post(
     "/",
     summary="Create a new Project",
-    dependencies=[Permissions(roles={API_ROLES}, scopes={Scope.ODT_READWRITE})],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_post(prj: Optional[Project] = None) -> Project:
     """
@@ -114,7 +114,7 @@ def prjs_post(prj: Optional[Project] = None) -> Project:
 @router.put(
     "/{identifier}",
     summary="Update a Project by identifier",
-    dependencies=[Permissions(roles={API_ROLES}, scopes={Scope.ODT_READWRITE})],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_put(prj: Project, identifier: str) -> Project:
     """
@@ -157,7 +157,7 @@ class PrjSBDLinkResponse(BaseModel):
 @router.post(
     "/{identifier}/{obs_block_id}/sbds",
     summary="Create a new SBDefinition linked to a project",
-    dependencies=[Permissions(roles={API_ROLES}, scopes={Scope.ODT_READWRITE})],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_sbds_post(
     identifier: str, obs_block_id: str, sbd: Optional[SBDefinition] = None
@@ -209,7 +209,7 @@ def prjs_sbds_post(
     "ObservingBlock, persists those SBDefinitions in the ODA, adds a "
     "link to the SBDefinitions to the ObservingBlock then persists"
     "the updated Project/ObservingBlock",
-    dependencies=[Permissions(roles={API_ROLES}, scopes={Scope.ODT_READWRITE})],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_ob_generate_sbds(identifier: str, obs_block_id: str) -> Project:
     LOGGER.debug(
@@ -257,7 +257,7 @@ def prjs_ob_generate_sbds(identifier: str, obs_block_id: str) -> Project:
     "persists those SBDefinitions in the ODA, adds a link to the "
     "SBDefinitions to the ObservingBlock then persists the updated "
     "Project/ObservingBlock",
-    dependencies=[Permissions(roles={API_ROLES}, scopes={Scope.ODT_READWRITE})],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_generate_sbds(identifier: str) -> Project:
     LOGGER.debug("POST PRJS generate SBDefinitions for prj_id: %s", identifier)
