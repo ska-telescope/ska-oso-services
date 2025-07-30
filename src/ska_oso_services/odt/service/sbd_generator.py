@@ -1,6 +1,6 @@
 # pylint: disable=no-member
 from random import randint
-from typing import Optional
+from typing import List, Optional
 
 import astropy.units as u
 from ska_oso_pdm import SBDefinition, SubArrayLOW, SubArrayMID, TelescopeType
@@ -52,13 +52,8 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
 
     telescope = observation_set.array_details.array
 
-    mccs_allocation, dish_allocations = _receptor_field_from_science_programme(
-        science_programme
-    )
-
     csp_configurations = [_csp_configuration_from_science_programme(science_programme)]
 
-    scan_definitions = []
     scan_sequence = []
     for target in science_programme.targets:
         scan_definition = ScanDefinition(
@@ -67,21 +62,13 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
                 science_programme, target.target_id
             ),
             target_ref=target.target_id,
-            mccs_allocation_ref=(
-                mccs_allocation.mccs_allocation_id
-                if mccs_allocation is not None
-                else None
-            ),
-            dish_allocation_ref=(
-                dish_allocations.dish_allocation_id
-                if dish_allocations is not None
-                else None
-            ),
             csp_configuration_ref=csp_configurations[0].config_id,
         )
+        scan_sequence.append(scan_definition)
 
-        scan_definitions.append(scan_definition)
-        scan_sequence.append(scan_definition.scan_definition_id)
+    mccs_allocation, dish_allocations = _receptor_field_from_science_programme(
+        science_programme, scan_sequence
+    )
 
     return SBDefinition(
         telescope=telescope,
@@ -90,8 +77,6 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
         mccs_allocation=mccs_allocation,
         csp_configurations=csp_configurations,
         targets=science_programme.targets,
-        scan_definitions=scan_definitions,
-        scan_sequence=scan_sequence,
     )
 
 
@@ -107,7 +92,7 @@ def _default_activities() -> dict[str, GitScript]:
 
 
 def _receptor_field_from_science_programme(
-    science_programme: ScienceProgramme,
+    science_programme: ScienceProgramme, scan_sequence: List[ScanDefinition]
 ) -> tuple[Optional[MCCSAllocation], Optional[DishAllocation]]:
     observation_set = science_programme.observation_sets[0]
 
@@ -116,14 +101,16 @@ def _receptor_field_from_science_programme(
     match telescope:
         case TelescopeType.SKA_LOW:
             mccs_allocation = _mccs_allocation(
-                SubArrayLOW(observation_set.array_details.subarray.upper())
+                SubArrayLOW(observation_set.array_details.subarray.upper()),
+                scan_sequence,
             )
 
             dish_allocations = None
         case TelescopeType.SKA_MID:
             mccs_allocation = None
             dish_allocations = _dish_allocation(
-                SubArrayMID(observation_set.array_details.subarray.upper())
+                SubArrayMID(observation_set.array_details.subarray.upper()),
+                scan_sequence,
             )
         case _:
             raise ValueError(f"Unsupported TelescopeType {telescope}")
@@ -228,7 +215,9 @@ def _scan_time_ms_from_science_programme(
         return result_for_target.result.continuum.to(u.s).value * 1e3
 
 
-def _dish_allocation(subarray: SubArrayMID) -> DishAllocation:
+def _dish_allocation(
+    subarray: SubArrayMID, scan_sequence: List[ScanDefinition]
+) -> DishAllocation:
     osd_data = get_osd(array_assembly=subarray.value, capabilities="mid", source="car")
 
     dish_ids = osd_data["capabilities"]["mid"][subarray.value]["number_dish_ids"]
@@ -237,10 +226,13 @@ def _dish_allocation(subarray: SubArrayMID) -> DishAllocation:
         dish_allocation_id=_sbd_internal_id(DishAllocation),
         selected_subarray_definition=subarray,
         dish_ids=dish_ids,
+        scan_sequence=scan_sequence,
     )
 
 
-def _mccs_allocation(subarray: SubArrayLOW) -> MCCSAllocation:
+def _mccs_allocation(
+    subarray: SubArrayLOW, scan_sequence: List[ScanDefinition]
+) -> MCCSAllocation:
     osd_data = get_osd(array_assembly=subarray.value, capabilities="low", source="car")
 
     station_ids = osd_data["capabilities"]["low"][subarray.value]["number_station_ids"]
@@ -254,7 +246,9 @@ def _mccs_allocation(subarray: SubArrayLOW) -> MCCSAllocation:
         mccs_allocation_id=_sbd_internal_id(MCCSAllocation),
         selected_subarray_definition=subarray,
         subarray_beams=[
-            SubarrayBeamConfiguration(apertures=apertures, subarray_beam_id=1)
+            SubarrayBeamConfiguration(
+                apertures=apertures, subarray_beam_id=1, scan_sequence=scan_sequence
+            )
         ],
     )
 
