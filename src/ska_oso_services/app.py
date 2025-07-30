@@ -77,7 +77,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "get_proposals_by_status",
                 "get_proposals_batch",
                 "update_panel",
-                "auto_create_panel",
+                "auto_create_panel","get_role"
             ]
         ),
         # Need this param for code generation - see
