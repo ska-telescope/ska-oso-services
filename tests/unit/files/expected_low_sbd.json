@@ -79,28 +79,6 @@
       }
     }
   ],
-  "scan_definitions": [
-    {
-      "scan_definition_id": "scan-definition-12345",
-      "scan_duration_ms": 3.6e+6,
-      "target_ref": "47 tuc",
-      "mccs_allocation_ref": "mccs-allocation-12345",
-      "csp_configuration_ref": "csp-configuration-12345",
-      "pointing_correction": "MAINTAIN"
-    },
-    {
-      "scan_definition_id": "scan-definition-67890",
-      "scan_duration_ms": 3.6e+6,
-      "target_ref": "target42",
-      "mccs_allocation_ref": "mccs-allocation-12345",
-      "csp_configuration_ref": "csp-configuration-12345",
-      "pointing_correction": "MAINTAIN"
-    }
-  ],
-  "scan_sequence": [
-    "scan-definition-12345",
-    "scan-definition-67890"
-  ],
   "csp_configurations": [
     {
       "config_id": "csp-configuration-12345",
@@ -207,7 +185,23 @@
             "weighting_key": "uniform"
           }
         ],
-        "subarray_beam_id": 1
+        "subarray_beam_id": 1,
+        "scan_sequence": [
+          {
+            "scan_definition_id": "scan-definition-12345",
+            "scan_duration_ms": 3.6e+6,
+            "target_ref": "47 tuc",
+            "csp_configuration_ref": "csp-configuration-12345",
+            "pointing_correction": "MAINTAIN"
+          },
+          {
+            "scan_definition_id": "scan-definition-67890",
+            "scan_duration_ms": 3.6e+6,
+            "target_ref": "target42",
+            "csp_configuration_ref": "csp-configuration-12345",
+            "pointing_correction": "MAINTAIN"
+          }
+        ]
       }
     ]
   }

@@ -44,7 +44,8 @@ ENV VIRTUAL_ENV=/app/.venv \
 COPY --chown=$APP_USER:$APP_USER --from=buildenv ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Now we copy and install the application code:
-COPY --chown=$APP_USER:$APP_USER . ./
+COPY pyproject.toml poetry.lock README.md ./
+COPY --chown=$APP_USER:$APP_USER ./src ./src
 
 RUN python -m pip --require-virtualenv install --no-deps -e .
 

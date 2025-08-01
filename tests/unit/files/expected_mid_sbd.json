@@ -45,19 +45,6 @@
       }
     }
   ],
-  "scan_definitions": [
-    {
-      "scan_definition_id": "scan-definition-12345",
-      "scan_duration_ms": 3.6e6,
-      "target_ref": "47 tuc",
-      "csp_configuration_ref": "csp-configuration-12345",
-      "dish_allocation_ref": "dish-allocation-12345",
-      "pointing_correction": "MAINTAIN"
-    }
-  ],
-  "scan_sequence": [
-    "scan-definition-12345"
-  ],
   "csp_configurations": [
     {
       "config_id": "csp-configuration-12345",
@@ -89,6 +76,13 @@
   "dish_allocations": {
     "dish_allocation_id": "dish-allocation-12345",
     "dish_ids": ["SKA001", "SKA036", "SKA063", "SKA100"],
-    "selected_subarray_definition": "AA0.5"
+    "selected_subarray_definition": "AA0.5",
+    "scan_sequence": [{
+      "scan_definition_id": "scan-definition-12345",
+      "scan_duration_ms": 3.6e6,
+      "target_ref": "47 tuc",
+      "csp_configuration_ref": "csp-configuration-12345",
+      "pointing_correction": "MAINTAIN"
+    }]
   }
 }
