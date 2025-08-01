@@ -48,61 +48,52 @@ def get_report() -> List[ProposalReport]:
 
 
 
-# import msal
-# import requests
+import msal
+import requests
 
 
 
 
 
-# @router.get(
-#     "/role",
-#     summary="Create a report for admin/coordinator")
-# def get_role():
-#     """
-#     Creates a new report for the PHT admin/coordinator.
-#     """
-#     # Configurations
-#     client_id = '2445e300-54c9-470f-9578-0f54840672af'
-#     client_secret = '7Ku8Q~m4nkFLdGtHwwbbwhl~YgjuOzEIEnS7TbRM'
-#     tenant_id = '78887040-bad7-494b-8760-88dcacfb3805'
-#     authority = f'https://login.microsoftonline.com/{tenant_id}'
-#     scope = ['https://graph.microsoft.com/.default']
-#     group_display_name = 'obs-oauth2role-opsreviewersci'
-#     group_id = "05883c37-b723-4b63-9216-0a789a61cb07s"
+@router.get(
+    "/role",
+    summary="Create a report for admin/coordinator")
+def get_role():
+    """
+    Creates a new report for the PHT admin/coordinator.
+    """
+    # Configurations
+    client_id = '2445e300-54c9-470f-9578-0f54840672af'
+    client_secret = 'BHY8Q~HOXyf4_jDuXjSfaRxFXS6-t05r95nDOb0s'
+    tenant_id = '78887040-bad7-494b-8760-88dcacfb3805'
+    authority = f'https://login.microsoftonline.com/{tenant_id}'
+    scope = ['https://graph.microsoft.com/.default']
+    group_id= '05883c37-b723-4b63-9216-0a789a61cb07'
+    group_display_name = 'obs-oauth2role-opsreviewersci'
 
-#     # 1. Get token
-#     app = msal.ConfidentialClientApplication(client_id, authority=authority, client_credential=client_secret)
-#     result = app.acquire_token_for_client(scopes=scope)
-#     print(result)
-#     access_token = result['access_token']
+    # 1. Get token
+    app = msal.ConfidentialClientApplication(client_id, authority=authority, client_credential=client_secret)
+    result = app.acquire_token_for_client(scopes=scope)
+    print(result)
+    access_token = result['access_token']
 
-#     headers = {'Authorization': f'Bearer {access_token}'}
-#     resp = requests.get("https://graph.microsoft.com/v1.0/groups", headers=headers).json()
-#     print([g["displayName"] for g in resp.get("value", [])])
-#     resp = requests.get("https://graph.microsoft.com/v1.0/groups", headers=headers).json()
-#     print([g["displayName"] for g in resp.get("value", [])])
-#     members_url = f"https://graph.microsoft.com/v1.0/groups/{group_id}/members"
-#     members_resp = requests.get(members_url, headers=headers).json()
-#     print("Members response:", members_resp)
-#     # 2. Find group ID by display name
-#     group_url = f"https://graph.microsoft.com/v1.0/groups?$filter=displayName eq '{group_display_name}'"
-#     group_resp = requests.get(group_url, headers=headers).json()
-#     print(group_resp)
-#     group_id = group_resp['value'][0]['id']
+    headers = {'Authorization': f'Bearer {access_token}'}
 
-#     # 3. Get group members (users assigned to "ENG" role)
-#     members_url = f"https://graph.microsoft.com/v1.0/groups/{group_id}/members"
-#     members_resp = requests.get(members_url, headers=headers).json()
-#     users = [m for m in members_resp['value'] if m['@odata.type'] == '#microsoft.graph.user']
+    # 3. Get group members (users assigned to "ENG" role)
+    members_url = f"https://graph.microsoft.com/v1.0/groups/{group_id}/members"
+    print(group_id)
+    print("members_url:", members_url)
+    members_resp = requests.get(members_url, headers=headers).json()
+    print
+    users = [m for m in members_resp['value'] if m['@odata.type'] == '#microsoft.graph.user']
 
-#     # Print user info
-#     result = []
-#     for user in users:
-#         print(f"{user['displayName']} | {user['mail']} | {user['id']}")
-#         result.append({
-#             "displayName": user['displayName'],
-#             "mail": user['mail'],
-#             "id": user['id']
-#         })
-#     return result
+    # Print user info
+    result = []
+    for user in users:
+        print(f"{user['displayName']} | {user['mail']} | {user['id']}")
+        result.append({
+            "displayName": user['displayName'],
+            "mail": user['mail'],
+            "id": user['id']
+        })
+    return result
