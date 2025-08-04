@@ -6,9 +6,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
-* Updated ODA to version 11.0.0 (python package and helm chart)
-* Updated ODT's SBD generator to populate scan sequence within MCCS/Dish allocation instead of at root SBD level (as implemented in PDM v19.0.0)
+
+2.0.0
+***********
+* [BREAKING] Updated ODA to version 11.0.0 (python package and helm chart)
+* [BREAKING] Updated ODT's SBD generator to populate scan sequence within MCCS/Dish allocation instead of at root SBD level (as implemented in PDM v19.0.0)
 * Added LOW/MID_TELESCOPE_OPERATOR roles to all ODT endpoints
+* Updated `/reports/` endpoint to pull proposals of all statuses except withdrawn and draft
+* Updated the status of a submitted proposal to be changed on assignment to a panel
 
 1.3.0
 ***********
