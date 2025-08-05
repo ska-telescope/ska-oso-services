@@ -1,15 +1,13 @@
 # tests/component/test_report.py
 from http import HTTPStatus
 
-import requests
-
 from ..unit.util import REVIEWERS, TestDataFactory
 from . import PHT_URL
 
 HEADERS = {"Content-type": "application/json"}
 
 
-def test_get_report_for_user():
+def test_get_report_for_user(authrequests):
     """
     Integration test for the GET /reports/ endpoint.
     """
@@ -29,35 +27,35 @@ def test_get_report_for_user():
         review_id="rvw-mvp01-20220923-00001",
     )
 
-    created_proposal1 = requests.post(
+    created_proposal1 = authrequests.post(
         f"{PHT_URL}/prsls/create",
         data=proposal1.json(),
         headers=HEADERS,
     )
     assert created_proposal1.status_code == HTTPStatus.OK, created_proposal1.text
 
-    created_proposal2 = requests.post(
+    created_proposal2 = authrequests.post(
         f"{PHT_URL}/prsls/create",
         data=proposal2.json(),
         headers=HEADERS,
     )
     assert created_proposal2.status_code == HTTPStatus.OK, created_proposal2.text
 
-    created_panel = requests.post(
+    created_panel = authrequests.post(
         f"{PHT_URL}/panels",
         data=panel.json(),
         headers=HEADERS,
     )
     assert created_panel.status_code == HTTPStatus.OK, created_panel.text
 
-    created_decision = requests.post(
+    created_decision = authrequests.post(
         f"{PHT_URL}/panel-decisions",
         data=decision.json(),
         headers=HEADERS,
     )
     assert created_decision.status_code == HTTPStatus.OK, created_decision.text
 
-    created_review = requests.post(
+    created_review = authrequests.post(
         f"{PHT_URL}/reviews",
         data=reviews.json(),
         headers=HEADERS,
@@ -66,7 +64,7 @@ def test_get_report_for_user():
 
     url = f"{PHT_URL}/report/"
 
-    response = requests.get(url)
+    response = authrequests.get(url)
     assert response.status_code == HTTPStatus.OK, response.text
 
     report = response.json()

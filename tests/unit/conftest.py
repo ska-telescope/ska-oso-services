@@ -7,6 +7,7 @@ from importlib.metadata import version
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token, monkeypatch_pubkeys
 
 from ska_oso_services import create_app
@@ -31,7 +32,22 @@ def client(test_app: FastAPI) -> TestClient:
     """
     Create a test client from the app instance, without running a live server
     """
-    token = mint_test_token(audience=AUDIENCE, scopes={Scope.ODT_READWRITE})
+    token = mint_test_token(
+        audience=AUDIENCE,
+        roles=[
+            Role.ANY,
+            Role.OPS_PROPOSAL_ADMIN,
+            Role.OPS_REVIEWER_SCIENCE,
+            Role.OPS_REVIEWER_TECHNICAL,
+            Role.SW_ENGINEER,
+        ],
+        scopes=[
+            Scope.ODT_READWRITE,
+            Scope.ODT_READ,
+            Scope.PHT_READ,
+            Scope.PHT_READWRITE,
+        ],
+    )
     headers = {"Authorization": f"Bearer {token}"}
     return TestClient(test_app, headers=headers)
 
