@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-import requests
 from ska_oso_pdm import Project
 
 from tests.unit.util import TestDataFactory
@@ -12,7 +11,7 @@ def test_project_generated_from_proposal(authrequests):
     # First need to add a proposal to generate from
     proposal = TestDataFactory.complete_proposal()
     proposal.prsl_id = None
-    post_response = requests.post(
+    post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
         data=proposal.model_dump_json(),
         headers={"Content-Type": "application/json"},

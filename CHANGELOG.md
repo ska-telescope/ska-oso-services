@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* [BREAKING] Added AAA protection to PHT endpoints
+* Upgraded ska-aaa-authhelpers version to 1.1.0
 
 2.0.0
 ***********
