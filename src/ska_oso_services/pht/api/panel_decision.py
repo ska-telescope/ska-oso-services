@@ -1,10 +1,12 @@
 import logging
 
 from fastapi import APIRouter
+from ska_aaa_authhelpers.roles import Role
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm import PanelDecision
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
     NotFoundError,
@@ -13,12 +15,18 @@ from ska_oso_services.common.error_handling import (
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/panel-decisions")
+router = APIRouter(prefix="/panel-decisions", tags=["PMT API- Panel Decision"])
 
 
 @router.post(
     "/",
     summary="Create a new Panel decision",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READWRITE],
+        )
+    ],
 )
 def create_panel_decision(decisions: PanelDecision) -> str:
     """
@@ -41,7 +49,16 @@ def create_panel_decision(decisions: PanelDecision) -> str:
         ) from err
 
 
-@router.get("/{decision_id}", summary="Retrieve an existing decision")
+@router.get(
+    "/{decision_id}",
+    summary="Retrieve an existing decision",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READ],
+        )
+    ],
+)
 def get_panel_decision(decision_id: str) -> PanelDecision:
     """Retrieves a decision for a panel from the ODA based on the decision_id."""
     LOGGER.debug("GET panel DECISION decision_id: %s", decision_id)
@@ -51,7 +68,16 @@ def get_panel_decision(decision_id: str) -> PanelDecision:
     return decision
 
 
-@router.get("/list/{user_id}", summary="Get a list of Decisions created by a user")
+@router.get(
+    "/list/{user_id}",
+    summary="Get a list of Decisions created by a user",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READ],
+        )
+    ],
+)
 def get_panel_decisions_for_user(user_id: str) -> list[PanelDecision]:
     """
     Retrieves the panel Decision for the given user ID from the
@@ -66,7 +92,16 @@ def get_panel_decisions_for_user(user_id: str) -> list[PanelDecision]:
     return decisions
 
 
-@router.put("/{decision_id}", summary="Update an existing Decision")
+@router.put(
+    "/{decision_id}",
+    summary="Update an existing Decision",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READWRITE],
+        )
+    ],
+)
 def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDecision:
     """
     Updates a decision in the ODA.

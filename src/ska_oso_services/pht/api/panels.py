@@ -1,22 +1,34 @@
 import logging
 
 from fastapi import APIRouter
+from ska_aaa_authhelpers import Role
 from ska_db_oda.persistence.domain.errors import ODANotFound
-from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
+from ska_db_oda.persistence.domain.query import MatchType, UserQuery
+from ska_oso_pdm.proposal import Proposal
+from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
-from ska_oso_pdm.proposal_management.review import PanelReview
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.utils.constants import REVIEWERS
 from ska_oso_services.pht.utils.validation import validate_duplicates
 
-router = APIRouter(prefix="/panels")
+router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 
 logger = logging.getLogger(__name__)
 
 
-@router.post("/", summary="Create a panel")
+@router.post(
+    "/",
+    summary="Create a panel",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READWRITE],
+        )
+    ],
+)
 def create_panel(param: Panel) -> str:
     logger.debug("POST panel")
 
@@ -29,17 +41,32 @@ def create_panel(param: Panel) -> str:
         proposal_ids = validate_duplicates(param.proposals, "prsl_id")
         for proposal_id in proposal_ids:
             try:
-                uow.prsls.get(proposal_id)
+                proposal: Proposal = uow.prsls.get(proposal_id)
+                proposal.status = ProposalStatus.UNDER_REVIEW
+                # Update proposal status in the ODA
+                uow.prsls.add(proposal)
+                logger.info(
+                    "Proposal status successfully updated with ID %s", proposal.prsl_id
+                )
             except ODANotFound:
                 raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
 
         panel: Panel = uow.panels.add(param)  # pylint: disable=no-member
         uow.commit()
+
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
 
 
-@router.get("/{panel_id}", summary="Retrieve an existing panel by panel_id")
+@router.get(
+    "/{panel_id}",
+    summary="Retrieve an existing panel by panel_id",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
+    ],
+)
 def get_panel(panel_id: str) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 
@@ -49,19 +76,14 @@ def get_panel(panel_id: str) -> Panel:
     return panel
 
 
-@router.get("/reviews/{panel_id}", summary="Get all reviews for a particular panel")
-def get_reviews_for_panel(panel_id: str) -> list[PanelReview]:
-    logger.debug("GET reviews for a panel_id: %s", panel_id)
-
-    with oda.uow() as uow:
-        query = CustomQuery(panel_id=panel_id)
-        reviews = uow.rvws.query(query)
-
-    return reviews
-
-
 @router.get(
-    "/list/{user_id}", summary="Get all panels matching the given query parameters"
+    "/list/{user_id}",
+    summary="Get all panels matching the given query parameters",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
+    ],
 )
 def get_panels_for_user(user_id: str) -> list[Panel]:
     """

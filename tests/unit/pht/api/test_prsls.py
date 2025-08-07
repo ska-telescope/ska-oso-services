@@ -7,7 +7,9 @@ from unittest import mock
 
 from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRefused
 from fastapi import status
+from ska_db_oda.persistence.domain.query import CustomQuery
 
+from ska_oso_services.pht.api.prsls import get_proposals_by_status
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
     PAYLOAD_BAD_TO,
@@ -333,6 +335,103 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "validation error" in response.json()["detail"].lower()
 
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_get_reviews_for_proposal_with_wrong_id(self, mock_oda, client):
+        """
+        Test reviews for a proposal with a wrong ID returns an empty list.
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.rvws.query.return_value = []
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        prsl_id = "wrong id"
+        response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
+
+        assert response.status_code == HTTPStatus.OK
+        res = response.json()
+        assert res == []
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow")
+    def test_get_reviews_for_panel_with_valid_id(self, mock_oda, client):
+        """
+        Test reviews for a proposal with a valid ID returns the expected reviews.
+        """
+        review_objs = [
+            TestDataFactory.reviews(prsl_id="my proposal"),
+        ]
+        uow_mock = mock.MagicMock()
+        uow_mock.rvws.query.return_value = review_objs
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        prsl_id = "my proposal"
+        response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
+        assert response.status_code == HTTPStatus.OK
+
+        expected = [
+            obj.model_dump(mode="json", exclude={"metadata"}) for obj in review_objs
+        ]
+        response = response.json()
+        del response[0]["metadata"]
+        assert expected == response
+        assert response[0]["review_id"] == expected[0]["review_id"]
+        assert response[0]["panel_id"] == expected[0]["panel_id"]
+
+
+class TestProposalBatch:
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_get_proposals_batch_all_found(self, mock_oda, client):
+        proposal1 = TestDataFactory.proposal(prsl_id="prsl-ska-00001")
+        proposal2 = TestDataFactory.proposal(prsl_id="prsl-ska-00002")
+        prsl_map = {"prsl-ska-00001": proposal1, "prsl-ska-00002": proposal2}
+
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.get.side_effect = prsl_map.get
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        response = client.post(
+            f"{PROPOSAL_API_URL}/batch",
+            json={"prsl_ids": ["prsl-ska-00001", "prsl-ska-00002"]},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) == 2
+        assert {obj["prsl_id"] for obj in data} == {"prsl-ska-00001", "prsl-ska-00002"}
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_get_proposals_batch_partial_found(self, mock_oda, client):
+        proposal1 = TestDataFactory.proposal(prsl_id="prsl-ska-00001")
+        prsl_map = {"prsl-ska-00001": proposal1}
+
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.get.side_effect = prsl_map.get
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        response = client.post(
+            f"{PROPOSAL_API_URL}/batch",
+            json={"prsl_ids": ["prsl-ska-00001", "prsl-ska-00004"]},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["prsl_id"] == "prsl-ska-00001"
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_get_proposals_batch_none_found(self, mock_oda, client):
+        """
+        Test when proposal ids are not found
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.get.return_value = None
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        response = client.post(
+            f"{PROPOSAL_API_URL}/batch", json={"prsl_ids": ["PRSL999", "PRSL888"]}
+        )
+        assert response.status_code == 200
+        assert response.json() == []
+
 
 class TestProposalEmailAPI:
     @mock.patch("ska_oso_services.pht.api.prsls.send_email_async", autospec=True)
@@ -405,3 +504,49 @@ class TestProposalEmailAPI:
 
         assert response.status_code == status.HTTP_502_BAD_GATEWAY
         assert "SMTP send failed" in response.text
+
+
+class TestGetProposalsByStatus:
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.get_latest_entity_by_id")
+    def test_get_proposals_by_status_success(self, mock_get_latest, mock_uow):
+        sample_proposal = TestDataFactory.complete_proposal(
+            prsl_id="prsl-ska-00002", status="draft"
+        )
+        mock_query_result = [sample_proposal]
+
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.query.return_value = mock_query_result
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        # Call returns raw proposal
+        # Returns filtered/latest
+        mock_get_latest.side_effect = [mock_query_result, mock_query_result]
+
+        result = get_proposals_by_status("draft")
+
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0].prsl_id == "prsl-ska-00002"
+        uow_mock.prsls.query.assert_called_once_with(CustomQuery(status="draft"))
+        assert mock_get_latest.call_count == 2
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.get_latest_entity_by_id")
+    def test_get_proposals_by_status_empty(self, mock_get_latest, mock_uow):
+        empty_result = []
+
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.query.return_value = empty_result
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        mock_get_latest.side_effect = [None]
+
+        result = get_proposals_by_status("non-existent-status")
+
+        assert result == []
+        uow_mock.prsls.query.assert_called_once_with(
+            CustomQuery(status="non-existent-status")
+        )
+        mock_get_latest.assert_called_once()

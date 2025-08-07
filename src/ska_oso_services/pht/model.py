@@ -133,9 +133,11 @@ class ProposalReport(AppModel):
     comments: str | None = None
     review_status: str | None = None
     decision_id: str | None = None
+    assigned_proposal: str | None = None
     recommendation: str | None = None
     decision_status: str | None = None
     panel_rank: int | None = None
+    panel_score: float | None = None
     review_submitted_on: str | None = None
     decision_on: str | None = None
     decision_status: str | None = None

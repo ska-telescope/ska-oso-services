@@ -6,7 +6,24 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* [BREAKING] Added AAA protection to PHT endpoints
+* Upgraded ska-aaa-authhelpers version to 1.1.0
+
+2.0.0
+***********
+* [BREAKING] Updated ODA to version 11.0.0 (python package and helm chart)
+* [BREAKING] Updated ODT's SBD generator to populate scan sequence within MCCS/Dish allocation instead of at root SBD level (as implemented in PDM v19.0.0)
+* Added LOW/MID_TELESCOPE_OPERATOR roles to all ODT endpoints
+* Updated `/reports/` endpoint to pull proposals of all statuses except withdrawn and draft
+* Updated the status of a submitted proposal to be changed on assignment to a panel
+
+1.3.0
+***********
 * Updated OSD data endpoint and introduced a model to OSD dict
+* Updated `/reports/{user_id}` to `/reports/` so no user_id is required
+* Updated `/reviews/{panel_id}` to `/reviews/{prsl_id}` to query by proposal id and not panel_id
+* Added `/status/{status}` so Proposal management admin/coordinator can get all submitted proposals
+* Added `/batch` to retrieve a list of proposals based on supplied list of proposal ids
 
 1.2.0
 ***********

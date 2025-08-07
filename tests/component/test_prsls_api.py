@@ -9,22 +9,22 @@ import json
 import uuid
 from http import HTTPStatus
 
-import requests
-
 from ..unit.util import VALID_NEW_PROPOSAL, TestDataFactory
 from . import PHT_URL
 
+PANELS_API_URL = f"{PHT_URL}/panels"
 
-def test_get_osd_data_fail():
+
+def test_get_osd_data_fail(authrequests):
     cycle = "-1"
-    response = requests.get(f"{PHT_URL}/prsls/osd/{cycle}")
+    response = authrequests.get(f"{PHT_URL}/prsls/osd/{cycle}")
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-def test_get_osd_data_success():
+def test_get_osd_data_success(authrequests):
     cycle = 1
-    response = requests.get(f"{PHT_URL}/prsls/osd/{cycle}")
+    response = authrequests.get(f"{PHT_URL}/prsls/osd/{cycle}")
 
     res = response.json()
     expected = {
@@ -120,7 +120,7 @@ def test_get_osd_data_success():
     assert expected == res
 
 
-def test_create_and_get_proposal():
+def test_create_and_get_proposal(authrequests):
     """
     Integration test for the POST /prsls/create endpoint
     and GET /prsls/{prsl_id}.
@@ -128,7 +128,7 @@ def test_create_and_get_proposal():
     """
 
     # POST using JSON string
-    post_response = requests.post(
+    post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
         data=VALID_NEW_PROPOSAL,
         headers={"Content-Type": "application/json"},
@@ -138,7 +138,7 @@ def test_create_and_get_proposal():
     assert isinstance(prsl_id, str), f"Expected string, got {type(prsl_id)}: {prsl_id}"
 
     # GET created proposal
-    get_response = requests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    get_response = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     actual_payload = get_response.json()
 
@@ -154,7 +154,7 @@ def test_create_and_get_proposal():
     assert actual_payload == expected_payload
 
 
-def test_proposal_create_then_put():
+def test_proposal_create_then_put(authrequests):
     """
     Test that an entity POSTed to /prsls/create
     can then be updated with PUT /prsls/{identifier},
@@ -162,7 +162,7 @@ def test_proposal_create_then_put():
     """
 
     # POST a new proposal
-    post_response = requests.post(
+    post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
         data=VALID_NEW_PROPOSAL,
         headers={"Content-Type": "application/json"},
@@ -176,7 +176,7 @@ def test_proposal_create_then_put():
     assert returned_prsl_id == expected_prsl_id
 
     # GET proposal to fetch latest state
-    get_response = requests.get(f"{PHT_URL}/prsls/{returned_prsl_id}")
+    get_response = authrequests.get(f"{PHT_URL}/prsls/{returned_prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
     original_proposal = get_response.json()
@@ -187,7 +187,7 @@ def test_proposal_create_then_put():
     proposal_to_update = json.dumps(original_proposal)
 
     # PUT updated proposal
-    put_response = requests.put(
+    put_response = authrequests.put(
         f"{PHT_URL}/prsls/{returned_prsl_id}",
         data=proposal_to_update,
         headers={"Content-Type": "application/json"},
@@ -197,7 +197,7 @@ def test_proposal_create_then_put():
     assert put_response.json()["metadata"]["version"] == initial_version + 1
 
 
-def test_get_list_proposals_for_user():
+def test_get_list_proposals_for_user(authrequests):
     """
     Integration test:
     - Create multiple proposals
@@ -214,7 +214,7 @@ def test_get_list_proposals_for_user():
         proposal = TestDataFactory.proposal(prsl_id=prsl_id)
         proposal_json = proposal.model_dump_json()
 
-        response = requests.post(
+        response = authrequests.post(
             f"{PHT_URL}/prsls/create",
             data=proposal_json,
             headers={"Content-Type": "application/json"},
@@ -224,12 +224,12 @@ def test_get_list_proposals_for_user():
 
     # Get created_by from one of the created proposals
     example_prsl_id = created_ids[0]
-    get_response = requests.get(f"{PHT_URL}/prsls/{example_prsl_id}")
+    get_response = authrequests.get(f"{PHT_URL}/prsls/{example_prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     user_id = get_response.json()["metadata"]["created_by"]
 
     # GET /list/{user_id}
-    list_response = requests.get(f"{PHT_URL}/prsls/list/{user_id}")
+    list_response = authrequests.get(f"{PHT_URL}/prsls/list/{user_id}")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     proposals = list_response.json()
@@ -242,3 +242,153 @@ def test_get_list_proposals_for_user():
         assert (
             prsl_id in returned_ids
         ), f"Missing proposal {prsl_id} in GET /list/{user_id}"
+
+
+def test_get_proposals_batch(authrequests):
+    """
+    Integration test:
+    - Create multiple proposals with unique IDs
+    - Use POST /batch to retrieve them
+    - Ensure all created proposals are returned
+    """
+
+    created_ids = []
+
+    # Create 3 proposals with unique prsl_ids
+    for _ in range(3):
+        prsl_id = f"prsl-test-{uuid.uuid4().hex[:8]}"
+        proposal = TestDataFactory.proposal(prsl_id=prsl_id)
+        proposal_json = proposal.model_dump_json()
+
+        response = authrequests.post(
+            f"{PHT_URL}/prsls/create",
+            data=proposal_json,
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        created_ids.append(response.json())
+
+    # Use POST /batch to retrieve them
+    batch_response = authrequests.post(
+        f"{PHT_URL}/prsls/batch",
+        json={"prsl_ids": created_ids},
+    )
+
+    assert batch_response.status_code == HTTPStatus.OK, batch_response.content
+
+    proposals = batch_response.json()
+    assert isinstance(proposals, list), "Expected a list of proposals"
+    assert len(proposals) == len(
+        created_ids
+    ), f"Expected {len(created_ids)} proposals, got {len(proposals)}"
+
+    returned_ids = {p["prsl_id"] for p in proposals}
+    for prsl_id in created_ids:
+        assert prsl_id in returned_ids, f"Missing proposal {prsl_id} in POST /batch"
+
+
+def test_get_reviews_for_panel_with_wrong_id(authrequests):
+    prsl_id = "wrong id"
+    response = authrequests.get(f"{PHT_URL}/prsls/reviews/{prsl_id}")
+    assert response.status_code == HTTPStatus.OK
+    res = response.json()
+    assert [] == res
+
+
+def test_get_reviews_for_panel_with_valid_id(authrequests):
+    proposal = TestDataFactory.complete_proposal("my proposal")
+    response = authrequests.post(
+        f"{PHT_URL}/prsls/create",
+        data=proposal.json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    panel_id = "panel-test-20250717-00001"
+    panel = TestDataFactory.panel_basic(panel_id=panel_id, name="New name")
+    data = panel.json()
+    response = authrequests.post(
+        f"{PANELS_API_URL}", data=data, headers={"Content-Type": "application/json"}
+    )
+    assert response.status_code == HTTPStatus.OK
+    review = [
+        TestDataFactory.reviews(
+            prsl_id=proposal.prsl_id,
+        )
+    ]
+    response = authrequests.post(
+        f"{PHT_URL}/reviews/",
+        data=review[0].json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    response = authrequests.get(f"{PHT_URL}/prsls/reviews/{proposal.prsl_id}")
+    assert response.status_code == HTTPStatus.OK
+    res = response.json()
+    del res[0]["metadata"]
+    expected = [obj.model_dump(mode="json", exclude={"metadata"}) for obj in review]
+    assert expected == res
+
+
+def test_get_proposals_by_status(authrequests):
+    """
+    - Create proposals with various statuses (e.g. 'pending', 'rejected', 'submitted')
+    - Fetch proposals using GET /prsls/status/{status}
+    - Check that only proposals with the requested status are returned
+    """
+
+    status_to_test = "submitted"
+    created_ids_with_target_status = []
+    created_ids_with_other_status = []
+
+    # Create proposals with the target status to test
+    for _ in range(3):
+        prsl_id = f"prsl-pending-{uuid.uuid4().hex[:8]}"
+        proposal = TestDataFactory.complete_proposal(
+            prsl_id=prsl_id, status=status_to_test
+        )
+        proposal_json = proposal.model_dump_json()
+
+        response = authrequests.post(
+            f"{PHT_URL}/prsls/create",
+            data=proposal_json,
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        created_ids_with_target_status.append(prsl_id)
+
+    # Create proposals with different statuses additionally
+    for status in ["draft", "rejected"]:
+        prsl_id = f"prsl-{status}-{uuid.uuid4().hex[:8]}"
+        proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id, status=status)
+        proposal_json = proposal.model_dump_json()
+
+        response = authrequests.post(
+            f"{PHT_URL}/prsls/create",
+            data=proposal_json,
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        created_ids_with_other_status.append(prsl_id)
+
+    # Get proposals by 'draft' status
+    status_response = authrequests.get(f"{PHT_URL}/prsls/status/{status_to_test}")
+    assert status_response.status_code == HTTPStatus.OK, status_response.content
+
+    proposals = status_response.json()
+    assert isinstance(proposals, list)
+
+    returned_ids = {p["prsl_id"] for p in proposals}
+
+    # All with 'draft' should be returned
+    for prsl_id in created_ids_with_target_status:
+        assert (
+            prsl_id in returned_ids
+        ), f"Missing {prsl_id} from GET /status/{status_to_test}"
+
+    # Other statuses should not be returned
+    for prsl_id in created_ids_with_other_status:
+        assert (
+            prsl_id not in returned_ids
+        ), f"Unexpected proposal {prsl_id} in GET /status/{status_to_test}"

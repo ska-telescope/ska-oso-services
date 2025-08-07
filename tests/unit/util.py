@@ -219,11 +219,14 @@ class TestDataFactory:
         return panel
 
     @staticmethod
-    def complete_proposal(prsl_id: str = "prsl-mvp01-20220923-00001") -> Proposal:
+    def complete_proposal(
+        prsl_id: str = "prsl-mvp01-20220923-00001", status="draft"
+    ) -> Proposal:
         filename = "complete_proposal.json"
         data = load_string_from_file(filename)
         prsl = Proposal.model_validate_json(data)
         prsl.prsl_id = prsl_id
+        prsl.status = status
         return prsl
 
     @staticmethod

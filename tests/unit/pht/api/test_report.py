@@ -13,7 +13,6 @@ HEADERS = {"Content-type": "application/json"}
 class TestReportsAPI:
     @mock.patch("ska_oso_services.pht.api.report.oda.uow", autospec=True)
     def test_get_report_success(self, mock_uow, client):
-        user_id = "DefaultUser"
         mock_proposals = [
             TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00001")
         ]
@@ -64,7 +63,7 @@ class TestReportsAPI:
             ]
             mock_join.return_value = mock_report
 
-            response = client.get(f"{REPORT_API_URL}/{user_id}")
+            response = client.get(f"{REPORT_API_URL}/")
 
         assert response.status_code == HTTPStatus.OK
 

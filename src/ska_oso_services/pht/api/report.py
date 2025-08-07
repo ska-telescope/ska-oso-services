@@ -2,9 +2,12 @@ import logging
 from typing import List
 
 from fastapi import APIRouter
-from ska_db_oda.persistence.domain.query import MatchType, UserQuery
+from ska_aaa_authhelpers.roles import Role
+from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_oso_pdm.proposal.proposal import ProposalStatus
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.pht.model import ProposalReport
 from ska_oso_services.pht.utils.pht_handler import (
     get_latest_entity_by_id,
@@ -13,17 +16,20 @@ from ska_oso_services.pht.utils.pht_handler import (
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/report")
+router = APIRouter(prefix="/report", tags=["PHT API - Report"])
 
 
 @router.get(
-    "/{user_id}",
+    "/",
     summary="Create a report for admin/coordinator",
-    response_model=List[ProposalReport],
+    response_model=list[ProposalReport],
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
+    ],
 )
-def get_report(
-    user_id: str,
-) -> List[ProposalReport]:
+def get_report() -> List[ProposalReport]:
     """
     Creates a new report for the PHT admin/coordinator.
     """
@@ -32,14 +38,24 @@ def get_report(
     # TODO: get proposals using Andrey's new query so no need to pass user_id
     LOGGER.debug("GET REPORT")
     with oda.uow() as uow:
-        query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        proposals = get_latest_entity_by_id(uow.prsls.query(query_param), "prsl_id")
+        proposal_query_param = CustomQuery()
+        query_param = CustomQuery()
+        proposals = get_latest_entity_by_id(
+            uow.prsls.query(proposal_query_param), "prsl_id"
+        )
+        # Filter out proposals that are not submitted
+        # (i.e., those with status DRAFT or WITHDRAWN)
+        filtered_proposals = [
+            proposal
+            for proposal in proposals
+            if proposal.status not in {ProposalStatus.DRAFT, ProposalStatus.WITHDRAWN}
+        ]
         panels = get_latest_entity_by_id(
             uow.panels.query(query_param), "panel_id"  # pylint: disable=no-member
         )
         reviews = get_latest_entity_by_id(uow.rvws.query(query_param), "review_id")
         decisions = get_latest_entity_by_id(uow.pnlds.query(query_param), "prsl_id")
     report = join_proposals_panels_reviews_decisions(
-        proposals, panels, reviews, decisions
+        filtered_proposals, panels, reviews, decisions
     )
     return report
