@@ -2,7 +2,8 @@
 Model specific for the pht
 """
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
+from ska_oso_pdm.proposal import ProposalPermissions, ProposalRole
 
 from ska_oso_services.common.model import AppModel
 
@@ -18,6 +19,14 @@ class EmailRequest(AppModel):
 
     email: EmailStr
     prsl_id: str
+
+
+class ProposalAccessResponse(AppModel):
+    prsl_id: str
+    role: ProposalRole
+    permissions: list[ProposalPermissions] = Field(
+        ..., description="Permissions granted to this user for this proposal."
+    )
 
 
 class CycleInformation(BaseModel):
