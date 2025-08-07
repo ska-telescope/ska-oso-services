@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Set Observing Block name when generating a Project
 
 2.0.0
 ***********
