@@ -1,10 +1,14 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal import ProposalAccess
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
+from ska_aaa_authhelpers import Role
+from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.model import ProposalAccessResponse
 from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
@@ -16,29 +20,24 @@ router = APIRouter(
 )
 
 @router.post(
-    "/prslacl/{user_id}",
-    summary="Create a new Proposal",
-    description=(
-        "The entity to be created in the request body should not contain a prsl_id as"
-        " fetching this from SKUID is the responsibility of the ODA."
-    ),
-    response_model=ProposalAccess,
+    "/prslacl",
+    summary="Create a new Proposal Access"
 )
-def post_prslacl(prslacl: ProposalAccess, user_id:str) -> ProposalAccess:
+def post_prslacl(prslacl: ProposalAccess, auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],) -> str:
     """
-    Function that a POST /prsls request is routed to.
-
-    :param prsl: Proposal to persist from the request body
-    :return: The Proposal as it exists in the ODA
+    Function that a POST /prslacl request is routed to.
     """
 
     with oda.uow() as uow:
-        persisted_prsl = uow.prslacc.add(prslacl, "tonye")
+        persisted_prslacc = uow.prslacc.add(prslacl, auth.user_id)
         uow.commit()
-
-    return persisted_prsl
-
-
+    return persisted_prslacc.access_id
 
 
 @router.get("/{user_id}", summary="Get a list of proposals created by a user")
