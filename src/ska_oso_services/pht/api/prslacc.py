@@ -9,7 +9,7 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_oso_services.common.error_handling import BadRequestError
+from ska_oso_services.common.error_handling import BadRequestError, NotFoundError
 from ska_oso_services.pht.model import ProposalAccessResponse
 from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
 
@@ -21,7 +21,7 @@ router = APIRouter(
 
 @router.post(
     "/prslacl",
-    summary="Create a new Proposal Access"
+    summary="Creates a new Proposal Access"
 )
 def post_prslacl(prslacl: ProposalAccess, auth: Annotated[
         AuthContext,
@@ -32,12 +32,23 @@ def post_prslacl(prslacl: ProposalAccess, auth: Annotated[
     ],) -> str:
     """
     Function that a POST /prslacl request is routed to.
+    :param prslacl: The ProposalAccess object to be created.
+    :param auth: The authentication context containing user information.
+    :return: The access_id of the created ProposalAccess.
     """
+    LOGGER.debug("Creating a new proposal access with data: %s", prslacl)
+    try: 
+        with oda.uow() as uow:
+            persisted_prslacc = uow.prslacc.add(prslacl, auth.user_id)
+            uow.commit()
+        return persisted_prslacc.access_id
+        
+    except ValueError as err:
+        LOGGER.exception("ValueError when adding proposal to the ODA: %s", err)
+        raise BadRequestError(
+            detail=f"Failed when attempting to create a proposal: '{err.args[0]}'",
+        ) from err
 
-    with oda.uow() as uow:
-        persisted_prslacc = uow.prslacc.add(prslacl, auth.user_id)
-        uow.commit()
-    return persisted_prslacc.access_id
 
 
 @router.get("/{user_id}", summary="Get a list of proposals created by a user")

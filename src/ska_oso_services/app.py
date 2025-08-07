@@ -50,8 +50,8 @@ def create_app(production=PRODUCTION) -> FastAPI:
         lifespan=watchdog(
             allow_unsecured=[
                 "get_systemcoordinates",
-                "create_proposal_access",
-                "get_access_for_user",
+                "update_access",
+                "get_access_for_user","post_prslacl"
             ]
         ),
         # Need this param for code generation - see

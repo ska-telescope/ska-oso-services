@@ -53,8 +53,7 @@ python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
 # PDM dependency is pulled in via the ODA rather than being explicitly set here
 # If updating this, also remember to update the Helm dependency in the umbrella chart
-#ska-db-oda = "^11.0.0"
-ska-db-oda= { git = "https://gitlab.com/ska-telescope/db/ska-db-oda.git", branch = "star-1557" }
+ska-db-oda = "^11.1.0"
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
