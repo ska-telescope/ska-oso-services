@@ -1,6 +1,6 @@
 import logging
-from typing import Annotated
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
@@ -39,7 +39,7 @@ def post_prslacl(
     LOGGER.debug("Creating a new proposal access for user: %s", prslacl.user_id)
     try:
         rand_part = uuid.uuid4().hex[:6]
-        prslacl.access_id =  f"prslacc-{rand_part}-{prslacl.user_id[:7]}"
+        prslacl.access_id = f"prslacc-{rand_part}-{prslacl.user_id[:7]}"
         with oda.uow() as uow:
             persisted_prslacc = uow.prslacc.add(prslacl, auth.user_id)
             uow.commit()
