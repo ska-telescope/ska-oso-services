@@ -22,5 +22,6 @@ package "osdmapper" <<Rectangle>> {
     _get_low_telescope_configuration ..> LowConfiguration : returns
 }
 
+
 @enduml
 
