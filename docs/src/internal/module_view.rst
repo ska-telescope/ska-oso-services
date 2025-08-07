@@ -4,7 +4,6 @@ Module View
 ============
 
 .. note::
-   sarah test
    The current module view is a work in progress and will be updated as the
    project evolves and when a final structure is established and agreed upon.
 
