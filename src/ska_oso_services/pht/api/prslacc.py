@@ -1,16 +1,17 @@
 import logging
 from typing import Annotated
+import uuid
 
 from fastapi import APIRouter
+from ska_aaa_authhelpers import Role
+from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal import ProposalAccess
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_aaa_authhelpers import Role
-from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_oso_services.common.error_handling import BadRequestError, NotFoundError
-from ska_oso_services.pht.model import ProposalAccessResponse
+from ska_oso_services.common.error_handling import BadRequestError
+from ska_oso_services.pht.model import ProposalAccessCreate, ProposalAccessResponse
 from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
 
 LOGGER = logging.getLogger(__name__)
@@ -19,30 +20,31 @@ router = APIRouter(
     prefix="/proposal-access", tags=["PPT API - Proposal Acess Management"]
 )
 
-@router.post(
-    "/prslacl",
-    summary="Creates a new Proposal Access"
-)
-def post_prslacl(prslacl: ProposalAccess, auth: Annotated[
+
+@router.post("/prslacl", summary="Creates a new Proposal Access")
+def post_prslacl(
+    prslacl: ProposalAccessCreate,
+    auth: Annotated[
         AuthContext,
         Permissions(
             roles={Role.ANY},
             scopes={Scope.PHT_READWRITE},
         ),
-    ],) -> str:
+    ],
+) -> str:
     """
-    Function that a POST /prslacl request is routed to.
-    :param prslacl: The ProposalAccess object to be created.
-    :param auth: The authentication context containing user information.
-    :return: The access_id of the created ProposalAccess.
+    This endpoint will be removed in the future, use the PUT endpoint instead.
+    as there will be no creation of a new proposal access, only updates.
     """
-    LOGGER.debug("Creating a new proposal access with data: %s", prslacl)
-    try: 
+    LOGGER.debug("Creating a new proposal access for user: %s", prslacl.user_id)
+    try:
+        rand_part = uuid.uuid4().hex[:6]
+        prslacl.access_id =  f"prslacc-{rand_part}-{prslacl.user_id[:7]}"
         with oda.uow() as uow:
             persisted_prslacc = uow.prslacc.add(prslacl, auth.user_id)
             uow.commit()
         return persisted_prslacc.access_id
-        
+
     except ValueError as err:
         LOGGER.exception("ValueError when adding proposal to the ODA: %s", err)
         raise BadRequestError(
@@ -50,43 +52,55 @@ def post_prslacl(prslacl: ProposalAccess, auth: Annotated[
         ) from err
 
 
+@router.get(
+    "/user", summary="Get a list of proposals the requesting user has access to"
+)
+def get_access_for_user(
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> list[ProposalAccessResponse]:
+    LOGGER.debug("Retrieving proposals for user: %s", auth.user_id)
 
-@router.get("/{user_id}", summary="Get a list of proposals created by a user")
-def get_access_for_user(user_id:str) -> list[ProposalAccessResponse]:
-    # user_id = "test_user"
     with oda.uow() as uow:
-        query_param = CustomQuery(user_id=user_id)
+        query_param = CustomQuery(user_id=auth.user_id)
         proposal_access = get_latest_entity_by_id(
             uow.prslacc.query(query_param), "access_id"
         )
-        if not proposal_access:
-            return []
-        return proposal_access
-    
+    if not proposal_access:
+        return []
+    return proposal_access
 
 
 @router.put(
-    "/{access_id}/{user_id}",
-    summary="Update an existing proposal",
+    "/user",
+    summary="Update an existing proposal access",
 )
-def update_access(access_id: str, access:ProposalAccess, user_id:str) -> ProposalAccess:
+def update_access(
+    access_id: str,
+    access: ProposalAccess,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> ProposalAccess:
 
-    with oda.uow() as uow:
-        # Verify proposal exists
-        existing = uow.prslacc.get(access_id)
-        if not existing:
-            LOGGER.info("Proposal not found for update: %s", access_id)
-            raise NotFoundError(detail="Proposal not found: {access_id}")
-
-        try:
-            updated_prsl = uow.prslacc.add(access, user_id)  # Add is used for update
+    try:
+        with oda.uow() as uow:
+            updated_prsl = uow.prslacc.add(access, auth.user_id)
             uow.commit()
-            LOGGER.info("Proposal %s updated successfully", access_id)
+            LOGGER.info("Proposal access id %s updated successfully", access.access_id)
             return updated_prsl
 
-        except ValueError as err:
-            LOGGER.error("Validation failed for proposal %s: %s", access_id, err)
-            raise BadRequestError(
-                detail="Validation error while saving proposal: {err.args[0]}"
-            ) from err
-
+    except ValueError as err:
+        LOGGER.error("Validation failed for proposal %s: %s", access_id, err)
+        raise BadRequestError(
+            detail="Validation error while saving proposal: {err.args[0]}"
+        ) from err

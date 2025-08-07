@@ -51,7 +51,8 @@ def create_app(production=PRODUCTION) -> FastAPI:
             allow_unsecured=[
                 "get_systemcoordinates",
                 "update_access",
-                "get_access_for_user","post_prslacl"
+                "get_access_for_user",
+                "post_prslacl",
             ]
         ),
         # Need this param for code generation - see

@@ -2,8 +2,10 @@
 Model specific for the pht
 """
 
+from typing import Optional
+
 from pydantic import BaseModel, EmailStr, Field
-from ska_oso_pdm.proposal import ProposalPermissions, ProposalRole
+from ska_oso_pdm.proposal import ProposalAccess, ProposalPermissions, ProposalRole
 
 from ska_oso_services.common.model import AppModel
 
@@ -27,6 +29,10 @@ class ProposalAccessResponse(AppModel):
     permissions: list[ProposalPermissions] = Field(
         ..., description="Permissions granted to this user for this proposal."
     )
+
+
+class ProposalAccessCreate(ProposalAccess):
+    access_id: Optional[str] = None
 
 
 class CycleInformation(BaseModel):
