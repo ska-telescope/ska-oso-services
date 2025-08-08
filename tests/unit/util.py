@@ -180,18 +180,17 @@ class TestDataFactory:
         return proposal
 
     @staticmethod
-    def panel_basic(
-        panel_id: str = None,
-        name: str = None,
-        reviewers= [],
-        proposals= []
-    ) -> Panel:
-        data = {"panel_id": panel_id, "name": name, "reviewers": reviewers, "proposals": proposals}
+    def panel_basic(panel_id: str = None, name: str = None) -> Panel:
+        data = {
+            "panel_id": panel_id,
+            "name": name,
+            "reviewers": [],
+            "proposals": [],
+        }
         panel = Panel.model_validate_json(json.dumps(data))
         set_identifier(panel, panel_id)
 
         return panel
-    
 
     @staticmethod
     def panel(

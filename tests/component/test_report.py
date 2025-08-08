@@ -16,7 +16,8 @@ def test_get_report_for_user(authrequests):
     proposal2 = TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00002")
     panel = TestDataFactory.panel(
         reviewer_id=REVIEWERS[0]["id"],
-        panel_id="panel-test-20250616-00001", name="Test Panel",
+        panel_id="panel-test-20250616-00001",
+        name="Test Panel",
         prsl_id_1=proposal1.prsl_id,
         prsl_id_2=proposal2.prsl_id,
     )

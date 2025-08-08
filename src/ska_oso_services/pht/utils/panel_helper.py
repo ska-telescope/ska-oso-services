@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_panel_id():
-    #TODO: Remove this once the uuid generator by Brendan works!
+    # TODO: Remove this once the uuid generator by Brendan works!
     return f"panel-{uuid.uuid4().hex[:9]}"
 
 

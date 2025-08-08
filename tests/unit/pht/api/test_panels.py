@@ -1,8 +1,8 @@
 import json
+import uuid
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
-import uuid
 
 from ska_db_oda.persistence.domain.errors import ODANotFound, UniqueConstraintViolation
 from ska_oso_pdm.proposal_management.panel import Panel
@@ -134,7 +134,7 @@ class TestPanelsAPI:
         """
         Ensure valid panel ID returns the Panel object.
         """
-        panel = TestDataFactory.panel(panel_id="panel-Galactic-2025.2")
+        panel = TestDataFactory.panel()
         panel_id = panel.panel_id
 
         uow_mock = mock.MagicMock()

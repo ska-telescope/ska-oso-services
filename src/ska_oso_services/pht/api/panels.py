@@ -76,12 +76,11 @@ def create_panel(param: Panel) -> str:
 @router.post(
     "/auto-create",
     summary="Create a panel",
-    dependencies=[
+    response_model=Union[str, list[PanelCreateResponse]],dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE]
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
         )
     ],
-    response_model=Union[str, list[PanelCreateResponse]],
 )
 def auto_create_panel(param: PanelCreate) -> str:
     """
@@ -99,7 +98,6 @@ def auto_create_panel(param: PanelCreate) -> str:
         )
         reviewers = param.reviewers or []
         is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
-    
         if is_sv:
             panel = Panel(
                 panel_id=generate_panel_id(),
@@ -109,8 +107,6 @@ def auto_create_panel(param: PanelCreate) -> str:
             )
             created_panel = uow.panels.add(panel)  # pylint: disable=no-member
             uow.commit()
-            print("created_panel:", created_panel)
-            print("created_panel.panel_id:", getattr(created_panel, "panel_id", None))
             return created_panel.panel_id
 
         # Science category panels
@@ -126,15 +122,11 @@ def auto_create_panel(param: PanelCreate) -> str:
         return build_panel_response(panel_objs)
 
 
-@router.get(
-    "/{panel_id}",
-    summary="Retrieve an existing panel by panel_id",
-    dependencies=[
+@router.put("/{panel_id}", summary="Update a panel", dependencies=[
         Permissions(
             roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
         )
-    ],
-)
+    ],)
 def update_panel(panel_id: str, param: Panel) -> str:
     logger.debug("POST panel")
     # Ensure ID match
@@ -160,7 +152,15 @@ def update_panel(panel_id: str, param: Panel) -> str:
     return panel.panel_id
 
 
-@router.get("/{panel_id}", summary="Retrieve an existing panel by panel_id")
+@router.get(
+    "/{panel_id}",
+    summary="Retrieve an existing panel by panel_id",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
+    ],
+)
 def get_panel(panel_id: str) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 

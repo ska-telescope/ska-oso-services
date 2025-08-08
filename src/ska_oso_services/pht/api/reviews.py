@@ -1,8 +1,8 @@
 import logging
 
 from fastapi import APIRouter
-from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_aaa_authhelpers.roles import Role
+from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm import PanelReview
 
 from ska_oso_services.common import oda
