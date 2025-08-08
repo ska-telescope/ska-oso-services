@@ -9,7 +9,11 @@ A SwaggerUI for the latest main branch of the API is available at
 
 https://k8s.stfc.skao.int/integration-ska-oso-services/oso/api/v2/ui/
 
-.. openapi:: ../openapi/openapi.json
+``<HOST>/ptt/api/<MAJOR_VERSION>/<RESOURCE>`` and the Swagger UI at ``<HOST>/api/<MAJOR_VERSION>/ui``.
+
+
+.. openapi:: ./openapi.json
+
 
 The API supports resources for: 
 
