@@ -8,10 +8,11 @@ Module View
    project evolves and when a final structure is established and agreed upon.
 
 
-The module view in the oso-services provides a high-level overview of the main components of the oso-services and major interactions between them. Detailed view 
-module views of the osdmapper and pht and are also provided in specialised views. 
+The module view in the OSO Services offers a high-level overview of the system's core components and their primary interactions. To support deeper understanding, 
+dedicated module views are provided for both the OSD Mapper and the Proposal Handling Tool (PHT).
 
-The module view of the 'pht' shows interactions for the proposals, proposal management and associated modules.
+The PHT module view highlights the internal structure and interactions related to proposal preparation (PPT), proposal management (PMT), and associated subsystems, 
+offering insight into how these components collaborate to support the end-to-end proposal lifecycle.
 
 
 .. figure:: diagrams/module_top_view.svg
