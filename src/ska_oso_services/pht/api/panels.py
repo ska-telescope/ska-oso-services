@@ -10,6 +10,7 @@ from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
     UnprocessableEntityError,
@@ -24,9 +25,6 @@ from ska_oso_services.pht.utils.panel_helper import (
     upsert_panel,
 )
 from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
-from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.common.error_handling import BadRequestError
-from ska_oso_services.pht.utils.constants import REVIEWERS
 from ska_oso_services.pht.utils.validation import validate_duplicates
 
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
@@ -76,7 +74,8 @@ def create_panel(param: Panel) -> str:
 @router.post(
     "/auto-create",
     summary="Create a panel",
-    response_model=Union[str, list[PanelCreateResponse]],dependencies=[
+    response_model=Union[str, list[PanelCreateResponse]],
+    dependencies=[
         Permissions(
             roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
         )
@@ -122,11 +121,15 @@ def auto_create_panel(param: PanelCreate) -> str:
         return build_panel_response(panel_objs)
 
 
-@router.put("/{panel_id}", summary="Update a panel", dependencies=[
+@router.put(
+    "/{panel_id}",
+    summary="Update a panel",
+    dependencies=[
         Permissions(
             roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
         )
-    ],)
+    ],
+)
 def update_panel(panel_id: str, param: Panel) -> str:
     logger.debug("POST panel")
     # Ensure ID match

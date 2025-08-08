@@ -17,7 +17,9 @@ HEADERS = {"Content-type": "application/json"}
 class TestPanelsAPI:
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_panels_post_success(self, mock_uow, client):
-        panel = TestDataFactory.panel_basic(panel_id=f"panel-test-{uuid.uuid4().hex[:8]}", name="Galaxy")
+        panel = TestDataFactory.panel_basic(
+            panel_id=f"panel-test-{uuid.uuid4().hex[:8]}", name="Galaxy"
+        )
 
         uow_mock = mock.MagicMock()
         uow_mock.panels.add.return_value = panel
@@ -34,7 +36,9 @@ class TestPanelsAPI:
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_panels_post_duplicate_name(self, mock_uow, client):
-        panel = TestDataFactory.panel_basic(name="dup name", panel_id="panel-dup-name-20250616-00001")
+        panel = TestDataFactory.panel_basic(
+            name="dup name", panel_id="panel-dup-name-20250616-00001"
+        )
 
         uow_mock = mock.MagicMock()
         uow_mock.panels.add.side_effect = UniqueConstraintViolation(
