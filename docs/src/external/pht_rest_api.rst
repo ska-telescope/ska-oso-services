@@ -14,10 +14,9 @@ The PHT API supports resources for proposal preparation and Management.
 * Proposal Preparation: 
 
 .. openapi:: ./_static/proposal.json
-   :encoding: utf-8
+
 
 
 * Proposal Management:
   
 .. openapi:: ./_static/proposal_management.json
-   :encoding: utf-8
