@@ -8,7 +8,6 @@ Unreleased
 ***********
 * [BREAKING] Added AAA protection to PHT endpoints
 * Upgraded ska-aaa-authhelpers version to 1.1.0
-* Set Observing Block name when generating a Project
 
 2.0.1
 ***********
