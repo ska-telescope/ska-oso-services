@@ -14,6 +14,83 @@ PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
 
 
+class TestPanelsUpdateAPI:
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_update_panel_success(self, mock_uow, client):
+        """
+        PUT returns the panel_id when body.path IDs match and reviewer exists.
+        """
+        uow_mock = mock.MagicMock()
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        panel_id = "panel-test-123"
+        panel_obj = TestDataFactory.panel(
+            panel_id=panel_id, name="Stargazers", reviewer_id=REVIEWERS[0]["id"]
+        )
+
+        uow_mock.panels.add.return_value = panel_obj
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{panel_id}",
+            data=panel_obj.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.json() == panel_id
+        uow_mock.panels.add.assert_called_once()
+        uow_mock.commit.assert_called_once()
+
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_update_panel_path_body_mismatch_returns_422(self, mock_uow, client):
+        """
+        If panel_id in path != body.panel_id -> UnprocessableEntityError
+        """
+        uow_mock = mock.MagicMock()
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        body_panel_id = "panel-body-abc"
+        path_panel_id = "panel-path-xyz"
+        panel_obj = TestDataFactory.panel(
+            panel_id=body_panel_id, name="Mismatch", reviewer_id=REVIEWERS[0]["id"]
+        )
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{path_panel_id}",
+            data=panel_obj.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY  # 422
+        assert "do not match" in resp.json().get("detail", "").lower()
+        uow_mock.panels.add.assert_not_called()
+        uow_mock.commit.assert_not_called()
+
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_update_panel_unknown_reviewer_returns_400(self, mock_uow, client):
+        """
+        If a reviewer in the body doesn't exist in REVIEWERS .
+        """
+        uow_mock = mock.MagicMock()
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        panel_id = "panel-test-111"
+        panel_obj = TestDataFactory.panel(
+            panel_id=panel_id, name="BadReviewers", reviewer_id="rev-001"
+        )
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{panel_id}",
+            data=panel_obj.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert resp.status_code == HTTPStatus.BAD_REQUEST
+        assert "does not exist" in resp.json().get("detail", "").lower()
+        uow_mock.panels.add.assert_not_called()
+        uow_mock.commit.assert_not_called()
+
+
 class TestPanelsAPI:
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_panels_post_success(self, mock_uow, client):
