@@ -2,10 +2,12 @@ import logging
 from typing import List
 
 from fastapi import APIRouter
+from ska_aaa_authhelpers.roles import Role
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.pht.model import ProposalReport
 from ska_oso_services.pht.utils.pht_handler import (
     get_latest_entity_by_id,
@@ -21,6 +23,11 @@ router = APIRouter(prefix="/report", tags=["PHT API - Report"])
     "/",
     summary="Create a report for admin/coordinator",
     response_model=list[ProposalReport],
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
+    ],
 )
 def get_report() -> List[ProposalReport]:
     """

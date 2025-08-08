@@ -21,3 +21,6 @@ else:
 class Scope(str, Enum):
     ODT_READ = "odt:read"
     ODT_READWRITE = "odt:readwrite"
+    PHT_READ = "pht:read"
+    PHT_READWRITE = "pht:readwrite"
+    PHT_UPDATE = "pht:update"

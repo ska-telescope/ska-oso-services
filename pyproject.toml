@@ -61,7 +61,7 @@ ska-ost-osd = "3.1.1"
 aiosmtplib = "^4.0.1"
 boto3 = "^1.38.13"
 
-ska-aaa-authhelpers = "^1.0.0"
+ska-aaa-authhelpers = "^1.1.0"
 # Need to pin as otherwise pip cannot resolve the dependencies in the tests.
 # This dependency comes through the osd > telmodel, so reasses when updating those.
 argcomplete = "^1.9.4"

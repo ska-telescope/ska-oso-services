@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter
+from ska_aaa_authhelpers import Role
 from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
@@ -8,6 +9,7 @@ from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.utils.constants import REVIEWERS
 from ska_oso_services.pht.utils.validation import validate_duplicates
@@ -17,7 +19,16 @@ router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 logger = logging.getLogger(__name__)
 
 
-@router.post("/", summary="Create a panel")
+@router.post(
+    "/",
+    summary="Create a panel",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READWRITE],
+        )
+    ],
+)
 def create_panel(param: Panel) -> str:
     logger.debug("POST panel")
 
@@ -47,7 +58,15 @@ def create_panel(param: Panel) -> str:
     return panel.panel_id
 
 
-@router.get("/{panel_id}", summary="Retrieve an existing panel by panel_id")
+@router.get(
+    "/{panel_id}",
+    summary="Retrieve an existing panel by panel_id",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
+    ],
+)
 def get_panel(panel_id: str) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 
@@ -58,7 +77,13 @@ def get_panel(panel_id: str) -> Panel:
 
 
 @router.get(
-    "/list/{user_id}", summary="Get all panels matching the given query parameters"
+    "/list/{user_id}",
+    summary="Get all panels matching the given query parameters",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
+    ],
 )
 def get_panels_for_user(user_id: str) -> list[Panel]:
     """
