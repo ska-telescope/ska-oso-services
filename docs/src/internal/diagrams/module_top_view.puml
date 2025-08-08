@@ -19,7 +19,7 @@ package "common" as common_pkg {
           + ReferenceFrame
           + EquatorialResponse
           + GalacticResponse
-          + get_systemcoordinates
+          + get_systemcoordinates()
       }
     }
 
@@ -87,53 +87,61 @@ package "odt" as odt_pkg {
 package "pht" as pht_pkg {
     package "api" <<Rectangle>> {
         package "panel_decision" <<Rectangle>> {
-            object panel_decision_endpoints{
-                + create_panel_decision<<endpoint>>
-                + get_panel_decision<<endpoint>>
-                + get_panel_decisions_for_user<<endpoint>>
-                + update_panel_decision<<endpoint>>
-            }
+          object panel_decision_endpoints {
+            + create_panel_decision()
+            + get_panel_decision()
+            + get_panel_decisions_for_user()
+            + update_panel_decision()
+          }
         }
-        package "panels" <<Rectangle>> {
-            object panels_endpoints{
-                + create_panel<<endpoint>>
-                + get_panel<<endpoint>>
-                + get_reviews_for_panel<<endpoint>>
-                + get_panels_for_user<<endpoint>>
-            }
+
+      package "panels" <<Rectangle>> {
+        object panels_endpoints {
+          + create_panel()
+          + get_panel()
+          + get_panels_for_user()
         }
-        package "prsls" <<Rectangle>> {
-            object prsls_endpoints{
-                + get_osd_by_cycle<<endpoint>>
-                + create_proposal<<endpoint>>
-                + get_proposal<<endpoint>>
-                + get_proposals_for_user<<endpoint>>
-                + update_proposal<<endpoint>>
-                + validate_proposal<<endpoint>>
-                + send_email<<endpoint>>
-                + create_upload_pdf_url<<endpoint>>
-                + create_download_pdf_url<<endpoint>>
-                + create_delete_pdf_url<<endpoint>>
-            }
+      }
+  
+      package "prsls" <<Rectangle>> {
+        object prsls_endpoints {
+          + get_osd_by_cycle()
+          + create_proposal()
+          + get_proposal()
+          + get_proposals_batch()
+          + get_proposals_by_status()
+          + get_reviews_for_proposal()
+          + get_proposals_for_user()
+          + update_proposal()
+          + validate_proposal()
+          + send_email()
+          + create_upload_pdf_url()
+          + create_download_pdf_url()
+          + create_delete_pdf_url()
         }
-        package "report" <<Rectangle>> {
-            object report_endpoints{
-                + get_report<<endpoint>>
-            }
+      }
+  
+      package "report" <<Rectangle>> {
+        object report_endpoints {
+          + get_report()
         }
-        package "reviewers" <<Rectangle>> {
-            object reviewers_endpoints{
-                + get_reviewers<<endpoint>>
-            }
+      }
+  
+      package "reviewers" <<Rectangle>> {
+        object reviewers_endpoints {
+          + get_reviewers()
         }
-        package "reviews" <<Rectangle>> {
-            object reviews_endpoints{
-                + create_review<<endpoint>>
-                + get_review<<endpoint>>
-                + get_reviews_for_user<<endpoint>>
-                + update_review<<endpoint>>
-            }
+      }
+  
+      package "reviews" <<Rectangle>> {
+        object reviews_endpoints {
+          + create_review()
+          + get_review()
+          + get_reviews_for_user()
+          + update_review()
         }
+      }
+
     }
     
     package "pht.utils" <<Rectangle>> {
