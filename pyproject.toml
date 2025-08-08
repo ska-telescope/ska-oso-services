@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska-oso-services"
-version = "1.2.0"
+version = "2.0.1"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
 authors = ["Team Buttons", "Stargazers Team"]
 license = "BSD-3-Clause"
@@ -53,7 +53,7 @@ python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
 # PDM dependency is pulled in via the ODA rather than being explicitly set here
 # If updating this, also remember to update the Helm dependency in the umbrella chart
-ska-db-oda = "^10.0.0"
+ska-db-oda = "^11.0.0"
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
@@ -61,7 +61,7 @@ ska-ost-osd = "3.1.1"
 aiosmtplib = "^4.0.1"
 boto3 = "^1.38.13"
 
-ska-aaa-authhelpers = "^1.0.0"
+ska-aaa-authhelpers = "^1.1.0"
 # Need to pin as otherwise pip cannot resolve the dependencies in the tests.
 # This dependency comes through the osd > telmodel, so reasses when updating those.
 argcomplete = "^1.9.4"

@@ -2,9 +2,11 @@ import logging
 
 from fastapi import APIRouter
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
+from ska_aaa_authhelpers.roles import Role
 from ska_oso_pdm import PanelReview
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
     NotFoundError,
@@ -19,6 +21,12 @@ router = APIRouter(prefix="/reviews", tags=["PMT API - Reviews"])
 @router.post(
     "/",
     summary="Create a new Review",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_REVIEWER_SCIENCE, Role.OPS_REVIEWER_TECHNICAL],
+            scopes=[Scope.PHT_READWRITE],
+        )
+    ],
 )
 def create_review(reviews: PanelReview) -> str:
     """
@@ -50,7 +58,20 @@ def create_review(reviews: PanelReview) -> str:
         ) from err
 
 
-@router.get("/{review_id}", summary="Retrieve an existing Review")
+@router.get(
+    "/{review_id}",
+    summary="Retrieve an existing Review",
+    dependencies=[
+        Permissions(
+            roles=[
+                Role.OPS_REVIEWER_SCIENCE,
+                Role.OPS_REVIEWER_TECHNICAL,
+                Role.OPS_PROPOSAL_ADMIN,
+            ],
+            scopes=[Scope.PHT_READ],
+        )
+    ],
+)
 def get_review(review_id: str) -> PanelReview:
     LOGGER.debug("GET Review review_id: %s", review_id)
 
@@ -59,7 +80,16 @@ def get_review(review_id: str) -> PanelReview:
     return Review
 
 
-@router.get("/list/{user_id}", summary="Get a list of Reviews created by a user")
+@router.get(
+    "/list/{user_id}",
+    summary="Get a list of Reviews created by a user",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_REVIEWER_SCIENCE, Role.OPS_REVIEWER_TECHNICAL],
+            scopes=[Scope.PHT_READ],
+        )
+    ],
+)
 def get_reviews_for_user(user_id: str) -> list[PanelReview]:
     """
     Retrieves the Reviews for the given user ID from the
@@ -74,7 +104,20 @@ def get_reviews_for_user(user_id: str) -> list[PanelReview]:
         return Reviews
 
 
-@router.put("/{review_id}", summary="Update an existing Review")
+@router.put(
+    "/{review_id}",
+    summary="Update an existing Review",
+    dependencies=[
+        Permissions(
+            roles=[
+                Role.OPS_REVIEWER_SCIENCE,
+                Role.OPS_REVIEWER_TECHNICAL,
+                Role.OPS_PROPOSAL_ADMIN,
+            ],
+            scopes=[Scope.PHT_READWRITE],
+        )
+    ],
+)
 def update_review(review_id: str, review: PanelReview) -> PanelReview:
     """
     Updates a Review in the underlying data store.

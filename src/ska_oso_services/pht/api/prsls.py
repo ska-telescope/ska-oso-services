@@ -4,6 +4,7 @@ from http import HTTPStatus
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
+from ska_aaa_authhelpers import Role
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal_management.review import PanelReview
@@ -11,6 +12,7 @@ from ska_ost_osd.rest.api.resources import get_osd
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from ska_oso_services.common import oda
+from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
     NotFoundError,
@@ -40,6 +42,7 @@ router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 @router.get(
     "/osd/{cycle}",
     summary="Retrieve OSD data for a particular cycle",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
 )
 def get_osd_by_cycle(cycle: int) -> OsdDataModel:
     LOGGER.debug("GET OSD data cycle: %s", cycle)
@@ -56,6 +59,7 @@ def get_osd_by_cycle(cycle: int) -> OsdDataModel:
 @router.post(
     "/create",
     summary="Create a new proposal",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
 )
 def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) -> str:
     """
@@ -77,7 +81,11 @@ def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) ->
         ) from err
 
 
-@router.get("/{prsl_id}", summary="Retrieve an existing proposal")
+@router.get(
+    "/{prsl_id}",
+    summary="Retrieve an existing proposal",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+)
 def get_proposal(prsl_id: str) -> Proposal:
     LOGGER.debug("GET PROPOSAL prsl_id: %s", prsl_id)
 
@@ -96,6 +104,7 @@ def get_proposal(prsl_id: str) -> Proposal:
     "/batch",
     summary="Retrieve multiple proposals in batch",
     response_model=list[Proposal],
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
 )
 def get_proposals_batch(
     prsl_ids: list[str] = Body(..., embed=True, description="List of proposal IDs"),
@@ -112,7 +121,11 @@ def get_proposals_batch(
     return proposals
 
 
-@router.get("/status/{status}", summary="Get a list of proposals by status")
+@router.get(
+    "/status/{status}",
+    summary="Get a list of proposals by status",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+)
 def get_proposals_by_status(status: str) -> list[Proposal]:
     """
     Function that requests to GET /proposals/status are mapped to
@@ -136,7 +149,11 @@ def get_proposals_by_status(status: str) -> list[Proposal]:
         return get_latest_entity_by_id(proposals, "prsl_id")
 
 
-@router.get("/reviews/{prsl_id}", summary="Get all reviews for a particular proposal")
+@router.get(
+    "/reviews/{prsl_id}",
+    summary="Get all reviews for a particular proposal",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+)
 def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
     """Function that requests to GET /reviews/{prsl_id} are mapped to
     Get reviews for a given proposal ID from the
@@ -153,7 +170,11 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
     return reviews
 
 
-@router.get("/list/{user_id}", summary="Get a list of proposals created by a user")
+@router.get(
+    "/list/{user_id}",
+    summary="Get a list of proposals created by a user",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+)
 def get_proposals_for_user(user_id: str) -> list[Proposal]:
     """
     Function that requests to GET /proposals/list are mapped to
@@ -179,7 +200,11 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
         return proposals
 
 
-@router.put("/{prsl_id}", summary="Update an existing proposal")
+@router.put(
+    "/{prsl_id}",
+    summary="Update an existing proposal",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
+)
 def update_proposal(prsl_id: str, prsl: Proposal) -> Proposal:
     """
     Updates a proposal in the underlying data store.
@@ -230,7 +255,11 @@ def update_proposal(prsl_id: str, prsl: Proposal) -> Proposal:
             ) from err
 
 
-@router.post("/validate", summary="Validate a proposal")
+@router.post(
+    "/validate",
+    summary="Validate a proposal",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+)
 def validate_proposal(prsl: Proposal) -> dict:
     """
     Validates a submitted proposal via POST.
@@ -247,7 +276,11 @@ def validate_proposal(prsl: Proposal) -> dict:
     return result
 
 
-@router.post("/send-email/", summary="Send an async email")
+@router.post(
+    "/send-email/",
+    summary="Send an async email",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
+)
 async def send_email(request: EmailRequest):
     """
     Endpoint to send SKAO email asynchronously via SMTP
@@ -256,7 +289,11 @@ async def send_email(request: EmailRequest):
     return {"message": "Email sent successfully"}
 
 
-@router.post("/signed-url/upload/{filename}", summary="Create upload PDF URL")
+@router.post(
+    "/signed-url/upload/{filename}",
+    summary="Create upload PDF URL",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
+)
 def create_upload_pdf_url(filename: str) -> str:
     """
     Generate a presigned S3 upload URL for the given filename.
@@ -295,7 +332,11 @@ def create_upload_pdf_url(filename: str) -> str:
         ) from client_err
 
 
-@router.post("/signed-url/download/{filename}", summary="Create download PDF URL")
+@router.post(
+    "/signed-url/download/{filename}",
+    summary="Create download PDF URL",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
+)
 def create_download_pdf_url(filename: str) -> str:
     """
     Generate a presigned S3 download URL for the given filename.
@@ -326,7 +367,11 @@ def create_download_pdf_url(filename: str) -> str:
         ) from client_err
 
 
-@router.post("/signed-url/delete/{filename}", summary="Create delete PDF URL")
+@router.post(
+    "/signed-url/delete/{filename}",
+    summary="Create delete PDF URL",
+    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
+)
 def create_delete_pdf_url(filename: str) -> str:
     """
     Generate a presigned S3 delete URL for the given filename.

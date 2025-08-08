@@ -24,6 +24,8 @@ from ska_oso_services.odt.validation import validate_sbd
 
 LOGGER = logging.getLogger(__name__)
 
+API_ROLES = {Role.SW_ENGINEER, Role.LOW_TELESCOPE_OPERATOR, Role.MID_TELESCOPE_OPERATOR}
+
 router = APIRouter(prefix="/sbds")
 
 
@@ -31,9 +33,7 @@ router = APIRouter(prefix="/sbds")
     "/create",
     summary="Create empty SBD",
     dependencies=[
-        Permissions(
-            roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READ, Scope.ODT_READWRITE}
-        )
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})
     ],
 )
 def sbds_create() -> SBDefinition:
@@ -48,7 +48,7 @@ def sbds_create() -> SBDefinition:
 @router.post(
     "/validate",
     summary="Validate an SBD",
-    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
     """
@@ -65,9 +65,7 @@ def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
     "/{identifier}",
     summary="Get SBD by identifier",
     dependencies=[
-        Permissions(
-            roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READ, Scope.ODT_READWRITE}
-        )
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})
     ],
 )
 def sbds_get(identifier: str) -> SBDefinition:
@@ -84,7 +82,7 @@ def sbds_get(identifier: str) -> SBDefinition:
 @router.post(
     "/",
     summary="Create a new SBDefinition",
-    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def sbds_post(sbd: SBDefinition) -> SBDefinition:
     """
@@ -131,7 +129,7 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
 @router.put(
     "/{identifier}",
     summary="Update an SBDefinition by identifier",
-    dependencies=[Permissions(roles={Role.SW_ENGINEER}, scopes={Scope.ODT_READWRITE})],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
     """

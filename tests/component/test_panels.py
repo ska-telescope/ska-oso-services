@@ -1,8 +1,6 @@
 import uuid
 from http import HTTPStatus
 
-import requests
-
 from ..unit.util import REVIEWERS, TestDataFactory
 from . import PHT_URL
 
@@ -10,11 +8,11 @@ PANELS_API_URL = f"{PHT_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
 
 
-def test_create_panel():
+def test_create_panel(authrequests):
     panel = TestDataFactory.panel_basic(panel_id=f"panel-test-{uuid.uuid4().hex[:8]}", name="Galaxy")
     data = panel.json()
 
-    response = requests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
+    response = authrequests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
 
     assert response.status_code == HTTPStatus.OK
 
@@ -22,13 +20,13 @@ def test_create_panel():
     assert panel.panel_id == result
 
 
-def test_panels_post_duplicate_reviewer():
+def test_panels_post_duplicate_reviewer(authrequests):
     panel = TestDataFactory.panel()
     panel.reviewers.append(panel.reviewers[0])
 
     data = panel.json()
 
-    response = requests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
+    response = authrequests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
 
     assert response.status_code == HTTPStatus.CONFLICT
 
@@ -37,13 +35,13 @@ def test_panels_post_duplicate_reviewer():
     assert expected == result
 
 
-def test_panels_post_duplicate_proposal():
+def test_panels_post_duplicate_proposal(authrequests):
     panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0]["id"])
     panel.proposals.append(panel.proposals[0])
 
     data = panel.json()
 
-    response = requests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
+    response = authrequests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
 
     assert response.status_code == HTTPStatus.CONFLICT
 
@@ -54,12 +52,12 @@ def test_panels_post_duplicate_proposal():
     assert expected == result
 
 
-def test_panels_post_not_existing_reviewer():
+def test_panels_post_not_existing_reviewer(authrequests):
     panel = TestDataFactory.panel()
 
     data = panel.json()
 
-    response = requests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
+    response = authrequests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
@@ -68,12 +66,12 @@ def test_panels_post_not_existing_reviewer():
     assert expected == result
 
 
-def test_panels_post_not_existing_proposal():
+def test_panels_post_not_existing_proposal(authrequests):
     panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0]["id"])
 
     data = panel.json()
 
-    response = requests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
+    response = authrequests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
@@ -82,7 +80,7 @@ def test_panels_post_not_existing_proposal():
     assert expected == result
 
 
-def test_get_list_panels_for_user():
+def test_get_list_panels_for_user(authrequests):
     """
     Integration test:
     - Create multiple panels
@@ -99,7 +97,7 @@ def test_get_list_panels_for_user():
         panel = TestDataFactory.panel_basic(panel_id=panel_id, name=f"Star{i+1}")
         panel_json = panel.model_dump_json()
 
-        response = requests.post(
+        response = authrequests.post(
             f"{PANELS_API_URL}",
             data=panel_json,
             headers={"Content-Type": "application/json"},
@@ -109,12 +107,12 @@ def test_get_list_panels_for_user():
 
     # Get created_by from one of the created panels
     example_panel_id = created_ids[0]
-    get_response = requests.get(f"{PANELS_API_URL}/{example_panel_id}")
+    get_response = authrequests.get(f"{PANELS_API_URL}/{example_panel_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     user_id = get_response.json()["metadata"]["created_by"]
 
     # GET /list/{user_id}
-    list_response = requests.get(f"{PANELS_API_URL}/list/{user_id}")
+    list_response = authrequests.get(f"{PANELS_API_URL}/list/{user_id}")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     panels = list_response.json()
@@ -128,14 +126,14 @@ def test_get_list_panels_for_user():
 
 
 
-def test_auto_create_category_panels():
+def test_auto_create_category_panels(authrequests):
     payload = {
         "name": "Galaxy",
         "reviewers": [],
         "proposals": [],
     }
 
-    response = requests.post(
+    response = authrequests.post(
         f"{PANELS_API_URL}/auto-create",
         json=payload,
         headers={"Content-Type": "application/json"},
@@ -153,14 +151,15 @@ def test_auto_create_category_panels():
     assert all("panel_id" in panel for panel in result)
     assert all("proposal_count" in panel for panel in result)
 
-def test_auto_create_science_verification_panel():
+
+def test_auto_create_science_verification_panel(authrequests):
     payload = {
         "name": "Science Verification",
         "reviewers": [],
         "proposals": [],
     }
 
-    response = requests.post(
+    response = authrequests.post(
        f"{PANELS_API_URL}/auto-create",
         json=payload,
         headers={"Content-Type": "application/json"},

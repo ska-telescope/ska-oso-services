@@ -2,8 +2,10 @@ import logging
 from typing import Union
 
 from fastapi import APIRouter
+from ska_aaa_authhelpers import Role
 from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
+from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
 
@@ -22,6 +24,9 @@ from ska_oso_services.pht.utils.panel_helper import (
     upsert_panel,
 )
 from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
+from ska_oso_services.common.auth import Permissions, Scope
+from ska_oso_services.common.error_handling import BadRequestError
+from ska_oso_services.pht.utils.constants import REVIEWERS
 from ska_oso_services.pht.utils.validation import validate_duplicates
 
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
@@ -29,7 +34,16 @@ router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 logger = logging.getLogger(__name__)
 
 
-@router.post("/", summary="Create a panel")
+@router.post(
+    "/",
+    summary="Create a panel",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READWRITE],
+        )
+    ],
+)
 def create_panel(param: Panel) -> str:
     logger.debug("POST panel")
 
@@ -42,12 +56,19 @@ def create_panel(param: Panel) -> str:
         proposal_ids = validate_duplicates(param.proposals, "prsl_id")
         for proposal_id in proposal_ids:
             try:
-                uow.prsls.get(proposal_id)
+                proposal: Proposal = uow.prsls.get(proposal_id)
+                proposal.status = ProposalStatus.UNDER_REVIEW
+                # Update proposal status in the ODA
+                uow.prsls.add(proposal)
+                logger.info(
+                    "Proposal status successfully updated with ID %s", proposal.prsl_id
+                )
             except ODANotFound:
                 raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
 
         panel: Panel = uow.panels.add(param)  # pylint: disable=no-member
         uow.commit()
+
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
 
@@ -55,6 +76,11 @@ def create_panel(param: Panel) -> str:
 @router.post(
     "/auto-create",
     summary="Create a panel",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE]
+        )
+    ],
     response_model=Union[str, list[PanelCreateResponse]],
 )
 def auto_create_panel(param: PanelCreate) -> str:
@@ -73,8 +99,7 @@ def auto_create_panel(param: PanelCreate) -> str:
         )
         reviewers = param.reviewers or []
         is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
-        print("param.name:", repr(param.name))
-        print("is_sv:", "SCIENCE VERIFICATION" in param.name.strip().upper())
+    
         if is_sv:
             panel = Panel(
                 panel_id=generate_panel_id(),
@@ -101,7 +126,15 @@ def auto_create_panel(param: PanelCreate) -> str:
         return build_panel_response(panel_objs)
 
 
-@router.put("/{panel_id}", summary="Update a panel")
+@router.get(
+    "/{panel_id}",
+    summary="Retrieve an existing panel by panel_id",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
+    ],
+)
 def update_panel(panel_id: str, param: Panel) -> str:
     logger.debug("POST panel")
     # Ensure ID match
@@ -138,7 +171,13 @@ def get_panel(panel_id: str) -> Panel:
 
 
 @router.get(
-    "/list/{user_id}", summary="Get all panels matching the given query parameters"
+    "/list/{user_id}",
+    summary="Get all panels matching the given query parameters",
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
+    ],
 )
 def get_panels_for_user(user_id: str) -> list[Panel]:
     """
