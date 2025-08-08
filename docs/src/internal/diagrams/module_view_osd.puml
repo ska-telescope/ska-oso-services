@@ -13,15 +13,6 @@ package "osdmapper" <<Rectangle>> {
     class _get_low_telescope_configuration <<function>> {
         returns: LowConfiguration
     }
-
-    configuration_from_osd ..> Configuration : returns
-    configuration_from_osd ..> MidConfiguration : calls
-    configuration_from_osd ..> LowConfiguration : calls
-
-    _get_mid_telescope_configuration ..> MidConfiguration : returns
-    _get_low_telescope_configuration ..> LowConfiguration : returns
 }
 
-
 @enduml
-
