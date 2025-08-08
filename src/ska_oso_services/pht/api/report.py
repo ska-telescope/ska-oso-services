@@ -45,5 +45,3 @@ def get_report() -> List[ProposalReport]:
         proposals, panels, reviews, decisions
     )
     return report
-
-

@@ -120,7 +120,7 @@ def prjs_put(prj: Project, identifier: str) -> Project:
     data store to create a new version.
     """
     LOGGER.debug("PUT PRJS prj_id: %s", identifier)
- 
+
     if prj.prj_id != identifier:
         raise UnprocessableEntityError(
             detail=(

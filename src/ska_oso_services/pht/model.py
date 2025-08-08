@@ -25,6 +25,7 @@ class PanelCreateResponse(AppModel):
     name: str
     proposal_count: int
 
+
 class PanelCreate(AppModel):
     name: str
     reviewers: list

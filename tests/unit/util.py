@@ -181,14 +181,17 @@ class TestDataFactory:
 
     @staticmethod
     def panel_basic(
-        panel_id: str = "panel-test-20250616-00001",
-        name: str = "Stargazers",
+        panel_id: str = None,
+        name: str = None,
+        reviewers= [],
+        proposals= []
     ) -> Panel:
-        data = {"panel_id": "panel-Galactic-2025", "name": name}
+        data = {"panel_id": panel_id, "name": name, "reviewers": reviewers, "proposals": proposals}
         panel = Panel.model_validate_json(json.dumps(data))
         set_identifier(panel, panel_id)
 
         return panel
+    
 
     @staticmethod
     def panel(

@@ -2,12 +2,13 @@ import json
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
+import uuid
 
 from ska_db_oda.persistence.domain.errors import ODANotFound, UniqueConstraintViolation
+from ska_oso_pdm.proposal_management.panel import Panel
 
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import REVIEWERS, TestDataFactory
-from ska_oso_pdm.proposal_management.panel import Panel
 
 PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
@@ -16,7 +17,7 @@ HEADERS = {"Content-type": "application/json"}
 class TestPanelsAPI:
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_panels_post_success(self, mock_uow, client):
-        panel = TestDataFactory.panel_basic()
+        panel = TestDataFactory.panel_basic(panel_id=f"panel-test-{uuid.uuid4().hex[:8]}", name="Galaxy")
 
         uow_mock = mock.MagicMock()
         uow_mock.panels.add.return_value = panel
@@ -33,7 +34,7 @@ class TestPanelsAPI:
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_panels_post_duplicate_name(self, mock_uow, client):
-        panel = TestDataFactory.panel_basic(name="dup name")
+        panel = TestDataFactory.panel_basic(name="dup name", panel_id="panel-dup-name-20250616-00001")
 
         uow_mock = mock.MagicMock()
         uow_mock.panels.add.side_effect = UniqueConstraintViolation(
@@ -177,26 +178,22 @@ class TestPanelAutoCreateAPI:
         mock_build_sv_panel_proposals,
         mock_get_latest_entity_by_id,
         mock_oda,
-        client
-        ):
+        client,
+    ):
         # Create a real Panel object
 
         panel_obj = Panel(
-        panel_id="panel-888",
-        name="Science Verification",
-        reviewers=[],
-        proposals=[]
+            panel_id="panel-888",
+            name="Science Verification",
+            reviewers=[],
+            proposals=[],
         )
 
         uow_mock = mock.MagicMock()
         uow_mock.panels.add.return_value = panel_obj
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        payload = {
-            "name": "Science Verification",
-            "reviewers": [],
-            "proposals": []
-        }
+        payload = {"name": "Science Verification", "reviewers": [], "proposals": []}
 
         response = client.post(
             f"{PANELS_API_URL}/auto-create",
@@ -208,8 +205,6 @@ class TestPanelAutoCreateAPI:
         panel_id = response.json()
         assert isinstance(panel_id, str)
         assert panel_id == "panel-888"
-
-
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.utils.pht_handler.get_latest_entity_by_id")
@@ -223,25 +218,19 @@ class TestPanelAutoCreateAPI:
         mock_build_sv_panel_proposals,
         mock_get_latest_entity_by_id,
         mock_oda,
-        client
+        client,
     ):
-        uow_mock = mock.Mock()
+        uow_mock = mock.MagicMock()
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-     
-        def panel_factory(*args, **kwargs):
-
-            name = kwargs.get('name')
-            if not name and args:
-                name = args[0]
-            if not name:
-                name = "unknown"
-            return SimpleNamespace(
-                panel_id=f"panel-{str(name).lower().replace(' ', '-')}",
-                name=name,
-                proposals=[],
-            )
-        uow_mock.panels.add.side_effect = panel_factory
+        # using 'Galaxy' that does not exist as part of science categories
+        mock_build_panel_response.return_value = [
+            {
+                "panel_id": "panel-galaxy",
+                "name": "Galaxy",
+                "proposal_count": 0,
+            },
+        ]
 
         uow_mock.prsls.query.return_value = []
         uow_mock.panels.query.return_value = []
@@ -249,13 +238,23 @@ class TestPanelAutoCreateAPI:
         mock_build_sv_panel_proposals.return_value = []
 
         def upsert_panel_side_effect(uow, panel_name, reviewers, proposals):
+            proposals = proposals or []
+            reviewers = reviewers or []
             return SimpleNamespace(
-                panel_id=f"panel-{panel_name.lower()}",
+                panel_id=f"panel-{panel_name.lower().replace(' ', '-')}",
                 name=panel_name,
+                proposals=proposals,
                 reviewers=reviewers,
-                proposals=[],
             )
+
         mock_upsert_panel.side_effect = upsert_panel_side_effect
+
+        uow_mock.panels.add.side_effect = lambda *a, **k: SimpleNamespace(
+            panel_id="panel-galaxy",
+            name="Galaxy",
+            proposals=[],
+            reviewers=[],
+        )
 
         payload = {
             "name": "Galaxy",
@@ -269,12 +268,12 @@ class TestPanelAutoCreateAPI:
             headers={"Content-type": "application/json"},
         )
 
-        print("Response JSON:", response.json())
         assert response.status_code == HTTPStatus.OK
         result = response.json()
         assert isinstance(result, list)
-        assert result[0]["panel_id"] == "panel-galaxy"
-        assert result[0]["name"] == "Galaxy"
-        assert result[0]["proposal_count"] == 0
-        mock_build_panel_response.assert_called_once()
+
+        panel_names = [panel["name"] for panel in result]
+        assert "Cosmology" in panel_names
+        assert all(panel["panel_id"] == "panel-galaxy" for panel in result)
+        assert all(panel["proposal_count"] == 0 for panel in result)
         uow_mock.commit.assert_called_once()

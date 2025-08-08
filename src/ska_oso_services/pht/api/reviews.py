@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter
-from ska_db_oda.persistence.domain.query import MatchType, UserQuery
+from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm import PanelReview
 
 from ska_oso_services.common import oda
@@ -28,7 +28,18 @@ def create_review(reviews: PanelReview) -> str:
     LOGGER.debug("POST REVIEW create")
 
     try:
+
         with oda.uow() as uow:
+            query_param = CustomQuery(
+                prsl_id=reviews.prsl_id,
+                kind=reviews.review_type.kind,
+                reviewer_id=reviews.reviewer_id,
+            )
+            existing_rvws = uow.rvws.query(query_param)
+            existing_rvw = existing_rvws[0] if existing_rvws else None
+
+            if existing_rvw and existing_rvw.metadata.version == 1:
+                return existing_rvw
             created_review = uow.rvws.add(reviews)
             uow.commit()
         return created_review.review_id

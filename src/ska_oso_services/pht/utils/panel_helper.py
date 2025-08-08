@@ -12,17 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 def generate_panel_id():
+    #TODO: Remove this once the uuid generator by Brendan works!
     return f"panel-{uuid.uuid4().hex[:9]}"
 
 
 def build_panel_response(panel_objs: dict) -> list[PanelCreateResponse]:
-    for name, panel in panel_objs.items():
-        # assert not isinstance(panel.proposals, mock.Mock), f"panel '{name}' proposals is a Mock!"
-        assert hasattr(panel, "proposals"), f"panel '{name}' has no 'proposals'"
-        assert isinstance(panel.proposals, list), f"panel '{name}' proposals is {type(panel.proposals)}"
-        PanelCreateResponse(
-            panel_id=panel.panel_id, name=name, proposal_count=len(panel.proposals)
-        )
+    """Builds a list of PanelCreateResponse objects from the given panel objects.
+    Each response includes the panel_id, name, and proposal_count.
+    """
     return [
         PanelCreateResponse(
             panel_id=panel.panel_id, name=name, proposal_count=len(panel.proposals)
