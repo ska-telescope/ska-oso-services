@@ -2,7 +2,6 @@
 top to bottom direction
 
 package "common" as common_pkg {
-
   package "constants" <<Rectangle>> {
     object constants_items {
         + MID_CHANNEL_WIDTH_KHZ
@@ -11,159 +10,157 @@ package "common" as common_pkg {
         + LOW_CHANNEL_BLOCK_MHZ
         + LOW_CONTINUUM_CHANNEL_WIDTH_KHZ
         + LOW_PST_CHANNEL_WIDTH_KHZ
-      }
+    }
   }
-    
+
   package "api.coordinates" <<Rectangle>> {
-        object coordinates_items {
-            + ReferenceFrame
-            + EquatorialResponse
-            + GalacticResponse
-            + get_systemcoordinates
-        }
+    object coordinates_items {
+        + ReferenceFrame
+        + EquatorialResponse
+        + GalacticResponse
+        + get_systemcoordinates
     }
+  }
 
-    package "auth" <<Rectangle>> {
-      object auth_items {
+  package "auth" <<Rectangle>> {
+    object auth_items {
         + Scope
-      }
     }
+  }
 
-    package "coordinateslookup" <<Rectangle>> {
-        object coordinateslookup_items {
-            + Equatorial
-            + Galactic
-            + round_coord()
-            + convert_ra_dec_deg()
-            + convert_to_galactic()
-            + get_coordinates()
-        }
+  package "coordinateslookup" <<Rectangle>> {
+    object coordinateslookup_items {
+        + Equatorial
+        + Galactic
+        + round_coord()
+        + convert_ra_dec_deg()
+        + convert_to_galactic()
+        + get_coordinates()
     }
+  }
 
-    package "error_handling" <<Rectangle>> {
-        object error_handling_items {
-            + error_details()
-            + BadRequestError
-            + DuplicateError
-            + UnprocessableEntityError
-            + NotFoundError
-            + _make_response()
-            + oda_not_found_handler()
-            + oda_error_handler()
-            + oda_unique_constraint_handler()
-            + dangerous_internal_server_handler()
-        }
+  package "error_handling" <<Rectangle>> {
+    object error_handling_items {
+        + error_details()
+        + BadRequestError
+        + DuplicateError
+        + UnprocessableEntityError
+        + NotFoundError
+        + _make_response()
+        + oda_not_found_handler()
+        + oda_error_handler()
+        + oda_unique_constraint_handler()
+        + dangerous_internal_server_handler()
     }
+  }
 
-    package "model" <<Rectangle>> {
-        object model_items {
-            + AppModel
-            + ValidationResponse
-            + ErrorResponseTraceback
-            + ErrorDetails
-        }
+  package "model" <<Rectangle>> {
+    object model_items {
+        + AppModel
+        + ValidationResponse
+        + ErrorResponseTraceback
+        + ErrorDetails
     }
+  }
 
-    package "osdmapper" <<Rectangle>> {
-        object osdmapper_items {
-            + FrequencyBand
-            + Subarray
-            + MidConfiguration
-            + LowConfiguration
-            + Configuration
-            + configuration_from_osd()
-            + _get_mid_telescope_configuration()
-            + _get_low_telescope_configuration()
-        }
+  package "osdmapper" <<Rectangle>> {
+    object osdmapper_items {
+        + FrequencyBand
+        + Subarray
+        + MidConfiguration
+        + LowConfiguration
+        + Configuration
+        + configuration_from_osd()
+        + _get_mid_telescope_configuration()
+        + _get_low_telescope_configuration()
     }
-    
+  }
 }
 
 package "odt" as odt_pkg {
-    note as odt_note
-    "ODT section minimised in this view"
+  note as odt_note
+  "ODT section minimised in this view"
+  end note
+}
+
+package "pht" <<Rectangle>> as pht_pkg {
+  package "model" <<Rectangle>> {
+    note as model_note
+    "model section minimised in this view"
     end note
+  }
+
+  package "pht_utils" <<Rectangle>> {
+    note as pht_utils_note
+    "utils section minimised in this view"
+    end note
+  }
+
+  package "api" <<Rectangle>> {
+    package "panel_decision" <<Rectangle>> {
+      object panel_decision_endpoints {
+        + create_panel_decision()
+        + get_panel_decision()
+        + get_panel_decisions_for_user()
+        + update_panel_decision()
+      }
+    }
+
+    package "panels" <<Rectangle>> {
+      object panels_endpoints {
+        + create_panel()
+        + get_panel()
+        + get_panels_for_user()
+      }
+    }
+
+    package "prsls" <<Rectangle>> {
+      object prsls_endpoints {
+        + get_osd_by_cycle()
+        + create_proposal()
+        + get_proposal()
+        + get_proposals_batch()
+        + get_proposals_by_status()
+        + get_reviews_for_proposal()
+        + get_proposals_for_user()
+        + update_proposal()
+        + validate_proposal()
+        + send_email()
+        + create_upload_pdf_url()
+        + create_download_pdf_url()
+        + create_delete_pdf_url()
+      }
+    }
+
+    package "report" <<Rectangle>> {
+      object report_endpoints {
+        + get_report()
+      }
+    }
+
+    package "reviewers" <<Rectangle>> {
+      object reviewers_endpoints {
+        + get_reviewers()
+      }
+    }
+
+    package "reviews" <<Rectangle>> {
+      object reviews_endpoints {
+        + create_review()
+        + get_review()
+        + get_reviews_for_user()
+        + update_review()
+      }
+    }
+  }
 }
-
-package "pht" as pht_pkg {
-
-    
-
-    package "utils" <<Rectangle>> {
-      note as utils_note
-        "utils section minimised in this view"
-      end note
-    }
-    package "model" <<Rectangle>> {
-      note as model_note
-        "model section minimised in this view"
-      end note
-    }
-    package "api" <<Rectangle>> {
-        package "panel_decision" <<Rectangle>> {
-            object panel_decision_endpoints{
-                + create_panel_decision()
-                + get_panel_decision()
-                + get_panel_decisions_for_user()
-                + update_panel_decision()
-            }
-        }
-        package "panels" <<Rectangle>> {
-            object panels_endpoints{
-                + create_panel()
-                + get_panel()
-                + get_panels_for_user()
-            }
-        }
-        package "prsls" <<Rectangle>> {
-            object prsls_endpoints{
-                + get_osd_by_cycle()
-                + create_proposal()
-                + get_proposal()
-                + get_proposals_batch()
-                + get_proposals_by_status()
-                + get_reviews_for_proposal()
-                + get_proposals_for_user()
-                + update_proposal()
-                + validate_proposal()
-                + send_email()
-                + create_upload_pdf_url()
-                + create_download_pdf_url()
-                + create_delete_pdf_url()
-            }
-        }
-        package "report" <<Rectangle>> {
-            object report_endpoints{
-                + get_report()
-            }
-        }
-        package "reviewers" <<Rectangle>> {
-            object reviewers_endpoints{
-                + get_reviewers()
-            }
-        }
-        package "reviews" <<Rectangle>> {
-            object reviews_endpoints{
-                + create_review()
-                + get_review()
-                + get_reviews_for_user()
-                + update_review()
-            }
-        }
-    }
-
-}
-
-common_pkg -down[hidden]- odt_pkg
-common_pkg -down[hidden]- odt_pkg
-odt_pkg -down[hidden]- pht_pkg
-odt_pkg -down[hidden]- pht_pkg
 
 package "app" <<Rectangle>> {
-    class create_app <<function>>
+  class create_app <<function>>
 }
 
-
+' Layout constraints to enforce separation
+common_pkg -[hidden]-> pht_pkg
 common_pkg -up-> app.create_app
 odt_pkg -up-> app.create_app
 pht_pkg -up-> app.create_app
