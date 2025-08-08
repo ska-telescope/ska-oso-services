@@ -160,7 +160,6 @@ package "app" <<Rectangle>> {
 }
 
 ' Layout constraints to enforce separation
-common_pkg -[hidden]-> pht_pkg
 common_pkg -up-> app.create_app
 odt_pkg -up-> app.create_app
 pht_pkg -up-> app.create_app
