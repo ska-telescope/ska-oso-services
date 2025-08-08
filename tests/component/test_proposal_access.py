@@ -1,11 +1,9 @@
 # pylint: disable=missing-timeout
-import json
 import uuid
 from http import HTTPStatus
 
-from ..unit.util import VALID_PANEL_DECISION, TestDataFactory
+from ..unit.util import TestDataFactory
 from . import PHT_URL
-
 
 
 def test_get_list_proposal_access_for_user(authrequests):
