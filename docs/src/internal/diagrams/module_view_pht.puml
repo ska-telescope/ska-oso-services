@@ -4,24 +4,6 @@ top to bottom direction
 package "pht" as pht_pkg {
 
     package "api" <<Rectangle>> {
-    
-        package "prsls" <<Rectangle>> {
-            object prsls_endpoints{
-                + POST /prsls/create
-                + POST /prsls/batch
-                + POST /prsls/validate
-                + POST /prsls/send-email/
-                + POST /prsls/signed-url/upload/{filename}
-                + POST /prsls/signed-url/download/{filename}
-                + POST /prsls/signed-url/delete/{filename}
-                + GET /prsls/osd/{cycle}
-                + GET /prsls/{proposal_id}
-                + GET /prsls/status/{status}
-                + GET /prsls/reviews/{prsl_id}
-                + GET /prsls/list/{user_id}
-                + PUT /prsls/{proposal_id}
-            }
-        }
 
         package "panel_decision" <<Rectangle>> {
             object panel_decision_endpoints{
@@ -37,6 +19,24 @@ package "pht" as pht_pkg {
                 + POST /panels/
                 + GET /panels//{panel_id}
                 + GET /panels/list/{user_id}
+            }
+        }
+        
+        package "prsls" <<Rectangle>> {
+            object prsls_endpoints{
+                + POST /prsls/create
+                + POST /prsls/batch
+                + POST /prsls/validate
+                + POST /prsls/send-email/
+                + POST /prsls/signed-url/upload/{filename}
+                + POST /prsls/signed-url/download/{filename}
+                + POST /prsls/signed-url/delete/{filename}
+                + GET /prsls/osd/{cycle}
+                + GET /prsls/{proposal_id}
+                + GET /prsls/status/{status}
+                + GET /prsls/reviews/{prsl_id}
+                + GET /prsls/list/{user_id}
+                + PUT /prsls/{proposal_id}
             }
         }
 
@@ -92,17 +92,20 @@ package "pht" as pht_pkg {
             class validate_duplicates <<function>>
             class validate_proposal <<function>>
         }
-        class constants
+        
+        package "constants" <<Rectangle>> {
+        }
     }
-
+    
     ' --- Relationships, return types only ---
-    api.prsls.prsls_endpoints --> utils.validation.validate_proposal
-    api.prsls.prsls_endpoints --> utils.pht_handler.pht_handler_items
-    api.prsls.prsls_endpoints --> utils.s3_bucket.s3_bucket_functions : PDF file
-    api.panels.panels_endpoints --> utils.validation.validate_duplicates : List[Panel]
-    api.report.report_endpoints --> utils.pht_handler.pht_handler_items: ProposalReport
-    api.prsls.prsls_endpoints --> utils.email_helper.email_helper_items
-    api.reviewers.reviewers_endpoints --> utils.constants : REVIEWERS
+    prsls_endpoints --> validate_proposal
+    prsls_endpoints --> email_helper_items
+    prsls_endpoints --> pht_handler_items
+    prsls_endpoints --> s3_bucket_functions
+    panels_endpoints --> validate_duplicates : List[Panel]
+    report_endpoints --> pht_handler_items
+    reviewers_endpoints --> constants
+    
 
 }
 @enduml
