@@ -47,7 +47,7 @@ def create_review(reviews: PanelReview) -> str:
             existing_rvw = existing_rvws[0] if existing_rvws else None
 
             if existing_rvw and existing_rvw.metadata.version == 1:
-                return existing_rvw
+                return existing_rvw.review_id
             created_review = uow.rvws.add(reviews)
             uow.commit()
         return created_review.review_id

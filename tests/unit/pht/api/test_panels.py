@@ -261,7 +261,6 @@ class TestPanelAutoCreateAPI:
         mock_oda,
         client,
     ):
-        # Create a real Panel object
 
         panel_obj = Panel(
             panel_id="panel-888",
@@ -301,6 +300,7 @@ class TestPanelAutoCreateAPI:
         mock_oda,
         client,
     ):
+
         uow_mock = mock.MagicMock()
         mock_oda.return_value.__enter__.return_value = uow_mock
 
@@ -321,7 +321,7 @@ class TestPanelAutoCreateAPI:
         def upsert_panel_side_effect(uow, panel_name, reviewers, proposals):
             proposals = proposals or []
             reviewers = reviewers or []
-            return SimpleNamespace(
+            return Panel(
                 panel_id=f"panel-{panel_name.lower().replace(' ', '-')}",
                 name=panel_name,
                 proposals=proposals,
@@ -330,7 +330,7 @@ class TestPanelAutoCreateAPI:
 
         mock_upsert_panel.side_effect = upsert_panel_side_effect
 
-        uow_mock.panels.add.side_effect = lambda *a, **k: SimpleNamespace(
+        uow_mock.panels.add.side_effect = lambda *a, **k: Panel(
             panel_id="panel-galaxy",
             name="Galaxy",
             proposals=[],

@@ -4,6 +4,7 @@ Unit tests for ska_oso_pht_services.api
 
 import json
 from http import HTTPStatus
+from types import SimpleNamespace
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -17,48 +18,116 @@ from tests.unit.util import VALID_REVIEW, TestDataFactory, assert_json_is_equal
 REVIEWS_API_URL = f"{PHT_BASE_API_URL}/reviews"
 
 
-class TestReviewAPI:
+class TestReviewCreateAPI:
+
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
-    def test_create_review(self, mock_oda, client):
+    def test_create_review_creates_new_success(self, mock_oda, client):
         """
-        Check the review_create method returns the expected review_id and status code.
+        When no existing review matches, it should create one,
+        commit, and return review_id.
         """
-
         review_obj = TestDataFactory.reviews()
+        uow = mock.MagicMock()
+        uow.rvws.query.return_value = []
+        uow.rvws.add.return_value = review_obj
+        mock_oda.return_value.__enter__.return_value = uow
 
-        uow_mock = mock.MagicMock()
-        uow_mock.rvws.add.return_value = review_obj
-        mock_oda.return_value.__enter__.return_value = uow_mock
-
-        response = client.post(
+        resp = client.post(
             f"{REVIEWS_API_URL}/",
             data=VALID_REVIEW,
             headers={"Content-type": "application/json"},
         )
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.json() == review_obj.review_id
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.json() == review_obj.review_id
+        uow.rvws.query.assert_called_once()
+        uow.rvws.add.assert_called_once()
+        uow.commit.assert_called_once()
+
+    @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
+    def test_create_review_returns_existing_when_version_1(self, mock_oda, client):
+        """
+        If an existing review with version==1 is found,
+        it should return its review_id without creating a new one.
+        """
+        existing = TestDataFactory.reviews()
+        if getattr(existing, "metadata", None) is None:
+            existing.metadata = SimpleNamespace(version=1)
+        else:
+            existing.metadata.version = 1
+
+        uow = mock.MagicMock()
+        uow.rvws.query.return_value = [existing]
+        mock_oda.return_value.__enter__.return_value = uow
+
+        resp = client.post(
+            f"{REVIEWS_API_URL}/",
+            data=VALID_REVIEW,
+            headers={"Content-type": "application/json"},
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+
+        assert resp.json() == existing.review_id
+        uow.rvws.add.assert_not_called()
+        uow.commit.assert_not_called()
+
+    @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
+    def test_create_review_existing_not_version1_creates_new(self, mock_oda, client):
+        """
+        If existing review exists but version != 1,
+          it should create a new one.
+        """
+        existing = TestDataFactory.reviews()
+        if getattr(existing, "metadata", None) is None:
+            existing.metadata = SimpleNamespace(version=2)
+        else:
+            existing.metadata.version = 2
+
+        created = TestDataFactory.reviews()
+        uow = mock.MagicMock()
+        uow.rvws.query.return_value = [existing]
+        uow.rvws.add.return_value = created
+        mock_oda.return_value.__enter__.return_value = uow
+
+        resp = client.post(
+            f"{REVIEWS_API_URL}/",
+            data=VALID_REVIEW,
+            headers={"Content-type": "application/json"},
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.json() == created.review_id
+        uow.rvws.add.assert_called_once()
+        uow.commit.assert_called_once()
 
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_create_review_value_error_raises_bad_request(self, mock_oda, client):
         """
-        Simulate ValueError in review creation and ensure it raises BadRequestError.
+        Value Error during add()
         """
+        uow = mock.MagicMock()
+        uow.rvws.query.return_value = []
+        uow.rvws.add.side_effect = ValueError("mock-failure")
+        mock_oda.return_value.__enter__.return_value = uow
 
-        uow_mock = mock.MagicMock()
-        uow_mock.rvws.add.side_effect = ValueError("mock-failure")
-
-        mock_oda.return_value.__enter__.return_value = uow_mock
-
-        response = client.post(
+        resp = client.post(
             f"{REVIEWS_API_URL}/",
             data=VALID_REVIEW,
             headers={"Content-Type": "application/json"},
         )
 
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        data = response.json()
-        assert "Failed when attempting to create a Review" in data["detail"]
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, resp.text
+        detail = resp.json().get("detail", "")
+        assert "Failed when attempting to create a Review" in detail
+        assert "mock-failure" in detail
+
+        uow.rvws.query.assert_called_once()
+        uow.rvws.add.assert_called_once()
+        uow.commit.assert_not_called()
+
+
+class TestReviewAPI:
 
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_get_review_not_found(self, mock_oda, client):
