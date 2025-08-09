@@ -8,11 +8,11 @@ from ska_oso_pdm.proposal.proposal import ProposalStatus
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.pht.model import ProposalReport
-from ska_oso_services.pht.utils.pht_handler import (
-    get_latest_entity_by_id,
-    join_proposals_panels_reviews_decisions,
+from ska_oso_services.pht.models.schemas import ProposalReportResponse
+from ska_oso_services.pht.utils.pht_helper import (
+    get_latest_entity_by_id
 )
+from ska_oso_services.pht.service.report_processing import join_proposals_panels_reviews_decisions
 
 LOGGER = logging.getLogger(__name__)
 
@@ -22,14 +22,14 @@ router = APIRouter(prefix="/report", tags=["PHT API - Report"])
 @router.get(
     "/",
     summary="Create a report for admin/coordinator",
-    response_model=list[ProposalReport],
+    response_model=list[ProposalReportResponse],
     dependencies=[
         Permissions(
             roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
         )
     ],
 )
-def get_report() -> List[ProposalReport]:
+def get_report() -> List[ProposalReportResponse]:
     """
     Creates a new report for the PHT admin/coordinator.
     """

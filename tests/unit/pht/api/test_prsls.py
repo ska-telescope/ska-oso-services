@@ -452,7 +452,7 @@ class TestProposalEmailAPI:
         mock_send.assert_called_once()
 
     @mock.patch(
-        "ska_oso_services.pht.utils.email_helper.aiosmtplib.send",
+        "ska_oso_services.pht.service.email_service.aiosmtplib.send",
         new_callable=mock.AsyncMock,
     )
     def test_send_email_connection_failure(self, mock_smtp_send, client):
@@ -470,7 +470,7 @@ class TestProposalEmailAPI:
         assert "SMTP connection failed" in response.text
 
     @mock.patch(
-        "ska_oso_services.pht.utils.email_helper.aiosmtplib.send",
+        "ska_oso_services.pht.service.email_service.aiosmtplib.send",
         new_callable=mock.AsyncMock,
     )
     def test_send_email_recipients_refused(self, mock_smtp_send, client):
@@ -487,7 +487,7 @@ class TestProposalEmailAPI:
         assert "Unable to send email for this recipient." in response.text
 
     @mock.patch(
-        "ska_oso_services.pht.utils.email_helper.aiosmtplib.send",
+        "ska_oso_services.pht.service.email_service.aiosmtplib.send",
         new_callable=mock.AsyncMock,
     )
     def test_send_email_generic_smtp_exception(self, mock_smtp_send, client):

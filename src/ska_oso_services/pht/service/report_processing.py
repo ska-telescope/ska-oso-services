@@ -1,78 +1,5 @@
-"""Transform and update proposal data.
-This module contains functions to transform and update proposal data
-for submission and creation processes.
-"""
 
-from datetime import datetime, timezone
-from typing import Any, Optional
-
-from ska_oso_pdm.proposal import Proposal
-
-from ska_oso_services.pht.model import ProposalReport
-
-
-def transform_update_proposal(data: Proposal) -> Proposal:
-    """
-    Transforms and updates a given Proposal model.
-
-    - If prsl_id is "new", sets it to "12345".
-    - Sets submitted_on to now if submitted_by is provided.
-    - Sets status based on presence of submitted_on.
-    - Extracts investigator_refs from info.investigators.
-    """
-
-    # TODO : rethink the logic here - may need to move to UI
-    if data.submitted_by:
-        submitted_on = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        status = "submitted"
-    else:
-        submitted_on = data.submitted_on
-        status = "submitted" if submitted_on else "draft"
-
-    investigator_refs = [inv.investigator_id for inv in data.info.investigators]
-
-    return Proposal(
-        prsl_id=data.prsl_id,
-        cycle=data.cycle,
-        submitted_by=data.submitted_by,
-        submitted_on=submitted_on,
-        status=status,
-        info=data.info,
-        investigator_refs=investigator_refs,
-    )
-
-
-def _get_attr_or_key(obj, key, default=None):
-    if isinstance(obj, dict):
-        return obj.get(key, default)
-    return getattr(obj, key, default)
-
-
-def get_latest_entity_by_id(entities: Optional[list[Any]], entity_id: str) -> list[Any]:
-    """
-    Returns the latest version of each entity based on a unique identifier.
-    Works for dicts and objects.
-    """
-    if not entities:
-        return []
-
-    latest = {}
-    for entity in entities:
-        key = _get_attr_or_key(entity, entity_id)
-        metadata = _get_attr_or_key(entity, "metadata", {})
-        version = _get_attr_or_key(metadata, "version", 0)
-        if key is None:
-            continue  # skip entities with no key
-        # Only keep new version
-        old_version = 0
-        if key in latest:
-            old_metadata = _get_attr_or_key(latest[key], "metadata", {})
-            old_version = _get_attr_or_key(old_metadata, "version", 0)
-        if key not in latest or version > old_version:
-            latest[key] = entity
-
-    return list(latest.values())
-
+from ska_oso_services.pht.models.schemas import ProposalReportResponse
 
 def _get_array_class(proposal) -> str:
     arrays = set()
@@ -97,7 +24,7 @@ def _get_array_class(proposal) -> str:
 
 def join_proposals_panels_reviews_decisions(
     proposals, panels, reviews, decisions
-) -> list[ProposalReport]:
+) -> list[ProposalReportResponse]:
     """Joins all input data into output rows, handling unavailable entities."""
     rows = []
 
@@ -130,7 +57,7 @@ def join_proposals_panels_reviews_decisions(
                 review = review_lookup.get((prsl_id, reviewer_id))
 
                 rows.append(
-                    ProposalReport(
+                    ProposalReportResponse(
                         prsl_id=proposal.prsl_id,
                         title=proposal.info.title,
                         science_category=proposal.info.science_category,
@@ -181,7 +108,7 @@ def join_proposals_panels_reviews_decisions(
         else:
             # No panel/reviewers — fallback to proposal + decision only
             rows.append(
-                ProposalReport(
+                ProposalReportResponse(
                     prsl_id=proposal.prsl_id,
                     title=proposal.info.title,
                     science_category=proposal.info.science_category,

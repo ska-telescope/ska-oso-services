@@ -18,15 +18,17 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
-from ska_oso_services.pht.model import EmailRequest, OsdDataModel
-from ska_oso_services.pht.utils import validation
+from ska_oso_services.pht.models.schemas import EmailRequest
+from ska_oso_services.pht.models.domain import  OsdDataModel
+from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
-from ska_oso_services.pht.utils.email_helper import send_email_async
-from ska_oso_services.pht.utils.pht_handler import (
+from ska_oso_services.pht.service.email_service import send_email_async
+from ska_oso_services.pht.utils.pht_helper import (
     get_latest_entity_by_id,
-    transform_update_proposal,
+  
 )
-from ska_oso_services.pht.utils.s3_bucket import (
+from ska_oso_services.pht.service.proposal_service import transform_update_proposal
+from ska_oso_services.pht.service.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
     create_presigned_url_delete_pdf,
     create_presigned_url_download_pdf,
