@@ -6,8 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
-* [BREAKING] Added AAA protection to PHT endpoints
-* Upgraded ska-aaa-authhelpers version to 1.1.0
+* [BREAKING] Adds AAA protection to PHT endpoints
+* Adds auto-panel creation `POST` endpoint based on cycle description
+* Adds separate `PUT` endpoint to update panels
+* Updates ska-aaa-authhelpers version to 1.1.0
+* Updates `POST` reviews endpoint to check if a review already exist under a different id before creating new review
 
 2.0.1
 ***********
