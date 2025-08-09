@@ -1,7 +1,6 @@
-
 from datetime import datetime, timezone
-from ska_oso_pdm.proposal import Proposal
 
+from ska_oso_pdm.proposal import Proposal
 
 
 def transform_update_proposal(data: Proposal) -> Proposal:

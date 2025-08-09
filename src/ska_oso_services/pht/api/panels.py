@@ -16,7 +16,6 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateResponse
-from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, REVIEWERS
 from ska_oso_services.pht.service.panel_operations import (
     build_panel_response,
     build_sv_panel_proposals,
@@ -24,8 +23,11 @@ from ska_oso_services.pht.service.panel_operations import (
     group_proposals_by_science_category,
     upsert_panel,
 )
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
-from ska_oso_services.pht.utils.pht_helper import validate_duplicates
+from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, REVIEWERS
+from ska_oso_services.pht.utils.pht_helper import (
+    get_latest_entity_by_id,
+    validate_duplicates,
+)
 
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 

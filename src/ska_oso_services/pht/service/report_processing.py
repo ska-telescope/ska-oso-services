@@ -1,5 +1,5 @@
-
 from ska_oso_services.pht.models.schemas import ProposalReportResponse
+
 
 def _get_array_class(proposal) -> str:
     arrays = set()

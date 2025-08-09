@@ -1,6 +1,7 @@
 """ Schemas specific for the proposal handling tool (PHT) """
 
 from pydantic import EmailStr
+
 from ska_oso_services.common.model import AppModel
 
 
@@ -14,9 +15,10 @@ class EmailRequest(AppModel):
 
 
 class PanelCreateResponse(AppModel):
-    """ Schema for response after creating a panel based on 
-        science categories and automatically assigning submitted proposals.
+    """Schema for response after creating a panel based on
+    science categories and automatically assigning submitted proposals.
     """
+
     panel_id: str
     name: str
     proposal_count: int
@@ -24,6 +26,7 @@ class PanelCreateResponse(AppModel):
 
 class PanelCreateRequest(AppModel):
     """Schema for creating a new panel."""
+
     name: str
     reviewers: list
     proposals: list
@@ -31,6 +34,7 @@ class PanelCreateRequest(AppModel):
 
 class ProposalReportResponse(AppModel):
     """Schema for proposal report response."""
+
     prsl_id: str
     title: str
     science_category: str | None = None

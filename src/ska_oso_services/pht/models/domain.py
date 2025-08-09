@@ -96,5 +96,3 @@ class Capabilities(BaseModel):
 class OsdDataModel(BaseModel):
     observatory_policy: ObservatoryPolicy
     capabilities: Capabilities
-
-

@@ -249,7 +249,9 @@ class TestPanelAutoCreateAPI:
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.utils.pht_helper.get_latest_entity_by_id")
-    @mock.patch("ska_oso_services.pht.service.panel_operations.build_sv_panel_proposals")
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.build_sv_panel_proposals"
+    )
     @mock.patch("ska_oso_services.pht.service.panel_operations.upsert_panel")
     @mock.patch("ska_oso_services.pht.service.panel_operations.build_panel_response")
     def test_auto_create_panel_sv_success(
@@ -288,7 +290,9 @@ class TestPanelAutoCreateAPI:
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.utils.pht_helper.get_latest_entity_by_id")
-    @mock.patch("ska_oso_services.pht.service.panel_operations.build_sv_panel_proposals")
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.build_sv_panel_proposals"
+    )
     @mock.patch("ska_oso_services.pht.service.panel_operations.upsert_panel")
     @mock.patch("ska_oso_services.pht.service.panel_operations.build_panel_response")
     def test_auto_create_panel_category_success(

@@ -9,10 +9,10 @@ from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.pht.models.schemas import ProposalReportResponse
-from ska_oso_services.pht.utils.pht_helper import (
-    get_latest_entity_by_id
+from ska_oso_services.pht.service.report_processing import (
+    join_proposals_panels_reviews_decisions,
 )
-from ska_oso_services.pht.service.report_processing import join_proposals_panels_reviews_decisions
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 LOGGER = logging.getLogger(__name__)
 

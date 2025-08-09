@@ -3,8 +3,9 @@ This module contains functions to transform and update proposal data
 for submission and creation processes.
 """
 
-from typing import Any, Optional
 import uuid
+from typing import Any, Optional
+
 from ska_oso_services.common.error_handling import DuplicateError
 
 

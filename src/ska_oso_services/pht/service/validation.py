@@ -1,7 +1,5 @@
 from ska_oso_pdm.proposal import Proposal
 
-
-
 # from ska_oso_pht_services.api_clients.osd_api import osd_client
 
 # TODO: use values from OSD after connection is ready
@@ -61,6 +59,3 @@ def validate_proposal(proposal: Proposal) -> dict:
 
     res = {"result": validate_result, "validation_errors": messages}
     return res
-
-
-

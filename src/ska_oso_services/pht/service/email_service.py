@@ -14,8 +14,6 @@ from ska_oso_services.pht.utils.constants import HTML_TEMPLATE
 LOGGER = logging.getLogger(__name__)
 
 
-
-
 # Email rendering
 def render_email(prsl_id: str, link: str) -> str:
     """
