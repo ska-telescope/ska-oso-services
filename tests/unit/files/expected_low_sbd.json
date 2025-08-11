@@ -12,7 +12,7 @@
   "targets": [
     {
       "target_id": "47 tuc",
-      "name": "",
+      "name": "47 tuc",
       "pointing_pattern": {
         "active": "SinglePointParameters",
         "parameters": [
@@ -46,7 +46,7 @@
     },
     {
       "target_id": "target42",
-      "name": "",
+      "name": "target42",
       "pointing_pattern": {
         "active": "SinglePointParameters",
         "parameters": [
@@ -82,7 +82,7 @@
   "csp_configurations": [
     {
       "config_id": "csp-configuration-12345",
-      "name": "",
+      "name": "Config 12345",
       "lowcbf": {
         "do_pst": false,
         "correlation_spws": [

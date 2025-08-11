@@ -3,7 +3,7 @@ from random import randint
 from typing import List, Optional
 
 import astropy.units as u
-from ska_oso_pdm import SBDefinition, SubArrayLOW, SubArrayMID, TelescopeType
+from ska_oso_pdm import SBDefinition, SubArrayLOW, SubArrayMID, Target, TelescopeType
 from ska_oso_pdm.project import ObservingBlock, ScienceProgramme
 from ska_oso_pdm.sb_definition import (
     CSPConfiguration,
@@ -47,6 +47,7 @@ def generate_sbds(obs_block: ObservingBlock) -> list[SBDefinition]:
 
 
 def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefinition:
+    science_programme.targets = _copy_targets_with_name(science_programme.targets)
 
     observation_set = science_programme.observation_sets[0]
 
@@ -178,8 +179,13 @@ def _csp_configuration_from_science_programme(
         case _:
             raise ValueError(f"Unsupported TelescopeType {telescope}")
 
+    csp_configuration_id, name = _sbd_internal_id_and_name(CSPConfiguration)
+
     return CSPConfiguration(
-        config_id=_sbd_internal_id(CSPConfiguration), midcbf=midcbf, lowcbf=lowcbf
+        config_id=csp_configuration_id,
+        name=name,
+        midcbf=midcbf,
+        lowcbf=lowcbf,
     )
 
 
@@ -273,16 +279,42 @@ def _proposal_observing_band_to_mid_receiver_band(observing_band: str) -> Receiv
             raise ValueError(f"Mid Band {observing_band} not supported")
 
 
-def _sbd_internal_id(pdm_type: type):
+def _sbd_internal_id(pdm_type: type) -> str:
+    """
+    Creates an identifier for a component of the SBDefinition that can
+    be used for tracking relationships
+    """
+    mapping = {
+        MCCSAllocation: "mccs-allocation-{}",
+        DishAllocation: "dish-allocation-{}",
+        ScanDefinition: "scan-definition-{}",
+    }
+
+    return mapping[pdm_type].format(randint(10000, 99999))
+
+
+def _sbd_internal_id_and_name(pdm_type: type) -> tuple[str, str]:
+    """
+    Creates an identifier for a component of the SBDefinition thar can
+    be used for tracking relationships alongside a display name that a user
+    could edit
+    """
     random_int = randint(10000, 99999)
 
-    if pdm_type is MCCSAllocation:
-        return f"mccs-allocation-{random_int}"
-    if pdm_type is DishAllocation:
-        return f"dish-allocation-{random_int}"
-    if pdm_type is ScanDefinition:
-        return f"scan-definition-{random_int}"
-    if pdm_type is CSPConfiguration:
-        return f"csp-configuration-{random_int}"
+    mapping = {
+        CSPConfiguration: (f"csp-configuration-{random_int}", f"Config {random_int}")
+    }
 
-    raise ValueError(f"Unsupported type {type} for an internal SBDefinition id")
+    return mapping[pdm_type]
+
+
+def _copy_targets_with_name(targets: list[Target]) -> list[Target]:
+    """
+    The PHT creates a Proposal with a Target with the target_id populated but not the
+    name. Here we populate the name with the ID that is set in the Proposal, assuming
+    it is unique. Longer term we should standardise how these fields are set.
+    """
+    return [
+        target.model_copy(update={"name": target.target_id}, deep=True)
+        for target in targets
+    ]
