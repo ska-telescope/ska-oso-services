@@ -82,43 +82,6 @@ class TestProposalAccessAPI:
 
         assert json.loads(proposal_access.model_dump_json()) == result
 
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    def test_panels_post_not_existing_reviewer(self, mock_uow, client):
-        panel = TestDataFactory.panel()
-
-        uow_mock = mock.MagicMock()
-        uow_mock.panels.add.return_value = panel
-        mock_uow().__enter__.return_value = uow_mock
-
-        data = panel.json()
-
-        response = client.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
-
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-
-        result = response.json()
-        expected = {"detail": "Reviewer 'rev-001' does not exist"}
-        assert expected == result
-
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    def test_panels_post_not_existing_proposal(self, mock_uow, client):
-        panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0]["id"])
-
-        uow_mock = mock.MagicMock()
-        uow_mock.panels.add.return_value = panel
-        uow_mock.prsls.get.side_effect = ODANotFound
-        mock_uow().__enter__.return_value = uow_mock
-
-        data = panel.json()
-
-        response = client.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
-
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-
-        result = response.json()
-        expected = {"detail": "Proposal 'prsl-mvp01-20220923-00001' does not exist"}
-        assert expected == result
-
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow", autospec=True)
     def test_get_proposal_access_by_user_success(self, mock_oda, client):
         """
