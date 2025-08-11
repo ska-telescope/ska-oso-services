@@ -16,10 +16,10 @@ from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
-from ska_oso_services.pht.model import (
-    ProposalAccessByProposalResponse,
-    ProposalAccessResponse,
-)
+# from ska_oso_services.pht.model import (
+#     ProposalAccessByProposalResponse,
+#     ProposalAccessResponse,
+# )
 
 CUR_DIR = Path(__file__).parent
 
@@ -282,19 +282,21 @@ class TestDataFactory:
 
     @staticmethod
     def proposal_access_response(
+        prsl_id: str,
         access_id: str = "access_id1",
         user_id: str = "user1",
         role: str = "Principal Investigator",
         permission: list[str] = ["view"],
-    ) -> ProposalAccessResponse:
+    ) -> ProposalAccess:
         data = {
+            "prsl_id":prsl_id,
             "access_id": access_id,
             "user_id": user_id,
             "role": role,
             "permissions": permission,
         }
 
-        proposal_access_response = ProposalAccessByProposalResponse.model_validate_json(
+        proposal_access_response = ProposalAccess.model_validate_json(
             json.dumps(data)
         )
 
