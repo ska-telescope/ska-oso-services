@@ -1,6 +1,8 @@
 @startuml
 top to bottom direction
 
+title Detailed View: PHT
+
 package "pht" as pht_pkg {
 
     package "api" <<Rectangle>> {
