@@ -7,8 +7,13 @@ from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
-from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalRole
+from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_oso_pdm.proposal import (
+    Proposal,
+    ProposalAccess,
+    ProposalPermissions,
+    ProposalRole,
+)
 from ska_oso_pdm.proposal_management.review import PanelReview
 from ska_ost_osd.rest.api.resources import get_osd
 from starlette.status import HTTP_400_BAD_REQUEST
@@ -17,7 +22,6 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
-    ForbiddenError,
     NotFoundError,
     UnprocessableEntityError,
 )
@@ -25,7 +29,11 @@ from ska_oso_services.pht.models.domain import OsdDataModel
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
-from ska_oso_services.pht.service.proposal_service import transform_update_proposal
+from ska_oso_services.pht.service.proposal_service import (
+    assert_user_has_permission_for_proposal,
+    list_accessible_proposal_ids,
+    transform_update_proposal,
+)
 from ska_oso_services.pht.service.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
     create_presigned_url_delete_pdf,
@@ -115,12 +123,9 @@ def get_proposal(
     LOGGER.debug("GET PROPOSAL prsl_id: %s", prsl_id)
     try:
         with oda.uow() as uow:
-            has_permission = uow.prslacc.query(
-                CustomQuery(user_id=auth.user_id, prsl_id=prsl_id)
+            assert_user_has_permission_for_proposal(
+                uow, auth.user_id, prsl_id, ProposalPermissions.View
             )
-            if has_permission is None:
-                raise ForbiddenError(f"User does not have access to proposal {prsl_id}")
-
             proposal = uow.prsls.get(prsl_id)
         LOGGER.info("Proposal retrieved successfully: %s", prsl_id)
         return proposal
@@ -154,7 +159,11 @@ def get_proposals_batch(
 @router.get(
     "/status/{status}",
     summary="Get a list of proposals by status",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+    dependencies=[
+        Permissions(
+            roles=[Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READ]
+        )
+    ],
 )
 def get_proposals_by_status(status: str) -> list[Proposal]:
     """
@@ -201,11 +210,18 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
 
 
 @router.get(
-    "/list/{user_id}",
+    "/prsls",
     summary="Get a list of proposals created by a user",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
 )
-def get_proposals_for_user(user_id: str) -> list[Proposal]:
+def get_proposals_for_user(
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READ},
+        ),
+    ]
+) -> list[Proposal]:
     """
     Function that requests to GET /proposals/list are mapped to
 
@@ -216,26 +232,40 @@ def get_proposals_for_user(user_id: str) -> list[Proposal]:
     :return: a tuple of a list of Proposal
     """
 
-    LOGGER.debug("GET PROPOSAL LIST query for the user: %s", user_id)
+    LOGGER.debug("GET PROPOSAL LIST query for the user: %s", auth.user_id)
 
     with oda.uow() as uow:
-        query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        proposals = uow.prsls.query(query_param)
+        prsl_ids = list_accessible_proposal_ids(
+            uow, auth.user_id, ProposalPermissions.View
+        )
+        proposals = []
+        for prsl_id in prsl_ids:
+            proposal = uow.prsls.get(prsl_id)
+            if proposal is not None:
+                proposals.append(proposal)
+            else:
+                LOGGER.warning("Proposal not found: %s", prsl_id)
 
         if proposals is None:
-            LOGGER.info("No proposals found for user: %s", user_id)
+            LOGGER.info("No proposals found for user: %s", auth.user_id)
             return []
 
-        LOGGER.debug("Found %d proposals for user: %s", len(proposals), user_id)
+        LOGGER.debug("Found %d proposals for user: %s", len(proposals), auth.user_id)
         return proposals
 
 
-@router.put(
-    "/{prsl_id}",
-    summary="Update an existing proposal",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
-)
-def update_proposal(prsl_id: str, prsl: Proposal) -> Proposal:
+@router.put("/{prsl_id}", summary="Update an existing proposal")
+def update_proposal(
+    prsl_id: str,
+    prsl: Proposal,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> Proposal:
     """
     Updates a proposal in the underlying data store.
 
@@ -266,6 +296,14 @@ def update_proposal(prsl_id: str, prsl: Proposal) -> Proposal:
         )
 
     with oda.uow() as uow:
+        if prsl.status == "draft":
+            assert_user_has_permission_for_proposal(
+                uow, auth.user_id, prsl_id, ProposalPermissions.Update
+            )
+        if prsl.status == "submitted":
+            assert_user_has_permission_for_proposal(
+                uow, auth.user_id, prsl_id, ProposalPermissions.Submit
+            )
         # Verify proposal exists
         existing = uow.prsls.get(prsl_id)
         if not existing:
@@ -273,7 +311,7 @@ def update_proposal(prsl_id: str, prsl: Proposal) -> Proposal:
             raise NotFoundError(detail="Proposal not found: {prsl_id}")
 
         try:
-            updated_prsl = uow.prsls.add(prsl)  # Add is used for update
+            updated_prsl = uow.prsls.add(prsl, auth.user_id)  # Add is used for update
             uow.commit()
             LOGGER.info("Proposal %s updated successfully", prsl_id)
             return updated_prsl
@@ -288,7 +326,9 @@ def update_proposal(prsl_id: str, prsl: Proposal) -> Proposal:
 @router.post(
     "/validate",
     summary="Validate a proposal",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+    dependencies=[
+        Permissions(roles=[Role.ANY, Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])
+    ],
 )
 def validate_proposal(prsl: Proposal) -> dict:
     """
