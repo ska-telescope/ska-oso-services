@@ -119,8 +119,7 @@ def get_proposal(
                 CustomQuery(user_id=auth.user_id, prsl_id=prsl_id)
             )
             if has_permission is None:
-                raise ForbiddenError(f"User does not have access to proposal {prsl_id}"
-                )
+                raise ForbiddenError(f"User does not have access to proposal {prsl_id}")
 
             proposal = uow.prsls.get(prsl_id)
         LOGGER.info("Proposal retrieved successfully: %s", prsl_id)
