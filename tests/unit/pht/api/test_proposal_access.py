@@ -33,8 +33,8 @@ class TestProposalAccessAPI:
         assert response.status_code == HTTPStatus.OK
 
         result = response.json()
-        
-        print('result', result)
+
+        print("result", result)
         assert proposal_access.access_id == result
 
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow")
@@ -113,8 +113,12 @@ class TestProposalAccessAPI:
 
         MOCK_PRSL_ID = "prsl1"
         proposal_access_response = [
-            TestDataFactory.proposal_access_response(access_id="access_id1", prsl_id=MOCK_PRSL_ID),
-            TestDataFactory.proposal_access_response(access_id="access_id2", prsl_id=MOCK_PRSL_ID),
+            TestDataFactory.proposal_access_response(
+                access_id="access_id1", prsl_id=MOCK_PRSL_ID
+            ),
+            TestDataFactory.proposal_access_response(
+                access_id="access_id2", prsl_id=MOCK_PRSL_ID
+            ),
         ]
 
         uow_mock = mock.MagicMock()

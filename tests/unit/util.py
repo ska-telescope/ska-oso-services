@@ -289,16 +289,14 @@ class TestDataFactory:
         permission: list[str] = ["view"],
     ) -> ProposalAccess:
         data = {
-            "prsl_id":prsl_id,
+            "prsl_id": prsl_id,
             "access_id": access_id,
             "user_id": user_id,
             "role": role,
             "permissions": permission,
         }
 
-        proposal_access_response = ProposalAccess.model_validate_json(
-            json.dumps(data)
-        )
+        proposal_access_response = ProposalAccess.model_validate_json(json.dumps(data))
 
         return proposal_access_response
 
