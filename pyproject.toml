@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska-oso-services"
-version = "2.0.1"
+version = "2.0.2"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
 authors = ["Team Buttons", "Stargazers Team"]
 license = "BSD-3-Clause"
