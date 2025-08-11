@@ -173,7 +173,9 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
 @router.get(
     "/list/{user_id}",
     summary="Get a list of proposals created by a user",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+    dependencies=[
+        Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ, Scope.ODT_READ])
+    ],
 )
 def get_proposals_for_user(user_id: str) -> list[Proposal]:
     """
