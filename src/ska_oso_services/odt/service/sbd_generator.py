@@ -281,7 +281,7 @@ def _proposal_observing_band_to_mid_receiver_band(observing_band: str) -> Receiv
 
 def _sbd_internal_id(pdm_type: type) -> str:
     """
-    Creates an identifier for a component of the SBDefinition thar can
+    Creates an identifier for a component of the SBDefinition that can
     be used for tracking relationships
     """
     mapping = {
