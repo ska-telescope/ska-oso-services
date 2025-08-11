@@ -7,8 +7,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 
+2.0.2
+***********
+* Set CSP config and Target name when generating SBDefinitions
+
 2.0.1
 ***********
+* NOTE: Due to a pipeline concurrency issue, this release wrongly includes BREAKING changes compared to 2.0.0 (namely PHT endpoint AAA). Please do not use this release, 
+  and instead use 2.0.2
 * Set Observing Block name when generating a Project
 
 2.0.0

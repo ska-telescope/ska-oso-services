@@ -12,7 +12,7 @@
   "targets": [
     {
       "target_id": "47 tuc",
-      "name": "",
+      "name": "47 tuc",
       "pointing_pattern": {
         "active": "SinglePointParameters",
         "parameters": [
@@ -48,7 +48,7 @@
   "csp_configurations": [
     {
       "config_id": "csp-configuration-12345",
-      "name": "",
+      "name": "Config 12345",
       "midcbf": {
         "frequency_band": "1",
         "subbands": [
