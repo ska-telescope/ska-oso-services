@@ -10,6 +10,10 @@ Unreleased
 * Updated ska-aaa-authhelpers version to 1.1.0
 * Added module_view page and diagrams to documentation
 
+2.0.1
+***********
+* Set Observing Block name when generating a Project
+
 2.0.0
 ***********
 * [BREAKING] Updated ODA to version 11.0.0 (python package and helm chart)
