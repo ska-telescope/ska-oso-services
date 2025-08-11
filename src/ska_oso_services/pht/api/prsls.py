@@ -1,12 +1,14 @@
 import logging
 from http import HTTPStatus
+from typing import Annotated
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
 from ska_aaa_authhelpers import Role
+from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
-from ska_oso_pdm.proposal import Proposal
+from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalRole
 from ska_oso_pdm.proposal_management.review import PanelReview
 from ska_ost_osd.rest.api.resources import get_osd
 from starlette.status import HTTP_400_BAD_REQUEST
@@ -15,6 +17,7 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
+    ForbiddenError,
     NotFoundError,
     UnprocessableEntityError,
 )
@@ -31,7 +34,10 @@ from ska_oso_services.pht.service.s3_bucket import (
     get_aws_client,
 )
 from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
+from ska_oso_services.pht.utils.pht_helper import (
+    generate_entity_id,
+    get_latest_entity_by_id,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +47,6 @@ router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 @router.get(
     "/osd/{cycle}",
     summary="Retrieve OSD data for a particular cycle",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
 )
 def get_osd_by_cycle(cycle: int) -> OsdDataModel:
     LOGGER.debug("GET OSD data cycle: %s", cycle)
@@ -55,12 +60,17 @@ def get_osd_by_cycle(cycle: int) -> OsdDataModel:
     return data
 
 
-@router.post(
-    "/create",
-    summary="Create a new proposal",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
-)
-def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) -> str:
+@router.post("/create", summary="Create a new proposal")
+def create_proposal(
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+    proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL),
+) -> str:
     """
     Creates a new proposal in the ODA
     """
@@ -69,7 +79,15 @@ def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) ->
 
     try:
         with oda.uow() as uow:
-            created_prsl = uow.prsls.add(proposal)
+            created_prsl = uow.prsls.add(proposal, auth.user_id)
+            prslacc: ProposalAccess = {
+                "access_id": generate_entity_id("prslacc"),
+                "prsl_id": created_prsl.prsl_id,
+                "user_id": auth.user_id,
+                "role": ProposalRole.PrincipalInvestigator,
+                "permissions": ["submit", "update", "view"],
+            }
+            uow.prslacc.add(prslacc, auth.user_id)
             uow.commit()
         LOGGER.info("Proposal successfully created with ID %s", created_prsl.prsl_id)
         return created_prsl.prsl_id
@@ -83,13 +101,27 @@ def create_proposal(proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL)) ->
 @router.get(
     "/{prsl_id}",
     summary="Retrieve an existing proposal",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
 )
-def get_proposal(prsl_id: str) -> Proposal:
+def get_proposal(
+    prsl_id: str,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READ},
+        ),
+    ],
+) -> Proposal:
     LOGGER.debug("GET PROPOSAL prsl_id: %s", prsl_id)
-
     try:
         with oda.uow() as uow:
+            has_permission = uow.prslacc.query(
+                CustomQuery(user_id=auth.user_id, prsl_id=prsl_id)
+            )
+            if has_permission is None:
+                raise ForbiddenError(f"User does not have access to proposal {prsl_id}"
+                )
+
             proposal = uow.prsls.get(prsl_id)
         LOGGER.info("Proposal retrieved successfully: %s", prsl_id)
         return proposal

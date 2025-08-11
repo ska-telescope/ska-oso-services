@@ -19,7 +19,7 @@ from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateR
 from ska_oso_services.pht.service.panel_operations import (
     build_panel_response,
     build_sv_panel_proposals,
-    generate_panel_id,
+    generate_entity_id,
     group_proposals_by_science_category,
     upsert_panel,
 )
@@ -101,7 +101,7 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
         is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
         if is_sv:
             panel = Panel(
-                panel_id=generate_panel_id(),
+                panel_id=generate_entity_id("panel"),
                 name="Science Verification",
                 reviewers=reviewers,
                 proposals=build_sv_panel_proposals(proposals),
