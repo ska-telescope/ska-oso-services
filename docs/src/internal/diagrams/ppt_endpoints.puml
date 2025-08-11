@@ -78,5 +78,6 @@ Client -> Service: GET /reviews/{panel_id}
 Service -> DB: SELECT all reviews by panel ID
 DB --> Service: Return record(s)
 Service --> Client: 200 OK (List[reviews])
+
 @enduml
 

@@ -15,7 +15,7 @@ from ska_oso_services.common.error_handling import (
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/panel-decisions", tags=["PMT API- Panel Decision"])
+router = APIRouter(prefix="/panel-decisions", tags=["PMT API - Panel Decision"])
 
 
 @router.post(

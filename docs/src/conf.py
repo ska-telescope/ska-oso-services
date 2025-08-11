@@ -42,6 +42,7 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.githubpages',  
     'sphinxcontrib.openapi']
 
+
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
@@ -84,6 +85,13 @@ pygments_style = 'sphinx'
 todo_include_todos = True
 
 
+numfig = True
+
+numfig_format={
+    'figure': 'Figure %s :',
+    'table': 'Table %s',
+    'code-block': 'Listing %s'
+}
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -116,7 +124,6 @@ html_theme_options = {
 #        'donate.html',
 #    ]
 #}
-
 
 # -- Options for HTMLHelp output ------------------------------------------
 
