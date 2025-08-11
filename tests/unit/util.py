@@ -11,11 +11,7 @@ from ska_db_oda.persistence.domain import set_identifier
 from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal
-from ska_oso_pdm.proposal.proposal_access import (
-    ProposalAccess,
-    ProposalPermissions,
-    ProposalRole,
-)
+from ska_oso_pdm.proposal.proposal_access import ProposalAccess
 from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
