@@ -3,26 +3,12 @@ This module contains functions to transform and update proposal data
 for submission and creation processes.
 """
 
-# import random
 from datetime import datetime, timezone
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from ska_oso_pdm.proposal import Proposal
 
 from ska_oso_services.pht.model import ProposalReport
-
-EXAMPLE_PROPOSAL = {
-    "prsl_id": "prp-ska01-202204-02",
-    "status": "draft",
-    "cycle": "5000_2023",
-    "info": {
-        "title": "The Milky Way View",
-        "proposal_type": {
-            "main_type": "standard_proposal",
-            "attributes": ["coordinated_proposal"],
-        },
-    },
-}
 
 
 def transform_update_proposal(data: Proposal) -> Proposal:
@@ -62,7 +48,7 @@ def _get_attr_or_key(obj, key, default=None):
     return getattr(obj, key, default)
 
 
-def get_latest_entity_by_id(entities: Optional[List[Any]], entity_id: str) -> List[Any]:
+def get_latest_entity_by_id(entities: Optional[list[Any]], entity_id: str) -> list[Any]:
     """
     Returns the latest version of each entity based on a unique identifier.
     Works for dicts and objects.
@@ -111,7 +97,7 @@ def _get_array_class(proposal) -> str:
 
 def join_proposals_panels_reviews_decisions(
     proposals, panels, reviews, decisions
-) -> List[ProposalReport]:
+) -> list[ProposalReport]:
     """Joins all input data into output rows, handling unavailable entities."""
     rows = []
 

@@ -20,6 +20,18 @@ class EmailRequest(AppModel):
     prsl_id: str
 
 
+class PanelCreateResponse(AppModel):
+    panel_id: str
+    name: str
+    proposal_count: int
+
+
+class PanelCreate(AppModel):
+    name: str
+    reviewers: list
+    proposals: list
+
+
 class CycleInformation(BaseModel):
     cycle_id: str
     proposal_open: str

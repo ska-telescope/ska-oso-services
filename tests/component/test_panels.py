@@ -9,7 +9,9 @@ HEADERS = {"Content-type": "application/json"}
 
 
 def test_create_panel(authrequests):
-    panel = TestDataFactory.panel_basic()
+    panel = TestDataFactory.panel_basic(
+        panel_id=f"panel-test-{uuid.uuid4().hex[:8]}", name="Galaxy"
+    )
     data = panel.json()
 
     response = authrequests.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
@@ -123,3 +125,48 @@ def test_get_list_panels_for_user(authrequests):
     returned_ids = {p["panel_id"] for p in panels}
     for panel_id in created_ids:
         assert panel_id in returned_ids, f"Missing panel {panel_id} in GET /{user_id}"
+
+
+def test_auto_create_category_panels(authrequests):
+    payload = {
+        "name": "Galaxy",
+        "reviewers": [],
+        "proposals": [],
+    }
+
+    response = authrequests.post(
+        f"{PANELS_API_URL}/auto-create",
+        json=payload,
+        headers={"Content-Type": "application/json"},
+    )
+    print("Category response:", response.json())
+
+    assert response.status_code == HTTPStatus.OK
+    result = response.json()
+    assert isinstance(result, list), "Expected a list of panels"
+
+    # At least one category must be present
+    panel_names = [panel["name"] for panel in result]
+    assert "Cosmology" in panel_names
+    assert all("panel_id" in panel for panel in result)
+    assert all("proposal_count" in panel for panel in result)
+
+
+def test_auto_create_science_verification_panel(authrequests):
+    payload = {
+        "name": "Science Verification",
+        "reviewers": [],
+        "proposals": [],
+    }
+
+    response = authrequests.post(
+        f"{PANELS_API_URL}/auto-create",
+        json=payload,
+        headers={"Content-Type": "application/json"},
+    )
+    print("SV response:", response.json())
+
+    assert response.status_code == HTTPStatus.OK
+    panel_id = response.json()
+    assert isinstance(panel_id, str), "Expected a single panel_id string for SV"
+    assert panel_id.startswith("panel-")

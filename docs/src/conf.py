@@ -39,7 +39,8 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages']
+    'sphinx.ext.githubpages',  
+    'sphinxcontrib.openapi']
 
 
 # The suffix(es) of source filenames.
@@ -206,4 +207,4 @@ epub_exclude_files = ['search.html']
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'python': ('https://docs.python.org/3/', None)}
-
+openapi_default_renderer='httpdomain'
