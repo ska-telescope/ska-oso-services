@@ -10,13 +10,11 @@ import json
 import uuid
 from http import HTTPStatus
 
-import requests
-
 from ..unit.util import VALID_REVIEW, TestDataFactory
 from . import PHT_URL
 
 
-def test_create_and_get_review():
+def test_create_and_get_review(authrequests):
     """
     Integration test for the POST /reviews/create endpoint
     and GET /reviews/{review_id}.
@@ -24,7 +22,7 @@ def test_create_and_get_review():
     """
 
     # POST using JSON string
-    post_response = requests.post(
+    post_response = authrequests.post(
         f"{PHT_URL}/reviews/",
         data=VALID_REVIEW,
         headers={"Content-Type": "application/json"},
@@ -36,7 +34,7 @@ def test_create_and_get_review():
     ), f"Expected string, got {type(review_id)}: {review_id}"
 
     # GET created proposal
-    get_response = requests.get(f"{PHT_URL}/reviews/{review_id}")
+    get_response = authrequests.get(f"{PHT_URL}/reviews/{review_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     actual_payload = get_response.json()
 
@@ -52,7 +50,7 @@ def test_create_and_get_review():
     assert actual_payload == expected_payload
 
 
-def test_review_create_then_put():
+def test_review_create_then_put(authrequests):
     """
     Test that an entity POSTed to /reviews/create
     can then be updated with PUT /reviews/{identifier},
@@ -60,7 +58,7 @@ def test_review_create_then_put():
     """
 
     # POST a new proposal
-    post_response = requests.post(
+    post_response = authrequests.post(
         f"{PHT_URL}/reviews/",
         data=VALID_REVIEW,
         headers={"Content-Type": "application/json"},
@@ -74,7 +72,7 @@ def test_review_create_then_put():
     assert returned_review_id == expected_review_id
 
     # GET proposal to fetch latest state
-    get_response = requests.get(f"{PHT_URL}/reviews/{returned_review_id}")
+    get_response = authrequests.get(f"{PHT_URL}/reviews/{returned_review_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
     originalreview = get_response.json()
@@ -84,7 +82,7 @@ def test_review_create_then_put():
     review_to_update = json.dumps(originalreview)
 
     # PUT updated proposal
-    put_response = requests.put(
+    put_response = authrequests.put(
         f"{PHT_URL}/reviews/{returned_review_id}",
         data=review_to_update,
         headers={"Content-Type": "application/json"},
@@ -94,7 +92,7 @@ def test_review_create_then_put():
     assert put_response.json()["metadata"]["version"] == initial_version + 1
 
 
-def test_get_list_reviews_for_user():
+def test_get_list_reviews_for_user(authrequests):
     """
     Integration test:
     - Create multiple reviews
@@ -111,7 +109,7 @@ def test_get_list_reviews_for_user():
         review = TestDataFactory.reviews(review_id=review_id)
         review_json = review.model_dump_json()
 
-        response = requests.post(
+        response = authrequests.post(
             f"{PHT_URL}/reviews/",
             data=review_json,
             headers={"Content-Type": "application/json"},
@@ -121,12 +119,12 @@ def test_get_list_reviews_for_user():
 
     # Get created_by from one of the created reviews
     example_review_id = created_ids[0]
-    get_response = requests.get(f"{PHT_URL}/reviews/{example_review_id}")
+    get_response = authrequests.get(f"{PHT_URL}/reviews/{example_review_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     user_id = get_response.json()["metadata"]["created_by"]
 
     # GET /list/{user_id}
-    list_response = requests.get(f"{PHT_URL}/reviews/list/{user_id}")
+    list_response = authrequests.get(f"{PHT_URL}/reviews/list/{user_id}")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     reviews = list_response.json()

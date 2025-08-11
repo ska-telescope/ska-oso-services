@@ -1,0 +1,113 @@
+@startuml
+top to bottom direction
+
+title Detailed View: PHT
+
+package "pht" as pht_pkg {
+
+    package "api" <<Rectangle>> {
+
+        package "panel_decision" <<Rectangle>> {
+            object panel_decision_endpoints{
+                + POST /panel-decisions/
+                + GET /panel-decisions/{decision_id}
+                + GET /panel-decisions/list/{user_id}
+                + PUT /panel-decisions/{decision_id}
+            }
+        }
+        
+        package "panels_management" <<Rectangle>> {
+            object panels_endpoints {
+                + POST /panels/
+                + GET /panels//{panel_id}
+                + GET /panels/list/{user_id}
+            }
+        }
+        
+        package "prsls" <<Rectangle>> {
+            object prsls_endpoints{
+                + POST /prsls/create
+                + POST /prsls/batch
+                + POST /prsls/validate
+                + POST /prsls/send-email/
+                + POST /prsls/signed-url/upload/{filename}
+                + POST /prsls/signed-url/download/{filename}
+                + POST /prsls/signed-url/delete/{filename}
+                + GET /prsls/osd/{cycle}
+                + GET /prsls/{proposal_id}
+                + GET /prsls/status/{status}
+                + GET /prsls/reviews/{prsl_id}
+                + GET /prsls/list/{user_id}
+                + PUT /prsls/{proposal_id}
+            }
+        }
+
+        package "report" <<Rectangle>> {
+            object report_endpoints{
+                + GET /report/
+            }
+        }
+
+        package "reviewers" <<Rectangle>> {
+            object reviewers_endpoints{
+                + GET /reviewers
+            }
+        }
+        
+        package "reviews" <<Rectangle>> {
+            object reviews_endpoints{
+                + POST /reviews
+                + GET /reviews/{review_id}
+                + GET /reviews/list/{user_id}
+                + PUT /reviews/{review_id}
+            }
+        }
+    }
+
+    package "utils" <<Rectangle>> {
+        package "email_helper" <<Rectangle>> {
+            object email_helper_items {
+                + render_email()
+                + send_email_async()
+            }
+        }
+        package "pht_handler" <<Rectangle>> {
+            object pht_handler_items {
+                + transform_update_proposal()
+                + get_latest_entity_by_id()
+                + _get_array_class()
+                + join_proposals_panels_reviews_decisions()
+            }
+        }
+        package "s3_bucket" <<Rectangle>> {
+            object s3_bucket_functions {
+                + S3Method (Enum)
+                + S3Config
+                + get_aws_client()
+                + generate_presigned_url()
+                + create_presigned_url_upload_pdf()
+                + create_presigned_url_download_pdf()
+                + create_presigned_url_delete_pdf()
+            }
+        }
+        package "validation" <<Rectangle>> {
+            class validate_duplicates <<function>>
+            class validate_proposal <<function>>
+        }
+        
+        package "constants" <<Rectangle>> {
+        }
+    }
+    
+    ' --- Relationships, return types only ---
+    prsls_endpoints --> validate_proposal
+    prsls_endpoints --> email_helper_items
+    prsls_endpoints --> pht_handler_items
+    prsls_endpoints --> s3_bucket_functions
+    panels_endpoints --> validate_duplicates
+    report_endpoints --> pht_handler_items
+    reviewers_endpoints --> constants
+    
+
+}
+@enduml

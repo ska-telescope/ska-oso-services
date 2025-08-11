@@ -1,16 +1,41 @@
+from enum import Enum
 from os import getenv
 
 import pytest
 from requests import Session
+from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
 
 AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
 
 
+class Scope(str, Enum):
+    ODT_READ = "odt:read"
+    ODT_READWRITE = "odt:readwrite"
+    PHT_READ = "pht:read"
+    PHT_READWRITE = "pht:readwrite"
+    PHT_UPDATE = "pht:update"
+
+
 @pytest.fixture(scope="session")
 def authrequests():
     req = Session()
-    token = mint_test_token(audience=AUDIENCE, scopes={"odt:readwrite"})
+    token = mint_test_token(
+        audience=AUDIENCE,
+        roles=[
+            Role.ANY,
+            Role.OPS_PROPOSAL_ADMIN,
+            Role.OPS_REVIEWER_SCIENCE,
+            Role.OPS_REVIEWER_TECHNICAL,
+            Role.SW_ENGINEER,
+        ],
+        scopes=[
+            Scope.ODT_READWRITE,
+            Scope.ODT_READ,
+            Scope.PHT_READ,
+            Scope.PHT_READWRITE,
+        ],
+    )
     req.headers.update({"Authorization": f"Bearer {token}"})
     return req
 
