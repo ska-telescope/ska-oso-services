@@ -18,10 +18,11 @@ def test_post_proposal_access(authrequests):
     # TEST_USER user id
 
     proposal_access = TestDataFactory.proposal_access(access_id="access_id_test_post")
+    proposal_access_json = proposal_access.model_dump_json()
 
     response = authrequests.post(
         f"{PHT_URL}/proposal-access/prslacl",
-        data=proposal_access,
+        data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
@@ -46,9 +47,11 @@ def test_post_duplicate_proposal_access(authrequests):
         access_id="access_id_test_post_duplicate"
     )
 
+    proposal_access_json = proposal_access.model_dump_json()
+
     response = authrequests.post(
         f"{PHT_URL}/proposal-access/prslacl",
-        data=proposal_access,
+        data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
@@ -56,7 +59,7 @@ def test_post_duplicate_proposal_access(authrequests):
 
     response = authrequests.post(
         f"{PHT_URL}/proposal-access/prslacl",
-        data=proposal_access,
+        data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
@@ -87,9 +90,11 @@ def test_get_list_proposal_access_for_user(authrequests):
         access_id="access_id_test_get_by_user", prsl_id="prsl_id_test_get_by_user"
     )
 
+    proposal_access_json = proposal_access.model_dump_json()
+
     post_response = authrequests.post(
         f"{PHT_URL}/proposal-access/prslacl",
-        data=proposal_access,
+        data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
@@ -121,9 +126,11 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
         access_id="access_id_test_get_by_prsl_id", prsl_id=TEST_PRSL_ID
     )
 
+    proposal_access_json = proposal_access.model_dump_json()
+
     post_response = authrequests.post(
         f"{PHT_URL}/proposal-access/prslacl",
-        data=proposal_access,
+        data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
@@ -153,9 +160,11 @@ def test_put_proposal_access(authrequests):
         access_id="access_id_test_put_proposal_access"
     )
 
+    proposal_access_json = proposal_access.model_dump_json()
+
     post_response = authrequests.post(
         f"{PHT_URL}/proposal-access/prslacl",
-        data=proposal_access,
+        data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
