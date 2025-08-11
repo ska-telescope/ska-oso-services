@@ -1,0 +1,25 @@
+@startuml
+
+
+title Detailed View: OSD Mapper
+
+left to right direction
+
+package "osdmapper" <<Rectangle>> {
+      class configuration_from_osd <<function>> {
+        returns: Configuration
+      }
+      class _get_mid_telescope_configuration <<function>> {
+          returns: MidConfiguration
+      }
+      class _get_low_telescope_configuration <<function>> {
+          returns: LowConfiguration
+      }
+}
+
+
+configuration_from_osd -[hidden]-> _get_mid_telescope_configuration
+_get_mid_telescope_configuration -[hidden]-> _get_low_telescope_configuration
+
+
+@enduml
