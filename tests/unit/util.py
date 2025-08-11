@@ -11,9 +11,19 @@ from ska_db_oda.persistence.domain import set_identifier
 from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal
+from ska_oso_pdm.proposal.proposal_access import (
+    ProposalAccess,
+    ProposalPermissions,
+    ProposalRole,
+)
 from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
+
+from ska_oso_services.pht.model import (
+    ProposalAccessByProposalResponse,
+    ProposalAccessResponse,
+)
 
 CUR_DIR = Path(__file__).parent
 
@@ -252,6 +262,47 @@ class TestDataFactory:
         }
 
         return data
+
+    @staticmethod
+    def proposal_access(
+        access_id: str = "prsl-mvp01-20220923-00001",
+        prsl_id: str = "panel-test-20250616-00001",
+        user_id: str = "rev-001",
+        role: str = "Principal Investigator",
+        permission: list[str] = ["view"],
+    ) -> ProposalAccess:
+        data = {
+            "access_id": access_id,
+            "prsl_id": prsl_id,
+            "user_id": user_id,
+            "role": role,
+            "permissions": permission,
+        }
+
+        proposal_access = ProposalAccess.model_validate_json(json.dumps(data))
+        set_identifier(proposal_access, access_id)
+
+        return proposal_access
+
+    @staticmethod
+    def proposal_access_response(
+        access_id: str = "access_id1",
+        user_id: str = "user1",
+        role: str = "Principal Investigator",
+        permission: list[str] = ["view"],
+    ) -> ProposalAccessResponse:
+        data = {
+            "access_id": access_id,
+            "user_id": user_id,
+            "role": role,
+            "permissions": permission,
+        }
+
+        proposal_access_response = ProposalAccessByProposalResponse.model_validate_json(
+            json.dumps(data)
+        )
+
+        return proposal_access_response
 
     @staticmethod
     def email_payload(email="test@example.com", prsl_id="SKAO123"):

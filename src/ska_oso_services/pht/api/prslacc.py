@@ -11,7 +11,11 @@ from ska_oso_pdm.proposal import ProposalAccess
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import BadRequestError
-from ska_oso_services.pht.model import ProposalAccessCreate, ProposalAccessResponse
+from ska_oso_services.pht.model import (
+    ProposalAccessByProposalResponse,
+    ProposalAccessCreate,
+    ProposalAccessResponse,
+)
 from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
 
 LOGGER = logging.getLogger(__name__)
@@ -76,8 +80,32 @@ def get_access_for_user(
     return proposal_access
 
 
+@router.get("/{prsl_id}", summary="Get a list of access of proposals ")
+def get_access_by_prsl_id(
+    prsl_id: str,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> list[ProposalAccessByProposalResponse]:
+    LOGGER.debug("Retrieving proposals for user: %s", auth.user_id)
+
+    with oda.uow() as uow:
+        query_param = CustomQuery(prsl_id=prsl_id)
+        proposal_access = get_latest_entity_by_id(
+            uow.prslacc.query(query_param), "access_id"
+        )
+    if not proposal_access:
+        return []
+    print(proposal_access)
+    return proposal_access
+
+
 @router.put(
-    "/user",
+    "/user/{access_id}",
     summary="Update an existing proposal access",
 )
 def update_access(

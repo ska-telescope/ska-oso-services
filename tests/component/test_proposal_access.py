@@ -6,48 +6,171 @@ from ..unit.util import TestDataFactory
 from . import PHT_URL
 
 
-def test_get_list_proposal_access_for_user(authrequests):
+def test_post_proposal_access(authrequests):
     """
-    Integration test:
+    Integration test: TODO
     - Create multiple reviews
     - Fetch created_by from one
     - Use GET /list/{user_id} to retrieve them
     - Ensure all created panel-decision are returned
     """
 
-    created_ids = []
+    # TEST_USER user id
 
-    # Create 2 reviews with unique decision_ids
-    for _ in range(2):
-        decision_id = f"pnld-test-{uuid.uuid4().hex[:8]}"
-        proposal = TestDataFactory.panel_decision(decision_id=decision_id)
-        proposal_json = proposal.model_dump_json()
+    proposal_access = TestDataFactory.proposal_access(access_id="access_id_test_post")
 
-        response = authrequests.post(
-            f"{PHT_URL}/panel-decisions/",
-            data=proposal_json,
-            headers={"Content-Type": "application/json"},
-        )
-        assert response.status_code == HTTPStatus.OK, response.content
-        created_ids.append(response.json())
+    response = authrequests.post(
+        f"{PHT_URL}/proposal-access/prslacl",
+        data=proposal_access,
+        headers={"Content-Type": "application/json"},
+    )
 
-    # Get created_by from one of the created reviews
-    example_decision_id = created_ids[0]
-    get_response = authrequests.get(f"{PHT_URL}/panel-decisions/{example_decision_id}")
-    assert get_response.status_code == HTTPStatus.OK, get_response.content
-    user_id = get_response.json()["metadata"]["created_by"]
+    assert response.status_code == HTTPStatus.OK
 
-    # GET /list/{user_id}
-    list_response = authrequests.get(f"{PHT_URL}/panel-decisions/list/{user_id}")
-    assert list_response.status_code == HTTPStatus.OK, list_response.content
+    result = response.json()
+    assert proposal_access.access_id == result
 
-    reviews = list_response.json()
-    assert isinstance(reviews, list), "Expected a list of reviews"
-    assert len(reviews) >= 2, f"Expected at least 2 reviews, got {len(reviews)}"
 
-    # Check that all created reviews are returned
-    returned_ids = {p["decision_id"] for p in reviews}
-    for decision_id in created_ids:
-        assert (
-            decision_id in returned_ids
-        ), f"Missing proposal {decision_id} in GET /list/{user_id}"
+def test_post_duplicate_proposal_access(authrequests):
+    """
+    Integration test: TODO
+    - Create multiple reviews
+    - Fetch created_by from one
+    - Use GET /list/{user_id} to retrieve them
+    - Ensure all created panel-decision are returned
+    """
+
+    # TEST_USER user id
+
+    proposal_access = TestDataFactory.proposal_access(
+        access_id="access_id_test_post_duplicate"
+    )
+
+    response = authrequests.post(
+        f"{PHT_URL}/proposal-access/prslacl",
+        data=proposal_access,
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert response.status_code == HTTPStatus.OK
+
+    response = authrequests.post(
+        f"{PHT_URL}/proposal-access/prslacl",
+        data=proposal_access,
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    result = response.json()
+    expected = {
+        "detail": 'duplicate key value violates unique constraint "tab_oda_prsl_access_prsl_id_user_id_version_key"\nDETAIL:  Key (prsl_id, user_id, version)=(access_id_test_post_duplicate, TEST_USER, 1) already exists.'
+    }
+    assert expected == result
+
+
+def test_get_list_proposal_access_for_user(authrequests):
+    """
+    Integration test: TODO
+    - Create multiple panels
+    - Fetch created_by from one
+    - Use GET /{user_id} to retrieve them
+    - Ensure all created panels are returned
+    """
+
+    proposal_access = TestDataFactory.proposal_access(
+        access_id="access_id_test_get_by_user", prsl_id="prsl_id_test_get_by_user"
+    )
+
+    post_response = authrequests.post(
+        f"{PHT_URL}/proposal-access/prslacl",
+        data=proposal_access,
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert post_response.status_code == HTTPStatus.OK
+
+    get_response = authrequests.get(f"{PHT_URL}/proposal-access/user")
+
+    assert get_response.status_code == HTTPStatus.OK
+
+    get_result = get_response.json()
+    get_result_filtered = [
+        item for item in get_result if item["prsl_id"] == "prsl_id_test_get_by_user"
+    ]
+    assert get_result_filtered.length == 1
+
+
+def test_get_list_proposal_access_for_prsl_id(authrequests):
+    """
+    Integration test: TODO
+    - Create multiple panels
+    - Fetch created_by from one
+    - Use GET /{user_id} to retrieve them
+    - Ensure all created panels are returned
+    """
+
+    TEST_PRSL_ID = "prsl_id_test_get_by_prsl_id"
+
+    proposal_access = TestDataFactory.proposal_access(
+        access_id="access_id_test_get_by_prsl_id", prsl_id=TEST_PRSL_ID
+    )
+
+    post_response = authrequests.post(
+        f"{PHT_URL}/proposal-access/prslacl",
+        data=proposal_access,
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert post_response.status_code == HTTPStatus.OK
+
+    get_response = authrequests.get(f"{PHT_URL}/proposal-access/user/{TEST_PRSL_ID}")
+
+    assert get_response.status_code == HTTPStatus.OK
+
+    get_result = get_response.json()
+    get_result_filtered = [
+        item for item in get_result if item["prsl_id"] == TEST_PRSL_ID
+    ]
+    assert get_result_filtered.length == 1
+
+
+def test_put_proposal_access(authrequests):
+    """
+    Integration test: TODO
+    - Create multiple panels
+    - Fetch created_by from one
+    - Use GET /{user_id} to retrieve them
+    - Ensure all created panels are returned
+    """
+
+    proposal_access = TestDataFactory.proposal_access(
+        access_id="access_id_test_put_proposal_access"
+    )
+
+    post_response = authrequests.post(
+        f"{PHT_URL}/proposal-access/prslacl",
+        data=proposal_access,
+        headers={"Content-Type": "application/json"},
+    )
+
+    access_id = post_response.json()
+
+    NEW_PERMISSON = ["view", "submit"]
+
+    put_proposal_access = TestDataFactory.proposal_access(
+        access_id=access_id, permission=NEW_PERMISSON
+    )
+
+    put_response = authrequests.put(
+        f"{PHT_URL}/proposal-access/user/{access_id}",
+        data=put_proposal_access,
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert put_response.status_code == HTTPStatus.OK
+
+    put_result = put_response.json()
+
+    assert put_result["metadata"]["version"] == 2
+    assert put_result["permisson"] == NEW_PERMISSON

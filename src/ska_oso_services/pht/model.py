@@ -31,6 +31,15 @@ class ProposalAccessResponse(AppModel):
     )
 
 
+class ProposalAccessByProposalResponse(AppModel):
+    access_id: str
+    user_id: str
+    role: ProposalRole
+    permissions: list[ProposalPermissions] = Field(
+        ..., description="Permissions granted to this user for this proposal."
+    )
+
+
 class ProposalAccessCreate(ProposalAccess):
     access_id: Optional[str] = None
 
