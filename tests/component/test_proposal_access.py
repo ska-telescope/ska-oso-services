@@ -178,7 +178,7 @@ def test_get_list_proposal_access_for_prsl_id_not_PI(authrequests):
     - ensure the proposal access is in the list
     """
 
-    TEST_PRSL_ID = "prsl_id_test_get_by_prsl_id"
+    TEST_PRSL_ID = "prsl_id_test_get_by_prsl_id_not_PI"
 
     proposal_access = TestDataFactory.proposal_access(
         access_id="access_id_test_get_by_prsl_id_not_PI",
