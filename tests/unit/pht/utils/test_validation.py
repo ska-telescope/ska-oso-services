@@ -1,4 +1,4 @@
-from ska_oso_services.pht.utils.validation import validate_proposal
+from ska_oso_services.pht.service.validation import validate_proposal
 from tests.unit.util import TestDataFactory
 
 

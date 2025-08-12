@@ -1,19 +1,16 @@
 import logging
-import uuid
 from datetime import datetime, timezone
 
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal_management.panel import Panel
 
-from ska_oso_services.pht.model import PanelCreateResponse
-from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
+from ska_oso_services.pht.models.schemas import PanelCreateResponse
+from ska_oso_services.pht.utils.pht_helper import (
+    generate_panel_id,
+    get_latest_entity_by_id,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def generate_panel_id():
-    # TODO: Remove this once the uuid generator by Brendan works!
-    return f"panel-{uuid.uuid4().hex[:9]}"
 
 
 def build_panel_response(panel_objs: dict) -> list[PanelCreateResponse]:

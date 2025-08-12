@@ -1,6 +1,8 @@
 import pytest
 
-from ska_oso_services.pht.utils.panel_helper import group_proposals_by_science_category
+from ska_oso_services.pht.service.panel_operations import (
+    group_proposals_by_science_category,
+)
 from tests.unit.util import TestDataFactory
 
 

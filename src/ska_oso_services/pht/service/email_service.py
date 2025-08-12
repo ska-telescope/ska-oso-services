@@ -9,18 +9,9 @@ from fastapi import HTTPException
 from jinja2 import Template
 
 from ska_oso_services.common.error_handling import UnprocessableEntityError
+from ska_oso_services.pht.utils.constants import HTML_TEMPLATE
 
 LOGGER = logging.getLogger(__name__)
-
-# HTML email template
-HTML_TEMPLATE = """
-<html>
-<body>
-    <p>SKAO proposal with ID <strong>{{ prsl_id }}</strong>.</p>
-    <p><a href="{{ link }}">Click here</a> to accept or reject the invitation.</p>
-</body>
-</html>
-"""
 
 
 # Email rendering

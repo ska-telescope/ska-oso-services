@@ -1,6 +1,6 @@
 from unittest import mock
 
-from ska_oso_services.pht.utils.s3_bucket import (
+from ska_oso_services.pht.service.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
     S3Config,
     S3Method,
