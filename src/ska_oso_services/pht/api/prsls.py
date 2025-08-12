@@ -20,9 +20,9 @@ from ska_oso_services.common.error_handling import (
 )
 from ska_oso_services.pht.model import EmailRequest, OsdDataModel
 from ska_oso_services.pht.utils import validation
+from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
 from ska_oso_services.pht.utils.email_helper import send_email_async
 from ska_oso_services.pht.utils.pht_handler import (
-    EXAMPLE_PROPOSAL,
     get_latest_entity_by_id,
     transform_update_proposal,
 )

@@ -5,6 +5,7 @@ Utility functions to be used in tests
 import json
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 from deepdiff import DeepDiff
 from ska_db_oda.persistence.domain import set_identifier
@@ -186,11 +187,13 @@ class TestDataFactory:
         return proposal
 
     @staticmethod
-    def panel_basic(
-        panel_id: str = "panel-test-20250616-00001",
-        name: str = "Stargazers",
-    ) -> Panel:
-        data = {"panel_id": "panel-Galactic-2025", "name": name}
+    def panel_basic(panel_id: str = None, name: str = None) -> Panel:
+        data = {
+            "panel_id": panel_id,
+            "name": name,
+            "reviewers": [],
+            "proposals": [],
+        }
         panel = Panel.model_validate_json(json.dumps(data))
         set_identifier(panel, panel_id)
 
@@ -310,6 +313,21 @@ class TestDataFactory:
     @staticmethod
     def email_payload(email="test@example.com", prsl_id="SKAO123"):
         return {"email": email, "prsl_id": prsl_id}
+
+    @staticmethod
+    def proposal_by_category(prsl_id, science_category, *, info_as="dict"):
+        """Module-level helper so it’s usable inside @parametrize."""
+        if info_as == "dict":
+            info = (
+                {}
+                if science_category is None
+                else {"science_category": science_category}
+            )
+        elif info_as == "obj":
+            info = SimpleNamespace(science_category=science_category)
+        else:
+            info = None
+        return SimpleNamespace(prsl_id=prsl_id, info=info)
 
 
 VALID_MID_SBDEFINITION_JSON = TestDataFactory.sbdefinition().model_dump_json()
