@@ -6,7 +6,7 @@ from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.pht.models.schemas import PanelCreateResponse
 from ska_oso_services.pht.utils.pht_helper import (
-    generate_panel_id,
+    generate_entity_id,
     get_latest_entity_by_id,
 )
 
@@ -96,7 +96,7 @@ def upsert_panel(uow, panel_name, reviewers, proposal_list):
         return existing_panel
     else:
         new_panel = Panel(
-            panel_id=generate_panel_id(),
+            panel_id=generate_entity_id("panel"),
             name=panel_name,
             reviewers=reviewers,
             proposals=[
