@@ -75,19 +75,18 @@ def test_post_duplicate_proposal_access(authrequests):
 
 def test_get_list_proposal_access_for_user(authrequests):
     """
-    Integration test: TODO
-    - Create multiple panels
-    - Fetch created_by from one
-    - Use GET /{user_id} to retrieve them
-    - Ensure all created panels are returned
+    Integration test:
+    - Create proposal access
+    - Use GET /proposal-access/user to retrieve them
+    - Ensure the proposal access with specific prsl_id is returned
     """
 
-    print("authrequests", authrequests)
+    TEST_USER = "21d14d12-72ae-4cc3-a806-d00ba1d2731a"
 
     proposal_access = TestDataFactory.proposal_access(
         access_id="access_id_test_get_by_user",
         prsl_id="prsl_id_test_get_by_user",
-        user_id="21d14d12-72ae-4cc3-a806-d00ba1d2731a",
+        user_id=TEST_USER,
     )
 
     proposal_access_json = proposal_access.model_dump_json()
@@ -95,6 +94,22 @@ def test_get_list_proposal_access_for_user(authrequests):
     post_response = authrequests.post(
         f"{PHT_URL}/proposal-access/prslacl",
         data=proposal_access_json,
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert post_response.status_code == HTTPStatus.OK
+
+    proposal_access_other_user = TestDataFactory.proposal_access(
+        access_id="access_id_test_get_by_user",
+        prsl_id="prsl_id_test_get_by_user",
+        user_id="other_user",
+    )
+
+    proposal_access_other_user_json = proposal_access_other_user.model_dump_json()
+
+    post_response = authrequests.post(
+        f"{PHT_URL}/proposal-access/prslacl",
+        data=proposal_access_other_user_json,
         headers={"Content-Type": "application/json"},
     )
 
@@ -109,7 +124,7 @@ def test_get_list_proposal_access_for_user(authrequests):
     print("get_result", get_result)
 
     get_result_filtered = [
-        item for item in get_result if item["prsl_id"] == "prsl_id_test_get_by_user"
+        item for item in get_result if (item["prsl_id"] == "prsl_id_test_get_by_user")
     ]
 
     print("get_result_filtered", get_result_filtered)
@@ -119,7 +134,7 @@ def test_get_list_proposal_access_for_user(authrequests):
 
 def test_get_list_proposal_access_for_prsl_id(authrequests):
     """
-    Integration test: TODO
+    Integration test:
     - Create proposal access
     - use GET /proposal-access/{prsl_id} to get a list of proposal
     - ensure the proposal access is in the list
