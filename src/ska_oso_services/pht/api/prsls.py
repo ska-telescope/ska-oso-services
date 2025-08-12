@@ -88,14 +88,18 @@ def create_proposal(
     try:
         with oda.uow() as uow:
             created_prsl = uow.prsls.add(proposal, auth.user_id)
-            prslacc: ProposalAccess = {
-                "access_id": generate_entity_id("prslacc"),
-                "prsl_id": created_prsl.prsl_id,
-                "user_id": auth.user_id,
-                "role": ProposalRole.PrincipalInvestigator,
-                "permissions": [ProposalPermissions.Submit, ProposalPermissions.Update, ProposalPermissions.View],
-            }
-            uow.prslacc.add(prslacc, auth.user_id)
+            create_prslacc = ProposalAccess(
+            access_id=generate_entity_id("prslacc"),
+            prsl_id=created_prsl.prsl_id,
+            user_id=auth.user_id,
+            role=ProposalRole.PrincipalInvestigator,
+            permissions=[
+                ProposalPermissions.Submit,
+                ProposalPermissions.Update,
+                ProposalPermissions.View,
+            ])
+
+            uow.prslacc.add(create_prslacc, auth.user_id)
             uow.commit()
         LOGGER.info("Proposal successfully created with ID %s", created_prsl.prsl_id)
         return created_prsl.prsl_id
