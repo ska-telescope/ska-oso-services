@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+from enum import Enum
+from typing import Optional
 
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal import Proposal, ProposalPermissions
@@ -39,31 +41,37 @@ def transform_update_proposal(data: Proposal) -> Proposal:
 
 
 def assert_user_has_permission_for_proposal(
-    uow, user_id: str, prsl_id: str, action: ProposalPermissions
+    uow,
+    user_id: str,
+    prsl_id: str,
+    action: Optional[ProposalPermissions] = None,  # None => only require 'view'
 ) -> None:
     """
-    Ensures the user has the specified permission for the given proposal.
-    Raises ForbiddenError if not allowed.
+    Ensure the user can at least VIEW the proposal; if `action` is provided
+    (e.g., Update), require that as well. Raises ForbiddenError if not allowed.
     """
-    rows = get_latest_entity_by_id(
-        uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id)), "access_id"
-    )
+    # 1) Fetch latest access row for (user, proposal)
+    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id)) or []
+    rows = get_latest_entity_by_id(rows_init, "access_id") or []
     access = rows[0] if rows else None
     if not access:
         raise ForbiddenError(detail="You do not have access to this proposal.")
 
+    # 2) Normalize stored permissions to lowercase strings
     perms = access.permissions or []
     norm = {
-        p.value if isinstance(p, ProposalPermissions) else str(p).lower() for p in perms
+        (p.value if isinstance(p, ProposalPermissions) else str(p)).lower()
+        for p in perms
     }
-    needed = (
-        action.value if isinstance(action, ProposalPermissions) else str(action).lower()
-    )
 
-    if needed not in norm:
-        raise ForbiddenError(
-            detail="You do not have permission to perform this action."
-        )
+    # 3) Build required set: always 'view', optionally the extra action
+    required = {"view"}
+    if action:
+        required.add((action.value if isinstance(action, Enum) else str(action)).lower())
+
+    # 4) Enforce
+    if not required.issubset(norm):
+        raise ForbiddenError(detail="You do not have permission to perform this action.")
 
 
 def list_accessible_proposal_ids(

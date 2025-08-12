@@ -123,9 +123,9 @@ def get_proposal(
     LOGGER.debug("GET PROPOSAL prsl_id: %s", prsl_id)
     try:
         with oda.uow() as uow:
-            # assert_user_has_permission_for_proposal(
-            #     uow, auth.user_id, prsl_id, ProposalPermissions.View
-            # )
+            assert_user_has_permission_for_proposal(
+                uow, auth.user_id, prsl_id, ProposalPermissions.View
+            )
             proposal = uow.prsls.get(prsl_id)
         LOGGER.info("Proposal retrieved successfully: %s", prsl_id)
         return proposal
