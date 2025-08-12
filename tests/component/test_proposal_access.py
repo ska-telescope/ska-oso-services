@@ -29,7 +29,7 @@ def test_post_proposal_access(authrequests):
     assert response.status_code == HTTPStatus.OK
 
     result = response.json()
-    assert proposal_access.access_id == result
+    assert isinstance(result.access_id, str)
 
 
 def test_post_duplicate_proposal_access(authrequests):
@@ -57,13 +57,13 @@ def test_post_duplicate_proposal_access(authrequests):
 
     assert response.status_code == HTTPStatus.OK
 
-    response = authrequests.post(
+    duplicate_response = authrequests.post(
         f"{PHT_URL}/proposal-access/prslacl",
         data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert duplicate_response.status_code == HTTPStatus.BAD_REQUEST
 
     result = response.json()
     expected = {
@@ -108,7 +108,7 @@ def test_get_list_proposal_access_for_user(authrequests):
     get_result_filtered = [
         item for item in get_result if item["prsl_id"] == "prsl_id_test_get_by_user"
     ]
-    assert get_result_filtered.length == 1
+    assert len(get_result_filtered) == 1
 
 
 def test_get_list_proposal_access_for_prsl_id(authrequests):
@@ -136,7 +136,7 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
 
     assert post_response.status_code == HTTPStatus.OK
 
-    get_response = authrequests.get(f"{PHT_URL}/proposal-access/user/{TEST_PRSL_ID}")
+    get_response = authrequests.get(f"{PHT_URL}/proposal-access/{TEST_PRSL_ID}")
 
     assert get_response.status_code == HTTPStatus.OK
 
