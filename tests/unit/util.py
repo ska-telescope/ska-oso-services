@@ -17,11 +17,6 @@ from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
-# from ska_oso_services.pht.model import (
-#     ProposalAccessByProposalResponse,
-#     ProposalAccessResponse,
-# )
-
 CUR_DIR = Path(__file__).parent
 
 

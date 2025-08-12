@@ -44,8 +44,6 @@ def test_post_duplicate_proposal_access(authrequests):
 
     proposal_access_json = proposal_access.model_dump_json()
 
-    print("proposal_access_json", proposal_access_json)
-
     response = authrequests.post(
         f"{PHT_URL}/proposal-access/prslacl",
         data=proposal_access_json,
@@ -120,13 +118,9 @@ def test_get_list_proposal_access_for_user(authrequests):
 
     get_result = get_response.json()
 
-    print("get_result", get_result)
-
     get_result_filtered = [
         item for item in get_result if (item["prsl_id"] == "prsl_id_test_get_by_user")
     ]
-
-    print("get_result_filtered", get_result_filtered)
 
     assert len(get_result_filtered) == 1
 
@@ -161,13 +155,10 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
 
     get_result = get_response.json()
 
-    print("get_result", get_result)
-
     get_result_filtered = [
         item for item in get_result if item["prsl_id"] == TEST_PRSL_ID
     ]
 
-    print("get_result_filtered", get_result_filtered)
     assert len(get_result_filtered) == 1
     assert get_result_filtered[0]["prsl_id"] == TEST_PRSL_ID
 
@@ -214,8 +205,6 @@ def test_put_proposal_access(authrequests):
     assert put_response.status_code == HTTPStatus.OK
 
     put_result = put_response.json()
-
-    print("put_result", put_result)
 
     assert put_result["metadata"]["version"] == 2
     assert put_result["permissions"] == NEW_PERMISSIONS

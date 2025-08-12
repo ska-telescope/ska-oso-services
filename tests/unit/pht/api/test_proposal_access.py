@@ -16,15 +16,11 @@ class TestProposalAccessAPI:
     def test_proposal_access_post_success(self, mock_uow, client):
         proposal_access = TestDataFactory.proposal_access()
 
-        print("proposal_access", proposal_access)
-
         uow_mock = mock.MagicMock()
         uow_mock.prslacc.add.return_value = proposal_access
         mock_uow().__enter__.return_value = uow_mock
 
         data = proposal_access.json()
-
-        print("PROPOSAL_ACCESS_API_URL", PROPOSAL_ACCESS_API_URL)
 
         response = client.post(
             f"{PROPOSAL_ACCESS_API_URL}/prslacl", data=data, headers=HEADERS
@@ -34,7 +30,6 @@ class TestProposalAccessAPI:
 
         result = response.json()
 
-        print("result", result)
         assert proposal_access.access_id == result
 
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow")
@@ -65,8 +60,6 @@ class TestProposalAccessAPI:
     def test_proposal_access_put_success(self, mock_uow, client):
         proposal_access = TestDataFactory.proposal_access()
         access_id = proposal_access.access_id
-
-        print("proposal_access", proposal_access)
 
         uow_mock = mock.MagicMock()
         uow_mock.prslacc.add.return_value = proposal_access

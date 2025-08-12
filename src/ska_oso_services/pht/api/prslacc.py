@@ -101,7 +101,7 @@ def get_access_by_prsl_id(
         )
     if not proposal_access:
         return []
-    print(proposal_access)
+
     return proposal_access
 
 
