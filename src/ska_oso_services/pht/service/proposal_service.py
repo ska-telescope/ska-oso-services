@@ -44,31 +44,16 @@ def assert_user_has_permission_for_proposal(
     uow,
     user_id: str,
     prsl_id: str,
-    action: Optional[ProposalPermissions] = ProposalPermissions.View,
 ) -> None:
     """
-    Ensure the user can at least VIEW the proposal; if `action` is provided
-    (e.g., Update), require that as well. Raises ForbiddenError if not allowed.
+    Ensure the user has at least 'view' permission for the given proposal.
+    Raises ForbiddenError if not allowed.
     """
-    # 1) Fetch latest access row for (user, proposal)
-    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id))
+    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id)) or []
     rows = get_latest_entity_by_id(rows_init, "access_id") or []
     access = rows[0] if rows else None
     if not access:
         raise ForbiddenError(detail="You do not have access to this proposal.")
-
-    perms = access.permissions or []
-    norm = {
-        (p.value if isinstance(p, ProposalPermissions) else str(p)).lower()
-        for p in perms
-    }
-
-    required = action.value if isinstance(action, Enum) else str(action).lower()
-    if action:
-        required.add((action.value if isinstance(action, Enum) else str(action)).lower())
-
-    if not required.issubset(norm):
-        raise ForbiddenError(detail="You do not have permission to perform this action.")
 
 
 def list_accessible_proposal_ids(
