@@ -1,5 +1,4 @@
 # pylint: disable=missing-timeout
-import uuid
 from http import HTTPStatus
 
 from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
@@ -34,7 +33,7 @@ def test_post_duplicate_proposal_access(authrequests):
     """
     Integration test:
     - Create multiple proposal access
-    - Check for expected error that the second one cannot be created because of duplication
+    - Check for expected error the duplicated one cannot be created
     """
 
     proposal_access = TestDataFactory.proposal_access(
