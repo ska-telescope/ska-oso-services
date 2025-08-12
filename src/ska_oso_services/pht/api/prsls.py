@@ -93,7 +93,7 @@ def create_proposal(
                 "prsl_id": created_prsl.prsl_id,
                 "user_id": auth.user_id,
                 "role": ProposalRole.PrincipalInvestigator,
-                "permissions": [ProposalAccess.Submit, ProposalPermissions.Update, ProposalPermissions.View],
+                "permissions": [ProposalPermissions.Submit, ProposalPermissions.Update, ProposalPermissions.View],
             }
             uow.prslacc.add(prslacc, auth.user_id)
             uow.commit()
