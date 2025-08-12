@@ -43,6 +43,22 @@ class BadRequestError(HTTPException):
         super().__init__(status_code=status_code, detail=detail)
 
 
+class ForbiddenError(HTTPException):
+    """Custom class to ensure our errors are formatted consistently"""
+
+    code = HTTPStatus.FORBIDDEN
+
+    def __init__(
+        self,
+        detail: Optional[str] = None,
+        status_code: Optional[int] = None,
+    ):
+        status_code = status_code or self.code
+        detail = detail or self.code.description
+
+        super().__init__(status_code=status_code, detail=detail)
+
+
 class DuplicateError(BadRequestError):
     code = HTTPStatus.CONFLICT
 

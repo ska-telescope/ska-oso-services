@@ -136,7 +136,10 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
     TEST_PRSL_ID = "prsl_id_test_get_by_prsl_id"
 
     proposal_access = TestDataFactory.proposal_access(
-        access_id="access_id_test_get_by_prsl_id", prsl_id=TEST_PRSL_ID
+        access_id="access_id_test_get_by_prsl_id",
+        prsl_id=TEST_PRSL_ID,
+        user_id=TEST_USER,
+        role="Principal Investigator",
     )
 
     proposal_access_json = proposal_access.model_dump_json()
@@ -155,12 +158,49 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
 
     get_result = get_response.json()
 
+    print("get_response", get_response)
+
     get_result_filtered = [
         item for item in get_result if item["prsl_id"] == TEST_PRSL_ID
     ]
 
+    print("get_result_filtered", get_result_filtered)
+
     assert len(get_result_filtered) == 1
     assert get_result_filtered[0]["prsl_id"] == TEST_PRSL_ID
+
+
+def test_get_list_proposal_access_for_prsl_id_not_PI(authrequests):
+    """
+    Integration test:
+    - Create proposal access
+    - use GET /proposal-access/{prsl_id} to get a list of proposal
+    - ensure the proposal access is in the list
+    """
+
+    TEST_PRSL_ID = "prsl_id_test_get_by_prsl_id"
+
+    proposal_access = TestDataFactory.proposal_access(
+        access_id="access_id_test_get_by_prsl_id_not_PI",
+        prsl_id=TEST_PRSL_ID,
+        user_id=TEST_USER,
+        role="Co-Investigator",
+    )
+
+    proposal_access_json = proposal_access.model_dump_json()
+
+    post_response = authrequests.post(
+        f"{PHT_URL}/proposal-access/prslacl",
+        data=proposal_access_json,
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert post_response.status_code == HTTPStatus.OK
+
+    get_response = authrequests.get(f"{PHT_URL}/proposal-access/{TEST_PRSL_ID}")
+
+    print("get_response", get_response)
+    assert get_response.status_code == HTTPStatus.FORBIDDEN
 
 
 def test_put_proposal_access(authrequests):
@@ -190,6 +230,8 @@ def test_put_proposal_access(authrequests):
 
     put_proposal_access = TestDataFactory.proposal_access(
         access_id=access_id,
+        user_id=TEST_USER,
+        role="Principal Investigator",
         prsl_id="prsl_id_test_put_proposal_access",
         permission=NEW_PERMISSIONS,
     )

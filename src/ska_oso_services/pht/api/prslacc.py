@@ -6,11 +6,11 @@ from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.query import CustomQuery
-from ska_oso_pdm.proposal import ProposalAccess
+from ska_oso_pdm.proposal import ProposalAccess, ProposalRole
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.common.error_handling import BadRequestError
+from ska_oso_services.common.error_handling import BadRequestError, ForbiddenError
 from ska_oso_services.pht.model import (
     ProposalAccessByProposalResponse,
     ProposalAccessCreate,
@@ -101,6 +101,21 @@ def get_access_by_prsl_id(
         )
     if not proposal_access:
         return []
+    else:
+        # check if PI
+        filtered_proposal_access = [
+            item
+            for item in proposal_access
+            if (
+                item.user_id == auth.user_id
+                and item.role == ProposalRole.PrincipalInvestigator
+            )
+        ]
+
+        if len(filtered_proposal_access) == 0:
+            raise ForbiddenError(
+                detail="Forbidden error while getting proposal access: Not Principal Investigator"
+            )
 
     return proposal_access
 
