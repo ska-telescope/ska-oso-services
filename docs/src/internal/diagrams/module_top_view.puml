@@ -7,12 +7,12 @@ package "common" as common_pkg {
 
     package "constants" <<Rectangle>> {
       object constants_items {
-        + MID_CHANNEL_WIDTH_KHZ
         + MID_20_CHANNELS_WIDTH_MHZ
-        + LOW_STATION_CHANNEL_WIDTH_MHZ
+        + MID_CHANNEL_WIDTH_KHZ
         + LOW_CHANNEL_BLOCK_MHZ
         + LOW_CONTINUUM_CHANNEL_WIDTH_KHZ
         + LOW_PST_CHANNEL_WIDTH_KHZ
+        + LOW_STATION_CHANNEL_WIDTH_MHZ
       }
     }
 
