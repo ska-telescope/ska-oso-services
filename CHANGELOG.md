@@ -9,6 +9,11 @@ Unreleased
 * [BREAKING] Added AAA protection to PHT endpoints
 * Updated ska-aaa-authhelpers version to 1.1.0
 * Added module_view page and diagrams to documentation
+* Added POST `/pht/proposal-access/prslacl` for pht
+* Added GET `/pht/proposal-access/prslacl/user` for pht
+* Added GET `/pht/proposal-access/prslacl/user/{prsl_id}` for pht
+* Added PUT `/pht/proposal-access/prslacl/user/{access_id}` for pht
+
 
 2.0.1
 ***********

@@ -265,8 +265,11 @@ class TestDataFactory:
         prsl_id: str = "panel-test-20250616-00001",
         user_id: str = "rev-001",
         role: str = "Principal Investigator",
-        permission: list[str] = ["view"],
+        permission: list[str] = None,
     ) -> ProposalAccess:
+        if permission is None:
+            permission = ["view"]
+
         data = {
             "access_id": access_id,
             "prsl_id": prsl_id,
@@ -286,8 +289,12 @@ class TestDataFactory:
         access_id: str = "access_id1",
         user_id: str = "user1",
         role: str = "Principal Investigator",
-        permission: list[str] = ["view"],
+        permission: list[str] = None,
     ) -> ProposalAccess:
+
+        if permission is None:
+            permission = ["view"]
+
         data = {
             "prsl_id": prsl_id,
             "access_id": access_id,

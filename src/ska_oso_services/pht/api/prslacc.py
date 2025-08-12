@@ -40,7 +40,7 @@ def post_prslacl(
     This endpoint will be removed in the future, use the PUT endpoint instead.
     as there will be no creation of a new proposal access, only updates.
     """
-    LOGGER.debug("Creating a new proposal access for user: %s", prslacl.user_id)
+    LOGGER.debug("Creating a new proposal access")
     try:
         rand_part = uuid.uuid4().hex[:6]
         prslacl.access_id = f"prslacc-{rand_part}-{prslacl.user_id[:7]}"
@@ -50,14 +50,14 @@ def post_prslacl(
         return persisted_prslacc.access_id
 
     except ValueError as err:
-        LOGGER.exception("ValueError when adding proposal to the ODA: %s", err)
+        LOGGER.exception("ValueError when adding proposal access to the ODA: %s", err)
         raise BadRequestError(
-            detail=f"Failed when attempting to create a proposal: '{err.args[0]}'",
+            detail=f"Failed attempting to create proposal access: '{err.args[0]}'",
         ) from err
 
 
 @router.get(
-    "/user", summary="Get a list of proposals the requesting user has access to"
+    "/user", summary="Get a list of proposal access the requesting user has access to"
 )
 def get_access_for_user(
     auth: Annotated[
@@ -68,7 +68,7 @@ def get_access_for_user(
         ),
     ],
 ) -> list[ProposalAccessResponse]:
-    LOGGER.debug("Retrieving proposals for user: %s", auth.user_id)
+    LOGGER.debug("Retrieving proposal access for user: %s", auth.user_id)
 
     with oda.uow() as uow:
         query_param = CustomQuery(user_id=auth.user_id)
@@ -80,7 +80,7 @@ def get_access_for_user(
     return proposal_access
 
 
-@router.get("/{prsl_id}", summary="Get a list of access of proposals ")
+@router.get("/{prsl_id}", summary="Get a list of proposal access by prsl id")
 def get_access_by_prsl_id(
     prsl_id: str,
     auth: Annotated[
@@ -91,7 +91,8 @@ def get_access_by_prsl_id(
         ),
     ],
 ) -> list[ProposalAccessByProposalResponse]:
-    LOGGER.debug("Retrieving proposals for user: %s", auth.user_id)
+    # pylint: disable=unused-argument
+    LOGGER.debug("Retrieving proposal access for prsl id: %s", prsl_id)
 
     with oda.uow() as uow:
         query_param = CustomQuery(prsl_id=prsl_id)
@@ -106,7 +107,7 @@ def get_access_by_prsl_id(
 
 @router.put(
     "/user/{access_id}",
-    summary="Update an existing proposal access",
+    summary="Update an existing proposal access by access id",
 )
 def update_access(
     access_id: str,
@@ -128,7 +129,9 @@ def update_access(
             return updated_prsl
 
     except ValueError as err:
-        LOGGER.error("Validation failed for proposal %s: %s", access_id, err)
+        LOGGER.error(
+            "Validation failed for proposal access with id %s: %s", access_id, err
+        )
         raise BadRequestError(
-            detail="Validation error while saving proposal: {err.args[0]}"
+            detail="Validation error while saving proposal access: {err.args[0]}"
         ) from err
