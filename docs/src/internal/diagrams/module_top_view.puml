@@ -18,9 +18,9 @@ package "common" as common_pkg {
 
     package "api.coordinates" <<Rectangle>> {
       object coordinates_items {
-          + ReferenceFrame
           + EquatorialResponse
           + GalacticResponse
+          + ReferenceFrame
           + get_systemcoordinates()
       }
     }
@@ -35,10 +35,10 @@ package "common" as common_pkg {
         object coordinateslookup_items {
           + Equatorial
           + Galactic
-          + round_coord()
           + convert_ra_dec_deg()
           + convert_to_galactic()
           + get_coordinates()
+          + round_coord()
         }
     }
 
@@ -46,13 +46,13 @@ package "common" as common_pkg {
         object error_handling_items {
           + BadRequestError
           + DuplicateError
-          + UnprocessableEntityError
           + NotFoundError
+          + UnprocessableEntityError
           + _make_response()
           + dangerous_internal_server_handler()
           + error_details()
-          + oda_not_found_handler()
           + oda_error_handler()
+          + oda_not_found_handler()
           + oda_unique_constraint_handler()
         }
     }
@@ -60,22 +60,22 @@ package "common" as common_pkg {
     package "model" <<Rectangle>> {
         object model_items {
           + AppModel
-          + ValidationResponse
-          + ErrorResponseTraceback
           + ErrorDetails
+          + ErrorResponseTraceback
+          + ValidationResponse
       }
     }
 
     package "osdmapper" <<Rectangle>> {
         object osdmapper_items {
-          + FrequencyBand
-          + Subarray
-          + MidConfiguration
-          + LowConfiguration
           + Configuration
+          + FrequencyBand
+          + LowConfiguration
+          + MidConfiguration
+          + Subarray
           + configuration_from_osd()
-          + _get_mid_telescope_configuration()
           + _get_low_telescope_configuration()
+          + _get_mid_telescope_configuration()
         }
     }
 }
@@ -107,19 +107,19 @@ package "pht" as pht_pkg {
   
       package "prsls" <<Rectangle>> {
         object prsls_endpoints {
-          + get_osd_by_cycle()
+          + create_delete_pdf_url()
+          + create_download_pdf_url()
           + create_proposal()
+          + create_upload_pdf_url()
+          + get_osd_by_cycle()
           + get_proposal()
           + get_proposals_batch()
           + get_proposals_by_status()
-          + get_reviews_for_proposal()
           + get_proposals_for_user()
+          + get_reviews_for_proposal()
+          + send_email()
           + update_proposal()
           + validate_proposal()
-          + send_email()
-          + create_upload_pdf_url()
-          + create_download_pdf_url()
-          + create_delete_pdf_url()
         }
       }
   

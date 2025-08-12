@@ -9,11 +9,11 @@ package "osdmapper" <<Rectangle>> {
       class configuration_from_osd <<function>> {
         returns: Configuration
       }
-      class _get_mid_telescope_configuration <<function>> {
-          returns: MidConfiguration
-      }
       class _get_low_telescope_configuration <<function>> {
           returns: LowConfiguration
+      }
+      class _get_mid_telescope_configuration <<function>> {
+          returns: MidConfiguration
       }
 }
 
