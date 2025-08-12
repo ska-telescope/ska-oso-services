@@ -128,7 +128,7 @@ def get_proposal(
     try:
         with oda.uow() as uow:
             assert_user_has_permission_for_proposal(
-                uow, auth.user_id, prsl_id, ProposalPermissions.View
+                uow, auth.user_id, prsl_id
             )
             proposal = uow.prsls.get(prsl_id)
         LOGGER.info("Proposal retrieved successfully: %s", prsl_id)
@@ -240,7 +240,7 @@ def get_proposals_for_user(
 
     with oda.uow() as uow:
         prsl_ids = list_accessible_proposal_ids(
-            uow, auth.user_id, ProposalPermissions.View
+            uow, auth.user_id
         )
         proposals = []
         for prsl_id in prsl_ids:
