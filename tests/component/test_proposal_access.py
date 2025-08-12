@@ -2,6 +2,8 @@
 import uuid
 from http import HTTPStatus
 
+from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
+
 from ..unit.util import TestDataFactory
 from . import PHT_URL
 
@@ -80,8 +82,6 @@ def test_get_list_proposal_access_for_user(authrequests):
     - Use GET /proposal-access/user to retrieve them
     - Ensure the proposal access with specific prsl_id is returned
     """
-
-    TEST_USER = "21d14d12-72ae-4cc3-a806-d00ba1d2731a"
 
     proposal_access = TestDataFactory.proposal_access(
         access_id="access_id_test_get_by_user",
