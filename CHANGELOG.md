@@ -11,7 +11,8 @@ Unreleased
 * Adds separate `PUT` endpoint to update panels
 * Updates ska-aaa-authhelpers version to 1.1.0
 * Updates `POST` reviews endpoint to check if a review already exist under a different id before creating new review
-* Added module_view page and diagrams to documentation
+* Adds module_view page and diagrams to documentation
+* Add the functionality to create permission when a proposal is created 
 
 2.0.3
 ***********
