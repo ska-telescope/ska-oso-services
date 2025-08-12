@@ -74,3 +74,11 @@ def list_accessible_proposal_ids(
             for row in rows
         }
     )
+def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
+    """
+    Return all proposal IDs that have any access row for the user.
+    No permission check/filtering.
+    """
+    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
+    rows = get_latest_entity_by_id(rows_init, "access_id") or []
+    return sorted({row.prsl_id for row in rows})
