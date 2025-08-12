@@ -1,7 +1,9 @@
 import json
+import pdb
 from http import HTTPStatus
 from unittest import mock
 
+from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
 from ska_db_oda.persistence.domain.errors import ODANotFound, UniqueConstraintViolation
 
 from tests.unit.conftest import PHT_BASE_API_URL
@@ -103,14 +105,19 @@ class TestProposalAccessAPI:
         """
         Returns list of proposal access filter by Proposal ID
         """
-
         MOCK_PRSL_ID = "prsl1"
         proposal_access = [
             TestDataFactory.proposal_access(
-                access_id="access_id1", prsl_id=MOCK_PRSL_ID
+                access_id="access_id1",
+                prsl_id=MOCK_PRSL_ID,
+                user_id=TEST_USER,
+                role="Principal Investigator",
             ),
             TestDataFactory.proposal_access(
-                access_id="access_id2", prsl_id=MOCK_PRSL_ID
+                access_id="access_id2",
+                prsl_id=MOCK_PRSL_ID,
+                user_id="mocked-user-id",
+                role="Co-Investigator",
             ),
         ]
 
@@ -124,3 +131,27 @@ class TestProposalAccessAPI:
 
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(proposal_access)
+
+    @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow", autospec=True)
+    def test_get_proposal_access_by_prsl_id_not_PI_forbidden(self, mock_oda, client):
+        """
+        Returns list of proposal access filter by Proposal ID where user is not PI
+        """
+
+        MOCK_PRSL_ID = "prsl1"
+        proposal_access = [
+            TestDataFactory.proposal_access(
+                access_id="access_id1", prsl_id=MOCK_PRSL_ID, role="Co-Investigator"
+            ),
+            TestDataFactory.proposal_access(
+                access_id="access_id2", prsl_id=MOCK_PRSL_ID, role="Co-Investigator"
+            ),
+        ]
+
+        uow_mock = mock.MagicMock()
+        uow_mock.prslacc.query.return_value = proposal_access
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        response = client.get(f"{PROPOSAL_ACCESS_API_URL}/{MOCK_PRSL_ID}")
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
