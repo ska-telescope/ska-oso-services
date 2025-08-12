@@ -82,13 +82,13 @@ class TestProposalAccessAPI:
         """
         Returns list of proposal access filter by User ID
         """
-        proposal_access_response = [
+        proposal_access = [
             TestDataFactory.proposal_access(access_id="access_id1", prsl_id="prsl1"),
             TestDataFactory.proposal_access(access_id="access_id2", prsl_id="prsl2"),
         ]
 
         uow_mock = mock.MagicMock()
-        uow_mock.prslacc.query.return_value = proposal_access_response
+        uow_mock.prslacc.query.return_value = proposal_access
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.get(f"{PROPOSAL_ACCESS_API_URL}/user")
@@ -96,7 +96,7 @@ class TestProposalAccessAPI:
         assert response.status_code == HTTPStatus.OK
 
         assert isinstance(response.json(), list)
-        assert len(response.json()) == len(proposal_access_response)
+        assert len(response.json()) == len(proposal_access)
 
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow", autospec=True)
     def test_get_proposal_access_by_prsl_id_success(self, mock_oda, client):
@@ -105,17 +105,17 @@ class TestProposalAccessAPI:
         """
 
         MOCK_PRSL_ID = "prsl1"
-        proposal_access_response = [
-            TestDataFactory.proposal_access_response(
+        proposal_access = [
+            TestDataFactory.proposal_access(
                 access_id="access_id1", prsl_id=MOCK_PRSL_ID
             ),
-            TestDataFactory.proposal_access_response(
+            TestDataFactory.proposal_access(
                 access_id="access_id2", prsl_id=MOCK_PRSL_ID
             ),
         ]
 
         uow_mock = mock.MagicMock()
-        uow_mock.prslacc.query.return_value = proposal_access_response
+        uow_mock.prslacc.query.return_value = proposal_access
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.get(f"{PROPOSAL_ACCESS_API_URL}/{MOCK_PRSL_ID}")
@@ -123,4 +123,4 @@ class TestProposalAccessAPI:
         assert response.status_code == HTTPStatus.OK
 
         assert isinstance(response.json(), list)
-        assert len(response.json()) == len(proposal_access_response)
+        assert len(response.json()) == len(proposal_access)

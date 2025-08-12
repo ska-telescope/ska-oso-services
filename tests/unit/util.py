@@ -282,30 +282,6 @@ class TestDataFactory:
         return proposal_access
 
     @staticmethod
-    def proposal_access_response(
-        prsl_id: str,
-        access_id: str = "access_id1",
-        user_id: str = "user1",
-        role: str = "Principal Investigator",
-        permission: list[str] = None,
-    ) -> ProposalAccess:
-
-        if permission is None:
-            permission = ["view"]
-
-        data = {
-            "prsl_id": prsl_id,
-            "access_id": access_id,
-            "user_id": user_id,
-            "role": role,
-            "permissions": permission,
-        }
-
-        proposal_access_response = ProposalAccess.model_validate_json(json.dumps(data))
-
-        return proposal_access_response
-
-    @staticmethod
     def email_payload(email="test@example.com", prsl_id="SKAO123"):
         return {"email": email, "prsl_id": prsl_id}
 
