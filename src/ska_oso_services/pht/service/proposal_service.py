@@ -51,9 +51,11 @@ def assert_user_has_permission_for_proposal(
     (e.g., Update), require that as well. Raises ForbiddenError if not allowed.
     """
     # 1) Fetch latest access row for (user, proposal)
-    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id)) or []
+    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id))
+    print(f"Access rows: {rows_init}")
     rows = get_latest_entity_by_id(rows_init, "access_id") or []
     access = rows[0] if rows else None
+    print(f"Access: {access}")
     if not access:
         raise ForbiddenError(detail="You do not have access to this proposal.")
 
