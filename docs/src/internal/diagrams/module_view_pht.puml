@@ -80,7 +80,7 @@ package "pht" as pht_pkg {
             }
         }
         package "s3_bucket" <<Rectangle>> {
-            object s3_bucket_functions {
+            object s3_bucket_items {
                 + S3Method (Enum)
                 + S3Config
                 + get_aws_client()
@@ -101,10 +101,10 @@ package "pht" as pht_pkg {
     
     ' --- Relationships, return types only ---
     prsls_endpoints --> validate_proposal
+    prsls_endpoints --> s3_bucket
     prsls_endpoints --> email_helper_items
-    prsls_endpoints --> pht_handler_items
-    prsls_endpoints --> s3_bucket_functions
     panels_endpoints --> validate_duplicates
+    prsls_endpoints --> pht_handler_items
     report_endpoints --> pht_handler_items
     reviewers_endpoints --> constants
     

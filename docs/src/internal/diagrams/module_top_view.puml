@@ -44,16 +44,16 @@ package "common" as common_pkg {
 
     package "error_handling" <<Rectangle>> {
         object error_handling_items {
-          + error_details()
           + BadRequestError
           + DuplicateError
           + UnprocessableEntityError
           + NotFoundError
           + _make_response()
+          + dangerous_internal_server_handler()
+          + error_details()
           + oda_not_found_handler()
           + oda_error_handler()
           + oda_unique_constraint_handler()
-          + dangerous_internal_server_handler()
         }
     }
 
@@ -170,7 +170,7 @@ package "app" <<Rectangle>> {
 }
 
 
-common_pkg -up-> app.create_app
-odt_pkg -up-> app.create_app
+common_pkg -down-> app.create_app
 pht_pkg -up-> app.create_app
+odt_pkg -left-> app.create_app
 @enduml
