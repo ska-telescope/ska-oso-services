@@ -8,14 +8,10 @@ from . import PHT_URL
 
 def test_post_proposal_access(authrequests):
     """
-    Integration test: TODO
-    - Create multiple reviews
-    - Fetch created_by from one
-    - Use GET /list/{user_id} to retrieve them
-    - Ensure all created panel-decision are returned
+    Integration test:
+    - Create a proposal access
+    - Ensure it returns an id
     """
-
-    # TEST_USER user id
 
     proposal_access = TestDataFactory.proposal_access(access_id="access_id_test_post")
     proposal_access_json = proposal_access.model_dump_json()
@@ -29,25 +25,25 @@ def test_post_proposal_access(authrequests):
     assert response.status_code == HTTPStatus.OK
 
     result = response.json()
-    assert isinstance(result.access_id, str)
+    assert isinstance(result, str)
 
 
 def test_post_duplicate_proposal_access(authrequests):
     """
-    Integration test: TODO
-    - Create multiple reviews
-    - Fetch created_by from one
-    - Use GET /list/{user_id} to retrieve them
-    - Ensure all created panel-decision are returned
+    Integration test:
+    - Create multiple proposal access
+    - Check for expected error that the second one cannot be created because of duplication
     """
 
-    # TEST_USER user id
-
     proposal_access = TestDataFactory.proposal_access(
-        access_id="access_id_test_post_duplicate"
+        access_id="access_id_test_post_duplicate",
+        prsl_id="prsl_id_test_post_duplicate",
+        user_id="TEST_USER",
     )
 
     proposal_access_json = proposal_access.model_dump_json()
+
+    print("proposal_access_json", proposal_access_json)
 
     response = authrequests.post(
         f"{PHT_URL}/proposal-access/prslacl",
@@ -65,13 +61,13 @@ def test_post_duplicate_proposal_access(authrequests):
 
     assert duplicate_response.status_code == HTTPStatus.BAD_REQUEST
 
-    result = response.json()
+    result = duplicate_response.json()
     expected = {
         "detail": (
             "duplicate key value violates unique constraint "
             '"tab_oda_prsl_access_prsl_id_user_id_version_key"\n'
             "DETAIL:  Key (prsl_id, user_id, version)="
-            "(access_id_test_post_duplicate, TEST_USER, 1) already exists."
+            "(prsl_id_test_post_duplicate, TEST_USER, 1) already exists."
         )
     }
     assert expected == result
@@ -86,8 +82,12 @@ def test_get_list_proposal_access_for_user(authrequests):
     - Ensure all created panels are returned
     """
 
+    print("authrequests", authrequests)
+
     proposal_access = TestDataFactory.proposal_access(
-        access_id="access_id_test_get_by_user", prsl_id="prsl_id_test_get_by_user"
+        access_id="access_id_test_get_by_user",
+        prsl_id="prsl_id_test_get_by_user",
+        user_id="21d14d12-72ae-4cc3-a806-d00ba1d2731a",
     )
 
     proposal_access_json = proposal_access.model_dump_json()
@@ -105,19 +105,24 @@ def test_get_list_proposal_access_for_user(authrequests):
     assert get_response.status_code == HTTPStatus.OK
 
     get_result = get_response.json()
+
+    print("get_result", get_result)
+
     get_result_filtered = [
         item for item in get_result if item["prsl_id"] == "prsl_id_test_get_by_user"
     ]
+
+    print("get_result_filtered", get_result_filtered)
+
     assert len(get_result_filtered) == 1
 
 
 def test_get_list_proposal_access_for_prsl_id(authrequests):
     """
     Integration test: TODO
-    - Create multiple panels
-    - Fetch created_by from one
-    - Use GET /{user_id} to retrieve them
-    - Ensure all created panels are returned
+    - Create proposal access
+    - use GET /proposal-access/{prsl_id} to get a list of proposal
+    - ensure the proposal access is in the list
     """
 
     TEST_PRSL_ID = "prsl_id_test_get_by_prsl_id"
@@ -141,23 +146,29 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
     assert get_response.status_code == HTTPStatus.OK
 
     get_result = get_response.json()
+
+    print("get_result", get_result)
+
     get_result_filtered = [
         item for item in get_result if item["prsl_id"] == TEST_PRSL_ID
     ]
-    assert get_result_filtered.length == 1
+
+    print("get_result_filtered", get_result_filtered)
+    assert len(get_result_filtered) == 1
+    assert get_result_filtered[0]["prsl_id"] == TEST_PRSL_ID
 
 
 def test_put_proposal_access(authrequests):
     """
-    Integration test: TODO
-    - Create multiple panels
-    - Fetch created_by from one
-    - Use GET /{user_id} to retrieve them
-    - Ensure all created panels are returned
+    Integration test:
+    - Create proposal access and save access_id
+    - Use PUT /proposal-access/user/{access_id} to update them
+    - Ensure version is bumped
     """
 
     proposal_access = TestDataFactory.proposal_access(
-        access_id="access_id_test_put_proposal_access"
+        access_id="access_id_test_put_proposal_access",
+        prsl_id="prsl_id_test_put_proposal_access",
     )
 
     proposal_access_json = proposal_access.model_dump_json()
@@ -170,15 +181,19 @@ def test_put_proposal_access(authrequests):
 
     access_id = post_response.json()
 
-    NEW_PERMISSON = ["view", "submit"]
+    NEW_PERMISSIONS = ["view", "submit"]
 
     put_proposal_access = TestDataFactory.proposal_access(
-        access_id=access_id, permission=NEW_PERMISSON
+        access_id=access_id,
+        prsl_id="prsl_id_test_put_proposal_access",
+        permission=NEW_PERMISSIONS,
     )
+
+    put_proposal_access_json = put_proposal_access.model_dump_json()
 
     put_response = authrequests.put(
         f"{PHT_URL}/proposal-access/user/{access_id}",
-        data=put_proposal_access,
+        data=put_proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
@@ -186,5 +201,7 @@ def test_put_proposal_access(authrequests):
 
     put_result = put_response.json()
 
+    print("put_result", put_result)
+
     assert put_result["metadata"]["version"] == 2
-    assert put_result["permisson"] == NEW_PERMISSON
+    assert put_result["permissions"] == NEW_PERMISSIONS

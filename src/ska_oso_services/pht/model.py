@@ -24,20 +24,16 @@ class EmailRequest(AppModel):
 
 
 class ProposalAccessResponse(AppModel):
-    prsl_id: str
+    prsl_id: str = None
     role: ProposalRole
     permissions: list[ProposalPermissions] = Field(
         ..., description="Permissions granted to this user for this proposal."
     )
 
 
-class ProposalAccessByProposalResponse(AppModel):
+class ProposalAccessByProposalResponse(ProposalAccessResponse):
     access_id: str
     user_id: str
-    role: ProposalRole
-    permissions: list[ProposalPermissions] = Field(
-        ..., description="Permissions granted to this user for this proposal."
-    )
 
 
 class ProposalAccessCreate(ProposalAccess):
