@@ -44,11 +44,18 @@ def assert_user_has_permission_for_proposal(
     prsl_id: str,
 ) -> None:
     """
-    Ensure the user has at least 'view' permission for the given proposal.
+    Ensure the user has an entry for the supplied proposal id.
     Raises ForbiddenError if not allowed.
     """
-    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id)) or []
-    rows = get_latest_entity_by_id(rows_init, "access_id") or []
+    rows = (
+        get_latest_entity_by_id(
+            uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id)),
+            "access_id",
+        )
+        or []
+    )
     access = rows[0] if rows else None
     if not access:
-        raise ForbiddenError(detail="You do not have access to this proposal.")
+        raise ForbiddenError(
+            detail=f"You do not have access to this proposal with id:{prsl_id}"
+        )

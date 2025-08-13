@@ -29,7 +29,10 @@ from ska_oso_services.pht.models.domain import OsdDataModel
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
-from ska_oso_services.pht.service.proposal_service import transform_update_proposal
+from ska_oso_services.pht.service.proposal_service import (
+    assert_user_has_permission_for_proposal,
+    transform_update_proposal,
+)
 from ska_oso_services.pht.service.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
     create_presigned_url_delete_pdf,
@@ -111,13 +114,22 @@ def create_proposal(
 @router.get(
     "/{prsl_id}",
     summary="Retrieve an existing proposal",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
 )
-def get_proposal(prsl_id: str) -> Proposal:
+def get_proposal(
+    prsl_id: str,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READ},
+        ),
+    ],
+) -> Proposal:
     LOGGER.debug("GET PROPOSAL prsl_id: %s", prsl_id)
 
     try:
         with oda.uow() as uow:
+            assert_user_has_permission_for_proposal(uow, auth.user_id, prsl_id)
             proposal = uow.prsls.get(prsl_id)
         LOGGER.info("Proposal retrieved successfully: %s", prsl_id)
         return proposal
