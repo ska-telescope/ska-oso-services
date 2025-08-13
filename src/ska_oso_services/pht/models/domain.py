@@ -50,6 +50,8 @@ class PanelCreate(AppModel):
     name: str
     reviewers: list
     proposals: list
+
+
 from pydantic import BaseModel
 
 

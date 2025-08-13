@@ -11,12 +11,12 @@ from ska_oso_pdm.proposal import ProposalAccess, ProposalRole
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import BadRequestError, ForbiddenError
-from ska_oso_services.pht.model import (
+from ska_oso_services.pht.models.schemas import (
     ProposalAccessByProposalResponse,
     ProposalAccessCreate,
     ProposalAccessResponse,
 )
-from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 LOGGER = logging.getLogger(__name__)
 

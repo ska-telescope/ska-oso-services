@@ -1,6 +1,7 @@
 """ Schemas specific for the proposal handling tool (PHT) """
 
-from pydantic import EmailStr
+from pydantic import EmailStr, Field
+from ska_oso_pdm.proposal import ProposalAccess, ProposalPermissions, ProposalRole
 
 from ska_oso_services.common.model import AppModel
 
@@ -12,6 +13,23 @@ class EmailRequest(AppModel):
 
     email: EmailStr
     prsl_id: str
+
+
+class ProposalAccessResponse(AppModel):
+    prsl_id: str = None
+    role: ProposalRole
+    permissions: list[ProposalPermissions] = Field(
+        ..., description="Permissions granted to this user for this proposal."
+    )
+
+
+class ProposalAccessByProposalResponse(ProposalAccessResponse):
+    access_id: str
+    user_id: str
+
+
+class ProposalAccessCreate(ProposalAccess):
+    access_id: str | None = None
 
 
 class PanelCreateResponse(AppModel):
