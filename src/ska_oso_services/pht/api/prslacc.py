@@ -103,7 +103,9 @@ def get_access_by_prsl_id(
         return []
     else:
         query_param_pi = CustomQuery(
-            prsl_id=prsl_id, user_id=auth.user_id, role=ProposalRole.PrincipalInvestigator
+            prsl_id=prsl_id,
+            user_id=auth.user_id,
+            role=ProposalRole.PrincipalInvestigator,
         )
         proposal_access_pi = get_latest_entity_by_id(
             uow.prslacc.query(query_param_pi), "access_id"
