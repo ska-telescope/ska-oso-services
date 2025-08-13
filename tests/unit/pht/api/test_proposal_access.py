@@ -149,7 +149,7 @@ class TestProposalAccessAPI:
         ]
 
         uow_mock = mock.MagicMock()
-        uow_mock.prslacc.query.side_effect = [proposal_access, []]
+        uow_mock.prslacc.query.side_effect = [[], proposal_access]
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.get(f"{PROPOSAL_ACCESS_API_URL}/{MOCK_PRSL_ID}")

@@ -52,9 +52,6 @@ class PanelCreate(AppModel):
     proposals: list
 
 
-from pydantic import BaseModel
-
-
 class CycleInformation(BaseModel):
     cycle_id: str
     proposal_open: str

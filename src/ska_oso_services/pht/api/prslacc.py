@@ -95,13 +95,6 @@ def get_access_by_prsl_id(
     LOGGER.debug("Retrieving proposal access for prsl id: %s", prsl_id)
 
     with oda.uow() as uow:
-        query_param = CustomQuery(prsl_id=prsl_id)
-        proposal_access = get_latest_entity_by_id(
-            uow.prslacc.query(query_param), "access_id"
-        )
-    if not proposal_access:
-        return []
-    else:
         query_param_pi = CustomQuery(
             prsl_id=prsl_id,
             user_id=auth.user_id,
@@ -118,6 +111,14 @@ def get_access_by_prsl_id(
                     "Not Principal Investigator"
                 )
             )
+
+        query_param = CustomQuery(prsl_id=prsl_id)
+        proposal_access = get_latest_entity_by_id(
+            uow.prslacc.query(query_param), "access_id"
+        )
+
+    if not proposal_access:
+        return []
 
     return proposal_access
 
