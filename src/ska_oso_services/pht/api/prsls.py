@@ -129,7 +129,7 @@ def get_proposal(
     try:
         with oda.uow() as uow:
             assert_user_has_permission_for_proposal(
-                uow, auth.user_id, prsl_id, ProposalPermissions.View
+                uow, auth.user_id, prsl_id
             )
             proposal = uow.prsls.get(prsl_id)
         LOGGER.info("Proposal retrieved successfully: %s", prsl_id)
@@ -215,7 +215,7 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
 
 
 @router.get(
-    "/prsls",
+    "/users",
     summary="Get a list of proposals created by a user",
 )
 def get_proposals_for_user(
@@ -240,8 +240,9 @@ def get_proposals_for_user(
     LOGGER.debug("GET PROPOSAL LIST query for the user: %s", auth.user_id)
 
     with oda.uow() as uow:
+        
         prsl_ids = list_accessible_proposal_ids(
-            uow, auth.user_id, ProposalPermissions.View
+            uow, auth.user_id
         )
         proposals = []
         for prsl_id in prsl_ids:

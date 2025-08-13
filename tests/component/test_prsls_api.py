@@ -202,7 +202,7 @@ def test_get_list_proposals_for_user(authrequests):
     Integration test:
     - Create multiple proposals
     - Fetch created_by from one
-    - Use GET /list/{user_id} to retrieve them
+    - Use GET /prsls to retrieve them
     - Ensure all created proposals are returned
     """
 
@@ -229,7 +229,7 @@ def test_get_list_proposals_for_user(authrequests):
     user_id = get_response.json()["metadata"]["created_by"]
 
     # GET /list/{user_id}
-    list_response = authrequests.get(f"{PHT_URL}/prsls/list/{user_id}")
+    list_response = authrequests.get(f"{PHT_URL}/prsls")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     proposals = list_response.json()
@@ -241,7 +241,7 @@ def test_get_list_proposals_for_user(authrequests):
     for prsl_id in created_ids:
         assert (
             prsl_id in returned_ids
-        ), f"Missing proposal {prsl_id} in GET /list/{user_id}"
+        ), f"Missing proposal {prsl_id} in GET /prsls"
 
 
 def test_get_proposals_batch(authrequests):

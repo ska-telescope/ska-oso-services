@@ -44,40 +44,20 @@ def assert_user_has_permission_for_proposal(
     uow,
     user_id: str,
     prsl_id: str,
-    action: Optional[ProposalPermissions] = None,  # None => only require 'view'
 ) -> None:
     """
-    Ensure the user can at least VIEW the proposal; if `action` is provided
-    (e.g., Update), require that as well. Raises ForbiddenError if not allowed.
+    Ensure the user has at least 'view' permission for the given proposal.
+    Raises ForbiddenError if not allowed.
     """
-    # 1) Fetch latest access row for (user, proposal)
-    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id))
-    print(f"Access rows: {rows_init}")
+    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id)) or []
     rows = get_latest_entity_by_id(rows_init, "access_id") or []
     access = rows[0] if rows else None
-    print(f"Access: {access}")
     if not access:
         raise ForbiddenError(detail="You do not have access to this proposal.")
 
-    # 2) Normalize stored permissions to lowercase strings
-    perms = access.permissions or []
-    norm = {
-        (p.value if isinstance(p, ProposalPermissions) else str(p)).lower()
-        for p in perms
-    }
-
-    # 3) Build required set: always 'view', optionally the extra action
-    required = {"view"}
-    if action:
-        required.add((action.value if isinstance(action, Enum) else str(action)).lower())
-
-    # 4) Enforce
-    if not required.issubset(norm):
-        raise ForbiddenError(detail="You do not have permission to perform this action.")
-
 
 def list_accessible_proposal_ids(
-    uow, user_id: str, required_perm: ProposalPermissions = ProposalPermissions.View
+    uow, user_id: str
 ) -> list[str]:
     """
     Return all proposal IDs a user can access.
@@ -88,15 +68,17 @@ def list_accessible_proposal_ids(
         )
         or []
     )
-    needed = required_perm.value
     return list(
         {
             row.prsl_id
             for row in rows
-            if any(
-                (p.value if isinstance(p, ProposalPermissions) else str(p).lower())
-                == needed
-                for p in (row.permissions or [])
-            )
         }
     )
+def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
+    """
+    Return all proposal IDs that have any access row for the user.
+    No permission check/filtering.
+    """
+    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
+    rows = get_latest_entity_by_id(rows_init, "access_id") or []
+    return sorted({row.prsl_id for row in rows})
