@@ -22,6 +22,7 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
+    ForbiddenError,
     NotFoundError,
     UnprocessableEntityError,
 )
@@ -352,15 +353,27 @@ def validate_proposal(prsl: Proposal) -> dict:
 
 @router.post(
     "/send-email/",
-    summary="Send an async email",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
+    summary="Send an async email"
 )
-async def send_email(request: EmailRequest):
+async def send_email(
+    request: EmailRequest,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],):
     """
     Endpoint to send SKAO email asynchronously via SMTP
     """
-    await send_email_async(request.email, request.prsl_id)
-    return {"message": "Email sent successfully"}
+    if(assert_user_has_permission_for_proposal(prsl_id=request.prsl_id, user_id=auth.user_id)):
+        await send_email_async(request.email, request.prsl_id)
+        return {"message": "Email sent successfully"}
+    else:
+        raise ForbiddenError(detail="You do not have permission to perform this action.")
+    
+    
 
 
 @router.post(
