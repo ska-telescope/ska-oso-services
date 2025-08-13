@@ -15,17 +15,19 @@ from ska_oso_services.common.error_handling import (
     BadRequestError,
     UnprocessableEntityError,
 )
-from ska_oso_services.pht.model import PanelCreate, PanelCreateResponse
-from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, REVIEWERS
-from ska_oso_services.pht.utils.panel_helper import (
+from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateResponse
+from ska_oso_services.pht.service.panel_operations import (
     build_panel_response,
     build_sv_panel_proposals,
-    generate_panel_id,
     group_proposals_by_science_category,
     upsert_panel,
 )
-from ska_oso_services.pht.utils.pht_handler import get_latest_entity_by_id
-from ska_oso_services.pht.utils.validation import validate_duplicates
+from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, REVIEWERS
+from ska_oso_services.pht.utils.pht_helper import (
+    generate_entity_id,
+    get_latest_entity_by_id,
+    validate_duplicates,
+)
 
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 
@@ -81,7 +83,7 @@ def create_panel(param: Panel) -> str:
         )
     ],
 )
-def auto_create_panel(param: PanelCreate) -> str:
+def auto_create_panel(param: PanelCreateRequest) -> str:
     """
     Creates panels:
     - If science verification, create a single
@@ -99,7 +101,7 @@ def auto_create_panel(param: PanelCreate) -> str:
         is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
         if is_sv:
             panel = Panel(
-                panel_id=generate_panel_id(),
+                panel_id=generate_entity_id("panel"),
                 name="Science Verification",
                 reviewers=reviewers,
                 proposals=build_sv_panel_proposals(proposals),

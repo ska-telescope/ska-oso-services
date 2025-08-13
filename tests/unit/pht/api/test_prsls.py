@@ -2,7 +2,9 @@
 Unit tests for ska_oso_pht_services.api
 """
 
+from contextlib import contextmanager
 from http import HTTPStatus
+from types import SimpleNamespace
 from unittest import mock
 
 from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRefused
@@ -187,24 +189,41 @@ class TestProposalAPI:
         data = response.json()
         assert "Failed when attempting to create a proposal" in data["detail"]
 
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service."
+        "assert_user_has_permission_for_proposal",
+        autospec=True,
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_get_proposal_not_found(self, mock_oda, client):
+    def test_get_proposal_not_found(self, mock_oda, mock_acl, client):
         """
-        Ensure KeyError during get() raises NotFoundError (404).
+        Ensure KeyError during get() raises NotFoundError.
         """
         proposal_id = "prsl-missing-9999"
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.get.side_effect = KeyError(proposal_id)
+        uow_mock.prslacc.query.return_value = [
+            {"access_id": "acc-1", "prsl_id": proposal_id, "user_id": "user-123"}
+        ]
+
         mock_oda.return_value.__enter__.return_value = uow_mock
+        mock_oda.return_value.__exit__.return_value = None
+
+        mock_acl.return_value = None
 
         response = client.get(f"{PROPOSAL_API_URL}/{proposal_id}")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert "Could not find proposal" in response.json()["detail"]
 
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service."
+        "assert_user_has_permission_for_proposal",
+        autospec=True,
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_get_proposal_success(self, mock_oda, client):
+    def test_get_proposal_success(self, mock_oda, mock_acl, client):
         """
         Ensure valid proposal ID returns the Proposal object.
         """
@@ -213,7 +232,14 @@ class TestProposalAPI:
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.get.return_value = proposal
+        uow_mock.prslacc.query.return_value = [
+            {"access_id": "acc-1", "prsl_id": proposal_id, "user_id": "user-123"}
+        ]
+
         mock_oda.return_value.__enter__.return_value = uow_mock
+        mock_oda.return_value.__exit__.return_value = None
+
+        mock_acl.return_value = None
 
         response = client.get(f"{PROPOSAL_API_URL}/{proposal_id}")
 
@@ -452,7 +478,7 @@ class TestProposalEmailAPI:
         mock_send.assert_called_once()
 
     @mock.patch(
-        "ska_oso_services.pht.utils.email_helper.aiosmtplib.send",
+        "ska_oso_services.pht.service.email_service.aiosmtplib.send",
         new_callable=mock.AsyncMock,
     )
     def test_send_email_connection_failure(self, mock_smtp_send, client):
@@ -470,7 +496,7 @@ class TestProposalEmailAPI:
         assert "SMTP connection failed" in response.text
 
     @mock.patch(
-        "ska_oso_services.pht.utils.email_helper.aiosmtplib.send",
+        "ska_oso_services.pht.service.email_service.aiosmtplib.send",
         new_callable=mock.AsyncMock,
     )
     def test_send_email_recipients_refused(self, mock_smtp_send, client):
@@ -487,7 +513,7 @@ class TestProposalEmailAPI:
         assert "Unable to send email for this recipient." in response.text
 
     @mock.patch(
-        "ska_oso_services.pht.utils.email_helper.aiosmtplib.send",
+        "ska_oso_services.pht.service.email_service.aiosmtplib.send",
         new_callable=mock.AsyncMock,
     )
     def test_send_email_generic_smtp_exception(self, mock_smtp_send, client):

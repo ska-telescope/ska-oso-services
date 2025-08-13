@@ -1,10 +1,10 @@
 from types import SimpleNamespace
 
-from ska_oso_services.pht.utils.pht_handler import (
+from ska_oso_services.pht.service.report_processing import (
     _get_array_class,
-    get_latest_entity_by_id,
     join_proposals_panels_reviews_decisions,
 )
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 from tests.unit.util import REVIEWERS, TestDataFactory
 
 

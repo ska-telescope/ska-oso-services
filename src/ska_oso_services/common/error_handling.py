@@ -70,6 +70,13 @@ class UnprocessableEntityError(BadRequestError):
         super().__init__(detail=detail)
 
 
+class ForbiddenError(BadRequestError):
+    code = HTTPStatus.FORBIDDEN
+
+    def __init__(self, detail: Optional[str] = None):
+        super().__init__(detail=detail)
+
+
 class NotFoundError(BadRequestError):
     code = HTTPStatus.NOT_FOUND
 

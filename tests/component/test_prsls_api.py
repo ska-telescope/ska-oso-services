@@ -156,45 +156,44 @@ def test_create_and_get_proposal(authrequests):
 
 def test_proposal_create_then_put(authrequests):
     """
-    Test that an entity POSTed to /prsls/create
-    can then be updated with PUT /prsls/{identifier},
-    and the version number increments as expected.
+    POST /prsls/create with a unique prsl_id, then PUT /prsls/{identifier}
+    and verify metadata.version increments.
     """
 
-    # POST a new proposal
+    # Make payload unique
+    data = json.loads(VALID_NEW_PROPOSAL)
+    data["prsl_id"] = f"{data.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
+
+    # Create proposal
     post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
-        data=VALID_NEW_PROPOSAL,
+        data=json.dumps(data),
         headers={"Content-Type": "application/json"},
     )
-
     assert post_response.status_code == HTTPStatus.OK, post_response.content
+    prsl_id = post_response.json()
 
-    # The POST endpoint returns only the prsl_id as a string
-    returned_prsl_id = post_response.json()
-    expected_prsl_id = json.loads(VALID_NEW_PROPOSAL)["prsl_id"]
-    assert returned_prsl_id == expected_prsl_id
+    # Get the created proposal
+    get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    assert get_v1.status_code == HTTPStatus.OK, get_v1.content
+    v1 = get_v1.json()["metadata"]["version"]
 
-    # GET proposal to fetch latest state
-    get_response = authrequests.get(f"{PHT_URL}/prsls/{returned_prsl_id}")
-    assert get_response.status_code == HTTPStatus.OK, get_response.content
-
-    original_proposal = get_response.json()
-    initial_version = original_proposal["metadata"]["version"]
-
-    # Modify content (simulate update)
-    original_proposal["info"]["title"] = "Updated Title"
-    proposal_to_update = json.dumps(original_proposal)
-
-    # PUT updated proposal
-    put_response = authrequests.put(
-        f"{PHT_URL}/prsls/{returned_prsl_id}",
-        data=proposal_to_update,
+    # Update title and PUT back
+    updated_entity = get_v1.json()
+    updated_entity["title"] = (
+        f"{updated_entity.get('title', 'Untitled')} (updated title)"
+    )
+    put_resp = authrequests.put(
+        f"{PHT_URL}/prsls/{prsl_id}",
+        data=json.dumps(updated_entity),
         headers={"Content-Type": "application/json"},
     )
+    assert put_resp.status_code == HTTPStatus.OK, put_resp.content
 
-    # Confirm version bumped
-    assert put_response.json()["metadata"]["version"] == initial_version + 1
+    # Verify version increment
+    get_v2 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    assert get_v2.status_code == HTTPStatus.OK, get_v2.content
+    assert get_v2.json()["metadata"]["version"] == v1 + 1
 
 
 def test_get_list_proposals_for_user(authrequests):

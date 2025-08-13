@@ -1,3 +1,14 @@
+# HTML email template
+HTML_TEMPLATE = """
+<html>
+<body>
+    <p>SKAO proposal with ID <strong>{{ prsl_id }}</strong>.</p>
+    <p><a href="{{ link }}">Click here</a> to accept or reject the invitation.</p>
+</body>
+</html>
+"""
+
+
 PANEL_NAME_POOL = [
     "Cosmology",
     "Cradle of Life",
