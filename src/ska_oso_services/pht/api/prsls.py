@@ -368,13 +368,10 @@ async def send_email(
     """
     Endpoint to send SKAO email asynchronously via SMTP
     """
-    if(assert_user_has_permission_for_proposal(prsl_id=request.prsl_id, user_id=auth.user_id)):
+    with oda.uow() as uow:
+        assert_user_has_permission_for_proposal(uow, prsl_id=request.prsl_id, user_id=auth.user_id)
         await send_email_async(request.email, request.prsl_id)
         return {"message": "Email sent successfully"}
-    else:
-        raise ForbiddenError(detail="You do not have permission to perform this action.")
-    
-    
 
 
 @router.post(

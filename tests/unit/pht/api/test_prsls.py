@@ -1,7 +1,7 @@
 """
 Unit tests for ska_oso_pht_services.api
 """
-
+import pdb
 from http import HTTPStatus
 from unittest import mock
 
@@ -434,13 +434,18 @@ class TestProposalBatch:
 
 
 class TestProposalEmailAPI:
+    @mock.patch("ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal", autospec=True)
     @mock.patch("ska_oso_services.pht.api.prsls.send_email_async", autospec=True)
-    def test_send_email_success(self, mock_send, client):
+    def test_send_email_success(self, mock_send, mock_check_pi, client):
         """
         Check that a successful email send returns status 200 and success message.
         """
+        
+        
         mock_send.return_value = True
-
+        mock_check_pi.return_value = None
+        
+        pdb.set_trace()
         response = client.post(
             f"{PROPOSAL_API_URL}/send-email/",
             json=PAYLOAD_SUCCESS,
