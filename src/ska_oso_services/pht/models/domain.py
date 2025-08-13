@@ -2,7 +2,54 @@
 Model specific for the pht
 """
 
-from pydantic import BaseModel
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field
+from ska_oso_pdm.proposal import ProposalAccess, ProposalPermissions, ProposalRole
+
+from ska_oso_services.common.model import AppModel
+
+
+class EmailRequest(AppModel):
+    """
+    Schema for incoming email request.
+
+    Attributes:
+        email (EmailStr): The recipient's email address.
+        prsl_id (str): The SKAO proposal ID.
+    """
+
+    email: EmailStr
+    prsl_id: str
+
+
+class ProposalAccessResponse(AppModel):
+    prsl_id: str = None
+    role: ProposalRole
+    permissions: list[ProposalPermissions] = Field(
+        ..., description="Permissions granted to this user for this proposal."
+    )
+
+
+class ProposalAccessByProposalResponse(ProposalAccessResponse):
+    access_id: str
+    user_id: str
+
+
+class ProposalAccessCreate(ProposalAccess):
+    access_id: Optional[str] = None
+
+
+class PanelCreateResponse(AppModel):
+    panel_id: str
+    name: str
+    proposal_count: int
+
+
+class PanelCreate(AppModel):
+    name: str
+    reviewers: list
+    proposals: list
 
 
 class CycleInformation(BaseModel):

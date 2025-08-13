@@ -1,0 +1,47 @@
+@startuml
+title Proposal Access Implementation - Database & Service Layer
+
+package "Database" {
+    entity Proposal {
+        prsl_id: UUID
+    
+    }
+
+    entity User {
+        user_id: UUID 
+    }
+
+    entity ProposalAccess {
+        access_id: UUID <<PK>>
+        prsl_id: UUID <<FK>>
+        user_id: UUID <<FK>>
+        role: ProposalRole
+        permissions: TEXT[]  ' e.g. ["submit", "view", "update"]
+    }
+
+    Proposal ||..|| ProposalAccess : "1" -- "0..*"
+    User ||..|| ProposalAccess : "1" -- "0..*"
+}
+
+package "Service Layer" {
+    class OsoService {
+        +check_access(user_id: str, prsl_id: str): bool
+        +get_permissions(user_id: str, prsl_id: str): list
+    }
+}
+
+OsoService ..> ProposalAccess : "queries"
+OsoService ..> User
+OsoService ..> Proposal
+
+note right of OsoService
+  When a request is received on a proposal endpoint:
+  1. Service receives user_id and proposal as input and retrieves user_id from token
+  2. Looks up ProposalAccess table 
+  3. If (user_id, prsl_id) exists, 
+  4. Checks the permissions for that user on the proposal
+  5. Access is allowed according to the permission
+  4. Permissions and role are enforced
+end note
+
+@enduml

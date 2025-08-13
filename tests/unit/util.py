@@ -12,6 +12,7 @@ from ska_db_oda.persistence.domain import set_identifier
 from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal
+from ska_oso_pdm.proposal.proposal_access import ProposalAccess
 from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
@@ -255,6 +256,30 @@ class TestDataFactory:
         }
 
         return data
+
+    @staticmethod
+    def proposal_access(
+        access_id: str = "prsl-mvp01-20220923-00001",
+        prsl_id: str = "panel-test-20250616-00001",
+        user_id: str = "rev-001",
+        role: str = "Principal Investigator",
+        permission: list[str] = None,
+    ) -> ProposalAccess:
+        if permission is None:
+            permission = ["view"]
+
+        data = {
+            "access_id": access_id,
+            "prsl_id": prsl_id,
+            "user_id": user_id,
+            "role": role,
+            "permissions": permission,
+        }
+
+        proposal_access = ProposalAccess.model_validate_json(json.dumps(data))
+        set_identifier(proposal_access, access_id)
+
+        return proposal_access
 
     @staticmethod
     def email_payload(email="test@example.com", prsl_id="SKAO123"):
