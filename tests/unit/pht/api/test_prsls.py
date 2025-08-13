@@ -276,10 +276,8 @@ class TestProposalAPI:
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_get_proposal_list_empty(self, mock_uow, mock_list_ids, client_get):
-        # list_accessible_proposal_ids should return no IDs
         mock_list_ids.return_value = []
 
-        # Make oda.uow() behave like a real context manager
         mock_uow.return_value.__enter__.return_value = mock.MagicMock()
         mock_uow.return_value.__exit__.return_value = None
 
