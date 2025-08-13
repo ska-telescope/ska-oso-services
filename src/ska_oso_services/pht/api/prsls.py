@@ -112,6 +112,43 @@ def create_proposal(
         ) from err
 
 
+@router.get("/mine", summary="Get a list of proposals the user can access")
+def get_proposals_for_user(
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READ},
+        ),
+    ]
+) -> list[Proposal]:
+    """
+    Function that requests to GET /proposals/list are mapped to
+
+    Retrieves the Proposals for the given user ID from the
+    underlying data store, if available
+
+    :param user_id: identifier of the Proposal
+    :return: a tuple of a list of Proposal
+    """
+
+    LOGGER.debug("GET PROPOSAL LIST query for the user: %s", auth.user_id)
+
+    with oda.uow() as uow:
+        proposals = [
+            p
+            for prsl_id in list_accessible_proposal_ids(uow, auth.user_id)
+            if (p := uow.prsls.get(prsl_id)) is not None
+        ]
+
+    if not proposals:
+        LOGGER.info("No proposals found for user: %s", auth.user_id)
+        return []
+
+    LOGGER.debug("Found %d proposals for user: %s", len(proposals), auth.user_id)
+    return proposals
+
+
 @router.get(
     "/{prsl_id}",
     summary="Retrieve an existing proposal",
@@ -210,46 +247,6 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
     return reviews
 
 
-@router.get("/list/", summary="Get a list of proposals created by a user")
-def get_proposals_for_user(
-    auth: Annotated[
-        AuthContext,
-        Permissions(
-            roles={Role.ANY, Role.SW_ENGINEER},
-            scopes={Scope.PHT_READ},
-        ),
-    ]
-) -> list[Proposal]:
-    """
-    Function that requests to GET /proposals/list are mapped to
-
-    Retrieves the Proposals for the given user ID from the
-    underlying data store, if available
-
-    :param user_id: identifier of the Proposal
-    :return: a tuple of a list of Proposal
-    """
-
-    LOGGER.debug("GET PROPOSAL LIST query for the user: %s", auth.user_id)
-
-    with oda.uow() as uow:
-        prsl_ids = list_accessible_proposal_ids(uow, auth.user_id)
-        proposals = []
-        for prsl_id in prsl_ids:
-            proposal = uow.prsls.get(prsl_id)
-            if proposal is not None:
-                proposals.append(proposal)
-            else:
-                LOGGER.warning("Proposal not found: %s", prsl_id)
-
-        if proposals is None:
-            LOGGER.info("No proposals found for user: %s", auth.user_id)
-            return []
-
-        LOGGER.debug("Found %d proposals for user: %s", len(proposals), auth.user_id)
-        return proposals
-
-
 @router.put(
     "/{prsl_id}",
     summary="Update an existing proposal",
@@ -331,10 +328,13 @@ def validate_proposal(prsl: Proposal) -> dict:
     summary="Send an async email",
     dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
 )
-async def send_email(request: EmailRequest):
+async def send_email(
+    request: EmailRequest,
+):
     """
     Endpoint to send SKAO email asynchronously via SMTP
     """
+
     await send_email_async(request.email, request.prsl_id)
     return {"message": "Email sent successfully"}
 

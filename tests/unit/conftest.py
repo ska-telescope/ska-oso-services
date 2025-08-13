@@ -2,6 +2,7 @@
 pytest fixtures to be used by unit tests
 """
 
+from functools import partial
 from importlib.metadata import version
 
 import pytest
@@ -50,6 +51,12 @@ def client(test_app: FastAPI) -> TestClient:
     )
     headers = {"Authorization": f"Bearer {token}"}
     return TestClient(test_app, headers=headers)
+
+
+@pytest.fixture(scope="module")
+def client_get(client: TestClient):  # pylint: disable=redefined-outer-name
+    """Always call GET with the client’s default auth headers."""
+    return partial(client.get, headers=client.headers)
 
 
 @pytest.fixture(scope="session", autouse=True)
