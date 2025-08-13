@@ -102,17 +102,14 @@ def get_access_by_prsl_id(
     if not proposal_access:
         return []
     else:
-        # check if PI
-        filtered_proposal_access = [
-            item
-            for item in proposal_access
-            if (
-                item.user_id == auth.user_id
-                and item.role == ProposalRole.PrincipalInvestigator
-            )
-        ]
+        query_param_pi = CustomQuery(
+            user_id=auth.user_id, role=ProposalRole.PrincipalInvestigator
+        )
+        proposal_access_pi = get_latest_entity_by_id(
+            uow.prslacc.query(query_param_pi), "access_id"
+        )
 
-        if len(filtered_proposal_access) == 0:
+        if not proposal_access_pi:
             raise ForbiddenError(
                 detail=(
                     "Forbidden error while getting proposal access: "

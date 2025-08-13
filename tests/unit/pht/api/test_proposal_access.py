@@ -135,7 +135,7 @@ class TestProposalAccessAPI:
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow", autospec=True)
     def test_get_proposal_access_by_prsl_id_not_PI_forbidden(self, mock_oda, client):
         """
-        Returns list of proposal access filter by Proposal ID where user is not PI
+        Returns forbidden error when user is not PI of a proposal
         """
 
         MOCK_PRSL_ID = "prsl1"
@@ -149,7 +149,7 @@ class TestProposalAccessAPI:
         ]
 
         uow_mock = mock.MagicMock()
-        uow_mock.prslacc.query.return_value = proposal_access
+        uow_mock.prslacc.query.side_effect = [proposal_access, []]
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.get(f"{PROPOSAL_ACCESS_API_URL}/{MOCK_PRSL_ID}")
