@@ -25,7 +25,7 @@ class TestProposalAccessAPI:
         data = proposal_access.json()
 
         response = client.post(
-            f"{PROPOSAL_ACCESS_API_URL}/prslacl", data=data, headers=HEADERS
+            f"{PROPOSAL_ACCESS_API_URL}/create", data=data, headers=HEADERS
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -49,7 +49,7 @@ class TestProposalAccessAPI:
         data = panel.json()
 
         response = client.post(
-            f"{PROPOSAL_ACCESS_API_URL}/prslacl", data=data, headers=HEADERS
+            f"{PROPOSAL_ACCESS_API_URL}/create", data=data, headers=HEADERS
         )
 
         assert response.status_code == HTTPStatus.BAD_REQUEST

@@ -47,14 +47,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
     app = FastAPI(
         openapi_url=f"{API_PREFIX}/openapi.json",
         docs_url=f"{API_PREFIX}/ui",
-        lifespan=watchdog(
-            allow_unsecured=[
-                "get_systemcoordinates",
-                "update_access",
-                "get_access_for_user",
-                "post_prslacl",
-            ]
-        ),
+        lifespan=watchdog(allow_unsecured=["get_systemcoordinates"]),
         # Need this param for code generation - see
         # https://fastapi.tiangolo.com/how-to/separate-openapi-schemas
         separate_input_output_schemas=False,

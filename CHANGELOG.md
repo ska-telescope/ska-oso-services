@@ -7,15 +7,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 * [BREAKING] Adds AAA protection to PHT endpoints
+* Updated ODA to v11.1.0
 * Adds auto-panel creation `POST` endpoint based on cycle description
 * Adds separate `PUT` endpoint to update panels
 * Updates ska-aaa-authhelpers version to 1.1.0
 * Updates `POST` reviews endpoint to check if a review already exist under a different id before creating new review
 * Added module_view page and diagrams to documentation
-* Added POST `/pht/proposal-access/prslacl` for pht
-* Added GET `/pht/proposal-access/prslacl/user` for pht
-* Added GET `/pht/proposal-access/prslacl/user/{prsl_id}` for pht
-* Added PUT `/pht/proposal-access/prslacl/user/{access_id}` for pht
+* Added POST `/pht/proposal-access/create` for pht
+* Added GET `/pht/proposal-access/user` for pht
+* Added GET `/pht/proposal-access/user/{prsl_id}` for pht
+* Added PUT `/pht/proposal-access/user/{access_id}` for pht
 
 
 2.0.3

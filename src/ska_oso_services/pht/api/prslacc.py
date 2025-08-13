@@ -25,9 +25,9 @@ router = APIRouter(
 )
 
 
-@router.post("/prslacl", summary="Creates a new Proposal Access")
-def post_prslacl(
-    prslacl: ProposalAccessCreate,
+@router.post("/create", summary="Creates a new Proposal Access")
+def post_create_access(
+    prslacc_create: ProposalAccessCreate,
     auth: Annotated[
         AuthContext,
         Permissions(
@@ -43,9 +43,9 @@ def post_prslacl(
     LOGGER.debug("Creating a new proposal access")
     try:
         rand_part = uuid.uuid4().hex[:6]
-        prslacl.access_id = f"prslacc-{rand_part}-{prslacl.user_id[:7]}"
+        prslacc_create.access_id = f"prslacc-{rand_part}-{prslacc_create.user_id[:7]}"
         with oda.uow() as uow:
-            persisted_prslacc = uow.prslacc.add(prslacl, auth.user_id)
+            persisted_prslacc = uow.prslacc.add(prslacc_create, auth.user_id)
             uow.commit()
         return persisted_prslacc.access_id
 

@@ -18,7 +18,7 @@ def test_post_proposal_access(authrequests):
     proposal_access_json = proposal_access.model_dump_json()
 
     response = authrequests.post(
-        f"{PHT_URL}/proposal-access/prslacl",
+        f"{PHT_URL}/proposal-access/create",
         data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
@@ -45,7 +45,7 @@ def test_post_duplicate_proposal_access(authrequests):
     proposal_access_json = proposal_access.model_dump_json()
 
     response = authrequests.post(
-        f"{PHT_URL}/proposal-access/prslacl",
+        f"{PHT_URL}/proposal-access/create",
         data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
@@ -53,7 +53,7 @@ def test_post_duplicate_proposal_access(authrequests):
     assert response.status_code == HTTPStatus.OK
 
     duplicate_response = authrequests.post(
-        f"{PHT_URL}/proposal-access/prslacl",
+        f"{PHT_URL}/proposal-access/create",
         data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
@@ -89,7 +89,7 @@ def test_get_list_proposal_access_for_user(authrequests):
     proposal_access_json = proposal_access.model_dump_json()
 
     post_response = authrequests.post(
-        f"{PHT_URL}/proposal-access/prslacl",
+        f"{PHT_URL}/proposal-access/create",
         data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
@@ -105,7 +105,7 @@ def test_get_list_proposal_access_for_user(authrequests):
     proposal_access_other_user_json = proposal_access_other_user.model_dump_json()
 
     post_response = authrequests.post(
-        f"{PHT_URL}/proposal-access/prslacl",
+        f"{PHT_URL}/proposal-access/create",
         data=proposal_access_other_user_json,
         headers={"Content-Type": "application/json"},
     )
@@ -145,7 +145,7 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
     proposal_access_json = proposal_access.model_dump_json()
 
     post_response = authrequests.post(
-        f"{PHT_URL}/proposal-access/prslacl",
+        f"{PHT_URL}/proposal-access/create",
         data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
@@ -190,7 +190,7 @@ def test_get_list_proposal_access_for_prsl_id_not_PI(authrequests):
     proposal_access_json = proposal_access.model_dump_json()
 
     post_response = authrequests.post(
-        f"{PHT_URL}/proposal-access/prslacl",
+        f"{PHT_URL}/proposal-access/create",
         data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
@@ -219,7 +219,7 @@ def test_put_proposal_access(authrequests):
     proposal_access_json = proposal_access.model_dump_json()
 
     post_response = authrequests.post(
-        f"{PHT_URL}/proposal-access/prslacl",
+        f"{PHT_URL}/proposal-access/create",
         data=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
