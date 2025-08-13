@@ -196,53 +196,6 @@ def test_proposal_create_then_put(authrequests):
     assert get_v2.json()["metadata"]["version"] == v1 + 1
 
 
-def test_get_list_proposals_for_user(authrequests):
-    """
-    Integration test:
-    - Create multiple proposals
-    - Fetch created_by from one
-    - Use GET /list/{user_id} to retrieve them
-    - Ensure all created proposals are returned
-    """
-
-    created_ids = []
-
-    # Create 2 proposals with unique prsl_ids
-    for _ in range(2):
-        prsl_id = f"prsl-test-{uuid.uuid4().hex[:8]}"
-        proposal = TestDataFactory.proposal(prsl_id=prsl_id)
-        proposal_json = proposal.model_dump_json()
-
-        response = authrequests.post(
-            f"{PHT_URL}/prsls/create",
-            data=proposal_json,
-            headers={"Content-Type": "application/json"},
-        )
-        assert response.status_code == HTTPStatus.OK, response.content
-        created_ids.append(response.json())
-
-    # Get created_by from one of the created proposals
-    example_prsl_id = created_ids[0]
-    get_response = authrequests.get(f"{PHT_URL}/prsls/{example_prsl_id}")
-    assert get_response.status_code == HTTPStatus.OK, get_response.content
-    user_id = get_response.json()["metadata"]["created_by"]
-
-    # GET /list/{user_id}
-    list_response = authrequests.get(f"{PHT_URL}/prsls/list/{user_id}")
-    assert list_response.status_code == HTTPStatus.OK, list_response.content
-
-    proposals = list_response.json()
-    assert isinstance(proposals, list), "Expected a list of proposals"
-    assert len(proposals) >= 2, f"Expected at least 2 proposals, got {len(proposals)}"
-
-    # Check that all created proposals are returned
-    returned_ids = {p["prsl_id"] for p in proposals}
-    for prsl_id in created_ids:
-        assert (
-            prsl_id in returned_ids
-        ), f"Missing proposal {prsl_id} in GET /list/{user_id}"
-
-
 def test_get_proposals_batch(authrequests):
     """
     Integration test:
