@@ -100,13 +100,13 @@ package "pht" as pht_pkg {
     }
     
     ' --- Relationships, return types only ---
-    prsls_endpoints --> validate_proposal
-    prsls_endpoints --> s3_bucket
+    validate_proposal --> prsls_endpoints
+    s3_bucket --> prsls_endpoints
     prsls_endpoints --> email_helper_items
-    panels_endpoints --> validate_duplicates
-    prsls_endpoints --> pht_handler_items
-    report_endpoints --> pht_handler_items
-    reviewers_endpoints --> constants
+    validate_duplicates --> panels_endpoints
+    pht_handler_items --> prsls_endpoints 
+    pht_handler_items --> report_endpoints
+    constants --> reviewers_endpoints
     
 
 }
