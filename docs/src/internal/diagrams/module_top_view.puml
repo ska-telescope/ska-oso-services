@@ -5,6 +5,7 @@ title High Level Module View of OSO Services
 
 package "common" as common_pkg {
 
+    package "constants" <<Rectangle>> {
       object Constants {
         + MID_20_CHANNELS_WIDTH_MHZ
         + MID_CHANNEL_WIDTH_KHZ
@@ -13,13 +14,16 @@ package "common" as common_pkg {
         + LOW_PST_CHANNEL_WIDTH_KHZ
         + LOW_STATION_CHANNEL_WIDTH_MHZ
       }
+    }
 
-      object Coordinates {
+    package "api.coordinates" <<Rectangle>> {
+      object coordinates_items  {
           + EquatorialResponse
           + GalacticResponse
           + ReferenceFrame
           + get_systemcoordinates()
       }
+    }
 
     package "auth" <<Rectangle>> {
         object auth_items {
@@ -27,6 +31,7 @@ package "common" as common_pkg {
       }
     }
 
+      package "coordinateslookup" <<Rectangle>> {
         object coordinateslookup_items {
           + Equatorial
           + Galactic
@@ -35,7 +40,9 @@ package "common" as common_pkg {
           + get_coordinates()
           + round_coord()
         }
+      }
 
+      package "error_handling" <<Rectangle>> {
         object error_handling_items {
           + BadRequestError
           + DuplicateError
@@ -48,14 +55,18 @@ package "common" as common_pkg {
           + oda_not_found_handler()
           + oda_unique_constraint_handler()
         }
+      }
 
+      package "model" <<Rectangle>> {
         object model_items {
           + AppModel
           + ErrorDetails
           + ErrorResponseTraceback
           + ValidationResponse
+        }
       }
 
+      package "osdmapper" <<Rectangle>> {
         object osdmapper_items {
           + Configuration
           + FrequencyBand
@@ -66,6 +77,7 @@ package "common" as common_pkg {
           + _get_low_telescope_configuration()
           + _get_mid_telescope_configuration()
         }
+      }
 }
 
 package "odt" as odt_pkg {
@@ -76,19 +88,25 @@ package "odt" as odt_pkg {
 
 package "pht" as pht_pkg {
     package "api" <<Rectangle>> {
+
+        package "panel_decision" <<Rectangle>> {
           object panel_decision_endpoints {
             + create_panel_decision()
             + get_panel_decision()
             + get_panel_decisions_for_user()
             + update_panel_decision()
           }
+        }
 
+      package "panels" <<Rectangle>> {
         object panels_endpoints {
           + create_panel()
           + get_panel()
           + get_panels_for_user()
         }
+      }
   
+      package "prsls" <<Rectangle>> {
         object prsls_endpoints {
           + create_delete_pdf_url()
           + create_download_pdf_url()
@@ -104,21 +122,28 @@ package "pht" as pht_pkg {
           + update_proposal()
           + validate_proposal()
         }
+      }
   
+      package "report" <<Rectangle>> {
         object report_endpoints {
           + get_report()
         }
+      }
   
+      package "reviewers" <<Rectangle>> {
         object reviewers_endpoints {
           + get_reviewers()
         }
+      }
   
+      package "reviews" <<Rectangle>> {
         object reviews_endpoints {
           + create_review()
           + get_review()
           + get_reviews_for_user()
           + update_review()
         }
+      }
 
     }
     
@@ -136,14 +161,17 @@ package "pht" as pht_pkg {
 
 }
 
+common_pkg -down[hidden]- odt_pkg
+common_pkg -down[hidden]- odt_pkg
+odt_pkg -down[hidden]- pht_pkg
+odt_pkg -down[hidden]- pht_pkg
+
 package "app" <<Rectangle>> {
     class create_app <<function>>
 }
 
 
-
-
-common_pkg -left-> app.create_app
-pht_pkg -down-> app.create_app
-odt_pkg -up-> app.create_app
+common_pkg -up-> app.create_app
+odt_pkg -right-> app.create_app
+pht_pkg -up-> app.create_app
 @enduml
