@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
+from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal import (
     Proposal,
     ProposalAccess,
@@ -31,6 +31,7 @@ from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
+    list_accessible_proposal_ids,
     transform_update_proposal,
 )
 from ska_oso_services.pht.service.s3_bucket import (
@@ -108,6 +109,43 @@ def create_proposal(
         raise BadRequestError(
             detail=f"Failed when attempting to create a proposal: '{err.args[0]}'",
         ) from err
+
+
+@router.get("/mine", summary="Get a list of proposals the user can access")
+def get_proposals_for_user(
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READ},
+        ),
+    ]
+) -> list[Proposal]:
+    """
+    Function that requests to GET /proposals/list are mapped to
+
+    Retrieves the Proposals for the given user ID from the
+    underlying data store, if available
+
+    :param user_id: identifier of the Proposal
+    :return: a tuple of a list of Proposal
+    """
+
+    LOGGER.debug("GET PROPOSAL LIST query for the user: %s", auth.user_id)
+
+    with oda.uow() as uow:
+        proposals = [
+            p
+            for prsl_id in list_accessible_proposal_ids(uow, auth.user_id)
+            if (p := uow.prsls.get(prsl_id)) is not None
+        ]
+
+    if not proposals:
+        LOGGER.info("No proposals found for user: %s", auth.user_id)
+        return []
+
+    LOGGER.debug("Found %d proposals for user: %s", len(proposals), auth.user_id)
+    return proposals
 
 
 @router.get(
@@ -208,36 +246,6 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
     return reviews
 
 
-@router.get(
-    "/list/{user_id}",
-    summary="Get a list of proposals created by a user",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
-)
-def get_proposals_for_user(user_id: str) -> list[Proposal]:
-    """
-    Function that requests to GET /proposals/list are mapped to
-
-    Retrieves the Proposals for the given user ID from the
-    underlying data store, if available
-
-    :param user_id: identifier of the Proposal
-    :return: a tuple of a list of Proposal
-    """
-
-    LOGGER.debug("GET PROPOSAL LIST query for the user: %s", user_id)
-
-    with oda.uow() as uow:
-        query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        proposals = uow.prsls.query(query_param)
-
-        if proposals is None:
-            LOGGER.info("No proposals found for user: %s", user_id)
-            return []
-
-        LOGGER.debug("Found %d proposals for user: %s", len(proposals), user_id)
-        return proposals
-
-
 @router.put(
     "/{prsl_id}",
     summary="Update an existing proposal",
@@ -319,10 +327,13 @@ def validate_proposal(prsl: Proposal) -> dict:
     summary="Send an async email",
     dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
 )
-async def send_email(request: EmailRequest):
+async def send_email(
+    request: EmailRequest,
+):
     """
     Endpoint to send SKAO email asynchronously via SMTP
     """
+
     await send_email_async(request.email, request.prsl_id)
     return {"message": "Email sent successfully"}
 

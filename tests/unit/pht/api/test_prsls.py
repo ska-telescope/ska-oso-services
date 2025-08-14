@@ -30,6 +30,49 @@ def has_validation_error(detail, field: str) -> bool:
     return any(field in str(e.get("loc", [])) for e in detail)
 
 
+from ska_oso_services.pht.service import proposal_service as ps
+
+MODULE = "ska_oso_services.pht.service.proposal_service"
+
+
+class TestListAccess:
+    @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
+    @mock.patch(f"{MODULE}.CustomQuery", autospec=True)
+    def test_list_ids_happy_path(self, mock_cq, mock_latest):
+        user_id = "user-123"
+        q = object()
+        mock_cq.return_value = q
+
+        uow = mock.MagicMock()
+        rows_init = [object()]
+        uow.prslacc.query.return_value = rows_init
+
+        mock_latest.return_value = [
+            SimpleNamespace(access_id="a2", prsl_id="prsl-b"),
+            SimpleNamespace(access_id="a1", prsl_id="prsl-a"),
+            SimpleNamespace(access_id="a3", prsl_id="prsl-a"),
+        ]
+
+        got = ps.list_accessible_proposal_ids(uow, user_id)
+
+        assert got == ["prsl-a", "prsl-b"]
+        mock_cq.assert_called_once_with(user_id=user_id)
+        uow.prslacc.query.assert_called_once_with(q)
+        mock_latest.assert_called_once_with(rows_init, "access_id")
+
+    @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
+    @mock.patch(f"{MODULE}.CustomQuery", autospec=True)
+    def test_list_ids_none_paths(self, mock_cq, mock_latest):
+        uow = mock.MagicMock()
+        uow.prslacc.query.return_value = None
+        mock_latest.return_value = None
+
+        got = ps.list_accessible_proposal_ids(uow, "u")
+
+        assert got == []
+        mock_latest.assert_called_once_with([], "access_id")
+
+
 class TestProposalAPI:
     @mock.patch("ska_oso_services.pht.api.prsls.get_osd_data")
     def test_get_osd_data_fail(self, mock_get_osd, client):
@@ -190,8 +233,7 @@ class TestProposalAPI:
         assert "Failed when attempting to create a proposal" in data["detail"]
 
     @mock.patch(
-        "ska_oso_services.pht.service.proposal_service."
-        "assert_user_has_permission_for_proposal",
+        f"{MODULE}.assert_user_has_permission_for_proposal",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
@@ -218,8 +260,7 @@ class TestProposalAPI:
         assert "Could not find proposal" in response.json()["detail"]
 
     @mock.patch(
-        "ska_oso_services.pht.service.proposal_service."
-        "assert_user_has_permission_for_proposal",
+        f"{MODULE}.assert_user_has_permission_for_proposal",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
@@ -248,36 +289,47 @@ class TestProposalAPI:
         assert data["prsl_id"] == proposal_id
         assert data["info"]["title"] == proposal.info.title
 
+    @mock.patch(
+        "ska_oso_services.pht.api.prsls.list_accessible_proposal_ids", autospec=True
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_get_proposal_list_success(self, mock_oda, client):
-        """
-        Check if the get_proposals_for_user returns proposals correctly.
-        """
+    def test_get_proposal_list_success(self, mock_uow, mock_list_ids, client_get):
+        # Arrange
         proposal_objs = [TestDataFactory.proposal(), TestDataFactory.proposal()]
-        uow_mock = mock.MagicMock()
-        uow_mock.prsls.query.return_value = proposal_objs
-        mock_oda.return_value.__enter__.return_value = uow_mock
+        proposal_ids = [p.prsl_id for p in proposal_objs]
+        mock_list_ids.return_value = proposal_ids
 
-        user_id = "DefaultUser"
-        response = client.get(f"{PROPOSAL_API_URL}/list/{user_id}")
-        assert response.status_code == HTTPStatus.OK
-        assert isinstance(response.json(), list)
-        assert len(response.json()) == len(proposal_objs)
+        uow = mock.MagicMock()
+        uow.prsls.get.side_effect = lambda pid: next(
+            (p for p in proposal_objs if p.prsl_id == pid), None
+        )
 
+        mock_uow.return_value.__enter__.return_value = uow
+        mock_uow.return_value.__exit__.return_value = None
+
+        # Act
+        resp = client_get(f"{PROPOSAL_API_URL}/mine")
+
+        # Assert
+        assert resp.status_code == HTTPStatus.OK, resp.json()
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) == len(proposal_objs)
+        mock_list_ids.assert_called_once()
+
+    @mock.patch(
+        "ska_oso_services.pht.api.prsls.list_accessible_proposal_ids", autospec=True
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_get_proposal_list_none(self, mock_oda, client):
-        """
-        Should return empty list if no proposals are found.
-        """
-        uow_mock = mock.MagicMock()
-        uow_mock.prsls.query.return_value = None
-        mock_oda.return_value.__enter__.return_value = uow_mock
+    def test_get_proposal_list_empty(self, mock_uow, mock_list_ids, client_get):
+        mock_list_ids.return_value = []
 
-        user_id = "user123"
-        response = client.get(f"{PROPOSAL_API_URL}/list/{user_id}")
+        mock_uow.return_value.__enter__.return_value = mock.MagicMock()
+        mock_uow.return_value.__exit__.return_value = None
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.json() == []
+        resp = client_get(f"{PROPOSAL_API_URL}/mine")
+        assert resp.status_code == HTTPStatus.OK, resp.json()
+        assert resp.json() == []
 
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_proposal_put_success(self, mock_uow, client):
