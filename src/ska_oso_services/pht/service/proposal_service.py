@@ -64,7 +64,7 @@ def assert_user_has_permission_for_proposal(
 def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
     """
     Return all proposal IDs that have any access row for the user.
-    No permission check/filtering.
+    No permission check/filtering as th euser will always have a basic "view" right.
     """
     rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
     rows = get_latest_entity_by_id(rows_init, "access_id") or []
