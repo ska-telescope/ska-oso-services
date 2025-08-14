@@ -31,7 +31,7 @@ def has_validation_error(detail, field: str) -> bool:
 
 
 class TestProposalAPI:
-    @mock.patch("ska_oso_services.pht.api.prsls.get_osd")
+    @mock.patch("ska_oso_services.pht.api.prsls.get_osd_data")
     def test_get_osd_data_fail(self, mock_get_osd, client):
         mock_get_osd.return_value = ({"detail": "some error"}, None)
         cycle = "-1"
@@ -41,7 +41,7 @@ class TestProposalAPI:
         res = response.json()
         assert {"detail": "some error"} == res
 
-    @mock.patch("ska_oso_services.pht.api.prsls.get_osd")
+    @mock.patch("ska_oso_services.pht.api.prsls.get_osd_data")
     def test_get_osd_data_success(self, mock_get_osd, client):
         expected = {
             "observatory_policy": {
