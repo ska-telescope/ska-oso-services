@@ -16,9 +16,8 @@ PANELS_API_URL = f"{PHT_URL}/panels"
 
 
 def test_get_osd_data_fail(authrequests):
-    cycle = "-1"
+    cycle = 9999
     response = authrequests.get(f"{PHT_URL}/prsls/osd/{cycle}")
-
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 

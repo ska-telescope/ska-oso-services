@@ -15,7 +15,6 @@ from ska_oso_pdm.proposal import (
     ProposalRole,
 )
 from ska_oso_pdm.proposal_management.review import PanelReview
-from ska_ost_osd.rest.api.resources import get_osd
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from ska_oso_services.common import oda
@@ -25,6 +24,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.common.osdmapper import get_osd_data
 from ska_oso_services.pht.models.domain import OsdDataModel
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
@@ -57,8 +57,7 @@ router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 )
 def get_osd_by_cycle(cycle: int) -> OsdDataModel:
     LOGGER.debug("GET OSD data cycle: %s", cycle)
-
-    data = get_osd(cycle_id=cycle, source="car")
+    data = get_osd_data(cycle_id=cycle, source="car")
     if type(data) is tuple and len(data) == 2:
         # Error happened at OSD
         detail = data[0]["detail"]

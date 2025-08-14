@@ -58,7 +58,7 @@ ska-db-oda = "^11.1.0"
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
-ska-ost-osd = "3.1.1"
+ska-ost-osd = "^4.0.0"
 aiosmtplib = "^4.0.1"
 boto3 = "^1.38.13"
 

@@ -6,8 +6,11 @@ configuration needed for the application.
 from typing import Optional
 
 from pydantic import dataclasses
-from ska_ost_osd.rest.api.resources import get_osd
+from ska_ost_osd.osd.common.error_handling import OSDModelError
+from ska_ost_osd.osd.models.models import OSDQueryParams
+from ska_ost_osd.osd.routers.api import get_osd
 
+from ska_oso_services.common.error_handling import OSDError
 from ska_oso_services.common.model import AppModel
 
 SUPPORTED_ARRAY_ASSEMBLIES = ["AA0.5", "AA1"]
@@ -60,7 +63,7 @@ def configuration_from_osd() -> Configuration:
 def _get_mid_telescope_configuration() -> MidConfiguration:
     subarrays = []
     for array_assembly in SUPPORTED_ARRAY_ASSEMBLIES:
-        mid_response = get_osd(
+        mid_response = get_osd_data(
             array_assembly=array_assembly, capabilities="mid", source="car"
         )
         subarrays.append(
@@ -89,7 +92,7 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
 def _get_low_telescope_configuration() -> LowConfiguration:
     subarrays = []
     for array_assembly in SUPPORTED_ARRAY_ASSEMBLIES:
-        low_response = get_osd(
+        low_response = get_osd_data(
             array_assembly=array_assembly, capabilities="low", source="car"
         )
         subarrays.append(
@@ -106,3 +109,25 @@ def _get_low_telescope_configuration() -> LowConfiguration:
     return LowConfiguration(
         frequency_band=FrequencyBand(**receiver_information), subarrays=subarrays
     )
+
+
+def get_osd_data(*args, **kwargs):
+    """
+    Wrapper function for `get_osd` that fetches osd data
+
+    This function constructs an `OSDQueryParams` object from the given
+    arguments and keyword arguments, calls `get_osd` with these parameters,
+    and returns the result data. If `get_osd` raises an `OSDModelError` or
+    `ValueError`, this function wraps and raises it as an `OSDError`
+    """
+    try:
+        params = OSDQueryParams(*args, **kwargs)
+        osd_data = get_osd(params)
+    except (OSDModelError, ValueError) as error:
+        raise OSDError(error)
+    data = (
+        osd_data.model_dump()["result_data"]
+        if hasattr(osd_data, "model_dump")
+        else osd_data
+    )
+    return data

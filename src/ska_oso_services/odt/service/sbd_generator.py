@@ -23,12 +23,12 @@ from ska_oso_pdm.sb_definition.mccs.mccs_allocation import (
     SubarrayBeamConfiguration,
 )
 from ska_oso_pdm.sb_definition.procedures import GitScript
-from ska_ost_osd.rest.api.resources import get_osd
 
 from ska_oso_services.common.constants import (
     LOW_STATION_CHANNEL_WIDTH_MHZ,
     MID_CHANNEL_WIDTH_KHZ,
 )
+from ska_oso_services.common.osdmapper import get_osd_data
 
 
 def generate_sbds(obs_block: ObservingBlock) -> list[SBDefinition]:
@@ -224,8 +224,9 @@ def _scan_time_ms_from_science_programme(
 def _dish_allocation(
     subarray: SubArrayMID, scan_sequence: List[ScanDefinition]
 ) -> DishAllocation:
-    osd_data = get_osd(array_assembly=subarray.value, capabilities="mid", source="car")
-
+    osd_data = get_osd_data(
+        array_assembly=subarray.value, capabilities="mid", source="car"
+    )
     dish_ids = osd_data["capabilities"]["mid"][subarray.value]["number_dish_ids"]
 
     return DishAllocation(
@@ -239,7 +240,9 @@ def _dish_allocation(
 def _mccs_allocation(
     subarray: SubArrayLOW, scan_sequence: List[ScanDefinition]
 ) -> MCCSAllocation:
-    osd_data = get_osd(array_assembly=subarray.value, capabilities="low", source="car")
+    osd_data = get_osd_data(
+        array_assembly=subarray.value, capabilities="low", source="car"
+    )
 
     station_ids = osd_data["capabilities"]["low"][subarray.value]["number_station_ids"]
 
