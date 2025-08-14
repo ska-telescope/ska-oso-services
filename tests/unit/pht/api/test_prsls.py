@@ -3,10 +3,12 @@ Unit tests for ska_oso_pht_services.api
 """
 
 from contextlib import contextmanager
+from datetime import datetime
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
 
+import pytest
 from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRefused
 from fastapi import status
 from ska_db_oda.persistence.domain.query import CustomQuery
@@ -331,18 +333,44 @@ class TestProposalAPI:
         assert resp.status_code == HTTPStatus.OK, resp.json()
         assert resp.json() == []
 
+    @pytest.mark.parametrize(
+        "proposal_status,permissions",
+        [
+            ("submitted", ["submit", "view"]),
+            ("submitted", ["submit"]),
+            ("draft", ["update", "view"]),
+            ("draft", ["update"]),
+        ],
+    )
+    @mock.patch(
+        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal_return_rows",
+        autospec=True,
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_proposal_put_success(self, mock_uow, client):
+    def test_proposal_put_success(
+        self, mock_uow, mock_acl, proposal_status, permissions, client
+    ):
         """
         Check the prsls_put method returns the expected response
         """
+
         uow_mock = mock.MagicMock()
         uow_mock.prsl.__contains__.return_value = True
-        proposal_obj = TestDataFactory.proposal()
+
+        if proposal_status == "submitted":
+            proposal_obj = TestDataFactory.complete_proposal()
+        else:
+            proposal_obj = TestDataFactory.proposal()
+
+        proposal_obj.status = proposal_status
         proposal_id = proposal_obj.prsl_id
         uow_mock.prsls.add.return_value = proposal_obj
         uow_mock.prsls.get.return_value = proposal_obj
         mock_uow().__enter__.return_value = uow_mock
+
+        mock_acl.return_value = [
+            TestDataFactory.proposal_access(permissions=permissions)
+        ]
 
         result = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
@@ -353,8 +381,12 @@ class TestProposalAPI:
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, proposal_obj.model_dump_json())
 
+    @mock.patch(
+        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal_return_rows",
+        autospec=True,
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_update_proposal_not_found(self, mock_uow, client):
+    def test_update_proposal_not_found(self, mock_uow, mock_acl, client):
         """
         Should return 404 if proposal doesn't exist.
         """
@@ -365,6 +397,10 @@ class TestProposalAPI:
         uow_mock.prsls.get.return_value = None  # not found
         mock_uow.return_value.__enter__.return_value = uow_mock
 
+        mock_acl.return_value = [
+            TestDataFactory.proposal_access(permissions=["update"])
+        ]
+
         response = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
             data=proposal_obj.model_dump_json(),
@@ -374,13 +410,21 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert "not found" in response.json()["detail"].lower()
 
+    @mock.patch(
+        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal_return_rows",
+        autospec=True,
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_update_proposal_id_mismatch(self, mock_uow, client):
+    def test_update_proposal_id_mismatch(self, mock_uow, mock_acl, client):
         """
         Should raise 422 when ID in path != payload.
         """
         proposal_obj = TestDataFactory.proposal()
         path_id = "diff-id"
+
+        mock_acl.return_value = [
+            TestDataFactory.proposal_access(permissions=["update"])
+        ]
 
         response = client.put(
             f"{PROPOSAL_API_URL}/{path_id}",
@@ -391,8 +435,12 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
         assert "do not match" in response.json()["detail"].lower()
 
+    @mock.patch(
+        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal_return_rows",
+        autospec=True,
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_update_proposal_validation_error(self, mock_oda, client):
+    def test_update_proposal_validation_error(self, mock_oda, mock_acl, client):
         """
         Should return 400 if .add() raises ValueError.
         """
@@ -403,6 +451,10 @@ class TestProposalAPI:
         uow_mock.prsls.get.return_value = proposal_obj
         uow_mock.prsls.add.side_effect = ValueError("Invalid proposal content")
         mock_oda.return_value.__enter__.return_value = uow_mock
+
+        mock_acl.return_value = [
+            TestDataFactory.proposal_access(permissions=["update"])
+        ]
 
         response = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
