@@ -18,7 +18,7 @@ Unreleased
 * Added PUT `/pht/proposal-access/user/{access_id}` for pht
 * Adds module_view page and diagrams to documentation
 * Adds the functionality to create permission when a proposal is created 
-* Adds the functionality to check permission when a user gets a proposal by id
+* Adds the functionality to check permission when a user gets a proposal by user_d from auth and prsl_id
 
 2.0.3
 ***********
