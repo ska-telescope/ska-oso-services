@@ -86,7 +86,6 @@ def create_proposal(
 
     try:
         with oda.uow() as uow:
-            created_prsl = uow.prsls.add(proposal)
             created_prsl = uow.prsls.add(proposal, auth.user_id)
             create_prslacc = ProposalAccess(
                 access_id=generate_entity_id("prslacc"),

@@ -19,12 +19,10 @@ from ska_ser_logging import configure_logging
 from ska_oso_services import odt, pht
 from ska_oso_services.common import api, oda
 from ska_oso_services.common.error_handling import (
-    OSDError,
     dangerous_internal_server_handler,
     oda_error_handler,
     oda_not_found_handler,
     oda_unique_constraint_handler,
-    osd_error_handler,
 )
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
@@ -72,7 +70,6 @@ def create_app(production=PRODUCTION) -> FastAPI:
     app.exception_handler(ODANotFound)(oda_not_found_handler)
     app.exception_handler(ODAError)(oda_error_handler)
     app.exception_handler(UniqueConstraintViolation)(oda_unique_constraint_handler)
-    app.exception_handler(OSDError)(osd_error_handler)
 
     if not production:
         app.exception_handler(Exception)(dangerous_internal_server_handler)

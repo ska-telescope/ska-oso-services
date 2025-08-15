@@ -85,10 +85,12 @@ def create_panel(param: Panel) -> str:
 )
 def auto_create_panel(param: PanelCreateRequest) -> str:
     """
-    Creates panels:
+    Auto creates panels:
     - If science verification, create a single
       'Science Verification' panel with all submitted proposals assigned.
-    - Else: Create panels for PANEL_NAME_POOL and assign proposals by science_category.
+    - Else: Create panels for PANEL_NAME_POOL, which is the science catgories 
+        (to be pulled in from OSD when available) and assign proposals by 
+        science_category using the field science category in the proposal.
     """
     with oda.uow() as uow:
         proposals = (
