@@ -47,10 +47,10 @@ class PanelCreateRequest(AppModel):
 
     name: str
     reviewers: list[str] = Field(
-        default_factory=list, description="List of reviewer entries."
+        default_factory=list, description="List of reviewer entries.", example=[]
     )
     proposals: list[str] = Field(
-        default_factory=list, description="List of proposal entries."
+        default_factory=list, description="List of proposal entries.", example=[]
     )
 
 
