@@ -343,7 +343,7 @@ class TestProposalAPI:
         ],
     )
     @mock.patch(
-        "ska_oso_services.pht.api.prsls." "assert_user_has_permission_for_proposal",
+        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
@@ -391,7 +391,7 @@ class TestProposalAPI:
         ],
     )
     @mock.patch(
-        "ska_oso_services.pht.api.prsls." "assert_user_has_permission_for_proposal",
+        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
@@ -462,7 +462,7 @@ class TestProposalAPI:
         assert result.status_code == HTTPStatus.FORBIDDEN
 
     @mock.patch(
-        "ska_oso_services.pht.api.prsls." "assert_user_has_permission_for_proposal",
+        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
@@ -491,7 +491,7 @@ class TestProposalAPI:
         assert "not found" in response.json()["detail"].lower()
 
     @mock.patch(
-        "ska_oso_services.pht.api.prsls." "assert_user_has_permission_for_proposal",
+        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
@@ -516,7 +516,7 @@ class TestProposalAPI:
         assert "do not match" in response.json()["detail"].lower()
 
     @mock.patch(
-        "ska_oso_services.pht.api.prsls." "assert_user_has_permission_for_proposal",
+        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
