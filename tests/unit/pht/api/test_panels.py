@@ -282,7 +282,6 @@ class TestPanelAutoCreateAPI:
             json=payload,
             headers={"Content-type": "application/json"},
         )
-        print("Response JSON:", response.json())
         assert response.status_code == HTTPStatus.OK
         panel_id = response.json()
         assert isinstance(panel_id, str)

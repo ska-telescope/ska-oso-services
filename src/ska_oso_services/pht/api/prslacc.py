@@ -21,7 +21,7 @@ from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 LOGGER = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/proposal-access", tags=["PPT API - Proposal Acess Management"]
+    prefix="/proposal-access", tags=["PPT API - Proposal Access Management"]
 )
 
 

@@ -158,13 +158,9 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
 
     get_result = get_response.json()
 
-    print("get_response", get_response)
-
     get_result_filtered = [
         item for item in get_result if item["prsl_id"] == TEST_PRSL_ID
     ]
-
-    print("get_result_filtered", get_result_filtered)
 
     assert len(get_result_filtered) == 1
     assert get_result_filtered[0]["prsl_id"] == TEST_PRSL_ID
@@ -199,7 +195,6 @@ def test_get_list_proposal_access_for_prsl_id_not_PI(authrequests):
 
     get_response = authrequests.get(f"{PHT_URL}/proposal-access/{TEST_PRSL_ID}")
 
-    print("get_response", get_response)
     assert get_response.status_code == HTTPStatus.FORBIDDEN
 
 
@@ -233,7 +228,7 @@ def test_put_proposal_access(authrequests):
         user_id=TEST_USER,
         role="Principal Investigator",
         prsl_id="prsl_id_test_put_proposal_access",
-        permission=NEW_PERMISSIONS,
+        permissions=NEW_PERMISSIONS,
     )
 
     put_proposal_access_json = put_proposal_access.model_dump_json()
