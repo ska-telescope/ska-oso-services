@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from ska_db_oda.persistence.domain.query import CustomQuery
-from ska_oso_pdm.proposal import Proposal
+from ska_oso_pdm.proposal import Proposal, ProposalAccess
 
 from ska_oso_services.common.error_handling import ForbiddenError
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
@@ -42,10 +42,10 @@ def assert_user_has_permission_for_proposal(
     uow,
     user_id: str,
     prsl_id: str,
-) -> None:
+) -> list[ProposalAccess]:
     """
     Ensure the user has an entry for the supplied proposal id.
-    Raises ForbiddenError if not allowed.
+    Raises ForbiddenError if not allowed and return rows.
     """
     rows = (
         get_latest_entity_by_id(
@@ -59,6 +59,7 @@ def assert_user_has_permission_for_proposal(
         raise ForbiddenError(
             detail=f"You do not have access to this proposal with id:{prsl_id}"
         )
+    return rows
 
 
 def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:

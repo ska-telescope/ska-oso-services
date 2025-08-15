@@ -263,17 +263,17 @@ class TestDataFactory:
         prsl_id: str = "panel-test-20250616-00001",
         user_id: str = "rev-001",
         role: str = "Principal Investigator",
-        permission: list[str] = None,
+        permissions: list[str] = None,
     ) -> ProposalAccess:
-        if permission is None:
-            permission = ["view"]
+        if permissions is None:
+            permissions = ["view"]
 
         data = {
             "access_id": access_id,
             "prsl_id": prsl_id,
             "user_id": user_id,
             "role": role,
-            "permissions": permission,
+            "permissions": permissions,
         }
 
         proposal_access = ProposalAccess.model_validate_json(json.dumps(data))
@@ -314,6 +314,7 @@ VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(prj_id=None).model_dump_jso
 
 # proposal entry
 VALID_NEW_PROPOSAL = TestDataFactory.proposal().model_dump_json()
+VALID_COMPLETE_PROPOSAL = TestDataFactory.complete_proposal().model_dump_json()
 VALID_REVIEW = TestDataFactory.reviews().model_dump_json()
 VALID_PANEL_DECISION = TestDataFactory.panel_decision().model_dump_json()
 PAYLOAD_SUCCESS = TestDataFactory.email_payload()

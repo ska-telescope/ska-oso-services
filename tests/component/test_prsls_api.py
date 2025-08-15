@@ -9,7 +9,9 @@ import json
 import uuid
 from http import HTTPStatus
 
-from ..unit.util import VALID_NEW_PROPOSAL, TestDataFactory
+from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
+
+from ..unit.util import VALID_COMPLETE_PROPOSAL, VALID_NEW_PROPOSAL, TestDataFactory
 from . import PHT_URL
 
 PANELS_API_URL = f"{PHT_URL}/panels"
@@ -193,6 +195,172 @@ def test_proposal_create_then_put(authrequests):
     get_v2 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
     assert get_v2.status_code == HTTPStatus.OK, get_v2.content
     assert get_v2.json()["metadata"]["version"] == v1 + 1
+
+
+def test_proposal_create_then_put_submit(authrequests):
+    """
+    POST /prsls/create with a unique prsl_id
+    then PUT /prsls/{identifier} using complete submit proposal
+    and verify metadata.version increments.
+    """
+
+    # Make payload unique
+    data = json.loads(VALID_NEW_PROPOSAL)
+    data["prsl_id"] = f"{data.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
+
+    # Create proposal
+    post_response = authrequests.post(
+        f"{PHT_URL}/prsls/create",
+        data=json.dumps(data),
+        headers={"Content-Type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
+    prsl_id = post_response.json()
+
+    # Get the created proposal
+    get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    assert get_v1.status_code == HTTPStatus.OK, get_v1.content
+    v1 = get_v1.json()["metadata"]["version"]
+
+    # Use a completed proposal with submitted status and PUT back
+    updated_complete_submit_proposal = json.loads(VALID_COMPLETE_PROPOSAL)
+    updated_complete_submit_proposal["prsl_id"] = prsl_id
+
+    put_resp = authrequests.put(
+        f"{PHT_URL}/prsls/{prsl_id}",
+        data=json.dumps(updated_complete_submit_proposal),
+        headers={"Content-Type": "application/json"},
+    )
+    assert put_resp.status_code == HTTPStatus.OK, put_resp.content
+
+    # Verify version increment
+    get_v2 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    assert get_v2.status_code == HTTPStatus.OK, get_v2.content
+    assert get_v2.json()["metadata"]["version"] == v1 + 1
+
+
+def test_proposal_create_then_put_update_forbidden(authrequests):
+    """
+    POST /prsls/create with a unique prsl_id
+    GET /proposal-access/{prsl_id} to get list of proposal access
+    filter returned proposal access by TEST_USER
+    PUT /proposal-access/{access_id} to remove(update) submit
+    then PUT /prsls/{identifier} to update proposal
+    verify return forbidden and version increment does not occur
+    """
+
+    # Make payload unique
+    data = json.loads(VALID_NEW_PROPOSAL)
+    data["prsl_id"] = f"{data.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
+
+    # Create proposal
+    post_response = authrequests.post(
+        f"{PHT_URL}/prsls/create",
+        data=json.dumps(data),
+        headers={"Content-Type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
+    prsl_id = post_response.json()
+
+    # Get the created proposal
+    get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    assert get_v1.status_code == HTTPStatus.OK, get_v1.content
+    v1 = get_v1.json()["metadata"]["version"]
+
+    # Get my proposal access record and remove(update) access from proposal access
+    access_records = authrequests.get(f"{PHT_URL}/proposal-access/{prsl_id}")
+
+    filtered_access = [
+        obj for obj in access_records.json() if obj.get("user_id") == TEST_USER
+    ]
+    my_access_record = filtered_access[0]
+    my_access_id = my_access_record["access_id"]
+
+    my_access_record["permissions"] = ["view"]
+
+    authrequests.put(
+        f"{PHT_URL}/proposal-access/user/{my_access_id}",
+        data=json.dumps(my_access_record),
+        headers={"Content-Type": "application/json"},
+    )
+
+    # Update title and PUT back
+    updated_entity = get_v1.json()
+    updated_entity["title"] = (
+        f"{updated_entity.get('title', 'Untitled')} (updated title)"
+    )
+    put_resp = authrequests.put(
+        f"{PHT_URL}/prsls/{prsl_id}",
+        data=json.dumps(updated_entity),
+        headers={"Content-Type": "application/json"},
+    )
+    assert put_resp.status_code == HTTPStatus.FORBIDDEN
+
+    # Verify version increment not occured
+    get_still_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    assert get_still_v1.status_code == HTTPStatus.OK, get_still_v1.content
+    assert get_still_v1.json()["metadata"]["version"] == v1
+
+
+def test_proposal_create_then_put_submit_forbidden(authrequests):
+    """
+    POST /prsls/create with a unique prsl_id
+    GET /proposal-access/{prsl_id} to get list of proposal access
+    filter returned proposal access by TEST_USER
+    PUT /proposal-access/{access_id} to remove(update) submit/update permission
+    then PUT /prsls/{identifier}
+    verify return forbidden and version increment does not occur
+    """
+
+    # Make payload unique
+    data = json.loads(VALID_NEW_PROPOSAL)
+    data["prsl_id"] = f"{data.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
+
+    # Create proposal
+    post_response = authrequests.post(
+        f"{PHT_URL}/prsls/create",
+        data=json.dumps(data),
+        headers={"Content-Type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
+    prsl_id = post_response.json()
+
+    # Get the created proposal
+    get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    assert get_v1.status_code == HTTPStatus.OK, get_v1.content
+    v1 = get_v1.json()["metadata"]["version"]
+
+    # Get my proposal access record and remove(update) access from proposal access
+    access_records = authrequests.get(f"{PHT_URL}/proposal-access/{prsl_id}")
+
+    filtered_access = [
+        obj for obj in access_records.json() if obj.get("user_id") == TEST_USER
+    ]
+    my_access_record = filtered_access[0]
+    my_access_id = my_access_record["access_id"]
+
+    my_access_record["permissions"] = ["view"]
+
+    authrequests.put(
+        f"{PHT_URL}/proposal-access/user/{my_access_id}",
+        data=json.dumps(my_access_record),
+        headers={"Content-Type": "application/json"},
+    )
+
+    updated_complete_submit_proposal = json.loads(VALID_COMPLETE_PROPOSAL)
+    updated_complete_submit_proposal["prsl_id"] = prsl_id
+
+    put_resp = authrequests.put(
+        f"{PHT_URL}/prsls/{prsl_id}",
+        data=json.dumps(updated_complete_submit_proposal),
+        headers={"Content-Type": "application/json"},
+    )
+    assert put_resp.status_code == HTTPStatus.FORBIDDEN
+
+    # Verify version increment not occured
+    get_still_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    assert get_still_v1.status_code == HTTPStatus.OK, get_still_v1.content
+    assert get_still_v1.json()["metadata"]["version"] == v1
 
 
 def test_get_proposals_batch(authrequests):
