@@ -15,12 +15,12 @@ from ska_oso_services.common.error_handling import (
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/panel-decisions", tags=["PMT API - Panel Decision"])
+router = APIRouter(prefix="/panel/decision", tags=["PMT API - Panel Decision"])
 
 
 @router.post(
     "/",
-    summary="Create a new Panel decision",
+    summary="Create a new Panel decision for a proposal",
     dependencies=[
         Permissions(
             roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
@@ -30,7 +30,7 @@ router = APIRouter(prefix="/panel-decisions", tags=["PMT API - Panel Decision"])
 )
 def create_panel_decision(decisions: PanelDecision) -> str:
     """
-    Creates a new decision for a panel in the ODA
+    Creates a new decision for a panel in the underlying data store
     """
 
     LOGGER.debug("POST DECISIONS create")
@@ -51,7 +51,7 @@ def create_panel_decision(decisions: PanelDecision) -> str:
 
 @router.get(
     "/{decision_id}",
-    summary="Retrieve an existing decision",
+    summary="Retrieve an existing panel decision for proposals",
     dependencies=[
         Permissions(
             roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],

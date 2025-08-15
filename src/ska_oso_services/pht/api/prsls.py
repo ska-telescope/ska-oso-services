@@ -56,9 +56,17 @@ router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 
 @router.get(
     "/osd/{cycle}",
-    summary="Retrieve OSD data for a particular cycle",
+    summary="Retrieve OSD data for a given cycle",
 )
 def get_osd_by_cycle(cycle: int) -> OsdDataModel:
+    """The queries the OSD data by cycle id. This data is made available for the PHT
+
+    Args:
+        cycle (int): [description]
+
+    Returns:
+        OsdDataModel: [description]
+    """
     LOGGER.debug("GET OSD data cycle: %s", cycle)
     data = get_osd_data(cycle_id=cycle, source="car")
     if type(data) is tuple and len(data) == 2:
@@ -123,13 +131,16 @@ def get_proposals_for_user(
     ]
 ) -> list[Proposal]:
     """
-    Function that requests to GET /proposals/list are mapped to
+    List all proposals accessible to the authenticated user by user_id
+    from the underlying data store.
 
-    Retrieves the Proposals for the given user ID from the
-    underlying data store, if available
+    The result is computed by:
+      1) Resolving accessible proposal ids via `list_accessible_proposal_ids`.
+      2) Fetching each proposal by id.
+      3) Returning a list (empty if none found).
 
-    :param user_id: identifier of the Proposal
-    :return: a tuple of a list of Proposal
+    Returns:
+        List[Proposal]: Proposals accessible to the current user.
     """
 
     LOGGER.debug("GET PROPOSAL LIST query for the user: %s", auth.user_id)

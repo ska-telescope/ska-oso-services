@@ -46,8 +46,12 @@ class PanelCreateRequest(AppModel):
     """Schema for creating a new panel."""
 
     name: str
-    reviewers: list
-    proposals: list
+    reviewers: list[str] = Field(
+        default_factory=list, description="List of reviewer entries."
+    )
+    proposals: list[str] = Field(
+        default_factory=list, description="List of proposal entries."
+    )
 
 
 class ProposalReportResponse(AppModel):
@@ -80,3 +84,4 @@ class ProposalReportResponse(AppModel):
     review_submitted_on: str | None = None
     decision_on: str | None = None
     decision_status: str | None = None
+    country: str | None = None  # get the office location of the PI from entra id
