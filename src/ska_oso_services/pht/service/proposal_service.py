@@ -38,29 +38,6 @@ def transform_update_proposal(data: Proposal) -> Proposal:
     )
 
 
-# def assert_user_has_permission_for_proposal(
-#     uow,
-#     user_id: str,
-#     prsl_id: str,
-# ) -> None:
-#     """
-#     Ensure the user has an entry for the supplied proposal id.
-#     Raises ForbiddenError if not allowed.
-#     """
-#     rows = (
-#         get_latest_entity_by_id(
-#             uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id)),
-#             "access_id",
-#         )
-#         or []
-#     )
-#     access = rows[0] if rows else None
-#     if not access:
-#         raise ForbiddenError(
-#             detail=f"You do not have access to this proposal with id:{prsl_id}"
-#         )
-
-
 def assert_user_has_permission_for_proposal(
     uow,
     user_id: str,
