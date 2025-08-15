@@ -33,7 +33,6 @@ from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
-    assert_user_has_permission_for_proposal_return_rows,
     list_accessible_proposal_ids,
     transform_update_proposal,
 )
@@ -273,7 +272,7 @@ def update_proposal(
     """
     with oda.uow() as uow:
         # Check if user in propsal access - forbidden error raised inside
-        rows = assert_user_has_permission_for_proposal_return_rows(
+        rows = assert_user_has_permission_for_proposal(
             uow=uow, prsl_id=prsl_id, user_id=auth.user_id
         )
         transform_body = transform_update_proposal(prsl)
