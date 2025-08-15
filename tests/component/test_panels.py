@@ -139,7 +139,6 @@ def test_auto_create_category_panels(authrequests):
         json=payload,
         headers={"Content-Type": "application/json"},
     )
-    print("Category response:", response.json())
 
     assert response.status_code == HTTPStatus.OK
     result = response.json()
@@ -164,7 +163,6 @@ def test_auto_create_science_verification_panel(authrequests):
         json=payload,
         headers={"Content-Type": "application/json"},
     )
-    print("SV response:", response.json())
 
     assert response.status_code == HTTPStatus.OK
     panel_id = response.json()

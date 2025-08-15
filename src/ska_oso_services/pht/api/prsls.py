@@ -272,7 +272,7 @@ def update_proposal(
     :return: the updated Proposal object
     """
     with oda.uow() as uow:
-        # Check if user in propsal access - error handled in function when it return no row
+        # Check if user in propsal access - forbidden error raised inside
         rows = assert_user_has_permission_for_proposal_return_rows(
             uow=uow, prsl_id=prsl_id, user_id=auth.user_id
         )
@@ -287,7 +287,9 @@ def update_proposal(
                     auth.user_id,
                 )
                 raise ForbiddenError(
-                    detail=f"You do not have access to submit this proposal with id:{prsl_id}"
+                    detail=(
+                        f"You do not have access to submit proposal with id:{prsl_id}"
+                    )
                 )
         elif ProposalPermissions.Update not in rows[0].permissions:
             LOGGER.info(
@@ -296,7 +298,7 @@ def update_proposal(
                 auth.user_id,
             )
             raise ForbiddenError(
-                detail=f"You do not have access to update this proposal with id:{prsl_id}"
+                detail=(f"You do not have access to update proposal with id:{prsl_id}")
             )
 
         try:

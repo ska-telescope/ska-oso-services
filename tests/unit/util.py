@@ -314,6 +314,7 @@ VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(prj_id=None).model_dump_jso
 
 # proposal entry
 VALID_NEW_PROPOSAL = TestDataFactory.proposal().model_dump_json()
+VALID_COMPLETE_PROPOSAL = TestDataFactory.complete_proposal().model_dump_json()
 VALID_REVIEW = TestDataFactory.reviews().model_dump_json()
 VALID_PANEL_DECISION = TestDataFactory.panel_decision().model_dump_json()
 PAYLOAD_SUCCESS = TestDataFactory.email_payload()

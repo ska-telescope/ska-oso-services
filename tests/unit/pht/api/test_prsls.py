@@ -343,7 +343,8 @@ class TestProposalAPI:
         ],
     )
     @mock.patch(
-        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal_return_rows",
+        "ska_oso_services.pht.api.prsls."
+        "assert_user_has_permission_for_proposal_return_rows",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
@@ -382,7 +383,8 @@ class TestProposalAPI:
         assert_json_is_equal(result.text, proposal_obj.model_dump_json())
 
     @mock.patch(
-        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal_return_rows",
+        "ska_oso_services.pht.api.prsls."
+        "assert_user_has_permission_for_proposal_return_rows",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
@@ -411,7 +413,8 @@ class TestProposalAPI:
         assert "not found" in response.json()["detail"].lower()
 
     @mock.patch(
-        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal_return_rows",
+        "ska_oso_services.pht.api.prsls."
+        "assert_user_has_permission_for_proposal_return_rows",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
@@ -436,7 +439,8 @@ class TestProposalAPI:
         assert "do not match" in response.json()["detail"].lower()
 
     @mock.patch(
-        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal_return_rows",
+        "ska_oso_services.pht.api.prsls."
+        "assert_user_has_permission_for_proposal_return_rows",
         autospec=True,
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
