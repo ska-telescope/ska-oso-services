@@ -26,7 +26,7 @@ def transform_update_proposal(data: Proposal) -> Proposal:
         submitted_on = data.submitted_on
         status = "submitted" if submitted_on else "draft"
 
-    investigator_refs = [inv.user_id for inv in data.info.investigators]
+    investigator_refs = [inv.investigator_id for inv in data.info.investigators]
 
     return Proposal(
         prsl_id=data.prsl_id,
