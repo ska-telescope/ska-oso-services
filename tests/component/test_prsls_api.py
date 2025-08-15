@@ -244,7 +244,7 @@ def test_proposal_create_then_put_update_forbidden(authrequests):
     POST /prsls/create with a unique prsl_id
     GET /proposal-access/{prsl_id} to get list of proposal access
     filter returned proposal access by TEST_USER
-    PUT /proposal-acess/{access_id} to remove(update) submit
+    PUT /proposal-access/{access_id} to remove(update) submit
     then PUT /prsls/{identifier} to update proposal
     verify return forbidden and version increment does not occur
     """
@@ -307,7 +307,7 @@ def test_proposal_create_then_put_submit_forbidden(authrequests):
     POST /prsls/create with a unique prsl_id
     GET /proposal-access/{prsl_id} to get list of proposal access
     filter returned proposal access by TEST_USER
-    PUT /proposal-acess/{access_id} to remove(update) submit/update permission
+    PUT /proposal-access/{access_id} to remove(update) submit/update permission
     then PUT /prsls/{identifier}
     verify return forbidden and version increment does not occur
     """
