@@ -430,6 +430,39 @@ class TestProposalAPI:
 
         assert result.status_code == HTTPStatus.FORBIDDEN
 
+    @pytest.mark.parametrize(
+        "proposal_status,permissions",
+        [
+            ("submitted", ["view", "update"]),
+        ],
+    )
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_proposal_put_forbidden_without_mock_proposal_service(
+        self, mock_uow, proposal_status, permissions, client
+    ):
+        """
+        Check the prsls_put method returns forbidden when the user has no permission
+        """
+
+        uow_mock = mock.MagicMock()
+        uow_mock.prsl.__contains__.return_value = True
+
+        proposal_obj = TestDataFactory.complete_proposal()
+
+        proposal_obj.status = proposal_status
+        proposal_id = proposal_obj.prsl_id
+        uow_mock.prsls.add.return_value = proposal_obj
+        uow_mock.prsls.get.return_value = proposal_obj
+        mock_uow().__enter__.return_value = uow_mock
+
+        result = client.put(
+            f"{PROPOSAL_API_URL}/{proposal_id}",
+            data=proposal_obj.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert result.status_code == HTTPStatus.FORBIDDEN
+
     @mock.patch(
         "ska_oso_services.pht.api.prsls."
         "assert_user_has_permission_for_proposal_return_rows",
