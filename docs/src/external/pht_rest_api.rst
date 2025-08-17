@@ -20,7 +20,7 @@ Proposal Preparation:
 
 
 
-Propsal Management:
+Proposal Management:
 ==========================
 
 - Panel Management:
@@ -42,7 +42,7 @@ Propsal Management:
 .. openapi:: ./_static/reviewers_only_openapi.json
 
 
-Report:
+PHT Report:
 ==========================
 
 - Proposal Management Report:
