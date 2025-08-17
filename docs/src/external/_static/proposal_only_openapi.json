@@ -10,16 +10,9 @@
         "tags": [
           "PPT API - Proposal Preparation"
         ],
-        "summary": "Retrieve OSD data for a particular cycle",
+        "summary": "Retrieve OSD data for a given cycle",
+        "description": "This queries the OSD data by cycle id. \n\nThis data is made available for the PHT UI.\n\nReturns:\n    OsdDataModel: The OSD data validated against the defined schema.",
         "operationId": "get_osd_by_cycle_ska_oso_services_oso_api_v2_pht_prsls_osd__cycle__get",
-        "security": [
-          {
-            "SKAO Entra ID Authentication": []
-          },
-          {
-            "SKAO Entra ID Authentication": []
-          }
-        ],
         "parameters": [
           {
             "name": "cycle",
@@ -28,22 +21,6 @@
             "schema": {
               "type": "integer",
               "title": "Cycle"
-            }
-          },
-          {
-            "name": "X-Request-ID",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Request-Id"
             }
           }
         ],
@@ -77,7 +54,7 @@
           "PPT API - Proposal Preparation"
         ],
         "summary": "Create a new proposal",
-        "description": "Creates a new proposal in the ODA",
+        "description": "Creates a new proposal in the ODA.",
         "operationId": "create_proposal_ska_oso_services_oso_api_v2_pht_prsls_create_post",
         "security": [
           {
@@ -110,19 +87,25 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Proposal"
-              },
-              "example": {
-                "prsl_id": "prp-ska01-202204-02",
-                "status": "draft",
-                "cycle": "5000_2023",
-                "info": {
-                  "title": "The Milky Way View",
-                  "proposal_type": {
-                    "main_type": "standard_proposal",
-                    "attributes": [
-                      "coordinated_proposal"
-                    ]
+                "$ref": "#/components/schemas/Proposal",
+                "examples": {
+                  "default": {
+                    "summary": "Example Proposal",
+                    "description": "A minimal example of a proposal entity.",
+                    "value": {
+                      "prsl_id": "prp-ska01-202204-02",
+                      "status": "draft",
+                      "cycle": "5000_2023",
+                      "info": {
+                        "title": "The Milky Way View",
+                        "proposal_type": {
+                          "main_type": "standard_proposal",
+                          "attributes": [
+                            "coordinated_proposal"
+                          ]
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -154,12 +137,75 @@
         }
       }
     },
+    "/ska-oso-services/oso/api/v2/pht/prsls/mine": {
+      "get": {
+        "tags": [
+          "PPT API - Proposal Preparation"
+        ],
+        "summary": "Get a list of proposals the user can access",
+        "description": "List all proposals accessible to the authenticated user.\n\nThe proposals are determined from the underlying data store by:\n1.) Resolving accessible proposal IDs via, list_accessible_proposal_ids,\n2.) Fetching each proposal by ID and \n3.) Returning the proposals as a list (empty if none are found).\n\nReturns:\n    list[Proposal]: Proposals accessible to the current user.",
+        "operationId": "get_proposals_for_user_ska_oso_services_oso_api_v2_pht_prsls_mine_get",
+        "security": [
+          {
+            "SKAO Entra ID Authentication": []
+          },
+          {
+            "SKAO Entra ID Authentication": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Request-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Request-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Proposal"
+                  },
+                  "title": "Response Get Proposals For User Ska Oso Services Oso Api V2 Pht Prsls Mine Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ska-oso-services/oso/api/v2/pht/prsls/{prsl_id}": {
       "get": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Retrieve an existing proposal",
+        "description": "Retrieves the latest proposal by prsl_id.\n\nReturns:\n    Proposal: Returns the latest proposal for the supplied prsl_id, including the metadata.",
         "operationId": "get_proposal_ska_oso_services_oso_api_v2_pht_prsls__prsl_id__get",
         "security": [
           {
@@ -224,7 +270,7 @@
           "PPT API - Proposal Preparation"
         ],
         "summary": "Update an existing proposal",
-        "description": "Updates a proposal in the underlying data store.\n\n:param prsl_id: identifier of the Proposal in the URL\n:param prsl: Proposal object payload from the request body\n:return: the updated Proposal object",
+        "description": "Updates a proposal in the underlying data store.",
         "operationId": "update_proposal_ska_oso_services_oso_api_v2_pht_prsls__prsl_id__put",
         "security": [
           {
@@ -301,6 +347,7 @@
           "PPT API - Proposal Preparation"
         ],
         "summary": "Retrieve multiple proposals in batch",
+        "description": "AI is creating summary for get_proposals_batch",
         "operationId": "get_proposals_batch_ska_oso_services_oso_api_v2_pht_prsls_batch_post",
         "security": [
           {
@@ -372,7 +419,7 @@
           "PPT API - Proposal Preparation"
         ],
         "summary": "Get a list of proposals by status",
-        "description": "Function that requests to GET /proposals/status are mapped to\n\nRetrieves the Proposals for the given status from the\nunderlying data store, if available\n\n:param status: status of the proposal\n:return: a tuple of a list of Proposal",
+        "description": "Function that requests to GET /proposals/status are mapped to.\n\nRetrieves the Proposals for the given status from the\nunderlying data store, if available\n\nReturns:\n    list[Proposal]",
         "operationId": "get_proposals_by_status_ska_oso_services_oso_api_v2_pht_prsls_status__status__get",
         "security": [
           {
@@ -443,7 +490,7 @@
           "PPT API - Proposal Preparation"
         ],
         "summary": "Get all reviews for a particular proposal",
-        "description": "Function that requests to GET /reviews/{prsl_id} are mapped to\nGet reviews for a given proposal ID from the\nunderlying data store, if available\n\n:param prsl_id: identifier of the Proposal\n:return: list[PanelReview]",
+        "description": "Function that requests to GET /reviews/{prsl_id} are mapped to.\n\nGet reviews for a given proposal ID from the\nunderlying data store, if available.\n\nReturns:\n    list[PanelReview]",
         "operationId": "get_reviews_for_proposal_ska_oso_services_oso_api_v2_pht_prsls_reviews__prsl_id__get",
         "security": [
           {
@@ -508,84 +555,13 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/list/{user_id}": {
-      "get": {
-        "tags": [
-          "PPT API - Proposal Preparation"
-        ],
-        "summary": "Get a list of proposals created by a user",
-        "description": "Function that requests to GET /proposals/list are mapped to\n\nRetrieves the Proposals for the given user ID from the\nunderlying data store, if available\n\n:param user_id: identifier of the Proposal\n:return: a tuple of a list of Proposal",
-        "operationId": "get_proposals_for_user_ska_oso_services_oso_api_v2_pht_prsls_list__user_id__get",
-        "security": [
-          {
-            "SKAO Entra ID Authentication": []
-          },
-          {
-            "SKAO Entra ID Authentication": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "User Id"
-            }
-          },
-          {
-            "name": "X-Request-ID",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Request-Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Proposal"
-                  },
-                  "title": "Response Get Proposals For User Ska Oso Services Oso Api V2 Pht Prsls List  User Id  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/ska-oso-services/oso/api/v2/pht/prsls/validate": {
       "post": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Validate a proposal",
-        "description": "Validates a submitted proposal via POST.\n\nReturns:\n    dict: {\n        \"result\": bool,\n        \"validation_errors\": list[str]\n    }",
+        "description": "Validates a submitted proposal via POST.\n\nReturns:\n    dict: {\n        \"result\": bool,\n        \"validation_errors\": list[str]}.",
         "operationId": "validate_proposal_ska_oso_services_oso_api_v2_pht_prsls_validate_post",
         "security": [
           {
@@ -655,7 +631,7 @@
           "PPT API - Proposal Preparation"
         ],
         "summary": "Send an async email",
-        "description": "Endpoint to send SKAO email asynchronously via SMTP",
+        "description": "Endpoint to send SKAO email asynchronously via SMTP.",
         "operationId": "send_email_ska_oso_services_oso_api_v2_pht_prsls_send_email__post",
         "security": [
           {
@@ -3330,22 +3306,28 @@
             "title": "Name"
           },
           "reviewers": {
-            "items": {},
+            "items": {
+              "type": "string"
+            },
             "type": "array",
-            "title": "Reviewers"
+            "title": "Reviewers",
+            "description": "List of reviewer entries.",
+            "example": []
           },
           "proposals": {
-            "items": {},
+            "items": {
+              "type": "string"
+            },
             "type": "array",
-            "title": "Proposals"
+            "title": "Proposals",
+            "description": "List of proposal entries.",
+            "example": []
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "name",
-          "reviewers",
-          "proposals"
+          "name"
         ],
         "title": "PanelCreateRequest",
         "description": "Schema for creating a new panel."
@@ -3967,6 +3949,158 @@
         "title": "Proposal",
         "description": "Proposal: Represents an astronomy proposal."
       },
+      "ProposalAccess": {
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata",
+            "description": "The metadata of this Proposal access."
+          },
+          "access_id": {
+            "type": "string",
+            "title": "Access Id"
+          },
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal.",
+            "default": [
+              "view"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_id",
+          "prsl_id",
+          "user_id",
+          "role"
+        ],
+        "title": "ProposalAccess"
+      },
+      "ProposalAccessByProposalResponse": {
+        "properties": {
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal."
+          },
+          "access_id": {
+            "type": "string",
+            "title": "Access Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "permissions",
+          "access_id",
+          "user_id"
+        ],
+        "title": "ProposalAccessByProposalResponse"
+      },
+      "ProposalAccessCreate": {
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata",
+            "description": "The metadata of this Proposal access."
+          },
+          "access_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Id"
+          },
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal.",
+            "default": [
+              "view"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "prsl_id",
+          "user_id",
+          "role"
+        ],
+        "title": "ProposalAccessCreate"
+      },
+      "ProposalAccessResponse": {
+        "properties": {
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "permissions"
+        ],
+        "title": "ProposalAccessResponse"
+      },
       "ProposalAssignment": {
         "properties": {
           "prsl_id": {
@@ -3985,6 +4119,16 @@
           "assigned_on"
         ],
         "title": "ProposalAssignment"
+      },
+      "ProposalPermissions": {
+        "type": "string",
+        "enum": [
+          "submit",
+          "update",
+          "view"
+        ],
+        "title": "ProposalPermissions",
+        "description": "Permissions for a user on a proposal."
       },
       "ProposalReportResponse": {
         "properties": {
@@ -4210,6 +4354,17 @@
               }
             ],
             "title": "Decision On"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
           }
         },
         "additionalProperties": false,
@@ -4225,6 +4380,14 @@
         ],
         "title": "ProposalReportResponse",
         "description": "Schema for proposal report response."
+      },
+      "ProposalRole": {
+        "type": "string",
+        "enum": [
+          "Principal Investigator",
+          "Co-Investigator"
+        ],
+        "title": "ProposalRole"
       },
       "ProposalStatus": {
         "type": "string",

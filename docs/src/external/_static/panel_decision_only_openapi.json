@@ -5,14 +5,14 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/ska-oso-services/oso/api/v2/pht/panel-decisions/": {
+    "/ska-oso-services/oso/api/v2/pht/panel/decision/": {
       "post": {
         "tags": [
-          "PMT API- Panel Decision"
+          "PMT API - Panel Decision"
         ],
-        "summary": "Create a new Panel decision",
-        "description": "Creates a new decision for a panel in the ODA",
-        "operationId": "create_panel_decision_ska_oso_services_oso_api_v2_pht_panel_decisions__post",
+        "summary": "Create a new Panel decision for proposals",
+        "description": "Create a new panel decision for proposals in a panel.\n\nPersists the panel decision in the underlying data store.\n\nReturns:\n    str: The identifier (id) of the created panel decision.",
+        "operationId": "create_panel_decision_ska_oso_services_oso_api_v2_pht_panel_decision__post",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -56,7 +56,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Create Panel Decision Ska Oso Services Oso Api V2 Pht Panel Decisions  Post"
+                  "title": "Response Create Panel Decision Ska Oso Services Oso Api V2 Pht Panel Decision  Post"
                 }
               }
             }
@@ -74,14 +74,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/panel-decisions/{decision_id}": {
+    "/ska-oso-services/oso/api/v2/pht/panel/decision/{decision_id}": {
       "get": {
         "tags": [
-          "PMT API- Panel Decision"
+          "PMT API - Panel Decision"
         ],
-        "summary": "Retrieve an existing decision",
-        "description": "Retrieves a decision for a panel from the ODA based on the decision_id.",
-        "operationId": "get_panel_decision_ska_oso_services_oso_api_v2_pht_panel_decisions__decision_id__get",
+        "summary": "Retrieve an existing panel decision for proposals",
+        "description": "Retrieves a decision for a panel from the ODA based on the decision_id.\n\nReturns:\n    PanelDecision: The created panel decision, validated against the schema.\n    This includes the metadata such as `created_by`, and `created_on`.",
+        "operationId": "get_panel_decision_ska_oso_services_oso_api_v2_pht_panel_decision__decision_id__get",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -142,11 +142,11 @@
       },
       "put": {
         "tags": [
-          "PMT API- Panel Decision"
+          "PMT API - Panel Decision"
         ],
         "summary": "Update an existing Decision",
         "description": "Updates a decision in the ODA.",
-        "operationId": "update_panel_decision_ska_oso_services_oso_api_v2_pht_panel_decisions__decision_id__put",
+        "operationId": "update_panel_decision_ska_oso_services_oso_api_v2_pht_panel_decision__decision_id__put",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -216,14 +216,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/panel-decisions/list/{user_id}": {
+    "/ska-oso-services/oso/api/v2/pht/panel/decision/list/{user_id}": {
       "get": {
         "tags": [
-          "PMT API- Panel Decision"
+          "PMT API - Panel Decision"
         ],
-        "summary": "Get a list of Decisions created by a user",
+        "summary": "Get a list of Decisions created by the given user",
         "description": "Retrieves the panel Decision for the given user ID from the\nODA, if available",
-        "operationId": "get_panel_decisions_for_user_ska_oso_services_oso_api_v2_pht_panel_decisions_list__user_id__get",
+        "operationId": "get_panel_decisions_for_user_ska_oso_services_oso_api_v2_pht_panel_decision_list__user_id__get",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -269,7 +269,7 @@
                   "items": {
                     "$ref": "#/components/schemas/PanelDecision"
                   },
-                  "title": "Response Get Panel Decisions For User Ska Oso Services Oso Api V2 Pht Panel Decisions List  User Id  Get"
+                  "title": "Response Get Panel Decisions For User Ska Oso Services Oso Api V2 Pht Panel Decision List  User Id  Get"
                 }
               }
             }
@@ -2698,22 +2698,28 @@
             "title": "Name"
           },
           "reviewers": {
-            "items": {},
+            "items": {
+              "type": "string"
+            },
             "type": "array",
-            "title": "Reviewers"
+            "title": "Reviewers",
+            "description": "List of reviewer entries.",
+            "example": []
           },
           "proposals": {
-            "items": {},
+            "items": {
+              "type": "string"
+            },
             "type": "array",
-            "title": "Proposals"
+            "title": "Proposals",
+            "description": "List of proposal entries.",
+            "example": []
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "name",
-          "reviewers",
-          "proposals"
+          "name"
         ],
         "title": "PanelCreateRequest",
         "description": "Schema for creating a new panel."
@@ -3335,6 +3341,158 @@
         "title": "Proposal",
         "description": "Proposal: Represents an astronomy proposal."
       },
+      "ProposalAccess": {
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata",
+            "description": "The metadata of this Proposal access."
+          },
+          "access_id": {
+            "type": "string",
+            "title": "Access Id"
+          },
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal.",
+            "default": [
+              "view"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_id",
+          "prsl_id",
+          "user_id",
+          "role"
+        ],
+        "title": "ProposalAccess"
+      },
+      "ProposalAccessByProposalResponse": {
+        "properties": {
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal."
+          },
+          "access_id": {
+            "type": "string",
+            "title": "Access Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "permissions",
+          "access_id",
+          "user_id"
+        ],
+        "title": "ProposalAccessByProposalResponse"
+      },
+      "ProposalAccessCreate": {
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata",
+            "description": "The metadata of this Proposal access."
+          },
+          "access_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Id"
+          },
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal.",
+            "default": [
+              "view"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "prsl_id",
+          "user_id",
+          "role"
+        ],
+        "title": "ProposalAccessCreate"
+      },
+      "ProposalAccessResponse": {
+        "properties": {
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "permissions"
+        ],
+        "title": "ProposalAccessResponse"
+      },
       "ProposalAssignment": {
         "properties": {
           "prsl_id": {
@@ -3353,6 +3511,16 @@
           "assigned_on"
         ],
         "title": "ProposalAssignment"
+      },
+      "ProposalPermissions": {
+        "type": "string",
+        "enum": [
+          "submit",
+          "update",
+          "view"
+        ],
+        "title": "ProposalPermissions",
+        "description": "Permissions for a user on a proposal."
       },
       "ProposalReportResponse": {
         "properties": {
@@ -3578,6 +3746,17 @@
               }
             ],
             "title": "Decision On"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
           }
         },
         "additionalProperties": false,
@@ -3593,6 +3772,14 @@
         ],
         "title": "ProposalReportResponse",
         "description": "Schema for proposal report response."
+      },
+      "ProposalRole": {
+        "type": "string",
+        "enum": [
+          "Principal Investigator",
+          "Co-Investigator"
+        ],
+        "title": "ProposalRole"
       },
       "ProposalStatus": {
         "type": "string",

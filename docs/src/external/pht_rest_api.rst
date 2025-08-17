@@ -14,35 +14,38 @@ Outlined below endpoints grouped by resources.
 Proposal Preparation:
 ==========================
 
-openapi:: ./_static/proposals_only_openapi.json
+* Proposals:
+
+.. openapi:: ./_static/proposal_only_openapi.json
 
 
 
 Propsal Management:
 ==========================
 
-* Panel Management:
+- Panel Management:
 
 .. openapi:: ./_static/panels_only_openapi.json
 
 
-* Review Management:
+- Review Management:
 
 .. openapi:: ./_static/reviews_only_openapi.json
 
 
-* Decision Management:
+- Decision Management:
   
 .. openapi:: ./_static/panel_decision_only_openapi.json
 
-* Reviewer Management:
+- Reviewer Management:
 
 .. openapi:: ./_static/reviewers_only_openapi.json
 
 
 Report:
 ==========================
-* Proposal Management Report:
+
+- Proposal Management Report:
 
 .. openapi:: ./_static/report_only_openapi.json
 
