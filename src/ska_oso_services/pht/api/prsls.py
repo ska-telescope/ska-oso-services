@@ -105,7 +105,7 @@ def create_proposal(
     LOGGER.debug("POST PROPOSAL create")
 
     try:
-        #create a proposal level access when the proposal is created
+        # create a proposal level access when the proposal is created
         with oda.uow() as uow:
             created_prsl = uow.prsls.add(proposal, auth.user_id)
             create_prslacc = ProposalAccess(

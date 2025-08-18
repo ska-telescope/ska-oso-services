@@ -2035,7 +2035,7 @@
       },
       "Investigator": {
         "properties": {
-          "investigator_id": {
+          "user_id": {
             "type": "string",
             "title": "Investigator Id",
             "description": "Unique identifier for the Proposal investigators class"
@@ -2088,7 +2088,7 @@
         },
         "type": "object",
         "required": [
-          "investigator_id",
+          "user_id",
           "given_name",
           "family_name",
           "email",
