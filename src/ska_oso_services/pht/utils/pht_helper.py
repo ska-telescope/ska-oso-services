@@ -20,7 +20,7 @@ def generate_entity_id(entity_name: str) -> str:
         str: A unique ID in the format "<entity_name>-<uuid-part>".
     """
     # TODO: Remove this once the uuid generator by Brendan works!
-    return f"{entity_name.lower()}-{uuid.uuid4().hex[:9]}"
+    return f"{entity_name.lower()}-skao-{uuid.uuid4().hex[:9]}"
 
 
 def _get_attr_or_key(obj, key, default=None):

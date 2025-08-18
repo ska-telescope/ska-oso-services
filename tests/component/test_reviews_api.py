@@ -105,8 +105,8 @@ def test_get_list_reviews_for_user(authrequests):
 
     # Create 2 reviews with unique review_ids
     for _ in range(2):
-        review_id = f"rvw-test-{uuid.uuid4().hex[:8]}"
-        review = TestDataFactory.reviews(review_id=review_id)
+        prsl_id = f"prsl-test-{uuid.uuid4().hex[:8]}"
+        review = TestDataFactory.reviews(prsl_id=prsl_id)
         review_json = review.model_dump_json()
 
         response = authrequests.post(

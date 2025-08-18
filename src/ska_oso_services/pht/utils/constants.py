@@ -143,3 +143,7 @@ REVIEWERS = [
         "subExpertise": "Cosmic Magnetism",
     },
 ]
+
+
+ACCESS_ID = "access_id"
+PRSL_ID = "prsl_id"

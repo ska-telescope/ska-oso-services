@@ -104,7 +104,7 @@
 		],
 		"investigators": [
 			{
-				"investigator_id": "prp-ska01-202204-01",
+				"user_id": "prp-ska01-202204-01",
 				"status": "Pending",
 				"given_name": "Tony",
 				"family_name": "Bennet",

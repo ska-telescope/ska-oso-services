@@ -60,7 +60,7 @@ def test_get_report_for_user(authrequests):
     assert created_panel.status_code == HTTPStatus.OK, created_panel.text
 
     created_decision = authrequests.post(
-        f"{PHT_URL}/panel-decisions", data=decision.model_dump_json(), headers=HEADERS
+        f"{PHT_URL}/panel/decision", data=decision.model_dump_json(), headers=HEADERS
     )
     assert created_decision.status_code == HTTPStatus.OK, created_decision.text
 

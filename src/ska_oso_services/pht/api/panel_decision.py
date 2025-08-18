@@ -15,12 +15,12 @@ from ska_oso_services.common.error_handling import (
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/panel-decisions", tags=["PMT API - Panel Decision"])
+router = APIRouter(prefix="/panel/decision", tags=["PMT API - Panel Decision"])
 
 
 @router.post(
     "/",
-    summary="Create a new Panel decision",
+    summary="Create a new Panel decision for proposals",
     dependencies=[
         Permissions(
             roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
@@ -30,10 +30,15 @@ router = APIRouter(prefix="/panel-decisions", tags=["PMT API - Panel Decision"])
 )
 def create_panel_decision(decisions: PanelDecision) -> str:
     """
-    Creates a new decision for a panel in the ODA
+    Create a new panel decision for proposals in a panel.
+
+    Persists the panel decision in the underlying data store.
+
+    Returns:
+        str: The identifier (id) of the created panel decision.
     """
 
-    LOGGER.debug("POST DECISIONS create")
+    LOGGER.debug("POST PANEL DECISIONS create")
 
     try:
         with oda.uow() as uow:
@@ -51,7 +56,7 @@ def create_panel_decision(decisions: PanelDecision) -> str:
 
 @router.get(
     "/{decision_id}",
-    summary="Retrieve an existing decision",
+    summary="Retrieve an existing panel decision for proposals",
     dependencies=[
         Permissions(
             roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
@@ -60,7 +65,13 @@ def create_panel_decision(decisions: PanelDecision) -> str:
     ],
 )
 def get_panel_decision(decision_id: str) -> PanelDecision:
-    """Retrieves a decision for a panel from the ODA based on the decision_id."""
+    """
+    Retrieves a decision for a panel from the ODA based on the decision_id.
+
+    Returns:
+        PanelDecision: The created panel decision, validated against the schema.
+        This includes the metadata such as `created_by`, and `created_on`.
+    """
     LOGGER.debug("GET panel DECISION decision_id: %s", decision_id)
 
     with oda.uow() as uow:
@@ -70,7 +81,7 @@ def get_panel_decision(decision_id: str) -> PanelDecision:
 
 @router.get(
     "/list/{user_id}",
-    summary="Get a list of Decisions created by a user",
+    summary="Get a list of Decisions created by the given user",
     dependencies=[
         Permissions(
             roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
