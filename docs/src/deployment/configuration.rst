@@ -79,3 +79,4 @@ but also can be overwritten via the values.yaml
      - To be updated
      - Required
      - Pulled from Vault - see :doc:`secret_management`
+     -
