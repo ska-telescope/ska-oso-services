@@ -6,8 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+
+3.0.0
+***********
 * [BREAKING] Adds AAA protection to PHT endpoints
-* [Breaking] Upgraded `OSD`` to version `4.0.0`
+* [Breaking] Upgraded `OSD` to version `4.0.0`
 * [Breaking] Updates ODA version to 11.3.0
 * Updated ODA to v11.1.0
 * Adds auto-panel creation `POST` endpoint based on cycle description
