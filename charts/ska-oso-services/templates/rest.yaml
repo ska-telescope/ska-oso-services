@@ -126,6 +126,16 @@ spec:
                 name: ska-oso-services-allsecrets-{{ $.Release.Name }}
                 key: AWS_PHT_BUCKET_NAME
                 {{ end }}
+          - name: OSO_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                {{ if .Values.rest.pht.oso_client_secret.secret }}
+                name: {{ .Values.rest.pht.oso_client_secret.secret }}
+                key: {{ .Values.rest.pht.oso_client_secret.key }}
+                {{ else }}
+                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
+                key: OSO_CLIENT_SECRET
+                {{ end }}
         envFrom:
           - configMapRef:
               name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
