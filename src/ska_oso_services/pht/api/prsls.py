@@ -56,9 +56,18 @@ router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 
 @router.get(
     "/osd/{cycle}",
-    summary="Retrieve OSD data for a particular cycle",
+    summary="Retrieve OSD data for a given cycle",
 )
 def get_osd_by_cycle(cycle: int) -> OsdDataModel:
+    """
+    This queries the OSD data by cycle id.
+
+    This data is made available for the PHT UI.
+
+    Returns:
+        OsdDataModel: The OSD data validated against the defined schema.
+
+    """
     LOGGER.debug("GET OSD data cycle: %s", cycle)
     data = get_osd_data(cycle_id=cycle, source="car")
     if type(data) is tuple and len(data) == 2:
@@ -78,17 +87,26 @@ def create_proposal(
             scopes={Scope.PHT_READWRITE},
         ),
     ],
-    proposal: Proposal = Body(..., example=EXAMPLE_PROPOSAL),
+    proposal: Proposal = Body(
+        ...,
+        examples={
+            "default": {
+                "summary": "Example Proposal",
+                "description": "A minimal example of a proposal.",
+                "value": EXAMPLE_PROPOSAL,
+            }
+        },
+    ),
 ) -> str:
     """
-    Creates a new proposal in the ODA
+    Creates a new proposal in the ODA.
     """
 
     LOGGER.debug("POST PROPOSAL create")
 
     try:
+        # create a proposal level access when the proposal is created
         with oda.uow() as uow:
-            created_prsl = uow.prsls.add(proposal)
             created_prsl = uow.prsls.add(proposal, auth.user_id)
             create_prslacc = ProposalAccess(
                 access_id=generate_entity_id("prslacc"),
@@ -124,13 +142,16 @@ def get_proposals_for_user(
     ]
 ) -> list[Proposal]:
     """
-    Function that requests to GET /proposals/list are mapped to
+    List all proposals accessible to the authenticated user.
 
-    Retrieves the Proposals for the given user ID from the
-    underlying data store, if available
+    The proposals are determined from the underlying data store by:
+    1.) Resolving accessible proposal IDs via, list_accessible_proposal_ids,
+    2.) Fetching each proposal by ID and
+    3.) Returning the proposals as a list (empty if none are found).
 
-    :param user_id: identifier of the Proposal
-    :return: a tuple of a list of Proposal
+    Returns:
+        list[Proposal]: Proposals accessible to the current user.
+
     """
 
     LOGGER.debug("GET PROPOSAL LIST query for the user: %s", auth.user_id)
@@ -164,6 +185,14 @@ def get_proposal(
         ),
     ],
 ) -> Proposal:
+    """
+    Retrieves the latest proposal by prsl_id.
+
+    Returns:
+        Proposal: Returns the latest proposal for the supplied prsl_id,
+                including the metadata.
+
+    """
     LOGGER.debug("GET PROPOSAL prsl_id: %s", prsl_id)
 
     try:
@@ -187,6 +216,10 @@ def get_proposal(
 def get_proposals_batch(
     prsl_ids: list[str] = Body(..., embed=True, description="List of proposal IDs"),
 ):
+    """
+    AI is creating summary for get_proposals_batch
+
+    """
     LOGGER.debug("GET BATCH PROPOSAL(s): %s", prsl_ids)
     proposals = []
     with oda.uow() as uow:
@@ -206,13 +239,14 @@ def get_proposals_batch(
 )
 def get_proposals_by_status(status: str) -> list[Proposal]:
     """
-    Function that requests to GET /proposals/status are mapped to
+    Function that requests to GET /proposals/status are mapped to.
 
     Retrieves the Proposals for the given status from the
     underlying data store, if available
 
-    :param status: status of the proposal
-    :return: a tuple of a list of Proposal
+    Returns:
+        list[Proposal]
+
     """
     LOGGER.debug("GET PROPOSAL status: %s", status)
 
@@ -233,12 +267,15 @@ def get_proposals_by_status(status: str) -> list[Proposal]:
     dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
 )
 def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
-    """Function that requests to GET /reviews/{prsl_id} are mapped to
-    Get reviews for a given proposal ID from the
-    underlying data store, if available
+    """
+    Function that requests to GET /reviews/{prsl_id} are mapped to.
 
-    :param prsl_id: identifier of the Proposal
-    :return: list[PanelReview]
+    Get reviews for a given proposal ID from the
+    underlying data store, if available.
+
+    Returns:
+        list[PanelReview]
+
     """
     LOGGER.debug("GET reviews for a prsl_id: %s", prsl_id)
     with oda.uow() as uow:
@@ -266,9 +303,6 @@ def update_proposal(
     """
     Updates a proposal in the underlying data store.
 
-    :param prsl_id: identifier of the Proposal in the URL
-    :param prsl: Proposal object payload from the request body
-    :return: the updated Proposal object
     """
     with oda.uow() as uow:
         # Check if user in propsal access - forbidden error raised inside
@@ -351,8 +385,8 @@ def validate_proposal(prsl: Proposal) -> dict:
     Returns:
         dict: {
             "result": bool,
-            "validation_errors": list[str]
-        }
+            "validation_errors": list[str]}.
+
     """
     LOGGER.debug("POST PROPOSAL validate")
     result = validation.validate_proposal(prsl)
@@ -369,7 +403,8 @@ async def send_email(
     request: EmailRequest,
 ):
     """
-    Endpoint to send SKAO email asynchronously via SMTP
+    Endpoint to send SKAO email asynchronously via SMTP.
+
     """
 
     await send_email_async(request.email, request.prsl_id)
@@ -384,6 +419,7 @@ async def send_email(
 def create_upload_pdf_url(filename: str) -> str:
     """
     Generate a presigned S3 upload URL for the given filename.
+
     """
     # Catch simple things someone may add to the filename
     if not filename or "/" in filename or "\\" in filename:
@@ -427,6 +463,7 @@ def create_upload_pdf_url(filename: str) -> str:
 def create_download_pdf_url(filename: str) -> str:
     """
     Generate a presigned S3 download URL for the given filename.
+
     """
 
     LOGGER.debug("POST Download Signed URL for: %s", filename)
@@ -462,6 +499,7 @@ def create_download_pdf_url(filename: str) -> str:
 def create_delete_pdf_url(filename: str) -> str:
     """
     Generate a presigned S3 delete URL for the given filename.
+
     """
 
     LOGGER.debug("POST Delete Signed URL for: %s", filename)

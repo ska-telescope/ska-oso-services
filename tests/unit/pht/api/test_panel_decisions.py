@@ -10,7 +10,7 @@ from ska_db_oda.persistence.domain.errors import ODANotFound
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import VALID_PANEL_DECISION, TestDataFactory, assert_json_is_equal
 
-PANEL_DECISION_API_URL = f"{PHT_BASE_API_URL}/panel-decisions"
+PANEL_DECISION_API_URL = f"{PHT_BASE_API_URL}/panel/decision"
 
 
 def has_validation_error(detail, field: str) -> bool:
