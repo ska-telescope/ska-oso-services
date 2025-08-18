@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+
+3.0.0
+***********
 * [BREAKING] Adds AAA protection to PHT endpoints
 * [Breaking] Upgraded `OSD`` to version `4.0.0`
 * Updated ODA to v11.1.0
