@@ -92,7 +92,7 @@ def create_proposal(
         examples={
             "default": {
                 "summary": "Example Proposal",
-                "description": "A minimal example of a proposal entity.",
+                "description": "A minimal example of a proposal.",
                 "value": EXAMPLE_PROPOSAL,
             }
         },
@@ -105,6 +105,7 @@ def create_proposal(
     LOGGER.debug("POST PROPOSAL create")
 
     try:
+        #create a proposal level access when the proposal is created
         with oda.uow() as uow:
             created_prsl = uow.prsls.add(proposal, auth.user_id)
             create_prslacc = ProposalAccess(
