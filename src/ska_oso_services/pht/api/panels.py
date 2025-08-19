@@ -170,13 +170,17 @@ def update_panel(panel_id: str, param: Panel) -> str:
                 tec_review = PanelReview(
                     panel_id=param.panel_id,
                     review_id=generate_entity_id("rvs-tec"),
-                    reviewer_id="dummy",
+                    reviewer_id="SciOps",
                     cycle=param.cycle,
+                    comments=None,
+                    src_net=None,
+                    submitted_on=None,
+                    submitted_by=None,
                     prsl_id=proposal if isinstance(proposal, str) else proposal.prsl_id,
                     status=ReviewStatus.TO_DO,
                     review_type=TechnicalReview(
                         kind="Technical Review",
-                        feasibility=Feasibility(is_feasible="Yes"),
+                        feasibility=Feasibility(is_feasible="Yes", comments=None),
                     ),
                 )
 

@@ -84,5 +84,3 @@ class ProposalReportResponse(AppModel):
     review_submitted_on: str | None = None
     decision_on: str | None = None
     decision_status: str | None = None
-    feasibility: str | None = None
-    country: str | None = None  # get the office location of the PI from entra id
