@@ -80,9 +80,14 @@ def join_proposals_panels_reviews_decisions(
                         reviewer_id=reviewer_id,
                         reviewer_status=reviewer_status,
                         review_status=review.status if review else None,
+                        feasibility=(
+                            review.review_type.feasibility.is_feasible
+                            if review and review.review_type.kind == "Technical Review"
+                            else "Yes"
+                        ),
                         conflict=(
                             review.review_type.conflict.has_conflict
-                            if review and review.review_type.conflict
+                            if review and review.review_type.kind == "Science Review"
                             else False
                         ),
                         review_id=review.review_id if review else None,
