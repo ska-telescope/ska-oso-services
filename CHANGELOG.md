@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Allow OPERATIONS_SCIENTIST role to use the ODT API endpoints
 
 3.0.0
 ***********

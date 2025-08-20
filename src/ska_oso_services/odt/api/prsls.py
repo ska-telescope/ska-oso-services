@@ -15,7 +15,12 @@ from ska_oso_services.odt.service.project_generator import generate_project
 
 LOGGER = logging.getLogger(__name__)
 
-API_ROLES = {Role.SW_ENGINEER, Role.LOW_TELESCOPE_OPERATOR, Role.MID_TELESCOPE_OPERATOR}
+API_ROLES = {
+    Role.SW_ENGINEER,
+    Role.LOW_TELESCOPE_OPERATOR,
+    Role.MID_TELESCOPE_OPERATOR,
+    Role.OPERATIONS_SCIENTIST,
+}
 
 
 router = APIRouter(prefix="/prsls")
