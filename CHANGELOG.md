@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Auto technical review creation using the `PUT panel update` endpoint
 
 3.0.0
 ***********
