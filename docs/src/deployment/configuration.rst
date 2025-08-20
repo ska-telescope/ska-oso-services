@@ -75,3 +75,8 @@ but also can be overwritten via the values.yaml
      - Required
      - Pulled from Vault - see :doc:`secret_management`
      -
+   * - OSO_CLIENT_SECRET
+     - client secret for oso services
+     - Required
+     - Pulled from Vault - see :doc:`secret_management`
+     -

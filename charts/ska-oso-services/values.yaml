@@ -61,6 +61,11 @@ rest:
       # If left as null the default secret deployed by the PHT umbrella will be used.
       secret: ~
       key: ~
+    oso_client_secret:
+      # This is the resource name of a k8s secret and the key the password is stored under.
+      # If left as null the default secret deployed by the PHT umbrella will be used.
+      secret: ~
+      key: ~
 
   skuid:
     url: # Standard SKUID svc address is used if this is not set
@@ -77,6 +82,7 @@ vault:
   - "AWS_SERVER_SECRET_KEY"
   - "SMTP_PASSWORD"
   - "AWS_PHT_BUCKET_NAME"
+  - "OSO_CLIENT_SECRET"
 
 nodeSelector: {}
 
