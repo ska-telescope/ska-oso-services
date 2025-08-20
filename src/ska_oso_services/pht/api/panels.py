@@ -3,11 +3,19 @@ from typing import Union
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
+from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
+from ska_oso_pdm import PanelReview
 from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
+from ska_oso_pdm.proposal_management.review import (
+    Feasibility,
+    ReviewStatus,
+    TechnicalReview,
+)
+from starlette_context import context
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -135,25 +143,49 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
     ],
 )
 def update_panel(panel_id: str, param: Panel) -> str:
-    logger.debug("POST panel")
+    logger.debug("PUT panel")
+    if context.exists() and context.get("auth"):
+        auth: AuthContext = context["auth"]
+        user_id = auth.user_id
+
     # Ensure ID match
     if param.panel_id != panel_id:
         logger.warning(
-            "Proposal ID mismatch: Proposal ID=%s in path, body ID=%s",
+            "Panel ID mismatch: Panel ID=%s in path, body ID=%s",
             panel_id,
             param.panel_id,
         )
-        raise UnprocessableEntityError(
-            detail="Proposal ID in path and body do not match."
-        )
+        raise UnprocessableEntityError(detail="Panel ID in path and body do not match.")
+
     reviewer_ids = validate_duplicates(param.reviewers, "reviewer_id")
     for reviewer_id in reviewer_ids:
         if not any([r["id"] == reviewer_id for r in REVIEWERS]):
             raise BadRequestError(f"Reviewer '{reviewer_id}' does not exist")
 
     validate_duplicates(param.proposals, "prsl_id")
+
     with oda.uow() as uow:
-        panel = uow.panels.add(param)  # pylint: disable=no-member
+        if param.reviewers:
+            for proposal in param.proposals:
+                tec_review = PanelReview(
+                    panel_id=param.panel_id,
+                    review_id=generate_entity_id("rvs-tec"),
+                    reviewer_id="SciOps",
+                    cycle=param.cycle,
+                    comments=None,
+                    src_net=None,
+                    submitted_on=None,
+                    submitted_by=None,
+                    prsl_id=proposal if isinstance(proposal, str) else proposal.prsl_id,
+                    status=ReviewStatus.TO_DO,
+                    review_type=TechnicalReview(
+                        kind="Technical Review",
+                        feasibility=Feasibility(is_feasible="Yes", comments=None),
+                    ),
+                )
+
+                uow.rvws.add(tec_review, user_id)  # pylint: disable=E0606
+        panel = uow.panels.add(param, user_id)  # pylint: disable=no-member
         uow.commit()
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
