@@ -1,5 +1,5 @@
 import logging
-from typing import Union
+from typing import Annotated, Union
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
@@ -142,11 +142,14 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
         )
     ],
 )
-def update_panel(panel_id: str, param: Panel) -> str:
+def update_panel(panel_id: str, param: Panel,  auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READ},
+        ),
+    ],) -> str:
     logger.debug("PUT panel")
-    if context.exists() and context.get("auth"):
-        auth: AuthContext = context["auth"]
-        user_id = auth.user_id
 
     # Ensure ID match
     if param.panel_id != panel_id:
@@ -184,8 +187,8 @@ def update_panel(panel_id: str, param: Panel) -> str:
                     ),
                 )
 
-                uow.rvws.add(tec_review, user_id)  # pylint: disable=E0606
-        panel = uow.panels.add(param, user_id)  # pylint: disable=no-member
+                uow.rvws.add(tec_review, auth.user_id)  # pylint: disable=E0606
+        panel = uow.panels.add(param, auth.user_id)  # pylint: disable=no-member
         uow.commit()
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
@@ -193,18 +196,19 @@ def update_panel(panel_id: str, param: Panel) -> str:
 
 @router.get(
     "/{panel_id}",
-    summary="Retrieve an existing panel by panel_id",
-    dependencies=[
-        Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
-        )
-    ],
+    summary="Retrieve an existing panel by panel_id"
 )
-def get_panel(panel_id: str) -> Panel:
+def get_panel(panel_id: str, auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READ},
+        ),
+    ],) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 
     with oda.uow() as uow:
-        panel = uow.panels.get(panel_id)  # pylint: disable=no-member
+        panel = uow.panels.get(panel_id, auth.user_id)  # pylint: disable=no-member
     logger.info("Panel retrieved successfully: %s", panel_id)
     return panel
 
@@ -218,7 +222,7 @@ def get_panel(panel_id: str) -> Panel:
         )
     ],
 )
-def get_panels_for_user(user_id: str) -> list[Panel]:
+def get_panels_for_user(user_id: str, ) -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
 
