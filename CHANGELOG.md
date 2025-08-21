@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+
+3.1.0
+***********
 * Auto technical review creation using the `PUT panel update` endpoint
 * Allow OPERATIONS_SCIENTIST role to use the ODT API endpoints
 
