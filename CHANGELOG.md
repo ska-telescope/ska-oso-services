@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Allow ODT read scope on proposal search
+* Copy name when generating Project from Proposal
 
 3.1.0
 ***********

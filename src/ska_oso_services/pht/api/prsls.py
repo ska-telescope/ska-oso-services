@@ -137,7 +137,7 @@ def get_proposals_for_user(
         AuthContext,
         Permissions(
             roles={Role.ANY, Role.SW_ENGINEER},
-            scopes={Scope.PHT_READ},
+            scopes={Scope.PHT_READ, Scope.ODT_READ},
         ),
     ]
 ) -> list[Proposal]:
