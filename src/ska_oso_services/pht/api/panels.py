@@ -110,6 +110,12 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
         reviewers = param.reviewers or []
         is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
         if is_sv:
+            existing_panel = get_latest_entity_by_id(
+                uow.panels.query(CustomQuery(name="Science Verification")), "panel_id"
+            )
+            if existing_panel:
+                return existing_panel.panel_id
+            
             panel = Panel(
                 panel_id=generate_entity_id("panel"),
                 name="Science Verification",
@@ -142,13 +148,7 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
         )
     ],
 )
-def update_panel(panel_id: str, param: Panel,  auth: Annotated[
-        AuthContext,
-        Permissions(
-            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
-            scopes={Scope.PHT_READ},
-        ),
-    ],) -> str:
+def update_panel(panel_id: str, param: Panel) -> str:
     logger.debug("PUT panel")
 
     # Ensure ID match
@@ -160,20 +160,15 @@ def update_panel(panel_id: str, param: Panel,  auth: Annotated[
         )
         raise UnprocessableEntityError(detail="Panel ID in path and body do not match.")
 
-    reviewer_ids = validate_duplicates(param.reviewers, "reviewer_id")
-    for reviewer_id in reviewer_ids:
-        if not any([r["id"] == reviewer_id for r in REVIEWERS]):
-            raise BadRequestError(f"Reviewer '{reviewer_id}' does not exist")
-
-    validate_duplicates(param.proposals, "prsl_id")
+    validate_duplicates(param.reviewers, "reviewer_id")
 
     with oda.uow() as uow:
-        if param.reviewers:
+        if param.tech_reviewers:
             for proposal in param.proposals:
                 tec_review = PanelReview(
                     panel_id=param.panel_id,
                     review_id=generate_entity_id("rvs-tec"),
-                    reviewer_id="SciOps",
+                    reviewer_id=param.tech_reviewers[0]. reviewer_id,
                     cycle=param.cycle,
                     comments=None,
                     src_net=None,
@@ -183,12 +178,12 @@ def update_panel(panel_id: str, param: Panel,  auth: Annotated[
                     status=ReviewStatus.TO_DO,
                     review_type=TechnicalReview(
                         kind="Technical Review",
-                        feasibility=Feasibility(is_feasible="Yes", comments=None),
+                        is_feasible="Yes"
                     ),
                 )
 
-                uow.rvws.add(tec_review, auth.user_id)  # pylint: disable=E0606
-        panel = uow.panels.add(param, auth.user_id)  # pylint: disable=no-member
+                uow.rvws.add(tec_review)  # pylint: disable=E0606
+        panel = uow.panels.add(param) 
         uow.commit()
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id

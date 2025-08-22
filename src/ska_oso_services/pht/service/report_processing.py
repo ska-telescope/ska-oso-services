@@ -59,6 +59,7 @@ def join_proposals_panels_reviews_decisions(
                 rows.append(
                     ProposalReportResponse(
                         prsl_id=proposal.prsl_id,
+                        review_type = review.review_type.kind
                         title=proposal.info.title,
                         science_category=proposal.info.science_category,
                         proposal_status=proposal.status,
@@ -86,7 +87,7 @@ def join_proposals_panels_reviews_decisions(
                             else False
                         ),
                         review_id=review.review_id if review else None,
-                        review_rank=review.review_type.rank if review else None,
+                        review_rank=review.review_type.rank if review and review.review_type.rank else None,
                         comments=review.comments if review else None,
                         review_submitted_on=(
                             review.submitted_on.isoformat()

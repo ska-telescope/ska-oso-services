@@ -1,7 +1,9 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers.roles import Role
+from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm import PanelReview
 
@@ -20,15 +22,15 @@ router = APIRouter(prefix="/reviews", tags=["PMT API - Reviews"])
 
 @router.post(
     "/",
-    summary="Create a new Review",
-    dependencies=[
-        Permissions(
-            roles=[Role.OPS_REVIEWER_SCIENCE, Role.OPS_REVIEWER_TECHNICAL],
-            scopes=[Scope.PHT_READWRITE],
-        )
-    ],
+    summary="Create a new Review"
 )
-def create_review(reviews: PanelReview) -> str:
+def create_review(reviews: PanelReview,  auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY, Role.SW_ENGINEER,  Role.OPS_PROPOSAL_ADMIN},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],) -> str:
     """
     Creates a new Review in the ODA
     """
@@ -48,7 +50,7 @@ def create_review(reviews: PanelReview) -> str:
 
             if existing_rvw and existing_rvw.metadata.version == 1:
                 return existing_rvw.review_id
-            created_review = uow.rvws.add(reviews)
+            created_review = uow.rvws.add(reviews, auth.user_id)
             uow.commit()
         return created_review.review_id
     except ValueError as err:
@@ -63,7 +65,7 @@ def create_review(reviews: PanelReview) -> str:
     summary="Retrieve an existing Review",
     dependencies=[
         Permissions(
-            roles=[
+            roles=[Role.SW_ENGINEER,
                 Role.OPS_REVIEWER_SCIENCE,
                 Role.OPS_REVIEWER_TECHNICAL,
                 Role.OPS_PROPOSAL_ADMIN,
@@ -85,7 +87,7 @@ def get_review(review_id: str) -> PanelReview:
     summary="Get a list of Reviews created by a user",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_REVIEWER_SCIENCE, Role.OPS_REVIEWER_TECHNICAL],
+            roles=[Role.SW_ENGINEER, Role.OPS_REVIEWER_SCIENCE, Role.OPS_REVIEWER_TECHNICAL],
             scopes=[Scope.PHT_READ],
         )
     ],
@@ -109,7 +111,7 @@ def get_reviews_for_user(user_id: str) -> list[PanelReview]:
     summary="Update an existing Review",
     dependencies=[
         Permissions(
-            roles=[
+            roles=[Role.SW_ENGINEER,
                 Role.OPS_REVIEWER_SCIENCE,
                 Role.OPS_REVIEWER_TECHNICAL,
                 Role.OPS_PROPOSAL_ADMIN,
