@@ -11,7 +11,6 @@ from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.proposal_management.review import (
-    Feasibility,
     ReviewStatus,
     TechnicalReview,
 )
