@@ -114,7 +114,7 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
                 uow.panels.query(CustomQuery(name="Science Verification")), "panel_id"
             )
             if existing_panel:
-                return existing_panel.panel_id
+                return existing_panel[0].panel_id
             
             panel = Panel(
                 panel_id=generate_entity_id("panel"),
