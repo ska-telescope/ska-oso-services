@@ -48,7 +48,9 @@ def generate_project(proposal: Proposal) -> Project:
             )
         )
 
-    return Project(prsl_ref=proposal.prsl_id, obs_blocks=observing_blocks)
+    return Project(
+        prsl_ref=proposal.prsl_id, name=proposal.info.title, obs_blocks=observing_blocks
+    )
 
 
 def _group_observation_sets(proposal: Proposal) -> list[list[ObservationSets]]:
