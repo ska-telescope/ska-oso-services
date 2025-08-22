@@ -1,9 +1,7 @@
 import logging
-from typing import Annotated
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers.roles import Role
-from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm import PanelReview
 
@@ -22,9 +20,11 @@ router = APIRouter(prefix="/reviews", tags=["PMT API - Reviews"])
 
 @router.post(
     "/",
-    summary="Create a new Review",  dependencies=[
+    summary="Create a new Review",
+    dependencies=[
         Permissions(
-            roles=[Role.ANY, Role.SW_ENGINEER,  Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READWRITE]
+            roles=[Role.ANY, Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN],
+            scopes=[Scope.PHT_READWRITE],
         )
     ],
 )
@@ -63,7 +63,8 @@ def create_review(reviews: PanelReview) -> str:
     summary="Retrieve an existing Review",
     dependencies=[
         Permissions(
-            roles=[Role.SW_ENGINEER,
+            roles=[
+                Role.SW_ENGINEER,
                 Role.OPS_REVIEWER_SCIENCE,
                 Role.OPS_REVIEWER_TECHNICAL,
                 Role.OPS_PROPOSAL_ADMIN,
@@ -85,7 +86,11 @@ def get_review(review_id: str) -> PanelReview:
     summary="Get a list of Reviews created by a user",
     dependencies=[
         Permissions(
-            roles=[Role.SW_ENGINEER, Role.OPS_REVIEWER_SCIENCE, Role.OPS_REVIEWER_TECHNICAL],
+            roles=[
+                Role.SW_ENGINEER,
+                Role.OPS_REVIEWER_SCIENCE,
+                Role.OPS_REVIEWER_TECHNICAL,
+            ],
             scopes=[Scope.PHT_READ],
         )
     ],
@@ -109,7 +114,8 @@ def get_reviews_for_user(user_id: str) -> list[PanelReview]:
     summary="Update an existing Review",
     dependencies=[
         Permissions(
-            roles=[Role.SW_ENGINEER,
+            roles=[
+                Role.SW_ENGINEER,
                 Role.OPS_REVIEWER_SCIENCE,
                 Role.OPS_REVIEWER_TECHNICAL,
                 Role.OPS_PROPOSAL_ADMIN,

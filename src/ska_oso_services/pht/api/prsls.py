@@ -88,7 +88,7 @@ def create_proposal(
         ),
     ],
     proposal: Proposal = Body(
-      ...,
+        ...,
         example=EXAMPLE_PROPOSAL,
     ),
 ) -> str:

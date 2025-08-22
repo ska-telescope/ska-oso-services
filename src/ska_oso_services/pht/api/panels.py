@@ -10,11 +10,7 @@ from ska_oso_pdm import PanelReview
 from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
-from ska_oso_pdm.proposal_management.review import (
-    ReviewStatus,
-    TechnicalReview,
-)
-from starlette_context import context
+from ska_oso_pdm.proposal_management.review import ReviewStatus, TechnicalReview
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -93,7 +89,7 @@ def create_panel(param: Panel) -> str:
 def auto_create_panel(param: PanelCreateRequest) -> str:
     """
     Auto creates panels:
-    - If science verification, create a single panel called 
+    - If science verification, create a single panel called
       'Science Verification' with all submitted proposals assigned.
     - Else: Create panels for PANEL_NAME_POOL, which is the science catgories
         (to be pulled in from OSD when available) and assign proposals by
@@ -115,7 +111,7 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
             )
             if existing_panel:
                 return existing_panel[0].panel_id
-            
+
             panel = Panel(
                 panel_id=generate_entity_id("panel"),
                 name="Science Verification",
@@ -123,7 +119,7 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
                 tech_reviewers=tech_reviewers,
                 proposals=build_sv_panel_proposals(proposals),
             )
-            created_panel = uow.panels.add(panel) 
+            created_panel = uow.panels.add(panel)
             for proposal_id in proposals:
                 try:
                     proposal: Proposal = uow.prsls.get(proposal_id.prsl_id)
@@ -131,11 +127,12 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
                     # Update proposal status in the ODA
                     uow.prsls.add(proposal)
                     logger.info(
-                        "Proposal status successfully updated with ID %s", proposal.prsl_id
+                        "Proposal status successfully updated with ID %s",
+                        proposal.prsl_id,
                     )
                 except ODANotFound:
                     raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
-            
+
             uow.commit()
             return created_panel.panel_id
 
@@ -143,7 +140,11 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
         grouped = group_proposals_by_science_category(proposals, PANEL_NAME_POOL)
         panel_objs = {
             panel_name: upsert_panel(
-                uow, panel_name, sci_reviewers, tech_reviewers, grouped.get(panel_name, [])
+                uow,
+                panel_name,
+                sci_reviewers,
+                tech_reviewers,
+                grouped.get(panel_name, []),
             )
             for panel_name in PANEL_NAME_POOL
         }
@@ -157,7 +158,8 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
     summary="Update a panel",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE]
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READWRITE],
         )
     ],
 )
@@ -181,7 +183,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
                 tec_review = PanelReview(
                     panel_id=param.panel_id,
                     review_id=generate_entity_id("rvs-tec"),
-                    reviewer_id=param.tech_reviewers[0]. reviewer_id,
+                    reviewer_id=param.tech_reviewers[0].reviewer_id,
                     cycle=param.cycle,
                     comments=None,
                     src_net=None,
@@ -190,29 +192,28 @@ def update_panel(panel_id: str, param: Panel) -> str:
                     prsl_id=proposal if isinstance(proposal, str) else proposal.prsl_id,
                     status=ReviewStatus.TO_DO,
                     review_type=TechnicalReview(
-                        kind="Technical Review",
-                        is_feasible="Yes"
+                        kind="Technical Review", is_feasible="Yes"
                     ),
                 )
 
                 uow.rvws.add(tec_review)  # pylint: disable=E0606
-        panel = uow.panels.add(param) 
+        panel = uow.panels.add(param)
         uow.commit()
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
 
 
-@router.get(
-    "/{panel_id}",
-    summary="Retrieve an existing panel by panel_id"
-)
-def get_panel(panel_id: str, auth: Annotated[
+@router.get("/{panel_id}", summary="Retrieve an existing panel by panel_id")
+def get_panel(
+    panel_id: str,
+    auth: Annotated[
         AuthContext,
         Permissions(
             roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READ},
         ),
-    ],) -> Panel:
+    ],
+) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 
     with oda.uow() as uow:
@@ -230,7 +231,9 @@ def get_panel(panel_id: str, auth: Annotated[
         )
     ],
 )
-def get_panels_for_user(user_id: str, ) -> list[Panel]:
+def get_panels_for_user(
+    user_id: str,
+) -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
 

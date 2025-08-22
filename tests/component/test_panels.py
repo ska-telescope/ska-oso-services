@@ -24,7 +24,7 @@ def test_create_panel(authrequests):
 
 def test_panels_post_duplicate_reviewer(authrequests):
     panel = TestDataFactory.panel()
-    panel.reviewers.append(panel.reviewers[0])
+    panel.sci_reviewers.append(panel.sci_reviewers[0])
 
     data = panel.json()
 
