@@ -22,15 +22,13 @@ router = APIRouter(prefix="/reviews", tags=["PMT API - Reviews"])
 
 @router.post(
     "/",
-    summary="Create a new Review"
-)
-def create_review(reviews: PanelReview,  auth: Annotated[
-        AuthContext,
+    summary="Create a new Review",  dependencies=[
         Permissions(
-            roles={Role.ANY, Role.SW_ENGINEER,  Role.OPS_PROPOSAL_ADMIN},
-            scopes={Scope.PHT_READWRITE},
-        ),
-    ],) -> str:
+            roles=[Role.ANY, Role.SW_ENGINEER,  Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READWRITE]
+        )
+    ],
+)
+def create_review(reviews: PanelReview) -> str:
     """
     Creates a new Review in the ODA
     """
@@ -50,7 +48,7 @@ def create_review(reviews: PanelReview,  auth: Annotated[
 
             if existing_rvw and existing_rvw.metadata.version == 1:
                 return existing_rvw.review_id
-            created_review = uow.rvws.add(reviews, auth.user_id)
+            created_review = uow.rvws.add(reviews)
             uow.commit()
         return created_review.review_id
     except ValueError as err:
