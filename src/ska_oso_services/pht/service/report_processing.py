@@ -1,3 +1,4 @@
+from itertools import chain
 from ska_oso_services.pht.models.schemas import ProposalReportResponse
 
 
@@ -50,9 +51,16 @@ def join_proposals_panels_reviews_decisions(
             None,
         )
 
-        if panel and panel.reviewers:
-            for reviewer in panel.reviewers:
-                reviewer_id = reviewer.reviewer_id
+        
+        if panel and (panel.sci_reviewers or panel.tech_reviewers):
+            seen: set[str] = set()
+            for reviewer in chain(panel.sci_reviewers or [], panel.tech_reviewers or []):
+                rid = reviewer.reviewer_id
+                if rid in seen:
+                    continue
+                seen.add(rid)
+
+                reviewer_id = rid
                 reviewer_status = reviewer.status
                 review = review_lookup.get((prsl_id, reviewer_id))
 
@@ -98,12 +106,7 @@ def join_proposals_panels_reviews_decisions(
                         recommendation=decision.recommendation if decision else None,
                         decision_status=decision.status if decision else None,
                         panel_rank=decision.rank if decision else None,
-                        panel_score=decision.score if decision else None,
-                        decision_on=(
-                            decision.decided_on.isoformat()
-                            if decision and decision.decided_on
-                            else None
-                        ),
+                        panel_score=decision.score if decision else None
                     )
                 )
         else:
@@ -130,12 +133,7 @@ def join_proposals_panels_reviews_decisions(
                     recommendation=decision.recommendation if decision else None,
                     decision_status=decision.status if decision else None,
                     panel_rank=decision.rank if decision else None,
-                    panel_score=decision.score if decision else None,
-                    decision_on=(
-                        decision.decided_on.isoformat()
-                        if decision and decision.decided_on
-                        else None
-                    ),
+                    panel_score=decision.score if decision else None
                 )
             )
 

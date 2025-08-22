@@ -25,7 +25,7 @@ class TestPanelsUpdateAPI:
 
         panel_id = "panel-test-123"
         panel_obj = TestDataFactory.panel(
-            panel_id=panel_id, name="Stargazers", reviewer_id=REVIEWERS[0]["id"]
+            panel_id=panel_id, name="Stargazers", reviewer_id=REVIEWERS["sci_reviewers"][0]["id"]
         )
 
         uow_mock.panels.add.return_value = panel_obj
@@ -52,7 +52,7 @@ class TestPanelsUpdateAPI:
         body_panel_id = "panel-body-abc"
         path_panel_id = "panel-path-xyz"
         panel_obj = TestDataFactory.panel(
-            panel_id=body_panel_id, name="Mismatch", reviewer_id=REVIEWERS[0]["id"]
+            panel_id=body_panel_id, name="Mismatch", reviewer_id=REVIEWERS["sci_reviewers"][0]["id"]
         )
 
         resp = client.put(
@@ -154,7 +154,7 @@ class TestPanelsAPI:
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_panels_post_duplicate_proposal(self, mock_uow, client):
-        panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0]["id"])
+        panel = TestDataFactory.panel(reviewer_id=REVIEWERS["sci_reviewers"][0]["id"])
         panel.proposals.append(panel.proposals[0])
 
         uow_mock = mock.MagicMock()
@@ -193,7 +193,7 @@ class TestPanelsAPI:
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_panels_post_not_existing_proposal(self, mock_uow, client):
-        panel = TestDataFactory.panel(reviewer_id=REVIEWERS[0]["id"])
+        panel = TestDataFactory.panel(reviewer_id=REVIEWERS["sci_reviewers"][0]["id"])
 
         uow_mock = mock.MagicMock()
         uow_mock.panels.add.return_value = panel

@@ -12,7 +12,7 @@ def test_join_proposals_panels_reviews_decisions():
     proposal1 = TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00001")
     proposal2 = TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00002")
     panel = TestDataFactory.panel(
-        reviewer_id=REVIEWERS[0]["id"],
+        reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
         panel_id="panel-test-20250616-00001",
         prsl_id_1=proposal1.prsl_id,
         prsl_id_2=proposal2.prsl_id,
@@ -20,7 +20,7 @@ def test_join_proposals_panels_reviews_decisions():
     decision = TestDataFactory.panel_decision(prsl_id=proposal1.prsl_id)
     reviews = TestDataFactory.reviews(
         prsl_id=proposal1.prsl_id,
-        reviewer_id=REVIEWERS[0]["id"],
+        reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
         review_id="rvw-mvp01-20220923-00001",
     )
 

@@ -88,14 +88,8 @@ def create_proposal(
         ),
     ],
     proposal: Proposal = Body(
-        ...,
-        examples={
-            "default": {
-                "summary": "Example Proposal",
-                "description": "A minimal example of a proposal.",
-                "value": EXAMPLE_PROPOSAL,
-            }
-        },
+      ...,
+        example=EXAMPLE_PROPOSAL,
     ),
 ) -> str:
     """

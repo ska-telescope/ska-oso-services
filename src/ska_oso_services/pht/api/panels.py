@@ -55,7 +55,7 @@ def create_panel(param: Panel) -> str:
     logger.debug("POST panel")
 
     with oda.uow() as uow:
-        reviewer_ids = validate_duplicates(param.reviewers, "reviewer_id")
+        reviewer_ids = validate_duplicates(param.sci_reviewers, "reviewer_id")
         for reviewer_id in reviewer_ids:
             if not any([r["id"] == reviewer_id for r in REVIEWERS]):
                 raise BadRequestError(f"Reviewer '{reviewer_id}' does not exist")
@@ -123,7 +123,19 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
                 tech_reviewers=tech_reviewers,
                 proposals=build_sv_panel_proposals(proposals),
             )
-            created_panel = uow.panels.add(panel)  # pylint: disable=no-member
+            created_panel = uow.panels.add(panel) 
+            for proposal_id in proposals:
+                try:
+                    proposal: Proposal = uow.prsls.get(proposal_id.prsl_id)
+                    proposal.status = ProposalStatus.UNDER_REVIEW
+                    # Update proposal status in the ODA
+                    uow.prsls.add(proposal)
+                    logger.info(
+                        "Proposal status successfully updated with ID %s", proposal.prsl_id
+                    )
+                except ODANotFound:
+                    raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
+            
             uow.commit()
             return created_panel.panel_id
 
@@ -161,7 +173,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
         )
         raise UnprocessableEntityError(detail="Panel ID in path and body do not match.")
 
-    validate_duplicates(param.reviewers, "reviewer_id")
+    validate_duplicates(param.sci_reviewers, "reviewer_id")
 
     with oda.uow() as uow:
         if param.tech_reviewers:
