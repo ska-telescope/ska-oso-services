@@ -41,7 +41,8 @@ EXAMPLE_PROPOSAL = {
 }
 
 
-REVIEWERS = [
+REVIEWERS ={ "sci_reviewers": 
+            [
     {
         "id": "c8f8f18a-3c70-4c39-8ed9-2d8d180d99a1",
         "jobTitle": "Prof.",
@@ -142,7 +143,20 @@ REVIEWERS = [
         "officeLocation": "Annex",
         "subExpertise": "Cosmic Magnetism",
     },
-]
+], 
+"tech_reviewers": [{
+     "id": "c8f8f18a-3c70-4c39-8ed9-2d8d180d9944",
+        "jobTitle": "Prof.",
+        "givenName": "Ethanmade",
+        "surname": "Nguyenpop",
+        "displayName": "Ethan Nguyen",
+        "mail": "ethanmade.nguyen@example.com",
+        "officeLocation": "Annex",
+        "subExpertise": "Cosmic Magnetism",
+}]
+
+
+}
 
 
 ACCESS_ID = "access_id"
