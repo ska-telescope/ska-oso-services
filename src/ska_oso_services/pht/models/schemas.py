@@ -46,7 +46,10 @@ class PanelCreateRequest(AppModel):
     """Schema for creating a new panel."""
 
     name: str
-    reviewers: list[str] = Field(
+    sci_reviewers: list[str] = Field(
+        default_factory=list, description="List of reviewer entries.", example=[]
+    )
+    tech_reviewers: list[str] = Field(
         default_factory=list, description="List of reviewer entries.", example=[]
     )
     proposals: list[str] = Field(

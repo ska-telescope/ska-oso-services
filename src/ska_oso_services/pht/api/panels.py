@@ -106,7 +106,8 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
             )
             or []
         )
-        reviewers = param.reviewers or []
+        sci_reviewers = param.sci_reviewers or []
+        tech_reviewers = param.tech_reviewers or []
         is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
         if is_sv:
             existing_panel = get_latest_entity_by_id(
@@ -118,7 +119,8 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
             panel = Panel(
                 panel_id=generate_entity_id("panel"),
                 name="Science Verification",
-                reviewers=reviewers,
+                sci_reviewers=sci_reviewers,
+                tech_reviewers=tech_reviewers,
                 proposals=build_sv_panel_proposals(proposals),
             )
             created_panel = uow.panels.add(panel)  # pylint: disable=no-member
@@ -129,7 +131,7 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
         grouped = group_proposals_by_science_category(proposals, PANEL_NAME_POOL)
         panel_objs = {
             panel_name: upsert_panel(
-                uow, panel_name, reviewers, grouped.get(panel_name, [])
+                uow, panel_name, sci_reviewers, tech_reviewers, grouped.get(panel_name, [])
             )
             for panel_name in PANEL_NAME_POOL
         }

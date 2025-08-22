@@ -64,7 +64,7 @@ def group_proposals_by_science_category(
     return grouped
 
 
-def upsert_panel(uow, panel_name, reviewers, proposal_list):
+def upsert_panel(uow, panel_name, sci_reviewers, tech_reviewers, proposal_list):
     """
     Creates a new panel or updates an existing one with the given proposals.
 
@@ -98,7 +98,8 @@ def upsert_panel(uow, panel_name, reviewers, proposal_list):
         new_panel = Panel(
             panel_id=generate_entity_id("panel"),
             name=panel_name,
-            reviewers=reviewers,
+            sci_reviewers=sci_reviewers,
+            tech_reviewers=tech_reviewers,
             proposals=[
                 {"prsl_id": proposal.prsl_id, "assigned_on": now}
                 for proposal in proposal_list
