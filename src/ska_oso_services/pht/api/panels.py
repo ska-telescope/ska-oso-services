@@ -93,8 +93,8 @@ def create_panel(param: Panel) -> str:
 def auto_create_panel(param: PanelCreateRequest) -> str:
     """
     Auto creates panels:
-    - If science verification, create a single
-      'Science Verification' panel with all submitted proposals assigned.
+    - If science verification, create a single panel called 
+      'Science Verification' with all submitted proposals assigned.
     - Else: Create panels for PANEL_NAME_POOL, which is the science catgories
         (to be pulled in from OSD when available) and assign proposals by
         science_category using the field science category in the proposal.
