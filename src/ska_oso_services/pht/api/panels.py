@@ -157,7 +157,7 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
     summary="Update a panel",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE]
         )
     ],
 )
