@@ -19,7 +19,7 @@ router = APIRouter(prefix="/panel/decision", tags=["PMT API - Panel Decision"])
 
 
 @router.post(
-    "/",
+    "/create",
     summary="Create a new Panel decision for proposals",
     dependencies=[
         Permissions(

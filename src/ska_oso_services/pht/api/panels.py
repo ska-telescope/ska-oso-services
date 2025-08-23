@@ -3,7 +3,6 @@ from typing import Annotated, Union
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
-from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm import PanelReview
@@ -38,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post(
-    "/",
+    "/create",
     summary="Create a panel",
     dependencies=[
         Permissions(
@@ -72,7 +71,7 @@ def create_panel(param: Panel) -> str:
         )
     ],
 )
-def auto_create_panel(param: PanelCreateRequest) -> str:
+def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResponse]:
     """
     Auto creates panels:
     - If science verification, create a single panel called
@@ -82,61 +81,66 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
         science_category using the field science category in the proposal.
     """
     with oda.uow() as uow:
-        proposals = (
+        submitted_proposals = (
             get_latest_entity_by_id(
                 uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)), "prsl_id"
-            )
-            or []
+            ) or []
         )
-        sci_reviewers = param.sci_reviewers or []
-        tech_reviewers = param.tech_reviewers or []
-        is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
-        if is_sv:
-            existing_panel = get_latest_entity_by_id(
+
+        science_reviewers = request.sci_reviewers or []
+        technical_reviewers = request.tech_reviewers or []
+
+        is_science_verification = "SCIENCE VERIFICATION" in request.name.strip().upper()
+        if is_science_verification:
+            existing_sv_panels = get_latest_entity_by_id(
                 uow.panels.query(CustomQuery(name="Science Verification")), "panel_id"
             )
-            if existing_panel:
-                return existing_panel[0].panel_id
+            if existing_sv_panels:
+                return existing_sv_panels[0].panel_id
 
-            panel = Panel(
+            sv_assignments = build_sv_panel_proposals(submitted_proposals)
+
+            new_panel = Panel(
                 panel_id=generate_entity_id("panel"),
                 name="Science Verification",
-                sci_reviewers=sci_reviewers,
-                tech_reviewers=tech_reviewers,
-                proposals=build_sv_panel_proposals(proposals),
+                sci_reviewers=science_reviewers,
+                tech_reviewers=technical_reviewers,
+                proposals=sv_assignments,
             )
-            created_panel = uow.panels.add(panel)
-            for proposal_id in proposals:
+            created_panel = uow.panels.add(new_panel)
+
+            # Update each referenced proposal to UNDER_REVIEW
+            for submitted_ref in submitted_proposals:
                 try:
-                    proposal: Proposal = uow.prsls.get(proposal_id.prsl_id)
-                    proposal.status = ProposalStatus.UNDER_REVIEW
-                    # Update proposal status in the ODA
-                    uow.prsls.add(proposal)
-                    logger.info(
-                        "Proposal status successfully updated with ID %s",
-                        proposal.prsl_id,
-                    )
+                    proposal: Proposal = uow.prsls.get(submitted_ref.prsl_id)
+                    if proposal.status != ProposalStatus.UNDER_REVIEW:
+                        proposal.status = ProposalStatus.UNDER_REVIEW
+                        uow.prsls.add(proposal)
+                        LOGGER.info("Proposal %s set to UNDER_REVIEW", proposal.prsl_id)
                 except ODANotFound:
-                    raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
+                    raise BadRequestError(f"Proposal '{submitted_ref}' does not exist")
 
             uow.commit()
             return created_panel.panel_id
 
         # Science category panels
-        grouped = group_proposals_by_science_category(proposals, PANEL_NAME_POOL)
-        panel_objs = {
+        proposals_by_category = group_proposals_by_science_category(
+            submitted_proposals, PANEL_NAME_POOL
+        )
+
+        panels_by_name = {
             panel_name: upsert_panel(
-                uow,
-                panel_name,
-                sci_reviewers,
-                tech_reviewers,
-                grouped.get(panel_name, []),
+                uow=uow,
+                panel_name=panel_name,
+                science_reviewers=science_reviewers,
+                technical_reviewers=technical_reviewers,
+                proposals=proposals_by_category.get(panel_name, []),
             )
             for panel_name in PANEL_NAME_POOL
         }
 
         uow.commit()
-        return build_panel_response(panel_objs)
+        return build_panel_response(panels_by_name)
 
 
 @router.get(

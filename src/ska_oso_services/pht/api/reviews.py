@@ -20,7 +20,7 @@ router = APIRouter(prefix="/reviews", tags=["PMT API - Reviews"])
 
 
 @router.post(
-    "/",
+    "/create",
     summary="Create a new Review",
     dependencies=[
         Permissions(
@@ -85,7 +85,7 @@ def get_review(review_id: str) -> PanelReview:
 
 
 @router.get(
-    "/list/{user_id}",
+    "/users/{user_id}/reviews",
     summary="Get a list of Reviews created by a user",
     dependencies=[
         Permissions(
