@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timezone
 
 from pydantic import ValidationError
 from ska_db_oda.persistence.domain.query import CustomQuery
@@ -122,18 +122,24 @@ def _require_perm(
         )
 
 
+
 def update_proposal_service(
     *, uow, prsl_id: str, payload: Proposal, user_id: str
 ) -> Proposal:
     """
-    Business rules (no transaction/commit here):
-      - If payload status is DRAFT: require Update permission; persist as-is.
-      - If payload status is SUBMITTED: require Submit permission;
-        set to UNDER_REVIEW; persist.
-      - Any other status -> 400.
+    - DRAFT -> require Update; persist as-is.
+    - SUBMITTED ->
+        - require Submit;
+        - if submitted_on >= CLOSE_ON: SKIP (no panel assignment, no status change/persist), return existing;
+        - if submitted_on < CLOSE_ON:
+            - assign to existing panel (prefer 'Science Verification', else by info.science_category);
+            - if no suitable panel exists -> raise NotFoundError (do NOT create);
+            - set UNDER_REVIEW and persist.
+    - otherwise -> 400.
     """
     LOGGER.debug("update_proposal_service prsl_id=%s user_id=%s", prsl_id, user_id)
 
+    # Transform & validate
     try:
         transformed = transform_update_proposal(payload)
         candidate = Proposal.model_validate(transformed)
@@ -142,27 +148,71 @@ def update_proposal_service(
             detail=f"Validation error after transforming proposal: {err.args[0]}"
         ) from err
 
+    # Ensure the proposal exists
     existing = uow.prsls.get(prsl_id)
     if not existing:
         raise NotFoundError(detail=f"Proposal not found: {prsl_id}")
 
+    # Permissions
     rows = assert_user_has_permission_for_proposal(
         uow=uow, prsl_id=prsl_id, user_id=user_id
     )
 
     if candidate.status == ProposalStatus.DRAFT:
         _require_perm(rows, ProposalPermissions.Update, "update", prsl_id, user_id)
-        updated = uow.prsls.add(candidate)
+        updated = uow.prsls.add(candidate, user_id)
+        LOGGER.info("Proposal %s prepared with status=%s", prsl_id, updated.status)
+        return updated
 
-    elif candidate.status == ProposalStatus.SUBMITTED:
-        _require_perm(rows, ProposalPermissions.Submit, "submit", prsl_id, user_id)
-        candidate.status = ProposalStatus.UNDER_REVIEW
-        updated = uow.prsls.add(candidate)
-
-    else:
+    if candidate.status != ProposalStatus.SUBMITTED:
         raise BadRequestError(
             detail="Unsupported status. Only DRAFT or SUBMITTED are allowed."
         )
+    _require_perm(rows, ProposalPermissions.Submit, "submit", prsl_id, user_id)
 
+    # ---- Close-date gate (hard-coded) ----
+    # Midnight (00:00:00) UTC of the close date
+    CLOSE_DATE = date(2025, 12, 31)
+    CLOSE_ON = datetime.combine(CLOSE_DATE, time(0, 0, tzinfo=timezone.utc))
+
+    def _as_utc_dt(v) -> datetime:
+        if v is None:
+            return datetime.now(timezone.utc)
+        if isinstance(v, datetime):
+            return v.astimezone(timezone.utc) if v.tzinfo else v.replace(tzinfo=timezone.utc)
+        return datetime.fromisoformat(str(v).replace("Z", "+00:00")).astimezone(timezone.utc)
+
+    submitted_dt = _as_utc_dt(candidate.submitted_on)
+
+    # If at/after close date: skip any changes
+    if submitted_dt >= CLOSE_ON:
+        LOGGER.info(
+            "Skipping panel assignment & status update for prsl_id=%s: "
+            "submitted_on=%s >= CLOSE_ON=%s",
+            prsl_id, submitted_dt.isoformat(), CLOSE_ON.isoformat()
+        )
+        return existing
+
+    # ---- assign to existing panel only (no creation) ----
+    sv_name = "Science Verification"
+    sv = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=sv_name)), "panel_id")
+    target_name = sv_name if sv else getattr(candidate.info, "science_category", None)
+
+    panel_list = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=target_name)), "panel_id")
+    panel = panel_list[0] if panel_list else None
+    if not panel:
+        raise NotFoundError(detail=f"Target panel not found: {target_name}")
+
+    now = datetime.now(timezone.utc)
+    def _entry_prsl_id(entry):
+        return entry["prsl_id"] if isinstance(entry, dict) else getattr(entry, "prsl_id")
+
+    existing_ids = {_entry_prsl_id(p) for p in (panel.proposals or [])}
+    if candidate.prsl_id not in existing_ids:
+        panel.proposals.append({"prsl_id": candidate.prsl_id, "assigned_on": now})
+        uow.panels.add(panel)
+
+    candidate.status = ProposalStatus.UNDER_REVIEW
+    updated = uow.prsls.add(candidate, user_id)
     LOGGER.info("Proposal %s prepared with status=%s", prsl_id, updated.status)
     return updated
