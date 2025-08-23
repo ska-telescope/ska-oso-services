@@ -4,7 +4,6 @@ from typing import Annotated
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, HTTPException
-from pydantic import ValidationError
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.query import CustomQuery
@@ -14,7 +13,6 @@ from ska_oso_pdm.proposal import (
     ProposalPermissions,
     ProposalRole,
 )
-from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
 from starlette.status import HTTP_400_BAD_REQUEST
 
@@ -22,7 +20,6 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
-    ForbiddenError,
     NotFoundError,
     UnprocessableEntityError,
 )
@@ -34,7 +31,7 @@ from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
     list_accessible_proposal_ids,
-    transform_update_proposal,
+    update_proposal_service,
 )
 from ska_oso_services.pht.service.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
@@ -289,82 +286,37 @@ def update_proposal(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={Role.SW_ENGINEER},
+            roles={Role.ANY, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
 ) -> Proposal:
     """
-    Updates a proposal in the underlying data store.
-
+    - DRAFT     -> require Update permission; persist as-is.
+    - SUBMITTED -> require Submit permission; update to UNDER_REVIEW; persist.
     """
-    with oda.uow() as uow:
-        # Check if user in propsal access - forbidden error raised inside
-        rows = assert_user_has_permission_for_proposal(
-            uow=uow, prsl_id=prsl_id, user_id=auth.user_id
+    if prsl.prsl_id != prsl_id:
+        raise UnprocessableEntityError(
+            detail="Proposal ID in path and body do not match."
         )
-        transform_body = transform_update_proposal(prsl)
 
-        # Assumption: status is final beyond this point
-        if transform_body.status == ProposalStatus.SUBMITTED:
-            if ProposalPermissions.Submit not in rows[0].permissions:
-                LOGGER.info(
-                    "Forbidden submit attempt for proposal: %s by user_id: %s ",
-                    prsl_id,
-                    auth.user_id,
-                )
-                raise ForbiddenError(
-                    detail=(
-                        f"You do not have access to submit proposal with id:{prsl_id}"
-                    )
-                )
-        elif ProposalPermissions.Update not in rows[0].permissions:
-            LOGGER.info(
-                "Forbidden update attempt for proposal: %s by user_id: %s ",
-                prsl_id,
-                auth.user_id,
-            )
-            raise ForbiddenError(
-                detail=(f"You do not have access to update proposal with id:{prsl_id}")
-            )
-
+    with oda.uow() as uow:
+        updated = update_proposal_service(
+            uow=uow,
+            prsl_id=prsl_id,
+            payload=prsl,
+            user_id=auth.user_id,
+        )
         try:
-            prsl = Proposal.model_validate(transform_body)  # test transformed
-        except ValidationError as err:
-            raise BadRequestError(
-                detail=f"Validation error after transforming proposal: {err.args[0]}"
-            ) from err
-
-        LOGGER.debug("PUT PROPOSAL - Attempting update for prsl_id: %s", prsl_id)
-
-        # Ensure ID match
-        if prsl.prsl_id != prsl_id:
-            LOGGER.warning(
-                "Proposal ID mismatch: Proposal ID=%s in path, body ID=%s",
-                prsl_id,
-                prsl.prsl_id,
-            )
-            raise UnprocessableEntityError(
-                detail="Proposal ID in path and body do not match."
-            )
-
-        # Verify proposal exists
-        existing = uow.prsls.get(prsl_id)
-        if not existing:
-            LOGGER.info("Proposal not found for update: %s", prsl_id)
-            raise NotFoundError(detail="Proposal not found: {prsl_id}")
-
-        try:
-            updated_prsl = uow.prsls.add(prsl)  # Add is used for update
             uow.commit()
-            LOGGER.info("Proposal %s updated successfully", prsl_id)
-            return updated_prsl
-
         except ValueError as err:
-            LOGGER.error("Validation failed for proposal %s: %s", prsl_id, err)
+            LOGGER.error("Commit failed for proposal %s: %s", prsl_id, err)
             raise BadRequestError(
-                detail="Validation error while saving proposal: {err.args[0]}"
+                detail=f"Validation error while saving proposal: {err.args[0]}"
             ) from err
+
+        LOGGER.info("Proposal %s persisted successfully", prsl_id)
+        return updated
 
 
 @router.post(

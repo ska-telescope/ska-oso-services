@@ -1,11 +1,20 @@
+import logging
 from datetime import datetime, timezone
 
+from pydantic import ValidationError
 from ska_db_oda.persistence.domain.query import CustomQuery
-from ska_oso_pdm.proposal import Proposal, ProposalAccess
+from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalPermissions
+from ska_oso_pdm.proposal.proposal import ProposalStatus
 
-from ska_oso_services.common.error_handling import ForbiddenError
+from ska_oso_services.common.error_handling import (
+    BadRequestError,
+    ForbiddenError,
+    NotFoundError,
+)
 from ska_oso_services.pht.utils.constants import ACCESS_ID
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
+
+LOGGER = logging.getLogger(__name__)
 
 
 def transform_update_proposal(data: Proposal) -> Proposal:
@@ -96,3 +105,67 @@ def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
     rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
     rows = get_latest_entity_by_id(rows_init, ACCESS_ID) or []
     return sorted({row.prsl_id for row in rows})
+
+
+def _require_perm(
+    rows, required: ProposalPermissions, action: str, prsl_id: str, user_id: str
+) -> None:
+    if not any(required in r.permissions for r in rows):
+        LOGGER.info(
+            "Forbidden %s attempt for proposal=%s by user_id=%s",
+            action,
+            prsl_id,
+            user_id,
+        )
+        raise ForbiddenError(
+            detail=f"You do not have access to {action} proposal with id: {prsl_id}"
+        )
+
+
+def update_proposal_service(
+    *, uow, prsl_id: str, payload: Proposal, user_id: str
+) -> Proposal:
+    """
+    Business rules (no transaction/commit here):
+      - If payload status is DRAFT: require Update permission; persist as-is.
+      - If payload status is SUBMITTED: require Submit permission;
+        set to UNDER_REVIEW; persist.
+      - Any other status -> 400.
+    """
+    LOGGER.debug("update_proposal_service prsl_id=%s user_id=%s", prsl_id, user_id)
+
+    # Transform & validate
+    try:
+        transformed = transform_update_proposal(payload)
+        candidate = Proposal.model_validate(transformed)
+    except ValidationError as err:
+        raise BadRequestError(
+            detail=f"Validation error after transforming proposal: {err.args[0]}"
+        ) from err
+
+    # Ensure the proposal exists
+    existing = uow.prsls.get(prsl_id)
+    if not existing:
+        raise NotFoundError(detail=f"Proposal not found: {prsl_id}")
+
+    # Permission rows
+    rows = assert_user_has_permission_for_proposal(
+        uow=uow, prsl_id=prsl_id, user_id=user_id
+    )
+
+    if candidate.status == ProposalStatus.DRAFT:
+        _require_perm(rows, ProposalPermissions.Update, "update", prsl_id, user_id)
+        updated = uow.prsls.add(candidate)
+
+    elif candidate.status == ProposalStatus.SUBMITTED:
+        _require_perm(rows, ProposalPermissions.Submit, "submit", prsl_id, user_id)
+        candidate.status = ProposalStatus.UNDER_REVIEW
+        updated = uow.prsls.add(candidate)
+
+    else:
+        raise BadRequestError(
+            detail="Unsupported status. Only DRAFT or SUBMITTED are allowed."
+        )
+
+    LOGGER.info("Proposal %s prepared with status=%s", prsl_id, updated.status)
+    return updated

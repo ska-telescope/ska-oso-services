@@ -333,53 +333,84 @@ class TestProposalAPI:
         assert resp.status_code == HTTPStatus.OK, resp.json()
         assert resp.json() == []
 
-    @pytest.mark.parametrize(
-        "proposal_status,permissions",
-        [
-            ("submitted", ["submit", "view"]),
-            ("submitted", ["submit"]),
-            ("draft", ["update", "view"]),
-            ("draft", ["update"]),
-        ],
+
+@pytest.mark.parametrize(
+    "proposal_status,permissions",
+    [
+        ("submitted", ["submit", "view"]),
+        ("submitted", ["submit"]),
+        ("draft", ["update", "view"]),
+        ("draft", ["update"]),
+    ],
+)
+@mock.patch(
+    "ska_oso_services.pht.service.proposal_service.transform_update_proposal",
+    autospec=True,
+)
+@mock.patch(
+    "ska_oso_services.pht.service.proposal_service."
+    "assert_user_has_permission_for_proposal",
+    autospec=True,
+)
+@mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+def test_proposal_put_success(
+    mock_uow, mock_acl, mock_transform, proposal_status, permissions, client
+):
+    """
+    PUT /prsls/{id} succeeds when caller has the right permission.
+    - draft     -> requires update; persisted as draft
+    - submitted -> requires submit; transitioned to under_review then persisted
+    """
+    # Build a proposal
+    if proposal_status == "submitted":
+        proposal_obj = TestDataFactory.complete_proposal()
+    else:
+        proposal_obj = TestDataFactory.proposal()
+
+    proposal_obj.status = proposal_status
+    proposal_id = proposal_obj.prsl_id
+
+    # Router opens uow context; hand back our mock
+    uow_mock = mock.MagicMock()
+    mock_uow().__enter__.return_value = uow_mock
+
+    # Repo behavior
+    uow_mock.prsls.get.return_value = proposal_obj
+
+    # Have add() echo back the object it received (so we can see the mutated status)
+    uow_mock.prsls.add.side_effect = lambda p: p
+
+    # ACL rows with provided permissions
+    mock_acl.return_value = [TestDataFactory.proposal_access(permissions=permissions)]
+
+    # Keep transform simple & predictable (identity)
+    # Service calls Proposal.model_validate() on this return value,
+    # so provide a dict.
+    mock_transform.return_value = proposal_obj.model_dump(mode="json")
+
+    # Exercise
+    result = client.put(
+        f"{PROPOSAL_API_URL}/{proposal_id}",
+        data=proposal_obj.model_dump_json(),
+        headers={"Content-type": "application/json"},
     )
-    @mock.patch(
-        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
-        autospec=True,
-    )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_proposal_put_success(
-        self, mock_uow, mock_acl, proposal_status, permissions, client
-    ):
-        """
-        Check the prsls_put method returns the expected response
-        """
 
-        uow_mock = mock.MagicMock()
-        uow_mock.prsl.__contains__.return_value = True
+    # Verify
+    assert result.status_code == HTTPStatus.OK
 
-        if proposal_status == "submitted":
-            proposal_obj = TestDataFactory.complete_proposal()
-        else:
-            proposal_obj = TestDataFactory.proposal()
+    body = result.json()
+    assert body["prsl_id"] == proposal_id
 
-        proposal_obj.status = proposal_status
-        proposal_id = proposal_obj.prsl_id
-        uow_mock.prsls.add.return_value = proposal_obj
-        uow_mock.prsls.get.return_value = proposal_obj
-        mock_uow().__enter__.return_value = uow_mock
+    expected_status = "under review" if proposal_status == "submitted" else "draft"
+    assert body["status"] == expected_status
 
-        mock_acl.return_value = [
-            TestDataFactory.proposal_access(permissions=permissions)
-        ]
-
-        result = client.put(
-            f"{PROPOSAL_API_URL}/{proposal_id}",
-            data=proposal_obj.model_dump_json(),
-            headers={"Content-type": "application/json"},
-        )
-
-        assert result.status_code == HTTPStatus.OK
-        assert_json_is_equal(result.text, proposal_obj.model_dump_json())
+    # Also assert repo add() saw the expected status
+    called_proposal = uow_mock.prsls.add.call_args[0][0]
+    assert str(called_proposal.status) in {
+        expected_status,
+        expected_status.upper(),
+        f"ProposalStatus.{expected_status.upper()}",
+    }
 
     @pytest.mark.parametrize(
         "proposal_status,permissions",

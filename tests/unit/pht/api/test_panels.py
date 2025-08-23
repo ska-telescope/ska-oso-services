@@ -137,25 +137,6 @@ class TestPanelsAPI:
         expected = {"detail": "You name is duplicated"}
         assert expected == result
 
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    def test_panels_post_duplicate_reviewer(self, mock_uow, client):
-        panel = TestDataFactory.panel()
-        panel.sci_reviewers.append(panel.sci_reviewers[0])
-
-        uow_mock = mock.MagicMock()
-        uow_mock.panels.add.return_value = panel
-        mock_uow().__enter__.return_value = uow_mock
-
-        data = panel.json()
-
-        response = client.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
-
-        assert response.status_code == HTTPStatus.CONFLICT
-
-        result = response.json()
-        expected = {"detail": "Duplicate reviewer_id are not allowed: {'rev-001'}"}
-        assert expected == result
-
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
     def test_get_panel_success(self, mock_oda, client):
         """

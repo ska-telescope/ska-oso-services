@@ -25,7 +25,7 @@ from ska_oso_services.pht.service.panel_operations import (
     group_proposals_by_science_category,
     upsert_panel,
 )
-from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, REVIEWERS
+from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
     get_latest_entity_by_id,
@@ -48,27 +48,13 @@ logger = logging.getLogger(__name__)
     ],
 )
 def create_panel(param: Panel) -> str:
+    """This endpoint may not be needed in the future.
+
+    The idea is to auto-generate panels and assign proposals.
+    """
     logger.debug("POST panel")
 
     with oda.uow() as uow:
-        reviewer_ids = validate_duplicates(param.sci_reviewers, "reviewer_id")
-        for reviewer_id in reviewer_ids:
-            if not any([r["id"] == reviewer_id for r in REVIEWERS]):
-                raise BadRequestError(f"Reviewer '{reviewer_id}' does not exist")
-
-        proposal_ids = validate_duplicates(param.proposals, "prsl_id")
-        for proposal_id in proposal_ids:
-            try:
-                proposal: Proposal = uow.prsls.get(proposal_id)
-                proposal.status = ProposalStatus.UNDER_REVIEW
-                # Update proposal status in the ODA
-                uow.prsls.add(proposal)
-                logger.info(
-                    "Proposal status successfully updated with ID %s", proposal.prsl_id
-                )
-            except ODANotFound:
-                raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
-
         panel: Panel = uow.panels.add(param)  # pylint: disable=no-member
         uow.commit()
 
@@ -185,15 +171,9 @@ def update_panel(panel_id: str, param: Panel) -> str:
                     review_id=generate_entity_id("rvs-tec"),
                     reviewer_id=param.tech_reviewers[0].reviewer_id,
                     cycle=param.cycle,
-                    comments=None,
-                    src_net=None,
-                    submitted_on=None,
-                    submitted_by=None,
                     prsl_id=proposal if isinstance(proposal, str) else proposal.prsl_id,
                     status=ReviewStatus.TO_DO,
-                    review_type=TechnicalReview(
-                        kind="Technical Review", is_feasible="Yes"
-                    ),
+                    review_type=TechnicalReview(kind="Technical Review"),
                 )
 
                 uow.rvws.add(tec_review)  # pylint: disable=E0606
@@ -204,7 +184,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
 
 
 @router.get("/{panel_id}", summary="Retrieve an existing panel by panel_id")
-def get_panel(
+def get_panel_by_id(
     panel_id: str,
     auth: Annotated[
         AuthContext,
