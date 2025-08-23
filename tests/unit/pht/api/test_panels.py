@@ -155,9 +155,7 @@ class TestPanelAutoCreateAPI:
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
     @mock.patch("ska_oso_services.pht.api.panels.upsert_panel")
-    @mock.patch(
-        "ska_oso_services.pht.api.panels.build_panel_response"
-    )  # not used in SV
+    @mock.patch("ska_oso_services.pht.api.panels.build_panel_response")
     def test_auto_create_panel_sv_success(
         self,
         mock_build_panel_response,
@@ -167,12 +165,8 @@ class TestPanelAutoCreateAPI:
         mock_oda,
         client,
     ):
-        panel_obj = Panel(
-            panel_id="panel-888",
-            name="Science Verification",
-            sci_reviewers=[],
-            tech_reviewers=[],
-            proposals=[],
+        panel_obj = TestDataFactory.panel_basic(
+            panel_id="panel-888", name="Science Verification"
         )
 
         uow = mock.MagicMock()
@@ -199,8 +193,8 @@ class TestPanelAutoCreateAPI:
         assert resp.json() == "panel-888"
 
         mock_build_sv_panel_proposals.assert_called_once()
-        args, _ = uow.panels.add.call_args
-        assert isinstance(args[0], Panel) and args[0].name == "Science Verification"
+        added_panel = uow.panels.add.call_args[0][0]
+        assert getattr(added_panel, "name") == "Science Verification"
         uow.commit.assert_called_once()
         mock_upsert_panel.assert_not_called()
         mock_build_panel_response.assert_not_called()
@@ -232,12 +226,8 @@ class TestPanelAutoCreateAPI:
         def upsert_panel_side_effect(
             uow_, panel_name, sci_reviewers, tech_reviewers, proposals
         ):
-            return Panel(
-                panel_id=f"panel-{panel_name.lower()}",
-                name=panel_name,
-                proposals=proposals or [],
-                sci_reviewers=sci_reviewers or [],
-                tech_reviewers=tech_reviewers or [],
+            return TestDataFactory.panel_basic(
+                panel_id=f"panel-{panel_name.lower()}", name=panel_name
             )
 
         mock_upsert_panel.side_effect = upsert_panel_side_effect
@@ -248,7 +238,7 @@ class TestPanelAutoCreateAPI:
         ]
 
         payload = {
-            "name": "Galaxy",  # NOT SV
+            "name": "Galaxy",
             "sci_reviewers": [],
             "tech_reviewers": [],
             "proposals": [],
@@ -324,19 +314,17 @@ class TestPanelAutoCreateAPI:
         client,
         monkeypatch,
     ):
-        """
-        When a proposal lookup fails (ODANotFound), return 400 and do not commit.
-        """
         uow = mock.MagicMock()
         mock_oda.return_value.__enter__.return_value = uow
 
         submitted = [SimpleNamespace(prsl_id="prop-missing")]
-
         mock_get_latest_entity_by_id.side_effect = [submitted, []]
 
         mock_build_sv_panel_proposals.return_value = []
 
-        uow.panels.add.return_value = SimpleNamespace(panel_id="panel-new-sv")
+        uow.panels.add.return_value = TestDataFactory.panel_basic(
+            panel_id="panel-new-sv", name="Science Verification"
+        )
 
         class DummyNotFound(Exception):
             pass
@@ -346,7 +334,7 @@ class TestPanelAutoCreateAPI:
 
         payload = {
             "name": "Science Verification",
-            "sci_reviewers": [],  # lists, not None (avoid 422)
+            "sci_reviewers": [],
             "tech_reviewers": [],
             "proposals": [],
         }
@@ -371,13 +359,6 @@ class TestPanelAutoCreateAPI:
         mock_uow,
         client,
     ):
-        """
-        SV path with non-empty proposals:
-        - creates the SV panel,
-        - flips each proposal's status to UNDER_REVIEW,
-        - persists each via uow.prsls.add(),
-        - commits once.
-        """
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
@@ -386,11 +367,11 @@ class TestPanelAutoCreateAPI:
             SimpleNamespace(prsl_id="prop-2"),
         ]
         mock_get_latest_entity_by_id.side_effect = [submitted_ids, []]
-
         mock_build_sv_panel_proposals.return_value = []
 
-        # New SV panel id
-        uow.panels.add.return_value = SimpleNamespace(panel_id="panel-new-sv")
+        uow.panels.add.return_value = TestDataFactory.panel_basic(
+            panel_id="panel-new-sv", name="Science Verification"
+        )
 
         p1_db = SimpleNamespace(
             prsl_id="prop-1", status=panels_api.ProposalStatus.SUBMITTED
