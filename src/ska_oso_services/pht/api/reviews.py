@@ -12,6 +12,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,7 +44,9 @@ def create_review(reviews: PanelReview) -> str:
                 kind=reviews.review_type.kind,
                 reviewer_id=reviews.reviewer_id,
             )
-            existing_rvws = uow.rvws.query(query_param)
+            existing_rvws = get_latest_entity_by_id(
+                uow.rvws.query(query_param), "review_id"
+            )
             existing_rvw = existing_rvws[0] if existing_rvws else None
 
             if existing_rvw and existing_rvw.metadata.version == 1:
