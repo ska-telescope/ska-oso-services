@@ -5,6 +5,7 @@ from pydantic import ValidationError
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalPermissions
 from ska_oso_pdm.proposal.proposal import ProposalStatus
+from ska_oso_pdm.proposal_management.panel import ProposalAssignment
 
 from ska_oso_services.common.error_handling import (
     BadRequestError,
@@ -122,7 +123,6 @@ def _require_perm(
         )
 
 
-
 def update_proposal_service(
     *, uow, prsl_id: str, payload: Proposal, user_id: str
 ) -> Proposal:
@@ -179,8 +179,14 @@ def update_proposal_service(
         if v is None:
             return datetime.now(timezone.utc)
         if isinstance(v, datetime):
-            return v.astimezone(timezone.utc) if v.tzinfo else v.replace(tzinfo=timezone.utc)
-        return datetime.fromisoformat(str(v).replace("Z", "+00:00")).astimezone(timezone.utc)
+            return (
+                v.astimezone(timezone.utc)
+                if v.tzinfo
+                else v.replace(tzinfo=timezone.utc)
+            )
+        return datetime.fromisoformat(str(v).replace("Z", "+00:00")).astimezone(
+            timezone.utc
+        )
 
     submitted_dt = _as_utc_dt(candidate.submitted_on)
 
@@ -189,27 +195,37 @@ def update_proposal_service(
         LOGGER.info(
             "Skipping panel assignment & status update for prsl_id=%s: "
             "submitted_on=%s >= CLOSE_ON=%s",
-            prsl_id, submitted_dt.isoformat(), CLOSE_ON.isoformat()
+            prsl_id,
+            submitted_dt.isoformat(),
+            CLOSE_ON.isoformat(),
         )
         return existing
 
     # ---- assign to existing panel only (no creation) ----
     sv_name = "Science Verification"
-    sv = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=sv_name)), "panel_id")
+    sv = get_latest_entity_by_id(
+        uow.panels.query(CustomQuery(name=sv_name)), "panel_id"
+    )
     target_name = sv_name if sv else getattr(candidate.info, "science_category", None)
 
-    panel_list = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=target_name)), "panel_id")
+    panel_list = get_latest_entity_by_id(
+        uow.panels.query(CustomQuery(name=target_name)), "panel_id"
+    )
     panel = panel_list[0] if panel_list else None
     if not panel:
         raise NotFoundError(detail=f"Target panel not found: {target_name}")
 
     now = datetime.now(timezone.utc)
+
     def _entry_prsl_id(entry):
-        return entry["prsl_id"] if isinstance(entry, dict) else getattr(entry, "prsl_id")
+        return (
+            entry["prsl_id"] if isinstance(entry, dict) else getattr(entry, "prsl_id")
+        )
 
     existing_ids = {_entry_prsl_id(p) for p in (panel.proposals or [])}
     if candidate.prsl_id not in existing_ids:
-        panel.proposals.append({"prsl_id": candidate.prsl_id, "assigned_on": now})
+        assignment = ProposalAssignment(prsl_id=candidate.prsl_id, assigned_on=now)
+        panel.proposals.append(assignment)
         uow.panels.add(panel)
 
     candidate.status = ProposalStatus.UNDER_REVIEW

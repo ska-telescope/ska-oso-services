@@ -139,14 +139,16 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
         return build_panel_response(panel_objs)
 
 
-@router.get("/{panel_id}", summary="Retrieve an existing panel by panel_id",  dependencies=[
+@router.get(
+    "/{panel_id}",
+    summary="Retrieve an existing panel by panel_id",
+    dependencies=[
         Permissions(
             roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
         )
-    ],)
-def get_panel_by_id(
-    panel_id: str
-) -> Panel:
+    ],
+)
+def get_panel_by_id(panel_id: str) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 
     with oda.uow() as uow:
@@ -197,8 +199,6 @@ def update_panel(panel_id: str, param: Panel) -> str:
         uow.commit()
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
-
-
 
 
 @router.get(
