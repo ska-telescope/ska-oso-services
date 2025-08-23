@@ -139,6 +139,25 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
         return build_panel_response(panel_objs)
 
 
+@router.get("/{panel_id}/Admin", summary="Retrieve an existing panel by panel_id")
+def get_panel_by_id(
+    panel_id: str,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READ},
+        ),
+    ],
+) -> Panel:
+    logger.debug("GET panel panel_id: %s", panel_id)
+
+    with oda.uow() as uow:
+        panel = uow.panels.get(panel_id, auth.user_id)  # pylint: disable=no-member
+    logger.info("Panel retrieved successfully: %s", panel_id)
+    return panel
+
+
 @router.put(
     "/{panel_id}",
     summary="Update a panel",
@@ -183,23 +202,6 @@ def update_panel(panel_id: str, param: Panel) -> str:
     return panel.panel_id
 
 
-@router.get("/{panel_id}", summary="Retrieve an existing panel by panel_id")
-def get_panel_by_id(
-    panel_id: str,
-    auth: Annotated[
-        AuthContext,
-        Permissions(
-            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
-            scopes={Scope.PHT_READ},
-        ),
-    ],
-) -> Panel:
-    logger.debug("GET panel panel_id: %s", panel_id)
-
-    with oda.uow() as uow:
-        panel = uow.panels.get(panel_id, auth.user_id)  # pylint: disable=no-member
-    logger.info("Panel retrieved successfully: %s", panel_id)
-    return panel
 
 
 @router.get(
