@@ -2,6 +2,7 @@
 Unit tests for ska_oso_pht_services.api
 """
 
+import logging
 from contextlib import contextmanager
 from datetime import datetime
 from http import HTTPStatus
@@ -333,8 +334,63 @@ class TestProposalAPI:
         assert resp.status_code == HTTPStatus.OK, resp.json()
         assert resp.json() == []
 
+    @mock.patch("ska_oso_services.pht.api.prsls.update_proposal_service", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_proposal_put_commit_valueerror_does_not_double_persist(
+        self, mock_uow, mock_update_service, client
+    ):
+        """
+        Sanity: on commit failure, we don't try multiple commits / extra writes.
+        """
+        body = TestDataFactory.proposal()
+        prsl_id = body.prsl_id
+        mock_update_service.return_value = body
+
+        uow_ctx = mock.MagicMock()
+        mock_uow().__enter__.return_value = uow_ctx
+        uow_ctx.commit.side_effect = ValueError("db-commit-boom")
+
+        resp = client.put(
+            f"{PROPOSAL_API_URL}/{prsl_id}",
+            data=body.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+
+        assert resp.status_code == HTTPStatus.BAD_REQUEST
+        assert uow_ctx.commit.call_count == 1
+
+        uow_ctx.prsls.add.assert_not_called()
+
 
 class TestPutProposalAPI:
+    @mock.patch("ska_oso_services.pht.api.prsls.update_proposal_service", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_proposal_put_id_mismatch_returns_422(
+        self, mock_uow, mock_update_service, client
+    ):
+        # Build a valid proposal body
+        body = TestDataFactory.proposal()
+        body_id = body.prsl_id
+
+        # Use a different ID in the path to trigger the guard
+        path_id = f"{body_id}-DIFF"
+
+        resp = client.put(
+            f"{PROPOSAL_API_URL}/{path_id}",
+            data=body.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+
+        # Expect Unprocessable Entity (adjust if your exception maps differently)
+        assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert (
+            "do not match" in resp.text
+        )  # "Proposal ID in path and body do not match."
+
+        # The guard fires BEFORE opening UoW or calling the service
+        mock_update_service.assert_not_called()
+        mock_uow().__enter__.assert_not_called()
+
     @pytest.mark.parametrize(
         "proposal_status,permissions",
         [

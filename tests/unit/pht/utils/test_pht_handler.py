@@ -1,11 +1,101 @@
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
+import pytest
+
+from ska_oso_services.pht.service import proposal_service as svc
 from ska_oso_services.pht.service.report_processing import (
     _get_array_class,
     join_proposals_panels_reviews_decisions,
 )
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 from tests.unit.util import REVIEWERS, TestDataFactory
+
+
+def _to_iso_z(value):
+    """Normalize submitted_on to 'YYYY-MM-DDTHH:MM:SSZ'"""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, datetime):
+        return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    raise TypeError(f"Unexpected submitted_on type: {type(value)}")
+
+
+def _replace_investigators(info_obj, inv_objs):
+    """Return a copy of `info_obj` with 'investigators' replaced (Pydantic v2)."""
+    return info_obj.model_copy(update={"investigators": inv_objs})
+
+
+def _parse_iso_z(s: str) -> datetime:
+    """Parse 'YYYY-MM-DDTHH:MM:SSZ' (or ISO with Z) into an aware UTC datetime."""
+    return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
+
+
+class TestTransformUpdateProposal:
+    @pytest.mark.parametrize(
+        "case",
+        [
+            {
+                "id": "submitted_by_sets_now",
+                "submitted_by": "alice",
+                "existing_submitted_on": None,
+                "investigator_ids": ["u1", "u2"],
+                "expected_status": "submitted",
+                "expected_submitted_on": "NOW",
+            },
+            {
+                "id": "draft_when_no_submit_fields",
+                "submitted_by": None,
+                "existing_submitted_on": None,
+                "investigator_ids": [],
+                "expected_status": "draft",
+                "expected_submitted_on": None,
+            },
+        ],
+        ids=lambda c: c["id"],
+    )
+    def test_transform_update_proposal(self, case):
+        base = TestDataFactory.proposal()
+
+        inv_factory = getattr(TestDataFactory, "investigator", None)
+        inv_objs = (
+            [inv_factory(user_id=i) for i in case["investigator_ids"]]
+            if inv_factory
+            else [SimpleNamespace(user_id=i) for i in case["investigator_ids"]]
+        )
+
+        new_info = _replace_investigators(base.info, inv_objs)
+
+        incoming = base.model_copy(
+            update={
+                "submitted_by": case["submitted_by"],
+                "submitted_on": case["existing_submitted_on"],
+                "info": new_info,
+            }
+        )
+
+        t0 = datetime.now(timezone.utc)
+        out = svc.transform_update_proposal(incoming)
+        t1 = datetime.now(timezone.utc)
+
+        assert out.investigator_refs == case["investigator_ids"]
+
+        # submitted_on logic
+        if case["expected_submitted_on"] == "NOW":
+            ts = _parse_iso_z(_to_iso_z(out.submitted_on))
+            slack = timedelta(seconds=2)
+            assert (t0 - slack) <= ts <= (t1 + slack), f"{ts=}, bounds=({t0}, {t1})"
+        else:
+            assert _to_iso_z(out.submitted_on) == case["expected_submitted_on"]
+
+        status_str = str(out.status).lower().replace("proposalstatus.", "")
+        assert status_str == case["expected_status"]
+
+        assert out.prsl_id == incoming.prsl_id
+        assert out.cycle == incoming.cycle
+        assert out.info is incoming.info
 
 
 def test_join_proposals_panels_reviews_decisions():
