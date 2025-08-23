@@ -134,7 +134,6 @@ def update_proposal_service(
     """
     LOGGER.debug("update_proposal_service prsl_id=%s user_id=%s", prsl_id, user_id)
 
-    # Transform & validate
     try:
         transformed = transform_update_proposal(payload)
         candidate = Proposal.model_validate(transformed)
@@ -143,12 +142,10 @@ def update_proposal_service(
             detail=f"Validation error after transforming proposal: {err.args[0]}"
         ) from err
 
-    # Ensure the proposal exists
     existing = uow.prsls.get(prsl_id)
     if not existing:
         raise NotFoundError(detail=f"Proposal not found: {prsl_id}")
 
-    # Permission rows
     rows = assert_user_has_permission_for_proposal(
         uow=uow, prsl_id=prsl_id, user_id=user_id
     )

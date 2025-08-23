@@ -360,3 +360,68 @@ class TestPanelAutoCreateAPI:
         assert resp.status_code == HTTPStatus.BAD_REQUEST, resp.content
         uow.commit.assert_not_called()
         uow.prsls.get.assert_called_once_with("prop-missing")
+
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
+    @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
+    def test_auto_create_panel_sv_updates_proposals_to_under_review(
+        self,
+        mock_build_sv_panel_proposals,
+        mock_get_latest_entity_by_id,
+        mock_uow,
+        client,
+    ):
+        """
+        SV path with non-empty proposals:
+        - creates the SV panel,
+        - flips each proposal's status to UNDER_REVIEW,
+        - persists each via uow.prsls.add(),
+        - commits once.
+        """
+        uow = mock.MagicMock()
+        mock_uow.return_value.__enter__.return_value = uow
+
+        submitted_ids = [
+            SimpleNamespace(prsl_id="prop-1"),
+            SimpleNamespace(prsl_id="prop-2"),
+        ]
+        mock_get_latest_entity_by_id.side_effect = [submitted_ids, []]
+
+        mock_build_sv_panel_proposals.return_value = []
+
+        # New SV panel id
+        uow.panels.add.return_value = SimpleNamespace(panel_id="panel-new-sv")
+
+        p1_db = SimpleNamespace(
+            prsl_id="prop-1", status=panels_api.ProposalStatus.SUBMITTED
+        )
+        p2_db = SimpleNamespace(
+            prsl_id="prop-2", status=panels_api.ProposalStatus.SUBMITTED
+        )
+        uow.prsls.get.side_effect = [p1_db, p2_db]
+
+        payload = {
+            "name": "Science Verification",
+            "sci_reviewers": [],
+            "tech_reviewers": [],
+            "proposals": [],
+        }
+
+        resp = client.post(
+            f"{PANELS_API_URL}/auto-create",
+            json=payload,
+            headers={"Content-type": "application/json"},
+        )
+        assert resp.status_code == HTTPStatus.OK, resp.content
+        assert resp.json() == "panel-new-sv"
+
+        assert uow.prsls.get.call_args_list == [
+            mock.call("prop-1"),
+            mock.call("prop-2"),
+        ]
+
+        assert p1_db.status == panels_api.ProposalStatus.UNDER_REVIEW
+        assert p2_db.status == panels_api.ProposalStatus.UNDER_REVIEW
+        assert uow.prsls.add.call_args_list == [mock.call(p1_db), mock.call(p2_db)]
+
+        uow.commit.assert_called_once()
