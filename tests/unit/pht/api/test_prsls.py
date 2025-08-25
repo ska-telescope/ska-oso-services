@@ -4,7 +4,7 @@ Unit tests for ska_oso_pht_services.api
 
 import logging
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
@@ -12,8 +12,14 @@ from unittest import mock
 import pytest
 from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRefused
 from fastapi import status
+from pydantic import BaseModel, ValidationError
 from ska_db_oda.persistence.domain.query import CustomQuery
 
+from ska_oso_services.common.error_handling import (
+    BadRequestError,
+    ForbiddenError,
+    NotFoundError,
+)
 from ska_oso_services.pht.api.prsls import get_proposals_by_status
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
@@ -334,7 +340,9 @@ class TestProposalAPI:
         assert resp.status_code == HTTPStatus.OK, resp.json()
         assert resp.json() == []
 
-    @mock.patch("ska_oso_services.pht.api.prsls.update_proposal_service", autospec=True)
+    @mock.patch(
+        "ska_oso_services.pht.api.prsls.update_proposal_with_assignment", autospec=True
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_proposal_put_commit_valueerror_does_not_double_persist(
         self, mock_uow, mock_update_service, client
@@ -362,18 +370,363 @@ class TestProposalAPI:
         uow_ctx.prsls.add.assert_not_called()
 
 
+class TestGetProposalReview:
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_get_reviews_for_proposal_with_wrong_id(self, mock_oda, client):
+        """
+        Test reviews for a proposal with a wrong ID returns an empty list.
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.rvws.query.return_value = []
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        prsl_id = "wrong id"
+        response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.json() == []
+
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow")
+    def test_get_reviews_for_panel_with_valid_id(self, mock_oda, client):
+        """
+        Test reviews for a proposal with a valid ID returns the expected reviews.
+        """
+        review_objs = [TestDataFactory.reviews(prsl_id="my proposal")]
+        uow_mock = mock.MagicMock()
+        uow_mock.rvws.query.return_value = review_objs
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        prsl_id = "my proposal"
+        response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
+        assert response.status_code == HTTPStatus.OK
+
+        expected = [
+            obj.model_dump(mode="json", exclude={"metadata"}) for obj in review_objs
+        ]
+        payload = response.json()
+        # align shapes by dropping metadata
+        del payload[0]["metadata"]
+        assert expected == payload
+        assert payload[0]["review_id"] == expected[0]["review_id"]
+        assert payload[0]["panel_id"] == expected[0]["panel_id"]
+
+
+class TestUpdateProposalWithAssignmentEarlyPaths:
+    @staticmethod
+    def _iso(dt: datetime) -> str:
+        return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # -------Validation error (transform or model_validate) -> 400 ----------
+    @pytest.mark.parametrize("raise_at", ["transform", "model_validate"])
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service.ValidationError", new=Exception
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service.transform_update_proposal",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service.Proposal.model_validate",
+        autospec=True,
+    )
+    def test_validation_error_paths_raise_400(
+        self, mock_model_validate, mock_transform, raise_at
+    ):
+        user_id = "user-123"
+        uow = mock.MagicMock()
+        payload = TestDataFactory.proposal()
+
+        uow.prsls.get.return_value = TestDataFactory.proposal()
+
+        if raise_at == "transform":
+            mock_transform.side_effect = Exception(
+                "transform_update_proposal validation failure"
+            )
+        else:
+            mock_transform.return_value = payload.model_dump(mode="json")
+            mock_model_validate.side_effect = Exception(
+                "Proposal.model_validate validation failure"
+            )
+
+        with pytest.raises(BadRequestError):
+            ps.update_proposal_with_assignment(
+                uow=uow, prsl_id="prsl-1", payload=payload, user_id=user_id
+            )
+
+        uow.prsls.add.assert_not_called()
+        uow.panels.add.assert_not_called()
+
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service.transform_update_proposal",
+        autospec=True,
+    )
+    def test_existing_proposal_not_found_raises_404(self, mock_transform):
+        user_id = "user-123"
+        uow = mock.MagicMock()
+
+        payload = TestDataFactory.proposal()
+        mock_transform.return_value = payload.model_dump(mode="json")
+        uow.prsls.get.return_value = None
+
+        with pytest.raises(NotFoundError):
+            ps.update_proposal_with_assignment(
+                uow=uow, prsl_id="missing-1", payload=payload, user_id=user_id
+            )
+
+    @pytest.mark.parametrize(
+        "status,required_perm", [("draft", "update"), ("submitted", "submit")]
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service." "transform_update_proposal",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service"
+        ".assert_user_has_permission_for_proposal",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service." "proposal_service.get_latest_entity_by_id",
+        autospec=True,
+    )
+    def test_permissions_invocation(
+        self, mock_get_latest, mock_acl, mock_transform, status, required_perm
+    ):
+        user_id = "user-123"
+        uow = mock.MagicMock()
+
+        payload = (
+            TestDataFactory.complete_proposal()
+            if status == "submitted"
+            else TestDataFactory.proposal()
+        )
+        payload.status = status
+        if status == "submitted":
+            payload.submitted_on = "2025-06-01T00:00:00Z"
+
+        mock_transform.return_value = payload.model_dump(mode="json")
+        uow.prsls.get.return_value = TestDataFactory.proposal()
+        mock_acl.return_value = [
+            TestDataFactory.proposal_access(permissions=[required_perm])
+        ]
+
+        if status == "submitted":
+            mock_get_latest.side_effect = [
+                [],  # no SV panel
+                [SimpleNamespace(panel_id="panel-cat", proposals=[])],
+            ]
+            uow.prsls.add.side_effect = lambda c, uid: c
+
+        ps.update_proposal_with_assignment(
+            uow=uow, prsl_id=payload.prsl_id, payload=payload, user_id=user_id
+        )
+
+        mock_acl.assert_called_once()
+        _, kwargs = mock_acl.call_args
+        assert kwargs["uow"] is uow
+        assert kwargs["prsl_id"] == payload.prsl_id
+        assert kwargs["user_id"] == user_id
+
+    @pytest.mark.parametrize(
+        "submitted_on_value",
+        [
+            "2025-06-01T00:00:00Z",  # ISO Z string
+            datetime(2025, 6, 1, 0, 0, 0, tzinfo=timezone.utc),  # tz-aware datetime
+        ],
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service." "transform_update_proposal",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service"
+        ".assert_user_has_permission_for_proposal",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service." "proposal_service.get_latest_entity_by_id",
+        autospec=True,
+    )
+    def test_as_utc_dt_inputs_flow_to_assignment_valid(
+        self, mock_get_latest, mock_acl, mock_transform, submitted_on_value
+    ):
+        user_id = "user-123"
+        uow = mock.MagicMock()
+
+        # Build a valid submitted body that the service will model_validate
+        payload = TestDataFactory.complete_proposal()
+        body = payload.model_dump(mode="json")
+        body["status"] = "submitted"
+        body["submitted_on"] = submitted_on_value
+        mock_transform.return_value = body
+
+        # Proposal exists
+        uow.prsls.get.return_value = TestDataFactory.proposal()
+        mock_acl.return_value = [
+            TestDataFactory.proposal_access(permissions=["submit"])
+        ]
+
+        # No SV panel; category panel exists
+        panel = SimpleNamespace(panel_id="panel-cosmos", proposals=[])
+        mock_get_latest.side_effect = [
+            [],  # SV panel lookup
+            [panel],  # category panel lookup
+        ]
+
+        # Echo the candidate from repo.add
+        uow.prsls.add.side_effect = lambda c, uid: c
+
+        out = ps.update_proposal_with_assignment(
+            uow=uow, prsl_id=payload.prsl_id, payload=payload, user_id=user_id
+        )
+
+        # We don't check the exact timestamp; just that
+        # assignment happened and status persisted
+        uow.panels.add.assert_called_once()
+        saved_panel = uow.panels.add.call_args[0][0]
+        assert saved_panel is panel
+        assert any(
+            getattr(a, "prsl_id", None) == payload.prsl_id for a in panel.proposals
+        )
+        assert str(out.status).lower().endswith("under review")
+        uow.prsls.add.assert_called_once()
+
+    # ---- Naive datetime should be rejected by the model -> 400 ----
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service.transform_update_proposal",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service."
+        "assert_user_has_permission_for_proposal",
+        autospec=True,
+    )
+    def test_naive_submitted_on_rejected_with_400(self, mock_acl, mock_transform):
+        user_id = "user-123"
+        uow = mock.MagicMock()
+
+        payload = TestDataFactory.complete_proposal()
+
+        # Return a body dict with a NAIVE datetime for submitted_on
+        naive_dt = datetime(2025, 6, 1, 0, 0, 0)  # no tzinfo
+        body = payload.model_dump(mode="json")
+        body["status"] = "submitted"
+        body["submitted_on"] = naive_dt
+        mock_transform.return_value = body
+
+        # Ensure we get past the 'existing' check and perms
+        uow.prsls.get.return_value = TestDataFactory.proposal()
+        mock_acl.return_value = [
+            TestDataFactory.proposal_access(permissions=["submit"])
+        ]
+
+        with pytest.raises(BadRequestError):
+            ps.update_proposal_with_assignment(
+                uow=uow, prsl_id=payload.prsl_id, payload=payload, user_id=user_id
+            )
+
+        # Nothing persisted on validation failure
+        uow.panels.add.assert_not_called()
+        uow.prsls.add.assert_not_called()
+
+    # ----Unsupported but valid enum (neither DRAFT nor SUBMITTED) -> 400 ----
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service.transform_update_proposal",
+        autospec=True,
+    )
+    def test_status_neither_draft_nor_submitted_raises_400(self, mock_transform):
+        user_id = "user-123"
+        uow = mock.MagicMock()
+
+        payload = TestDataFactory.complete_proposal()
+        body = payload.model_dump(mode="json")
+
+        # Use a VALID enum that is neither DRAFT nor SUBMITTED so model_validate passes
+        body["status"] = ps.ProposalStatus.UNDER_REVIEW
+        mock_transform.return_value = body
+
+        # Existing proposal check passes
+        uow.prsls.get.return_value = TestDataFactory.complete_proposal()
+
+        with pytest.raises(BadRequestError):
+            ps.update_proposal_with_assignment(
+                uow=uow, prsl_id=payload.prsl_id, payload=payload, user_id=user_id
+            )
+
+        uow.prsls.add.assert_not_called()
+        uow.panels.add.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "submitted_on_value",
+        [
+            "2025-12-31T00:00:00Z",  # exactly at CLOSE_ON
+            "2026-01-01T00:00:00Z",  # after CLOSE_ON
+        ],
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service." "transform_update_proposal",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service"
+        ".assert_user_has_permission_for_proposal",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.proposal_service.get_latest_entity_by_id",
+        autospec=True,
+    )
+    def test_close_gate_submitted_on_at_or_after_close_skips_assignment(
+        self, mock_get_latest, mock_acl, mock_transform, submitted_on_value
+    ):
+        """
+        If submitted_on is at/after CLOSE_ON, service must:
+        - return existing proposal,
+        - NOT assign to any panel,
+        - NOT persist any changes,
+        - NOT even look up panels.
+        """
+        user_id = "user-123"
+        uow = mock.MagicMock()
+
+        payload = TestDataFactory.complete_proposal()
+        body = payload.model_dump(mode="json")
+        body["status"] = "submitted"
+        body["submitted_on"] = submitted_on_value
+        mock_transform.return_value = body
+
+        # Existing proposal with same id so service can return it unchanged
+        existing = TestDataFactory.complete_proposal(prsl_id=payload.prsl_id)
+        uow.prsls.get.return_value = existing
+
+        # Have submit permission so we reach the close-date gate
+        mock_acl.return_value = [
+            TestDataFactory.proposal_access(permissions=["submit"])
+        ]
+
+        out = ps.update_proposal_with_assignment(
+            uow=uow, prsl_id=payload.prsl_id, payload=payload, user_id=user_id
+        )
+
+        # Returned object is exactly the existing proposal (no mutation/persist)
+        assert out is existing
+
+        # No repo writes, no panel lookups/updates
+        uow.prsls.add.assert_not_called()
+        uow.panels.add.assert_not_called()
+        mock_get_latest.assert_not_called()
+
+
 class TestPutProposalAPI:
-    @mock.patch("ska_oso_services.pht.api.prsls.update_proposal_service", autospec=True)
+    @mock.patch(
+        "ska_oso_services.pht.api.prsls.update_proposal_with_assignment", autospec=True
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_proposal_put_id_mismatch_returns_422(
         self, mock_uow, mock_update_service, client
     ):
-        # Build a valid proposal body
         body = TestDataFactory.proposal()
-        body_id = body.prsl_id
-
-        # Use a different ID in the path to trigger the guard
-        path_id = f"{body_id}-DIFF"
+        path_id = f"{body.prsl_id}-DIFF"
 
         resp = client.put(
             f"{PROPOSAL_API_URL}/{path_id}",
@@ -381,304 +734,117 @@ class TestPutProposalAPI:
             headers={"Content-Type": "application/json"},
         )
 
-        # Expect Unprocessable Entity (adjust if your exception maps differently)
         assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-        assert (
-            "do not match" in resp.text
-        )  # "Proposal ID in path and body do not match."
+        assert "do not match" in resp.text.lower()
 
-        # The guard fires BEFORE opening UoW or calling the service
         mock_update_service.assert_not_called()
         mock_uow().__enter__.assert_not_called()
 
     @pytest.mark.parametrize(
-        "proposal_status,permissions",
+        "initial_status,final_status",
         [
-            ("submitted", ["submit", "view"]),
-            ("submitted", ["submit"]),
-            ("draft", ["update", "view"]),
-            ("draft", ["update"]),
+            ("draft", "draft"),
+            ("submitted", "under review"),
         ],
     )
     @mock.patch(
-        "ska_oso_services.pht.service.proposal_service.transform_update_proposal",
-        autospec=True,
-    )
-    @mock.patch(
-        "ska_oso_services.pht.service.proposal_service."
-        "assert_user_has_permission_for_proposal",
-        autospec=True,
+        "ska_oso_services.pht.api.prsls.update_proposal_with_assignment", autospec=True
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_proposal_put_success(
-        self, mock_uow, mock_acl, mock_transform, proposal_status, permissions, client
+        self, mock_uow, mock_update_service, initial_status, final_status, client
     ):
-        """
-        PUT /prsls/{id} succeeds when caller has the right permission.
-        - draft     -> requires update; persisted as draft
-        - submitted -> requires submit; transitioned to under_review then persisted
-        """
-        proposal_obj = (
-            TestDataFactory.complete_proposal()
-            if proposal_status == "submitted"
-            else TestDataFactory.proposal()
-        )
-        proposal_obj.status = proposal_status
-        proposal_id = proposal_obj.prsl_id
+        incoming = TestDataFactory.complete_proposal()
+        incoming.status = initial_status
+        proposal_id = incoming.prsl_id
+
+        returned = TestDataFactory.complete_proposal(prsl_id=proposal_id)
+        returned.status = final_status
+        mock_update_service.return_value = returned
 
         uow_mock = mock.MagicMock()
         mock_uow().__enter__.return_value = uow_mock
 
-        uow_mock.prsls.get.return_value = proposal_obj
-        uow_mock.prsls.add.side_effect = lambda p: p
-
-        mock_acl.return_value = [
-            TestDataFactory.proposal_access(permissions=permissions)
-        ]
-
-        mock_transform.return_value = proposal_obj.model_dump(mode="json")
-
-        result = client.put(
+        resp = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
-            data=proposal_obj.model_dump_json(),
-            headers={"Content-type": "application/json"},
+            data=incoming.model_dump_json(),
+            headers={"Content-Type": "application/json"},
         )
 
-        assert result.status_code == HTTPStatus.OK
-        body = result.json()
-        assert body["prsl_id"] == proposal_id
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.json() == returned.model_dump(mode="json")
 
-        expected_status = "under_review" if proposal_status == "submitted" else "draft"
-        actual_status = str(body["status"]).replace(" ", "_").lower()
-        assert actual_status == expected_status
-
-        called_proposal = uow_mock.prsls.add.call_args[0][0]
-        called_status = (
-            str(getattr(called_proposal, "status", None)).replace(" ", "_").lower()
-        )
-        if called_status.startswith("proposalstatus."):
-            called_status = called_status.split(".", 1)[1].lower()
-        assert called_status == expected_status
+        assert mock_update_service.call_count == 1
+        _, kwargs = mock_update_service.call_args
+        assert kwargs["prsl_id"] == proposal_id
+        assert kwargs["uow"] is uow_mock
+        assert "user_id" in kwargs
 
         uow_mock.commit.assert_called_once()
-        mock_transform.assert_called_once()
-        mock_acl.assert_called_once()
 
     @pytest.mark.parametrize(
-        "proposal_status,permissions",
+        "exc_cls,http_code",
         [
-            ("submitted", ["view", "update"]),
-            ("submitted", []),
-            ("draft", ["view"]),
-            ("draft", []),
+            (ForbiddenError, HTTPStatus.FORBIDDEN),
+            (NotFoundError, HTTPStatus.NOT_FOUND),
+            (BadRequestError, HTTPStatus.BAD_REQUEST),
         ],
     )
     @mock.patch(
-        "ska_oso_services.pht.service.proposal_service.transform_update_proposal",
-        autospec=True,
-    )
-    @mock.patch(
-        "ska_oso_services.pht.service.proposal_service."
-        "assert_user_has_permission_for_proposal",
-        autospec=True,
+        "ska_oso_services.pht.api.prsls.update_proposal_with_assignment", autospec=True
     )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_proposal_put_forbidden(
-        self, mock_uow, mock_acl, mock_transform, proposal_status, permissions, client
+    def test_proposal_put_error_paths(
+        self, mock_uow, mock_update_service, exc_cls, http_code, client
     ):
-        """
-        PUT /prsls/{id} returns 403 when the caller lacks the required permission.
-        """
+        incoming = TestDataFactory.proposal()
+        proposal_id = incoming.prsl_id
+
+        # Clearer message than "boom"
+        mock_update_service.side_effect = exc_cls("simulated service failure")
+
         uow_mock = mock.MagicMock()
         mock_uow().__enter__.return_value = uow_mock
 
-        proposal_obj = (
-            TestDataFactory.complete_proposal()
-            if proposal_status == "submitted"
-            else TestDataFactory.proposal()
-        )
-        proposal_obj.status = proposal_status
-        proposal_id = proposal_obj.prsl_id
-
-        uow_mock.prsls.get.return_value = proposal_obj
-        uow_mock.prsls.add.return_value = proposal_obj
-
-        mock_acl.return_value = [
-            TestDataFactory.proposal_access(permissions=permissions)
-        ]
-
-        mock_transform.return_value = proposal_obj.model_dump(mode="json")
-
-        result = client.put(
+        resp = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
-            data=proposal_obj.model_dump_json(),
-            headers={"Content-type": "application/json"},
+            data=incoming.model_dump_json(),
+            headers={"Content-Type": "application/json"},
         )
 
-        assert result.status_code == HTTPStatus.FORBIDDEN
-        uow_mock.prsls.add.assert_not_called()
+        assert resp.status_code == http_code
         uow_mock.commit.assert_not_called()
 
-        mock_transform.assert_called_once()
-        mock_acl.assert_called_once()
+    @mock.patch(
+        "ska_oso_services.pht.api.prsls.update_proposal_with_assignment", autospec=True
+    )
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_proposal_put_commit_value_error_returns_400(
+        self, mock_uow, mock_update_service, client
+    ):
+        incoming = TestDataFactory.proposal()
+        proposal_id = incoming.prsl_id
 
-        @pytest.mark.parametrize(
-            "proposal_status,permissions",
-            [
-                ("submitted", ["view", "update"]),
-            ],
+        updated = TestDataFactory.proposal(prsl_id=proposal_id)
+        mock_update_service.return_value = updated
+
+        uow_mock = mock.MagicMock()
+        # Clearer message than "broken commit"
+        uow_mock.commit.side_effect = ValueError("simulated database commit failure")
+        mock_uow().__enter__.return_value = uow_mock
+
+        resp = client.put(
+            f"{PROPOSAL_API_URL}/{proposal_id}",
+            data=incoming.model_dump_json(),
+            headers={"Content-Type": "application/json"},
         )
-        @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-        def test_proposal_put_forbidden_without_mock_proposal_service(
-            self, mock_uow, proposal_status, permissions, client
-        ):
-            """
-            Check the prsls_put method returns forbidden when the user has no permission
-            """
 
-            uow_mock = mock.MagicMock()
-            uow_mock.prsl.__contains__.return_value = True
+        assert resp.status_code == HTTPStatus.BAD_REQUEST
+        detail = resp.json().get("detail", "").lower()
+        assert "validation error while saving proposal" in detail
 
-            proposal_obj = TestDataFactory.complete_proposal()
-
-            proposal_obj.status = proposal_status
-            proposal_id = proposal_obj.prsl_id
-            uow_mock.prsls.add.return_value = proposal_obj
-            uow_mock.prsls.get.return_value = proposal_obj
-            mock_uow().__enter__.return_value = uow_mock
-
-            result = client.put(
-                f"{PROPOSAL_API_URL}/{proposal_id}",
-                data=proposal_obj.model_dump_json(),
-                headers={"Content-type": "application/json"},
-            )
-
-            assert result.status_code == HTTPStatus.FORBIDDEN
-
-        @mock.patch(
-            "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
-            autospec=True,
-        )
-        @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-        def test_update_proposal_not_found(self, mock_uow, mock_acl, client):
-            """
-            Should return 404 if proposal doesn't exist.
-            """
-            proposal_obj = TestDataFactory.proposal()
-            proposal_id = proposal_obj.prsl_id
-
-            uow_mock = mock.MagicMock()
-            uow_mock.prsls.get.return_value = None  # not found
-            mock_uow.return_value.__enter__.return_value = uow_mock
-
-            mock_acl.return_value = [
-                TestDataFactory.proposal_access(permissions=["update"])
-            ]
-
-            response = client.put(
-                f"{PROPOSAL_API_URL}/{proposal_id}",
-                data=proposal_obj.model_dump_json(),
-                headers={"Content-Type": "application/json"},
-            )
-
-            assert response.status_code == HTTPStatus.NOT_FOUND
-            assert "not found" in response.json()["detail"].lower()
-
-        @mock.patch(
-            "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
-            autospec=True,
-        )
-        @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-        def test_update_proposal_id_mismatch(self, mock_uow, mock_acl, client):
-            """
-            Should raise 422 when ID in path != payload.
-            """
-            proposal_obj = TestDataFactory.proposal()
-            path_id = "diff-id"
-
-            mock_acl.return_value = [
-                TestDataFactory.proposal_access(permissions=["update"])
-            ]
-
-            response = client.put(
-                f"{PROPOSAL_API_URL}/{path_id}",
-                data=proposal_obj.model_dump_json(),
-                headers={"Content-Type": "application/json"},
-            )
-
-            assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-            assert "do not match" in response.json()["detail"].lower()
-
-        @mock.patch(
-            "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
-            autospec=True,
-        )
-        @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-        def test_update_proposal_validation_error(self, mock_oda, mock_acl, client):
-            """
-            Should return 400 if .add() raises ValueError.
-            """
-            proposal_obj = TestDataFactory.proposal()
-            proposal_id = proposal_obj.prsl_id
-
-            uow_mock = mock.MagicMock()
-            uow_mock.prsls.get.return_value = proposal_obj
-            uow_mock.prsls.add.side_effect = ValueError("Invalid proposal content")
-            mock_oda.return_value.__enter__.return_value = uow_mock
-
-            mock_acl.return_value = [
-                TestDataFactory.proposal_access(permissions=["update"])
-            ]
-
-            response = client.put(
-                f"{PROPOSAL_API_URL}/{proposal_id}",
-                data=proposal_obj.model_dump_json(),
-                headers={"Content-Type": "application/json"},
-            )
-
-            assert response.status_code == HTTPStatus.BAD_REQUEST
-            assert "validation error" in response.json()["detail"].lower()
-
-        @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-        def test_get_reviews_for_proposal_with_wrong_id(self, mock_oda, client):
-            """
-            Test reviews for a proposal with a wrong ID returns an empty list.
-            """
-            uow_mock = mock.MagicMock()
-            uow_mock.rvws.query.return_value = []
-            mock_oda.return_value.__enter__.return_value = uow_mock
-
-            prsl_id = "wrong id"
-            response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
-
-            assert response.status_code == HTTPStatus.OK
-            res = response.json()
-            assert res == []
-
-        @mock.patch("ska_oso_services.pht.api.prsls.oda.uow")
-        def test_get_reviews_for_panel_with_valid_id(self, mock_oda, client):
-            """
-            Test reviews for a proposal with a valid ID returns the expected reviews.
-            """
-            review_objs = [
-                TestDataFactory.reviews(prsl_id="my proposal"),
-            ]
-            uow_mock = mock.MagicMock()
-            uow_mock.rvws.query.return_value = review_objs
-            mock_oda.return_value.__enter__.return_value = uow_mock
-
-            prsl_id = "my proposal"
-            response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
-            assert response.status_code == HTTPStatus.OK
-
-            expected = [
-                obj.model_dump(mode="json", exclude={"metadata"}) for obj in review_objs
-            ]
-            response = response.json()
-            del response[0]["metadata"]
-            assert expected == response
-            assert response[0]["review_id"] == expected[0]["review_id"]
-            assert response[0]["panel_id"] == expected[0]["panel_id"]
+        mock_update_service.assert_called_once()
+        uow_mock.commit.assert_called_once()
 
 
 class TestProposalBatch:

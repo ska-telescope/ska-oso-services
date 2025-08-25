@@ -16,7 +16,7 @@ from ska_oso_services.common.coordinateslookup import (
 )
 from ska_oso_services.common.model import AppModel
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/coordinates")
 
@@ -63,7 +63,7 @@ def get_systemcoordinates(
              In case of an error, an error response is returned.
     :rtype: GalacticResponse | EquatorialResponse
     """
-    LOGGER.debug("GET coordinates: %s", identifier)
+    logger.debug("GET coordinates: %s", identifier)
     response = get_coordinates(identifier)
 
     if reference_frame.lower() == "galactic":

@@ -13,7 +13,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/panel/decision", tags=["PMT API - Panel Decision"])
 
@@ -38,7 +38,7 @@ def create_panel_decision(decisions: PanelDecision) -> str:
         str: The identifier (id) of the created panel decision.
     """
 
-    LOGGER.debug("POST PANEL DECISIONS create")
+    logger.debug("POST PANEL DECISIONS create")
 
     try:
         with oda.uow() as uow:
@@ -46,7 +46,7 @@ def create_panel_decision(decisions: PanelDecision) -> str:
             uow.commit()
         return created_decision.decision_id
     except ValueError as err:
-        LOGGER.exception(
+        logger.exception(
             "ValueError when adding Decision for a panel to the ODA: %s", err
         )
         raise BadRequestError(
@@ -72,7 +72,7 @@ def get_panel_decision(decision_id: str) -> PanelDecision:
         PanelDecision: The created panel decision, validated against the schema.
         This includes the metadata such as `created_by`, and `created_on`.
     """
-    LOGGER.debug("GET panel DECISION decision_id: %s", decision_id)
+    logger.debug("GET panel DECISION decision_id: %s", decision_id)
 
     with oda.uow() as uow:
         decision = uow.pnlds.get(decision_id)
@@ -80,7 +80,7 @@ def get_panel_decision(decision_id: str) -> PanelDecision:
 
 
 @router.get(
-    "/list/{user_id}",
+    "/users/{user_id}/decisions",
     summary="Get a list of Decisions created by the given user",
     dependencies=[
         Permissions(
@@ -95,7 +95,7 @@ def get_panel_decisions_for_user(user_id: str) -> list[PanelDecision]:
     ODA, if available
     """
 
-    LOGGER.debug("GET Decision LIST query for the user: %s", user_id)
+    logger.debug("GET Decision LIST query for the user: %s", user_id)
 
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
@@ -117,11 +117,11 @@ def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDec
     """
     Updates a decision in the ODA.
     """
-    LOGGER.debug("PUT Decision - Attempting update for Decision_id: %s", decision_id)
+    logger.debug("PUT Decision - Attempting update for Decision_id: %s", decision_id)
 
     # Ensure ID match
     if decision.decision_id != decision_id:
-        LOGGER.warning(
+        logger.warning(
             "Decision ID mismatch: decision ID=%s in path, body ID=%s",
             decision_id,
             decision.decision_id,
@@ -134,17 +134,17 @@ def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDec
         # Verify Decision exists
         existing = uow.pnlds.get(decision_id)
         if not existing:
-            LOGGER.info("Decision not found for update: %s", decision_id)
+            logger.info("Decision not found for update: %s", decision_id)
             raise NotFoundError(detail="Decision not found: {decision_id}")
 
         try:
             updated_decision = uow.pnlds.add(decision)  # Add is used for update
             uow.commit()
-            LOGGER.info("Decision %s updated successfully", decision_id)
+            logger.info("Decision %s updated successfully", decision_id)
             return updated_decision
 
         except ValueError as err:
-            LOGGER.error("Validation failed for Decision %s: %s", decision_id, err)
+            logger.error("Validation failed for Decision %s: %s", decision_id, err)
             raise BadRequestError(
                 detail="Validation error while saving Decision: {err.args[0]}"
             ) from err

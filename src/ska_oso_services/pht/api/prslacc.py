@@ -18,7 +18,7 @@ from ska_oso_services.pht.models.schemas import (
 )
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/proposal-access", tags=["PPT API - Proposal Access Management"]
@@ -40,7 +40,7 @@ def post_create_access(
     This endpoint will be removed in the future, use the PUT endpoint instead.
     as there will be no creation of a new proposal access, only updates.
     """
-    LOGGER.debug("Creating a new proposal access")
+    logger.debug("Creating a new proposal access")
     try:
         rand_part = uuid.uuid4().hex[:6]
         prslacc_create.access_id = f"prslacc-{rand_part}-{prslacc_create.user_id[:7]}"
@@ -50,7 +50,7 @@ def post_create_access(
         return persisted_prslacc.access_id
 
     except ValueError as err:
-        LOGGER.exception("ValueError when adding proposal access to the ODA: %s", err)
+        logger.exception("ValueError when adding proposal access to the ODA: %s", err)
         raise BadRequestError(
             detail=f"Failed attempting to create proposal access: '{err.args[0]}'",
         ) from err
@@ -68,7 +68,7 @@ def get_access_for_user(
         ),
     ],
 ) -> list[ProposalAccessResponse]:
-    LOGGER.debug("Retrieving proposal access for user: %s", auth.user_id)
+    logger.debug("Retrieving proposal access for user: %s", auth.user_id)
 
     with oda.uow() as uow:
         query_param = CustomQuery(user_id=auth.user_id)
@@ -92,7 +92,7 @@ def get_access_by_prsl_id(
     ],
 ) -> list[ProposalAccessByProposalResponse]:
     # pylint: disable=unused-argument
-    LOGGER.debug("Retrieving proposal access for prsl id: %s", prsl_id)
+    logger.debug("Retrieving proposal access for prsl id: %s", prsl_id)
 
     with oda.uow() as uow:
         query_param_pi = CustomQuery(
@@ -143,11 +143,11 @@ def update_access(
         with oda.uow() as uow:
             updated_prsl = uow.prslacc.add(access, auth.user_id)
             uow.commit()
-            LOGGER.info("Proposal access id %s updated successfully", access.access_id)
+            logger.info("Proposal access id %s updated successfully", access.access_id)
             return updated_prsl
 
     except ValueError as err:
-        LOGGER.error(
+        logger.error(
             "Validation failed for proposal access with id %s: %s", access_id, err
         )
         raise BadRequestError(

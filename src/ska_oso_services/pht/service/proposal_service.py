@@ -15,7 +15,7 @@ from ska_oso_services.common.error_handling import (
 from ska_oso_services.pht.utils.constants import ACCESS_ID
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def transform_update_proposal(data: Proposal) -> Proposal:
@@ -58,7 +58,7 @@ def assert_user_has_permission_for_proposal(
         specific proposal or raise ForbiddenError.
 
     Args:
-        uow: Unit-of-work with `prslacc` repo access.
+        uow: Unit-of-work.
         user_id: The user identifier to check.
         prsl_id: Proposal identifier.
 
@@ -86,12 +86,12 @@ def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
     """
     Return sorted unique proposal IDs accessible to a user.
 
-    The function queries the proposal-access repository for all access rows
+    The function queries the `proposal-access` table for all access rows
     that match the given user and then selects the latest entity per access_id,
     finally deduplicating and sorting by proposal id.
 
     Args:
-        uow: Unit-of-work providing `prslacc` repo with a `query` method.
+        uow: Unit-of-work
         user_id: The user identifier from the token of the authenticated user.
 
     Returns:
@@ -112,7 +112,7 @@ def _require_perm(
     rows, required: ProposalPermissions, action: str, prsl_id: str, user_id: str
 ) -> None:
     if not any(required in r.permissions for r in rows):
-        LOGGER.info(
+        logger.info(
             "Forbidden %s attempt for proposal=%s by user_id=%s",
             action,
             prsl_id,
@@ -123,21 +123,32 @@ def _require_perm(
         )
 
 
-def update_proposal_service(
+def update_proposal_with_assignment(
     *, uow, prsl_id: str, payload: Proposal, user_id: str
 ) -> Proposal:
     """
     - DRAFT -> require Update; persist as-is.
     - SUBMITTED ->
         - require Submit;
-        - if submitted_on >= CLOSE_ON: SKIP (no panel assignment, no status change/persist), return existing;
+        - if submitted_on >= CLOSE_ON: SKIP (no panel assignment,
+        no status change/persist), return existing;
         - if submitted_on < CLOSE_ON:
-            - assign to existing panel (prefer 'Science Verification', else by info.science_category);
-            - if no suitable panel exists -> raise NotFoundError (do NOT create);
-            - set UNDER_REVIEW and persist.
+            - assign to existing panel (check if there is 'Science Verification',
+            else by info.science_category);
+            - if no suitable panel exists -> raise NotFoundError (DO NOT create:
+            this needs to be discussed
+            with SciOps if to allow manual creation of panel at any point);
+            - set status to UNDER_REVIEW and persist.
     - otherwise -> 400.
+    Note:  CLOSE_ON is hardcoded but should be replaced with data from OSD
+            Get the cycle form proposal to properly determin if science verification
+            or proposals to determine which panel to assign the proposal.
+    Assumption: The assumption here is that only Science Verification or
+        Proposals and not both. We also need to update it here such that even
+        when SV panel exist, it should use the OSD to determine the panel to use
+        and also handle the overlap situations.
     """
-    LOGGER.debug("update_proposal_service prsl_id=%s user_id=%s", prsl_id, user_id)
+    logger.debug("update_proposal_service prsl_id=%s user_id=%s", prsl_id, user_id)
 
     # Transform & validate
     try:
@@ -145,7 +156,7 @@ def update_proposal_service(
         candidate = Proposal.model_validate(transformed)
     except ValidationError as err:
         raise BadRequestError(
-            detail=f"Validation error after transforming proposal: {err.args[0]}"
+            detail=f"Validation error after transforming proposal: {err}"
         ) from err
 
     # Ensure the proposal exists
@@ -161,7 +172,7 @@ def update_proposal_service(
     if candidate.status == ProposalStatus.DRAFT:
         _require_perm(rows, ProposalPermissions.Update, "update", prsl_id, user_id)
         updated = uow.prsls.add(candidate, user_id)
-        LOGGER.info("Proposal %s prepared with status=%s", prsl_id, updated.status)
+        logger.info("Proposal %s prepared with status=%s", prsl_id, updated.status)
         return updated
 
     if candidate.status != ProposalStatus.SUBMITTED:
@@ -170,7 +181,7 @@ def update_proposal_service(
         )
     _require_perm(rows, ProposalPermissions.Submit, "submit", prsl_id, user_id)
 
-    # ---- Close-date gate (hard-coded) ----
+    # ---- Close-date (hard-coded) but should come from OSD observation policy ----
     # Midnight (00:00:00) UTC of the close date
     CLOSE_DATE = date(2025, 12, 31)
     CLOSE_ON = datetime.combine(CLOSE_DATE, time(0, 0, tzinfo=timezone.utc))
@@ -192,7 +203,7 @@ def update_proposal_service(
 
     # If at/after close date: skip any changes
     if submitted_dt >= CLOSE_ON:
-        LOGGER.info(
+        logger.info(
             "Skipping panel assignment & status update for prsl_id=%s: "
             "submitted_on=%s >= CLOSE_ON=%s",
             prsl_id,
@@ -201,19 +212,20 @@ def update_proposal_service(
         )
         return existing
 
-    # ---- assign to existing panel only (no creation) ----
+    # ---- assign to existing panel only (no creation of new panel) ----
+    # -----Further discuss this with SciOps to determin the rule here ----------
     sv_name = "Science Verification"
     sv = get_latest_entity_by_id(
         uow.panels.query(CustomQuery(name=sv_name)), "panel_id"
     )
-    target_name = sv_name if sv else getattr(candidate.info, "science_category", None)
+    target_panel = sv_name if sv else getattr(candidate.info, "science_category", None)
 
     panel_list = get_latest_entity_by_id(
-        uow.panels.query(CustomQuery(name=target_name)), "panel_id"
+        uow.panels.query(CustomQuery(name=target_panel)), "panel_id"
     )
     panel = panel_list[0] if panel_list else None
     if not panel:
-        raise NotFoundError(detail=f"Target panel not found: {target_name}")
+        raise NotFoundError(detail=f"Target panel not found: {target_panel}")
 
     now = datetime.now(timezone.utc)
 
@@ -222,6 +234,7 @@ def update_proposal_service(
             entry["prsl_id"] if isinstance(entry, dict) else getattr(entry, "prsl_id")
         )
 
+    # -----check if proposal is in panel, if not assign to the panel---------
     existing_ids = {_entry_prsl_id(p) for p in (panel.proposals or [])}
     if candidate.prsl_id not in existing_ids:
         assignment = ProposalAssignment(prsl_id=candidate.prsl_id, assigned_on=now)
@@ -230,5 +243,5 @@ def update_proposal_service(
 
     candidate.status = ProposalStatus.UNDER_REVIEW
     updated = uow.prsls.add(candidate, user_id)
-    LOGGER.info("Proposal %s prepared with status=%s", prsl_id, updated.status)
+    logger.info("Proposal %s prepared with status=%s", prsl_id, updated.status)
     return updated

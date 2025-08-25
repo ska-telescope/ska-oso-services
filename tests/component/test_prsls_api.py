@@ -427,7 +427,9 @@ def test_get_reviews_for_panel_with_valid_id(authrequests):
     panel = TestDataFactory.panel_basic(panel_id=panel_id, name="New name")
     data = panel.json()
     response = authrequests.post(
-        f"{PANELS_API_URL}", data=data, headers={"Content-Type": "application/json"}
+        f"{PANELS_API_URL}/create",
+        data=data,
+        headers={"Content-Type": "application/json"},
     )
     assert response.status_code == HTTPStatus.OK
     review = [
@@ -436,7 +438,7 @@ def test_get_reviews_for_panel_with_valid_id(authrequests):
         )
     ]
     response = authrequests.post(
-        f"{PHT_URL}/reviews/",
+        f"{PHT_URL}/reviews/create",
         data=review[0].json(),
         headers={"Content-Type": "application/json"},
     )

@@ -13,7 +13,7 @@ from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.odt.api.prjs import _create_prj_status_entity
 from ska_oso_services.odt.service.project_generator import generate_project
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 API_ROLES = {
     Role.SW_ENGINEER,
@@ -34,7 +34,7 @@ router = APIRouter(prefix="/prsls")
     dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_prsl_post(prsl_id: str) -> Project:
-    LOGGER.debug("POST PRSLS generateProject from prsl_id: %s", prsl_id)
+    logger.debug("POST PRSLS generateProject from prsl_id: %s", prsl_id)
     with oda.uow() as uow:
         proposal = uow.prsls.get(prsl_id)
         project = generate_project(proposal)

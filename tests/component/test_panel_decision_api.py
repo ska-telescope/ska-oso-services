@@ -23,7 +23,7 @@ def test_create_and_get_panel_decision(authrequests):
 
     # POST using JSON string
     post_response = authrequests.post(
-        f"{PHT_URL}/panel/decision/",
+        f"{PHT_URL}/panel/decision/create",
         data=VALID_PANEL_DECISION,
         headers={"Content-Type": "application/json"},
     )
@@ -59,7 +59,7 @@ def test_panel_decision_create_then_put(authrequests):
 
     # POST a new proposal
     post_response = authrequests.post(
-        f"{PHT_URL}/panel/decision/",
+        f"{PHT_URL}/panel/decision/create",
         data=VALID_PANEL_DECISION,
         headers={"Content-Type": "application/json"},
     )
@@ -110,7 +110,7 @@ def test_get_list_panel_decision_for_user(authrequests):
         proposal_json = proposal.model_dump_json()
 
         response = authrequests.post(
-            f"{PHT_URL}/panel/decision/",
+            f"{PHT_URL}/panel/decision/create",
             data=proposal_json,
             headers={"Content-Type": "application/json"},
         )
@@ -123,8 +123,9 @@ def test_get_list_panel_decision_for_user(authrequests):
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     user_id = get_response.json()["metadata"]["created_by"]
 
-    # GET /list/{user_id}
-    list_response = authrequests.get(f"{PHT_URL}/panel/decision/list/{user_id}")
+    list_response = authrequests.get(
+        f"{PHT_URL}/panel/decision/users/{user_id}/decisions"
+    )
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     reviews = list_response.json()
@@ -136,4 +137,4 @@ def test_get_list_panel_decision_for_user(authrequests):
     for decision_id in created_ids:
         assert (
             decision_id in returned_ids
-        ), f"Missing proposal {decision_id} in GET /list/{user_id}"
+        ), f"Missing proposal {decision_id} in GET /users/{user_id}/decisions"

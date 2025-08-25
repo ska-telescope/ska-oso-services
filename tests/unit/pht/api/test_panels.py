@@ -85,7 +85,7 @@ class TestPanelsAPI:
 
         data = panel.json()
 
-        response = client.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
+        response = client.post(f"{PANELS_API_URL}/create", data=data, headers=HEADERS)
 
         assert response.status_code == HTTPStatus.OK
 
@@ -106,7 +106,7 @@ class TestPanelsAPI:
 
         data = panel.json()
 
-        response = client.post(f"{PANELS_API_URL}", data=data, headers=HEADERS)
+        response = client.post(f"{PANELS_API_URL}/create", data=data, headers=HEADERS)
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
@@ -143,7 +143,7 @@ class TestPanelsAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         user_id = "DefaultUser"
-        response = client.get(f"{PANELS_API_URL}/list/{user_id}")
+        response = client.get(f"{PANELS_API_URL}/users/{user_id}/panels")
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(panels_objs)
@@ -165,17 +165,17 @@ class TestPanelAutoCreateAPI:
         mock_oda,
         client,
     ):
-        panel_obj = TestDataFactory.panel_basic(
-            panel_id="panel-888", name="Science Verification"
-        )
-
         uow = mock.MagicMock()
         mock_oda.return_value.__enter__.return_value = uow
 
+        # 1) submitted proposals -> []
+        # 2) existing SV panel   -> []
         mock_get_latest_entity_by_id.side_effect = [[], []]
         mock_build_sv_panel_proposals.return_value = []
 
-        uow.panels.add.return_value = panel_obj
+        uow.panels.add.return_value = TestDataFactory.panel_basic(
+            panel_id="panel-888", name="Science Verification"
+        )
 
         payload = {
             "name": "Science Verification",
@@ -184,20 +184,19 @@ class TestPanelAutoCreateAPI:
             "proposals": [],
         }
 
-        resp = client.post(
-            f"{PANELS_API_URL}/auto-create",
-            json=payload,
-            headers={"Content-type": "application/json"},
-        )
+        resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
         assert resp.status_code == HTTPStatus.OK, resp.content
         assert resp.json() == "panel-888"
 
-        mock_build_sv_panel_proposals.assert_called_once()
+        # No category path helpers
+        mock_upsert_panel.assert_not_called()
+        mock_build_panel_response.assert_not_called()
+
+        # SV path helpers
+        mock_build_sv_panel_proposals.assert_called_once_with([])
         added_panel = uow.panels.add.call_args[0][0]
         assert getattr(added_panel, "name") == "Science Verification"
         uow.commit.assert_called_once()
-        mock_upsert_panel.assert_not_called()
-        mock_build_panel_response.assert_not_called()
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
@@ -217,17 +216,18 @@ class TestPanelAutoCreateAPI:
         uow = mock.MagicMock()
         mock_oda.return_value.__enter__.return_value = uow
 
+        # deterministic pool
         monkeypatch.setattr(
             panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True
         )
 
+        # No submitted proposals -> upsert gets [], []
         mock_get_latest_entity_by_id.return_value = []
 
-        def upsert_panel_side_effect(
-            uow_, panel_name, sci_reviewers, tech_reviewers, proposals
-        ):
+        def upsert_panel_side_effect(*args, **kwargs):
+            name = kwargs.get("panel_name") or (args[1] if len(args) > 1 else None)
             return TestDataFactory.panel_basic(
-                panel_id=f"panel-{panel_name.lower()}", name=panel_name
+                panel_id=f"panel-{name.lower()}", name=name
             )
 
         mock_upsert_panel.side_effect = upsert_panel_side_effect
@@ -244,21 +244,26 @@ class TestPanelAutoCreateAPI:
             "proposals": [],
         }
 
-        resp = client.post(
-            f"{PANELS_API_URL}/auto-create",
-            json=payload,
-            headers={"Content-type": "application/json"},
-        )
+        resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
         assert resp.status_code == HTTPStatus.OK, resp.content
+
         result = resp.json()
-        assert isinstance(result, list)
         assert {p["name"] for p in result} == {"Cosmology", "Stars"}
         assert all(p["proposal_count"] == 0 for p in result)
 
+        # Assert upsert was invoked once per bucket with empty proposals
         assert mock_upsert_panel.call_count == 2
+        for call in mock_upsert_panel.call_args_list:
+            _, kwargs = call
+            assert kwargs["uow"] is uow
+            assert kwargs["panel_name"] in {"Cosmology", "Stars"}
+            assert kwargs["science_reviewers"] == []
+            assert kwargs["technical_reviewers"] == []
+            assert kwargs["proposals"] == []
+
+        mock_build_sv_panel_proposals.assert_not_called()
         mock_build_panel_response.assert_called_once()
         uow.commit.assert_called_once()
-        mock_build_sv_panel_proposals.assert_not_called()
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
@@ -277,6 +282,8 @@ class TestPanelAutoCreateAPI:
         uow = mock.MagicMock()
         mock_oda.return_value.__enter__.return_value = uow
 
+        # 1) submitted proposals -> []
+        # 2) existing SV panel present
         mock_get_latest_entity_by_id.side_effect = [
             [],
             [SimpleNamespace(panel_id="panel-existing-sv")],
@@ -289,11 +296,7 @@ class TestPanelAutoCreateAPI:
             "proposals": [],
         }
 
-        resp = client.post(
-            f"{PANELS_API_URL}/auto-create",
-            json=payload,
-            headers={"Content-type": "application/json"},
-        )
+        resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
         assert resp.status_code == HTTPStatus.OK, resp.content
         assert resp.json() == "panel-existing-sv"
 
@@ -318,8 +321,8 @@ class TestPanelAutoCreateAPI:
         mock_oda.return_value.__enter__.return_value = uow
 
         submitted = [SimpleNamespace(prsl_id="prop-missing")]
+        # 1) submitted proposals list, 2) no existing SV panel -> create
         mock_get_latest_entity_by_id.side_effect = [submitted, []]
-
         mock_build_sv_panel_proposals.return_value = []
 
         uow.panels.add.return_value = TestDataFactory.panel_basic(
@@ -329,6 +332,7 @@ class TestPanelAutoCreateAPI:
         class DummyNotFound(Exception):
             pass
 
+        # the endpoint catches panels_api.ODANotFound
         monkeypatch.setattr(panels_api, "ODANotFound", DummyNotFound, raising=False)
         uow.prsls.get.side_effect = DummyNotFound
 
@@ -339,12 +343,7 @@ class TestPanelAutoCreateAPI:
             "proposals": [],
         }
 
-        resp = client.post(
-            f"{PANELS_API_URL}/auto-create",
-            json=payload,
-            headers={"Content-type": "application/json"},
-        )
-
+        resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, resp.content
         uow.commit.assert_not_called()
         uow.prsls.get.assert_called_once_with("prop-missing")
@@ -366,6 +365,7 @@ class TestPanelAutoCreateAPI:
             SimpleNamespace(prsl_id="prop-1"),
             SimpleNamespace(prsl_id="prop-2"),
         ]
+        # 1) submitted proposals, 2) no existing SV panel -> create
         mock_get_latest_entity_by_id.side_effect = [submitted_ids, []]
         mock_build_sv_panel_proposals.return_value = []
 
@@ -388,11 +388,7 @@ class TestPanelAutoCreateAPI:
             "proposals": [],
         }
 
-        resp = client.post(
-            f"{PANELS_API_URL}/auto-create",
-            json=payload,
-            headers={"Content-type": "application/json"},
-        )
+        resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
         assert resp.status_code == HTTPStatus.OK, resp.content
         assert resp.json() == "panel-new-sv"
 
@@ -400,9 +396,87 @@ class TestPanelAutoCreateAPI:
             mock.call("prop-1"),
             mock.call("prop-2"),
         ]
-
         assert p1_db.status == panels_api.ProposalStatus.UNDER_REVIEW
         assert p2_db.status == panels_api.ProposalStatus.UNDER_REVIEW
         assert uow.prsls.add.call_args_list == [mock.call(p1_db), mock.call(p2_db)]
+        uow.commit.assert_called_once()
 
+    # NEW: verify category path passes grouped proposals into upsert_panel
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
+    @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
+    @mock.patch("ska_oso_services.pht.api.panels.upsert_panel")
+    @mock.patch("ska_oso_services.pht.api.panels.build_panel_response")
+    def test_auto_create_panel_category_groups_and_passes_proposals(
+        self,
+        mock_build_panel_response,
+        mock_upsert_panel,
+        mock_build_sv_panel_proposals,
+        mock_get_latest_entity_by_id,
+        mock_oda,
+        client,
+        monkeypatch,
+    ):
+        """
+        Ensure proposals are grouped by science_category and
+        passed through to upsert_panel
+        for each panel in PANEL_NAME_POOL; unmatched categories
+        are skipped.
+        """
+        uow = mock.MagicMock()
+        mock_oda.return_value.__enter__.return_value = uow
+
+        # Arrange proposals with categories (two matched, one unmatched)
+        p_cos = TestDataFactory.proposal_by_category("prsl-1", "Cosmology")
+        p_sta = TestDataFactory.proposal_by_category("prsl-2", "Stars")
+        p_unk = TestDataFactory.proposal_by_category("prsl-3", "Unknown")
+
+        # 1) submitted proposals (used for grouping)
+        mock_get_latest_entity_by_id.return_value = [p_cos, p_sta, p_unk]
+
+        # deterministic pool and response
+        monkeypatch.setattr(
+            panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True
+        )
+        mock_build_panel_response.return_value = [
+            {"panel_id": "panel-cosmology", "name": "Cosmology", "proposal_count": 1},
+            {"panel_id": "panel-stars", "name": "Stars", "proposal_count": 1},
+        ]
+
+        # Capture proposals passed to each upsert call
+        calls = []
+
+        def upsert_panel_capture(**kwargs):
+            calls.append(
+                (
+                    kwargs["panel_name"],
+                    [getattr(p, "prsl_id") for p in kwargs["proposals"]],
+                )
+            )
+            return TestDataFactory.panel_basic(
+                panel_id=f"panel-{kwargs['panel_name'].lower()}",
+                name=kwargs["panel_name"],
+            )
+
+        mock_upsert_panel.side_effect = upsert_panel_capture
+
+        payload = {
+            "name": "Any non-SV name",
+            "sci_reviewers": [],
+            "tech_reviewers": [],
+            "proposals": [],
+        }
+
+        resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
+        assert resp.status_code == HTTPStatus.OK, resp.content
+
+        # Verify the grouping reached upsert_panel
+        assert mock_upsert_panel.call_count == 2
+        assert ("Cosmology", ["prsl-1"]) in calls
+        assert ("Stars", ["prsl-2"]) in calls
+        # 'Unknown' should be skipped
+        assert all("prsl-3" not in ids for _, ids in calls)
+
+        mock_build_sv_panel_proposals.assert_not_called()
+        mock_build_panel_response.assert_called_once()
         uow.commit.assert_called_once()

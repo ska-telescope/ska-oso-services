@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Union
+from typing import Union
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
@@ -84,7 +84,8 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
         submitted_proposals = (
             get_latest_entity_by_id(
                 uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)), "prsl_id"
-            ) or []
+            )
+            or []
         )
 
         science_reviewers = request.sci_reviewers or []
@@ -116,7 +117,7 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
                     if proposal.status != ProposalStatus.UNDER_REVIEW:
                         proposal.status = ProposalStatus.UNDER_REVIEW
                         uow.prsls.add(proposal)
-                        LOGGER.info("Proposal %s set to UNDER_REVIEW", proposal.prsl_id)
+                        logger.info("Proposal %s set to UNDER_REVIEW", proposal.prsl_id)
                 except ODANotFound:
                     raise BadRequestError(f"Proposal '{submitted_ref}' does not exist")
 
@@ -172,6 +173,14 @@ def get_panel_by_id(panel_id: str) -> Panel:
     ],
 )
 def update_panel(panel_id: str, param: Panel) -> str:
+    """
+    Takes the incoming panel payload and creates the technical review.
+
+    Assumption: only one technical reviwer for a panel for now. Hence,
+    only one technical review for each proposal in a panel is needed.
+    Note: In the future, check for new proposals added to the panel
+    and handle the status accordingly.
+    """
     logger.debug("PUT panel")
 
     # Ensure ID match
@@ -184,21 +193,46 @@ def update_panel(panel_id: str, param: Panel) -> str:
         raise UnprocessableEntityError(detail="Panel ID in path and body do not match.")
 
     validate_duplicates(param.sci_reviewers, "reviewer_id")
+    # TODO: check for any new proposal added and handle status appropriately here
+    # This will be situations where the Admin re-assignes proposals
 
     with oda.uow() as uow:
+
         if param.tech_reviewers:
             for proposal in param.proposals:
-                tec_review = PanelReview(
-                    panel_id=param.panel_id,
-                    review_id=generate_entity_id("rvs-tec"),
+                query_param = CustomQuery(
+                    prsl_id=proposal.prsl_id,
+                    kind="Technical Review",
                     reviewer_id=param.tech_reviewers[0].reviewer_id,
-                    cycle=param.cycle,
-                    prsl_id=proposal if isinstance(proposal, str) else proposal.prsl_id,
-                    status=ReviewStatus.TO_DO,
-                    review_type=TechnicalReview(kind="Technical Review"),
                 )
+                existing_tech_rvws = get_latest_entity_by_id(
+                    uow.rvws.query(query_param), "review_id"
+                )
+                existing_rvw = existing_tech_rvws[0] if existing_tech_rvws else None
 
-                uow.rvws.add(tec_review)  # pylint: disable=E0606
+                if existing_rvw and existing_rvw.metadata.version == 1:
+                    logger.debug(
+                        "Technical review already exists (prsl_id=%s, reviewer=%s);",
+                        proposal.prsl_id,
+                        existing_rvw.reviewer_id,
+                    )
+                else:
+                    tec_review = PanelReview(
+                        panel_id=param.panel_id,
+                        review_id=generate_entity_id("rvs-tec"),
+                        reviewer_id=param.tech_reviewers[0].reviewer_id,
+                        cycle=param.cycle,
+                        prsl_id=(
+                            proposal if isinstance(proposal, str) else proposal.prsl_id
+                        ),
+                        status=ReviewStatus.TO_DO,
+                        review_type=TechnicalReview(kind="Technical Review"),
+                    )
+
+                    uow.rvws.add(tec_review)  # pylint: disable=E0606
+                    logger.info(
+                        "Created technical review (prsl_id=%s)", proposal.prsl_id
+                    )
         panel = uow.panels.add(param)
         uow.commit()
     logger.info("Panel successfully created with ID %s", panel.panel_id)

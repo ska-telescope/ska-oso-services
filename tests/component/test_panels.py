@@ -26,7 +26,7 @@ def test_get_list_panels_for_user(authrequests):
         panel_json = panel.model_dump_json()
 
         response = authrequests.post(
-            f"{PANELS_API_URL}",
+            f"{PANELS_API_URL}/create",
             data=panel_json,
             headers={"Content-Type": "application/json"},
         )
@@ -51,7 +51,6 @@ def test_get_list_panels_for_user(authrequests):
     returned_ids = {p["panel_id"] for p in panels}
     for panel_id in created_ids:
         assert panel_id in returned_ids, f"Missing panel {panel_id} in GET /{user_id}"
-
 
 
 def test_auto_create_category_panels(authrequests):

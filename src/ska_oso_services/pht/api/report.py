@@ -14,7 +14,7 @@ from ska_oso_services.pht.service.report_processing import (
 )
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/report", tags=["PHT API - Report"])
 
@@ -34,9 +34,9 @@ def get_report() -> List[ProposalReportResponse]:
     Creates a new report for the PHT admin/coordinator.
     """
 
-    LOGGER.debug("GET REPORT create")
+    logger.debug("GET REPORT create")
     # TODO: get proposals using Andrey's new query so no need to pass user_id
-    LOGGER.debug("GET REPORT")
+    logger.debug("GET REPORT")
     with oda.uow() as uow:
         proposal_query_param = CustomQuery()
         query_param = CustomQuery()

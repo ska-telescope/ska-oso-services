@@ -22,10 +22,15 @@ def _assigned_on(item):
     )
 
 
-def _with_proposals(panel: Any, proposals_as_dicts: list[dict]) -> Any:
-    """Return a copy of `panel` with proposals replaced ."""
+def _with_proposals(panel, assignments):
+    return panel.model_copy(update={"proposals": assignments})
 
-    return panel.model_copy(update={"proposals": proposals_as_dicts})
+
+def _make_assignment(pid, assigned_on):
+    make = getattr(TestDataFactory, "proposal_assignment", None)
+    if make is not None:
+        return make(prsl_id=pid, assigned_on=assigned_on)
+    return SimpleNamespace(prsl_id=pid, assigned_on=assigned_on)
 
 
 class TestUpsertPanel:
@@ -37,9 +42,8 @@ class TestUpsertPanel:
                 "existing": True,
                 "existing_ids": ["A"],
                 "incoming_ids": ["A", "B"],
-                "sci_reviewers": [],
-                "tech_reviewers": [],
-                "expect_add_called": False,
+                "science_reviewers": [],
+                "technical_reviewers": [],
                 "expect_final_ids": ["A", "B"],
             },
             {
@@ -47,9 +51,8 @@ class TestUpsertPanel:
                 "existing": True,
                 "existing_ids": ["A", "B"],
                 "incoming_ids": [],
-                "sci_reviewers": [],
-                "tech_reviewers": [],
-                "expect_add_called": False,
+                "science_reviewers": [],
+                "technical_reviewers": [],
                 "expect_final_ids": ["A", "B"],
             },
             {
@@ -57,9 +60,8 @@ class TestUpsertPanel:
                 "existing": False,
                 "existing_ids": [],
                 "incoming_ids": ["A", "B"],
-                "sci_reviewers": [],
-                "tech_reviewers": [],
-                "expect_add_called": True,
+                "science_reviewers": [],
+                "technical_reviewers": [],
                 "expect_final_ids": ["A", "B"],
             },
             {
@@ -67,9 +69,8 @@ class TestUpsertPanel:
                 "existing": False,
                 "existing_ids": [],
                 "incoming_ids": [],
-                "sci_reviewers": [],
-                "tech_reviewers": [],
-                "expect_add_called": True,
+                "science_reviewers": [],
+                "technical_reviewers": [],
                 "expect_final_ids": [],
             },
         ],
@@ -78,27 +79,29 @@ class TestUpsertPanel:
     def test_upsert_panel_parametrized(self, monkeypatch, case):
         fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
+        # Freeze time inside module under test
         monkeypatch.setattr(
             panel_ops,
             "datetime",
-            SimpleNamespace(now=lambda tz: fixed_now),
+            SimpleNamespace(now=lambda tz=None: fixed_now),
             raising=True,
         )
 
         uow = mock.MagicMock()
+        uow.panels.add.side_effect = lambda p: p
 
         incoming = [SimpleNamespace(prsl_id=pid) for pid in case["incoming_ids"]]
 
+        existing_panel = None
         if case["existing"]:
             existing_panel = TestDataFactory.panel(
                 name="SomePanel", reviewer_id="test_id"
             )
-
-            existing_dicts = [
-                {"prsl_id": pid, "assigned_on": fixed_now - timedelta(minutes=5)}
+            existing_assignments = [
+                _make_assignment(pid, fixed_now - timedelta(minutes=5))
                 for pid in case["existing_ids"]
             ]
-            existing_panel = _with_proposals(existing_panel, existing_dicts)
+            existing_panel = _with_proposals(existing_panel, existing_assignments)
 
             monkeypatch.setattr(
                 panel_ops,
@@ -116,28 +119,31 @@ class TestUpsertPanel:
                 lambda prefix: f"{prefix}-new-123",
                 raising=True,
             )
-            # Echo saved panel back from repo
-            uow.panels.add.side_effect = lambda p: p
 
         result = panel_ops.upsert_panel(
             uow=uow,
             panel_name="SomePanel",
-            sci_reviewers=case["sci_reviewers"],
-            tech_reviewers=case["tech_reviewers"],
-            proposal_list=incoming,
+            science_reviewers=case["science_reviewers"],
+            technical_reviewers=case["technical_reviewers"],
+            proposals=incoming,
         )
 
-        if case["expect_add_called"]:
-            uow.panels.add.assert_called_once()
-            added_panel = uow.panels.add.call_args[0][0]
-            assert added_panel.name == "SomePanel"
-            assert [_prsl_id(p) for p in added_panel.proposals] == case[
-                "expect_final_ids"
-            ]
-            assert added_panel.sci_reviewers == case["sci_reviewers"]
-            assert added_panel.tech_reviewers == case["tech_reviewers"]
+        uow.panels.add.assert_called_once()
+
+        saved_panel = uow.panels.add.call_args[0][0]
+        assert saved_panel.name == "SomePanel"
+        assert [_prsl_id(p) for p in saved_panel.proposals] == case["expect_final_ids"]
+
+        if case["existing"]:
+            assert getattr(saved_panel, "sci_reviewers") == getattr(
+                existing_panel, "sci_reviewers"
+            )
+            assert getattr(saved_panel, "tech_reviewers") == getattr(
+                existing_panel, "tech_reviewers"
+            )
         else:
-            uow.panels.add.assert_not_called()
+            assert getattr(saved_panel, "sci_reviewers") == case["science_reviewers"]
+            assert getattr(saved_panel, "tech_reviewers") == case["technical_reviewers"]
 
         final_ids = [_prsl_id(p) for p in result.proposals]
         assert final_ids == case["expect_final_ids"]
@@ -172,9 +178,7 @@ class TestGroupProposalsByScienceCategory:
                 ["Cosmology"],
                 [
                     TestDataFactory.proposal_by_category("prsl-1", "Cosmology"),
-                    TestDataFactory.proposal_by_category(
-                        "prsl-2", "Unknown"
-                    ),  # skipped
+                    TestDataFactory.proposal_by_category("prsl-2", "Unknown"),
                 ],
                 {"Cosmology": ["prsl-1"]},
                 1,
@@ -185,13 +189,11 @@ class TestGroupProposalsByScienceCategory:
                 [
                     TestDataFactory.proposal_by_category(
                         "prsl-1", None, info_as="dict"
-                    ),  # dict missing key
-                    TestDataFactory.proposal_by_category(
-                        "prsl-2", None, info_as="obj"
-                    ),  # obj None
+                    ),
+                    TestDataFactory.proposal_by_category("prsl-2", None, info_as="obj"),
                     TestDataFactory.proposal_by_category(
                         "prsl-3", None, info_as="none"
-                    ),  # info None
+                    ),
                 ],
                 {"Cosmology": []},
                 3,
