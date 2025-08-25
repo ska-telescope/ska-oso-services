@@ -16,7 +16,7 @@ router = APIRouter(tags=["PMT API - Reviewers"])
         )
     ],
 )
-def get_reviewers() -> list[dict]:
+def get_reviewers() -> dict:
     """Returns a mocked list of reviewers
 
     Returns:

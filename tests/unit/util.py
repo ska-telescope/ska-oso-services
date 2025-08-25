@@ -186,7 +186,8 @@ class TestDataFactory:
         data = {
             "panel_id": panel_id,
             "name": name,
-            "reviewers": [],
+            "sci_reviewers": [],
+            "tech_reviewers": [],
             "proposals": [],
         }
         panel = Panel.model_validate_json(json.dumps(data))
@@ -209,7 +210,14 @@ class TestDataFactory:
                 {"prsl_id": prsl_id_1, "assigned_on": "2025-05-21T09:30:00Z"},
                 {"prsl_id": prsl_id_2, "assigned_on": "2025-05-21T09:45:00Z"},
             ],
-            "reviewers": [
+            "sci_reviewers": [
+                {
+                    "reviewer_id": reviewer_id,
+                    "assigned_on": "2025-06-16T11:23:01Z",
+                    "status": "Pending",
+                }
+            ],
+            "tech_reviewers": [
                 {
                     "reviewer_id": reviewer_id,
                     "assigned_on": "2025-06-16T11:23:01Z",

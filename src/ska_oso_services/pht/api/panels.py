@@ -1,5 +1,5 @@
 import logging
-from typing import Union
+from typing import Annotated, Union
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
@@ -10,12 +10,7 @@ from ska_oso_pdm import PanelReview
 from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
-from ska_oso_pdm.proposal_management.review import (
-    Feasibility,
-    ReviewStatus,
-    TechnicalReview,
-)
-from starlette_context import context
+from ska_oso_pdm.proposal_management.review import ReviewStatus, TechnicalReview
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -30,7 +25,7 @@ from ska_oso_services.pht.service.panel_operations import (
     group_proposals_by_science_category,
     upsert_panel,
 )
-from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, REVIEWERS
+from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
     get_latest_entity_by_id,
@@ -53,27 +48,13 @@ logger = logging.getLogger(__name__)
     ],
 )
 def create_panel(param: Panel) -> str:
+    """This endpoint may not be needed in the future.
+
+    The idea is to auto-generate panels and assign proposals.
+    """
     logger.debug("POST panel")
 
     with oda.uow() as uow:
-        reviewer_ids = validate_duplicates(param.reviewers, "reviewer_id")
-        for reviewer_id in reviewer_ids:
-            if not any([r["id"] == reviewer_id for r in REVIEWERS]):
-                raise BadRequestError(f"Reviewer '{reviewer_id}' does not exist")
-
-        proposal_ids = validate_duplicates(param.proposals, "prsl_id")
-        for proposal_id in proposal_ids:
-            try:
-                proposal: Proposal = uow.prsls.get(proposal_id)
-                proposal.status = ProposalStatus.UNDER_REVIEW
-                # Update proposal status in the ODA
-                uow.prsls.add(proposal)
-                logger.info(
-                    "Proposal status successfully updated with ID %s", proposal.prsl_id
-                )
-            except ODANotFound:
-                raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
-
         panel: Panel = uow.panels.add(param)  # pylint: disable=no-member
         uow.commit()
 
@@ -94,8 +75,8 @@ def create_panel(param: Panel) -> str:
 def auto_create_panel(param: PanelCreateRequest) -> str:
     """
     Auto creates panels:
-    - If science verification, create a single
-      'Science Verification' panel with all submitted proposals assigned.
+    - If science verification, create a single panel called
+      'Science Verification' with all submitted proposals assigned.
     - Else: Create panels for PANEL_NAME_POOL, which is the science catgories
         (to be pulled in from OSD when available) and assign proposals by
         science_category using the field science category in the proposal.
@@ -107,16 +88,37 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
             )
             or []
         )
-        reviewers = param.reviewers or []
+        sci_reviewers = param.sci_reviewers or []
+        tech_reviewers = param.tech_reviewers or []
         is_sv = "SCIENCE VERIFICATION" in param.name.strip().upper()
         if is_sv:
+            existing_panel = get_latest_entity_by_id(
+                uow.panels.query(CustomQuery(name="Science Verification")), "panel_id"
+            )
+            if existing_panel:
+                return existing_panel[0].panel_id
+
             panel = Panel(
                 panel_id=generate_entity_id("panel"),
                 name="Science Verification",
-                reviewers=reviewers,
+                sci_reviewers=sci_reviewers,
+                tech_reviewers=tech_reviewers,
                 proposals=build_sv_panel_proposals(proposals),
             )
-            created_panel = uow.panels.add(panel)  # pylint: disable=no-member
+            created_panel = uow.panels.add(panel)
+            for proposal_id in proposals:
+                try:
+                    proposal: Proposal = uow.prsls.get(proposal_id.prsl_id)
+                    proposal.status = ProposalStatus.UNDER_REVIEW
+                    # Update proposal status in the ODA
+                    uow.prsls.add(proposal)
+                    logger.info(
+                        "Proposal status successfully updated with ID %s",
+                        proposal.prsl_id,
+                    )
+                except ODANotFound:
+                    raise BadRequestError(f"Proposal '{proposal_id}' does not exist")
+
             uow.commit()
             return created_panel.panel_id
 
@@ -124,7 +126,11 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
         grouped = group_proposals_by_science_category(proposals, PANEL_NAME_POOL)
         panel_objs = {
             panel_name: upsert_panel(
-                uow, panel_name, reviewers, grouped.get(panel_name, [])
+                uow,
+                panel_name,
+                sci_reviewers,
+                tech_reviewers,
+                grouped.get(panel_name, []),
             )
             for panel_name in PANEL_NAME_POOL
         }
@@ -138,15 +144,13 @@ def auto_create_panel(param: PanelCreateRequest) -> str:
     summary="Update a panel",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READWRITE],
         )
     ],
 )
 def update_panel(panel_id: str, param: Panel) -> str:
     logger.debug("PUT panel")
-    if context.exists() and context.get("auth"):
-        auth: AuthContext = context["auth"]
-        user_id = auth.user_id
 
     # Ensure ID match
     if param.panel_id != panel_id:
@@ -157,54 +161,43 @@ def update_panel(panel_id: str, param: Panel) -> str:
         )
         raise UnprocessableEntityError(detail="Panel ID in path and body do not match.")
 
-    reviewer_ids = validate_duplicates(param.reviewers, "reviewer_id")
-    for reviewer_id in reviewer_ids:
-        if not any([r["id"] == reviewer_id for r in REVIEWERS]):
-            raise BadRequestError(f"Reviewer '{reviewer_id}' does not exist")
-
-    validate_duplicates(param.proposals, "prsl_id")
+    validate_duplicates(param.sci_reviewers, "reviewer_id")
 
     with oda.uow() as uow:
-        if param.reviewers:
+        if param.tech_reviewers:
             for proposal in param.proposals:
                 tec_review = PanelReview(
                     panel_id=param.panel_id,
                     review_id=generate_entity_id("rvs-tec"),
-                    reviewer_id="SciOps",
+                    reviewer_id=param.tech_reviewers[0].reviewer_id,
                     cycle=param.cycle,
-                    comments=None,
-                    src_net=None,
-                    submitted_on=None,
-                    submitted_by=None,
                     prsl_id=proposal if isinstance(proposal, str) else proposal.prsl_id,
                     status=ReviewStatus.TO_DO,
-                    review_type=TechnicalReview(
-                        kind="Technical Review",
-                        feasibility=Feasibility(is_feasible="Yes", comments=None),
-                    ),
+                    review_type=TechnicalReview(kind="Technical Review"),
                 )
 
-                uow.rvws.add(tec_review, user_id)  # pylint: disable=E0606
-        panel = uow.panels.add(param, user_id)  # pylint: disable=no-member
+                uow.rvws.add(tec_review)  # pylint: disable=E0606
+        panel = uow.panels.add(param)
         uow.commit()
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
 
 
-@router.get(
-    "/{panel_id}",
-    summary="Retrieve an existing panel by panel_id",
-    dependencies=[
+@router.get("/{panel_id}", summary="Retrieve an existing panel by panel_id")
+def get_panel_by_id(
+    panel_id: str,
+    auth: Annotated[
+        AuthContext,
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
-        )
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READ},
+        ),
     ],
-)
-def get_panel(panel_id: str) -> Panel:
+) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 
     with oda.uow() as uow:
-        panel = uow.panels.get(panel_id)  # pylint: disable=no-member
+        panel = uow.panels.get(panel_id, auth.user_id)  # pylint: disable=no-member
     logger.info("Panel retrieved successfully: %s", panel_id)
     return panel
 
@@ -218,7 +211,9 @@ def get_panel(panel_id: str) -> Panel:
         )
     ],
 )
-def get_panels_for_user(user_id: str) -> list[Panel]:
+def get_panels_for_user(
+    user_id: str,
+) -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
 

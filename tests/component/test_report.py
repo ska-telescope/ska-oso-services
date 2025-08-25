@@ -18,7 +18,7 @@ def test_get_report_for_user(authrequests):
     decision = TestDataFactory.panel_decision(prsl_id=proposal1.prsl_id)
     reviews = TestDataFactory.reviews(
         prsl_id=proposal1.prsl_id,
-        reviewer_id=REVIEWERS[0]["id"],
+        reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
         review_id="rvw-mvp01-20220923-00001",
     )
 
@@ -34,7 +34,7 @@ def test_get_report_for_user(authrequests):
     reviews = reviews.model_copy(update={"prsl_id": prsl1_id, "review_id": review_id})
 
     panel = TestDataFactory.panel(
-        reviewer_id=REVIEWERS[0]["id"],
+        reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
         panel_id=panel_id,
         name="Test Panel",
         prsl_id_1=prsl1_id,

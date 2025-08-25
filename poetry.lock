@@ -323,18 +323,18 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "boto3"
-version = "1.40.12"
+version = "1.40.15"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "boto3-1.40.12-py3-none-any.whl", hash = "sha256:3c3d6731390b5b11f5e489d5d9daa57f0c3e171efb63ac8f47203df9c71812b3"},
-    {file = "boto3-1.40.12.tar.gz", hash = "sha256:c6b32aee193fbd2eb84696d2b5b2410dcda9fb4a385e1926cff908377d222247"},
+    {file = "boto3-1.40.15-py3-none-any.whl", hash = "sha256:52b8aa78c9906c4e49dcec6817c041df33c9825073bf66e7df8fc00afbe47b4b"},
+    {file = "boto3-1.40.15.tar.gz", hash = "sha256:271b379ce5ad35ca82f1009e917528a182eed0e2de197ccffb0c51acadec5c79"},
 ]
 
 [package.dependencies]
-botocore = ">=1.40.12,<1.41.0"
+botocore = ">=1.40.15,<1.41.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.13.0,<0.14.0"
 
@@ -343,14 +343,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.40.12"
+version = "1.40.15"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "botocore-1.40.12-py3-none-any.whl", hash = "sha256:84e96004a8b426c5508f6b5600312d6271364269466a3a957dc377ad8effc438"},
-    {file = "botocore-1.40.12.tar.gz", hash = "sha256:c6560578e799b47b762b7e555bd9c5dd5c29c5d23bd778a8a72e98c979b3c727"},
+    {file = "botocore-1.40.15-py3-none-any.whl", hash = "sha256:b364e039d2b67e509cfb089cb39b295251e48a60cc68fd591defbe10b44d83f9"},
+    {file = "botocore-1.40.15.tar.gz", hash = "sha256:4960800e4c5a7b43db22550979c22f5a324cbaf75ef494bbb2cf400ef1e6aca7"},
 ]
 
 [package.dependencies]
@@ -3242,14 +3242,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-db-oda"
-version = "11.3.0"
+version = "11.4.0"
 description = "SKA Database OSO Data Archive"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_db_oda-11.3.0-py3-none-any.whl", hash = "sha256:91a8e5effad68457f103cd698bb73aafa976594c6722acd938b00995f64d71b8"},
-    {file = "ska_db_oda-11.3.0.tar.gz", hash = "sha256:f37ee9123931c7ce7c7e21b6e846e5ae525feb32828bbb2580996433d4ef1a2a"},
+    {file = "ska_db_oda-11.4.0-py3-none-any.whl", hash = "sha256:2a7e482cd223404c4e52d8a24317aade5d62ab7b3dc627d777df73b17a4cd7ae"},
+    {file = "ska_db_oda-11.4.0.tar.gz", hash = "sha256:3a210fbbf75901d78349139709fedc774e8aaab1d460532973fdcf67002b0d50"},
 ]
 
 [package.dependencies]
@@ -3260,7 +3260,7 @@ psycopg-pool = ">=3.1.1,<4.0.0"
 pydantic = ">=2.9,<3.0"
 python-dateutil = ">=2.8.2,<3.0.0"
 requests = ">=2.27.1,<3.0.0"
-ska-oso-pdm = ">=20.0.1,<21.0.0"
+ska-oso-pdm = ">=21.0.0,<22.0.0"
 ska-ser-logging = ">=0.4.1,<0.5.0"
 ska-ser-skuid = ">=3.3.3,<4.0.0"
 
@@ -3271,14 +3271,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-oso-pdm"
-version = "20.0.1"
+version = "21.0.0"
 description = "SKA Project Data Model serialisation library"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_oso_pdm-20.0.1-py3-none-any.whl", hash = "sha256:cb247c11dc1a8f7d1810581c41326509524481c2417fbb3bde89c25d6dcc986b"},
-    {file = "ska_oso_pdm-20.0.1.tar.gz", hash = "sha256:ec613d9349d5f9693c09ca2451de5d50c101f0cadec3cee1a40717fa67ecc950"},
+    {file = "ska_oso_pdm-21.0.0-py3-none-any.whl", hash = "sha256:a853d35a48f1be54cb11b63cc74e1ca32194370b3988ce554311a72460e19eac"},
+    {file = "ska_oso_pdm-21.0.0.tar.gz", hash = "sha256:6ccdc9dd9f0a43cbc2f8a4736754846c5c279125e14b35994ac38fca6a944723"},
 ]
 
 [package.dependencies]
@@ -3407,14 +3407,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-telmodel"
-version = "1.23.2"
+version = "1.24.0"
 description = "SKA telescope model library"
 optional = false
 python-versions = ">=3.10.0,<4.0.0"
 groups = ["main"]
 files = [
-    {file = "ska_telmodel-1.23.2-py3-none-any.whl", hash = "sha256:f3e297bfb40c41689dd54fb3da679c7370211b001c5454a2fb53d4eb2daec4ff"},
-    {file = "ska_telmodel-1.23.2.tar.gz", hash = "sha256:b390a63a32b7c7d6a54778f1e9db024ddc737e81155c5536e36fbd84486fbb3f"},
+    {file = "ska_telmodel-1.24.0-py3-none-any.whl", hash = "sha256:0b4d43a19914399701ad7cae8328712c3d2e068100b7b181d837f51bba93cef7"},
+    {file = "ska_telmodel-1.24.0.tar.gz", hash = "sha256:4082188f7d20369a02f0476a97af98419c5ffd995e342cc19cc6e66df57b6efc"},
 ]
 
 [package.dependencies]
@@ -4255,4 +4255,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "8bb900bd3826e33a70f27b6889ee5b2a626b0d650c15214bfbe1219d8fa5f7c2"
+content-hash = "10a849413f5aaf31fb02310ae0ab695e3b7985f8921212eec368c74815d1322b"

@@ -18,13 +18,14 @@ class TestReportsAPI:
         ]
         mock_panels = [
             TestDataFactory.panel(
-                prsl_id_1=mock_proposals[0].prsl_id, reviewer_id=REVIEWERS[0]["id"]
+                prsl_id_1=mock_proposals[0].prsl_id,
+                reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
             )
         ]
         mock_reviews = [
             TestDataFactory.reviews(
                 prsl_id=mock_proposals[0].prsl_id,
-                reviewer_id=REVIEWERS[0]["id"],
+                reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
                 review_id="rvw-mvp01-20220923-00001",
             )
         ]
@@ -35,7 +36,7 @@ class TestReportsAPI:
             TestDataFactory.proposal_report(
                 prsl_id=mock_proposals[0].prsl_id,
                 panel_id=mock_panels[0].panel_id,
-                reviewer_id=REVIEWERS[0]["id"],
+                reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
             )
         ]  # a list of dict
 

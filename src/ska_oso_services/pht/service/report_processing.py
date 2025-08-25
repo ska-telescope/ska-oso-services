@@ -1,3 +1,5 @@
+from itertools import chain
+
 from ska_oso_services.pht.models.schemas import ProposalReportResponse
 
 
@@ -50,9 +52,17 @@ def join_proposals_panels_reviews_decisions(
             None,
         )
 
-        if panel and panel.reviewers:
-            for reviewer in panel.reviewers:
-                reviewer_id = reviewer.reviewer_id
+        if panel and (panel.sci_reviewers or panel.tech_reviewers):
+            seen: set[str] = set()
+            for reviewer in chain(
+                panel.sci_reviewers or [], panel.tech_reviewers or []
+            ):
+                rid = reviewer.reviewer_id
+                if rid in seen:
+                    continue
+                seen.add(rid)
+
+                reviewer_id = rid
                 reviewer_status = reviewer.status
                 review = review_lookup.get((prsl_id, reviewer_id))
 
@@ -79,6 +89,7 @@ def join_proposals_panels_reviews_decisions(
                         panel_name=panel.name,
                         reviewer_id=reviewer_id,
                         reviewer_status=reviewer_status,
+                        review_type=review.review_type.kind if review else None,
                         review_status=review.status if review else None,
                         conflict=(
                             review.review_type.conflict.has_conflict
@@ -86,7 +97,11 @@ def join_proposals_panels_reviews_decisions(
                             else False
                         ),
                         review_id=review.review_id if review else None,
-                        review_rank=review.review_type.rank if review else None,
+                        review_rank=(
+                            review.review_type.rank
+                            if review and review.review_type.rank
+                            else None
+                        ),
                         comments=review.comments if review else None,
                         review_submitted_on=(
                             review.submitted_on.isoformat()
@@ -98,11 +113,6 @@ def join_proposals_panels_reviews_decisions(
                         decision_status=decision.status if decision else None,
                         panel_rank=decision.rank if decision else None,
                         panel_score=decision.score if decision else None,
-                        decision_on=(
-                            decision.decided_on.isoformat()
-                            if decision and decision.decided_on
-                            else None
-                        ),
                     )
                 )
         else:
@@ -130,11 +140,6 @@ def join_proposals_panels_reviews_decisions(
                     decision_status=decision.status if decision else None,
                     panel_rank=decision.rank if decision else None,
                     panel_score=decision.score if decision else None,
-                    decision_on=(
-                        decision.decided_on.isoformat()
-                        if decision and decision.decided_on
-                        else None
-                    ),
                 )
             )
 
