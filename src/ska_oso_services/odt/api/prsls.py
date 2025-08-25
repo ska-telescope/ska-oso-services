@@ -41,8 +41,8 @@ class ProposalProjectDetails(AppModel):
     title: str | None = None
     created_on: AwareDatetime
     created_by: str
-    last_updated_on: AwareDatetime
-    last_updated_by: str
+    last_modified_on: AwareDatetime
+    last_modified_by: str
 
 
 @router.post(
@@ -107,8 +107,8 @@ def prj_details() -> list[ProposalProjectDetails]:
                 title=project.name,
                 created_by=project.metadata.created_by,
                 created_on=project.metadata.created_on,
-                last_updated_by=project.metadata.last_modified_by,
-                last_updated_on=project.metadata.last_modified_on,
+                last_modified_by=project.metadata.last_modified_by,
+                last_modified_on=project.metadata.last_modified_on,
             )
             for project in all_projects
         ]
@@ -135,8 +135,8 @@ def prj_details() -> list[ProposalProjectDetails]:
                 title=proposal.info.title,
                 created_by=proposal.metadata.created_by,
                 created_on=proposal.metadata.created_on,
-                last_updated_by=proposal.metadata.last_modified_by,
-                last_updated_on=proposal.metadata.last_modified_on,
+                last_modified_by=proposal.metadata.last_modified_by,
+                last_modified_on=proposal.metadata.last_modified_on,
             )
             for proposal in proposals_without_projects
         ]

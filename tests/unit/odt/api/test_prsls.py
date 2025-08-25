@@ -128,8 +128,8 @@ class TestProposalAndProjectView:
                 prj_id=None,
                 prsl_id=proposal.prsl_id,
                 title=proposal.info.title,
-                last_updated_by=proposal.metadata.last_modified_by,
-                last_updated_on=proposal.metadata.last_modified_on,
+                last_modified_by=proposal.metadata.last_modified_by,
+                last_modified_on=proposal.metadata.last_modified_on,
                 created_by=proposal.metadata.created_by,
                 created_on=proposal.metadata.created_on,
             ).model_dump_json()
@@ -161,8 +161,8 @@ class TestProposalAndProjectView:
                 prj_id=project.prj_id,
                 prsl_id=proposal.prsl_id,
                 title=project.name,
-                last_updated_by=project.metadata.last_modified_by,
-                last_updated_on=project.metadata.last_modified_on,
+                last_modified_by=project.metadata.last_modified_by,
+                last_modified_on=project.metadata.last_modified_on,
                 created_by=project.metadata.created_by,
                 created_on=project.metadata.created_on,
             ).model_dump_json()
@@ -193,8 +193,8 @@ class TestProposalAndProjectView:
                 prj_id=project.prj_id,
                 prsl_id=None,
                 title=project.name,
-                last_updated_by=project.metadata.last_modified_by,
-                last_updated_on=project.metadata.last_modified_on,
+                last_modified_by=project.metadata.last_modified_by,
+                last_modified_on=project.metadata.last_modified_on,
                 created_by=project.metadata.created_by,
                 created_on=project.metadata.created_on,
             ).model_dump_json()
