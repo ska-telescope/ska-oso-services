@@ -7,6 +7,7 @@ from http import HTTPStatus
 from unittest import mock
 
 import pytest
+from ska_aaa_authhelpers.test_helpers import TEST_USER
 from ska_db_oda.persistence.domain.errors import ODANotFound
 
 from ska_oso_services.odt.api.prsls import ProposalProjectDetails
@@ -39,7 +40,7 @@ class TestProjectCreationFromProposal:
 
         assert resp.status_code == HTTPStatus.OK
         assert_json_is_equal(resp.text, project.model_dump_json())
-        uow_mock.prjs.add.assert_called_with(project)
+        uow_mock.prjs.add.assert_called_with(project, user=TEST_USER)
 
     @mock.patch("ska_oso_services.odt.api.prsls.generate_project")
     @mock.patch("ska_oso_services.odt.api.prsls.oda.uow")

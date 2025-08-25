@@ -3,11 +3,11 @@ These functions map to the API paths, with the returned value being the API resp
 """
 
 import logging
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from ska_aaa_authhelpers import Role
+from ska_aaa_authhelpers import AuthContext, Role
 from ska_oso_pdm import ProjectStatusHistory, TelescopeType
 from ska_oso_pdm.entity_status_history import ProjectStatus
 from ska_oso_pdm.project import Author, ObservingBlock, Project
@@ -68,12 +68,14 @@ def prjs_get(identifier: str) -> Project:
         return uow.prjs.get(identifier)
 
 
-@router.post(
-    "/",
-    summary="Create a new Project",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
-)
-def prjs_post(prj: Optional[Project] = None) -> Project:
+@router.post("/", summary="Create a new Project")
+def prjs_post(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    prj: Optional[Project] = None,
+) -> Project:
     """
     Creates a new Project in the underlying data store. The response
     contains the entity as it exists in the data store, with
@@ -100,10 +102,10 @@ def prjs_post(prj: Optional[Project] = None) -> Project:
 
     try:
         with oda.uow() as uow:
-            updated_prj = uow.prjs.add(prj)
+            updated_prj = uow.prjs.add(prj, user=auth.user_id)
 
             prj_status = _create_prj_status_entity(updated_prj)
-            uow.prjs_status_history.add(prj_status)
+            uow.prjs_status_history.add(prj_status, user=auth.user_id)
 
             uow.commit()
         return updated_prj
@@ -114,12 +116,15 @@ def prjs_post(prj: Optional[Project] = None) -> Project:
         ) from err
 
 
-@router.put(
-    "/{identifier}",
-    summary="Update a Project by identifier",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
-)
-def prjs_put(prj: Project, identifier: str) -> Project:
+@router.put("/{identifier}", summary="Update a Project by identifier")
+def prjs_put(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    prj: Project,
+    identifier: str,
+) -> Project:
     """
     Updates the Project with the given identifier in the underlying
     data store to create a new version.
@@ -138,10 +143,10 @@ def prjs_put(prj: Project, identifier: str) -> Project:
             # This get will check if the identifier already exists
             # and throw an error if it doesn't
             uow.prjs.get(identifier)
-            updated_prj = uow.prjs.add(prj)
+            updated_prj = uow.prjs.add(prj, user=auth.user_id)
 
             prj_status = _create_prj_status_entity(updated_prj)
-            uow.prjs_status_history.add(prj_status)
+            uow.prjs_status_history.add(prj_status, user=auth.user_id)
 
             uow.commit()
 
@@ -160,10 +165,15 @@ class PrjSBDLinkResponse(BaseModel):
 @router.post(
     "/{identifier}/{obs_block_id}/sbds",
     summary="Create a new SBDefinition linked to a project",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
 def prjs_sbds_post(
-    identifier: str, obs_block_id: str, sbd: Optional[SBDefinition] = None
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    identifier: str,
+    obs_block_id: str,
+    sbd: Optional[SBDefinition] = None,
 ) -> PrjSBDLinkResponse:
     """
     Creates an SBDefintiion linked to the given project.
@@ -188,17 +198,17 @@ def prjs_sbds_post(
         sbd_to_save = (
             sbd if sbd is not None else DEFAULT_SB_DEFINITION.model_copy(deep=True)
         )
-        sbd = uow.sbds.add(sbd_to_save)
+        sbd = uow.sbds.add(sbd_to_save, user=auth.user_id)
 
         sbd_status = _create_sbd_status_entity(sbd)
-        uow.sbds_status_history.add(sbd_status)
+        uow.sbds_status_history.add(sbd_status, user=auth.user_id)
 
         obs_block.sbd_ids.append(sbd.sbd_id)
         # Persist the change to the obs_block above
-        prj = uow.prjs.add(prj)
+        prj = uow.prjs.add(prj, user=auth.user_id)
 
         prj_status = _create_prj_status_entity(prj)
-        uow.prjs_status_history.add(prj_status)
+        uow.prjs_status_history.add(prj_status, user=auth.user_id)
 
         uow.commit()
 
@@ -212,9 +222,15 @@ def prjs_sbds_post(
     "ObservingBlock, persists those SBDefinitions in the ODA, adds a "
     "link to the SBDefinitions to the ObservingBlock then persists"
     "the updated Project/ObservingBlock",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
-def prjs_ob_generate_sbds(identifier: str, obs_block_id: str) -> Project:
+def prjs_ob_generate_sbds(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    identifier: str,
+    obs_block_id: str,
+) -> Project:
     LOGGER.debug(
         "POST PRJS generate SBDefinitions for prj_id: %s and obs_block_id: %s",
         identifier,
@@ -240,14 +256,14 @@ def prjs_ob_generate_sbds(identifier: str, obs_block_id: str) -> Project:
         sbds = generate_sbds(obs_block)
 
         for sbd in sbds:
-            updated_sbd = uow.sbds.add(sbd)
+            updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
 
             sbd_status = _create_sbd_status_entity(updated_sbd)
-            uow.sbds_status_history.add(sbd_status)
+            uow.sbds_status_history.add(sbd_status, user=auth.user_id)
 
             obs_block.sbd_ids.append(updated_sbd.sbd_id)
 
-        updated_prj = uow.prjs.add(prj)
+        updated_prj = uow.prjs.add(prj, user=auth.user_id)
         uow.commit()
 
     return updated_prj
@@ -260,9 +276,14 @@ def prjs_ob_generate_sbds(identifier: str, obs_block_id: str) -> Project:
     "persists those SBDefinitions in the ODA, adds a link to the "
     "SBDefinitions to the ObservingBlock then persists the updated "
     "Project/ObservingBlock",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
-def prjs_generate_sbds(identifier: str) -> Project:
+def prjs_generate_sbds(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    identifier: str,
+) -> Project:
     LOGGER.debug("POST PRJS generate SBDefinitions for prj_id: %s", identifier)
     with oda.uow() as uow:
         prj = uow.prjs.get(identifier)
@@ -274,14 +295,14 @@ def prjs_generate_sbds(identifier: str) -> Project:
             sbds = generate_sbds(obs_block)
 
             for sbd in sbds:
-                updated_sbd = uow.sbds.add(sbd)
+                updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
 
                 sbd_status = _create_sbd_status_entity(updated_sbd)
-                uow.sbds_status_history.add(sbd_status)
+                uow.sbds_status_history.add(sbd_status, user=auth.user_id)
 
                 obs_block.sbd_ids.append(updated_sbd.sbd_id)
 
-        updated_prj = uow.prjs.add(prj)
+        updated_prj = uow.prjs.add(prj, user=auth.user_id)
         uow.commit()
 
     return updated_prj

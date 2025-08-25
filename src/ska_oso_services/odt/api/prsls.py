@@ -4,10 +4,11 @@ These functions map to the API paths, with the returned value being the API resp
 
 import logging
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter
 from pydantic import AwareDatetime
-from ska_aaa_authhelpers import Role
+from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.persistence.domain.query import DateQuery
 from ska_oso_pdm.project import Project
 
@@ -17,7 +18,7 @@ from ska_oso_services.common.model import AppModel
 from ska_oso_services.odt.api.prjs import _create_prj_status_entity
 from ska_oso_services.odt.service.project_generator import generate_project
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 API_ROLES = {
     Role.SW_ENGINEER,
@@ -49,18 +50,23 @@ class ProposalProjectDetails(AppModel):
     summary="Create a new Project from the Proposal, creating a Observing Block for "
     "each group of Observation Sets in the Proposal "
     "and copying over the science data",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
-def prjs_prsl_post(prsl_id: str) -> Project:
-    logger.debug("POST PRSLS generateProject from prsl_id: %s", prsl_id)
+def prjs_prsl_post(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    prsl_id: str,
+) -> Project:
+    LOGGER.debug("POST PRSLS generateProject from prsl_id: %s", prsl_id)
     with oda.uow() as uow:
         proposal = uow.prsls.get(prsl_id)
         project = generate_project(proposal)
 
-        persisted_project = uow.prjs.add(project)
+        persisted_project = uow.prjs.add(project, user=auth.user_id)
 
         prj_status = _create_prj_status_entity(persisted_project)
-        uow.prjs_status_history.add(prj_status)
+        uow.prjs_status_history.add(prj_status, user=auth.user_id)
 
         uow.commit()
 

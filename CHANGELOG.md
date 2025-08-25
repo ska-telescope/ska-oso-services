@@ -10,6 +10,7 @@ Unreleased
 * [BREAKING] Updates the PHT endpoints such that they are coherent e,g `POST entity/create`
 * [BREAKING] Updates the retrieval of entities endpoint from `entity/list/{id}` to be `entity/users/{id}/entity`
 * Add `/odt/prsls/project-view` endpoint which returns a view for the UI of an outer join of the Proposals and Projects
+* Write user from auth context to entity metadata for ODT endpoints
 
 3.1.1
 ***********
