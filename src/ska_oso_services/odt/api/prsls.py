@@ -37,7 +37,9 @@ class ProposalProjectDetails(AppModel):
     """
 
     prsl_id: str | None = None
+    prsl_version: int | None = None
     prj_id: str | None = None
+    prj_version: int | None = None
     title: str | None = None
     created_on: AwareDatetime
     created_by: str
@@ -103,6 +105,7 @@ def prj_details() -> list[ProposalProjectDetails]:
         project_details = [
             ProposalProjectDetails(
                 prj_id=project.prj_id,
+                prj_version=project.metadata.version,
                 prsl_id=project.prsl_ref,
                 title=project.name,
                 created_by=project.metadata.created_by,
@@ -132,6 +135,7 @@ def prj_details() -> list[ProposalProjectDetails]:
         proposal_without_project_details = [
             ProposalProjectDetails(
                 prsl_id=proposal.prsl_id,
+                prsl_version=proposal.metadata.version,
                 title=proposal.info.title,
                 created_by=proposal.metadata.created_by,
                 created_on=proposal.metadata.created_on,

@@ -127,6 +127,7 @@ class TestProposalAndProjectView:
             ProposalProjectDetails(
                 prj_id=None,
                 prsl_id=proposal.prsl_id,
+                prsl_version=1,
                 title=proposal.info.title,
                 last_modified_by=proposal.metadata.last_modified_by,
                 last_modified_on=proposal.metadata.last_modified_on,
@@ -159,6 +160,7 @@ class TestProposalAndProjectView:
         assert result[0] == json.loads(
             ProposalProjectDetails(
                 prj_id=project.prj_id,
+                prj_version=1,
                 prsl_id=proposal.prsl_id,
                 title=project.name,
                 last_modified_by=project.metadata.last_modified_by,
@@ -191,6 +193,7 @@ class TestProposalAndProjectView:
         assert result[0] == json.loads(
             ProposalProjectDetails(
                 prj_id=project.prj_id,
+                prj_version=1,
                 prsl_id=None,
                 title=project.name,
                 last_modified_by=project.metadata.last_modified_by,
