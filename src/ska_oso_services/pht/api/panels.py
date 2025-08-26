@@ -4,14 +4,12 @@ from typing import Union
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
-from ska_oso_pdm import PanelReview
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
-from ska_oso_pdm.proposal_management.review import ReviewStatus, TechnicalReview
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.common.error_handling import BadRequestError, UnprocessableEntityError
+from ska_oso_services.common.error_handling import UnprocessableEntityError
 from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateResponse
 from ska_oso_services.pht.service.panel_operations import (
     build_panel_response,
@@ -27,9 +25,7 @@ from ska_oso_services.pht.utils.pht_helper import (
     get_latest_entity_by_id,
     validate_duplicates,
 )
-from ska_db_oda.persistence.domain.errors import ODANotFound
-from ska_db_oda.persistence.domain.query import CustomQuery
-from ska_oso_pdm.proposal.proposal import Proposal, ProposalStatus
+
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 
 logger = logging.getLogger(__name__)
@@ -73,14 +69,21 @@ def create_panel(param: Panel) -> str:
 def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResponse]:
     """
     Auto creates panels:
-    - If science verification, create a single panel called
+    - If science verification (SV), create a single panel called
       'Science Verification' with all submitted proposals assigned.
+    - If existing SV panel, update reviewers and add any new proposals.
     - Else: Create panels for PANEL_NAME_POOL, which is the science categories
         (to be pulled in from OSD when available) and assign proposals by
         science_category using the field science category in the proposal.
+    - If existing panel for a science category, update reviewers and add
+        any new proposals.
+    - If no proposals for a category, still create the panel with no assignments.
+    Note: This endpoint may be split into two in the future for clarity
+        1. Auto-create-panel
+        2. Auto-assign-proposals-to-panels
     """
     with oda.uow() as uow:
-        submitted_proposals = (
+        submitted_proposal_refs = (
             get_latest_entity_by_id(
                 uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)), "prsl_id"
             )
@@ -92,25 +95,52 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
 
         is_science_verification = "SCIENCE VERIFICATION" in request.name.strip().upper()
         if is_science_verification:
-            existing_sv_panels = get_latest_entity_by_id(
+            sv_panel_refs = get_latest_entity_by_id(
                 uow.panels.query(CustomQuery(name="Science Verification")), "panel_id"
             )
-            if existing_sv_panels:
-                for ref in submitted_proposals:
-                    try:
-                        proposal: Proposal = uow.prsls.get(ref.prsl_id)
-                        if proposal.status != ProposalStatus.UNDER_REVIEW:
-                            proposal.status = ProposalStatus.UNDER_REVIEW
-                            uow.prsls.add(proposal)
-                            logger.info(
-                                "Setting proposal %s status to UNDER REVIEW", proposal.prsl_id
-                            )
-                    except ODANotFound as exc:
-                        raise BadRequestError(f"Proposal '{ref.prsl_id}' does not exist") from exc
-                ensure_submitted_proposals_under_review(uow, submitted_proposals)
-                return existing_sv_panels[0].panel_id
 
-            sv_assignments = build_sv_panel_proposals(submitted_proposals)
+            if sv_panel_refs:
+                sv_panel_id = sv_panel_refs[0].panel_id
+                sv_panel = uow.panels.get(sv_panel_id)
+
+                sv_candidate_assignments = build_sv_panel_proposals(
+                    submitted_proposal_refs
+                )
+
+                # Append only proposals not already assigned to the SV panel
+                existing_prsl_ids = {a.prsl_id for a in (sv_panel.proposals or [])}
+                sv_assignments_to_add = [
+                    a
+                    for a in sv_candidate_assignments
+                    if a.prsl_id not in existing_prsl_ids
+                ]
+                if sv_assignments_to_add:
+                    sv_panel.proposals = (
+                        sv_panel.proposals or []
+                    ) + sv_assignments_to_add
+
+                # --------Update reviewers (overwrite with provided lists)---------
+                sv_panel.sci_reviewers = science_reviewers
+                sv_panel.tech_reviewers = technical_reviewers
+
+                uow.panels.add(sv_panel)
+
+                # ---------Set UNDER_REVIEW only for newly added proposals------
+                ensure_submitted_proposals_under_review(
+                    uow, (a.prsl_id for a in sv_assignments_to_add)
+                )
+
+                uow.commit()
+                logger.info(
+                    "Updated existing Science Verification panel %s "
+                    "(added %d proposals)",
+                    sv_panel_id,
+                    len(sv_assignments_to_add),
+                )
+                return sv_panel_id
+
+            # ----------No existing SV panel, create with assignments----------------
+            sv_assignments = build_sv_panel_proposals(submitted_proposal_refs)
 
             new_panel = Panel(
                 panel_id=generate_entity_id("panel"),
@@ -121,15 +151,17 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
             )
             created_panel = uow.panels.add(new_panel)
 
-            # Update each referenced proposal to UNDER_REVIEW
-            ensure_submitted_proposals_under_review(uow, submitted_proposals)
+            # ---------Update each referenced proposal to UNDER_REVIEW-------
+            ensure_submitted_proposals_under_review(
+                uow, (r.prsl_id for r in submitted_proposal_refs)
+            )
             uow.commit()
-            logger.info("Science Verification panel successfully updated")
+            logger.info("Science Verification panel created and proposals assigned")
             return created_panel.panel_id
 
-        # Science category panels
+        # ------------------Science category panels-------------
         proposals_by_category = group_proposals_by_science_category(
-            submitted_proposals, PANEL_NAME_POOL
+            submitted_proposal_refs, PANEL_NAME_POOL
         )
 
         panels_by_name = {
@@ -142,7 +174,11 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
             )
             for panel_name in PANEL_NAME_POOL
         }
-        ensure_submitted_proposals_under_review(uow, submitted_proposals)
+
+        # -------Update statuses for all SUBMITTED to UNDER_REVIEW----------
+        ensure_submitted_proposals_under_review(
+            uow, (r.prsl_id for r in submitted_proposal_refs)
+        )
 
         uow.commit()
         logger.info("Panels successfully updated")
@@ -162,7 +198,7 @@ def get_panel_by_id(panel_id: str) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
 
     with oda.uow() as uow:
-        panel = uow.panels.get(panel_id)  # pylint: disable=no-member
+        panel = uow.panels.get(panel_id)
     logger.info("Panel retrieved successfully: %s", panel_id)
     return panel
 
@@ -202,7 +238,6 @@ def update_panel(panel_id: str, param: Panel) -> str:
     # TODO: check for any new proposal added and handle status appropriately here
     # This will be situations where the Admin re-assignes proposals
 
-
     with oda.uow() as uow:
         proposal_ids = [
             p if isinstance(p, str) else getattr(p, "prsl_id")
@@ -213,21 +248,32 @@ def update_panel(panel_id: str, param: Panel) -> str:
         if param.tech_reviewers:
             tech_reviewer_id = param.tech_reviewers[0].reviewer_id
             for prsl_id in proposal_ids:
-                ensure_review_exist_or_create(uow, param, kind="Technical Review", reviewer_id=tech_reviewer_id, proposal_id=prsl_id)
+                ensure_review_exist_or_create(
+                    uow,
+                    param,
+                    kind="Technical Review",
+                    reviewer_id=tech_reviewer_id,
+                    proposal_id=prsl_id,
+                )
 
         # Science Reviews for every (science reviewer × proposal) pair
         if param.sci_reviewers:
             for sci in param.sci_reviewers:
                 sci_reviewer_id = sci.reviewer_id
                 for prsl_id in proposal_ids:
-                    ensure_review_exist_or_create(uow, param, kind="Science Review", reviewer_id=sci_reviewer_id, proposal_id=prsl_id)
+                    ensure_review_exist_or_create(
+                        uow,
+                        param,
+                        kind="Science Review",
+                        reviewer_id=sci_reviewer_id,
+                        proposal_id=prsl_id,
+                    )
 
         # Persist the panel itself
         panel = uow.panels.add(param)
         uow.commit()
     logger.info("Panel successfully updated with ID %s", panel.panel_id)
     return panel.panel_id
-
 
 
 @router.get(
