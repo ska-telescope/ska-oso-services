@@ -94,6 +94,7 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
                 uow.panels.query(CustomQuery(name="Science Verification")), "panel_id"
             )
             if existing_sv_panels:
+                ensure_submitted_proposals_under_review(uow, submitted_proposals)
                 return existing_sv_panels[0].panel_id
 
             sv_assignments = build_sv_panel_proposals(submitted_proposals)
