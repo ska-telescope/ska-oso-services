@@ -75,7 +75,7 @@ class ProposalReportResponse(AppModel):
     review_status: str | None = None
     conflict: bool = False
     review_id: str | None = None
-    review_rank: float | None = None
+    review_rank: int | None = None
     comments: str | None = None
     review_status: str | None = None
     decision_id: str | None = None

@@ -98,8 +98,8 @@ def join_proposals_panels_reviews_decisions(
                         ),
                         review_id=review.review_id if review else None,
                         review_rank=(
-                            review.review_type.rank
-                            if review and review.review_type.rank
+                            getattr(getattr(review, "review_type", None), "rank", None)
+                            if review
                             else None
                         ),
                         comments=review.comments if review else None,
