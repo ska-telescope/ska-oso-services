@@ -109,6 +109,7 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
             # Update each referenced proposal to UNDER_REVIEW
             ensure_submitted_proposals_under_review(uow, submitted_proposals)
             uow.commit()
+            logger.info("Science Verification panel successfully updated")
             return created_panel.panel_id
 
         # Science category panels
@@ -129,7 +130,7 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
         ensure_submitted_proposals_under_review(uow, submitted_proposals)
 
         uow.commit()
-
+        logger.info("Panels successfully updated")
         return build_panel_response(panels_by_name)
 
 
