@@ -6,7 +6,7 @@ from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal.proposal import Proposal, ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel, ProposalAssignment
-from ska_oso_pdm.proposal_management.review import ReviewStatus, TechnicalReview, ScienceReview
+from ska_oso_pdm.proposal_management.review import ReviewStatus, TechnicalReview, ScienceReview, Conflict
 from ska_oso_pdm import PanelReview
 
 
@@ -249,11 +249,14 @@ def ensure_review_exist_or_create(uow, param, kind: str, reviewer_id: str, propo
             )
             return
 
-        review_type = (
-            TechnicalReview(kind="Technical Review")
-            if kind == "Technical Review"
-            else ScienceReview(kind="Science Review")
-        )
+        if kind == "Technical Review":
+            review_type = TechnicalReview(kind="Technical Review")
+        else:
+            review_type = ScienceReview(
+                rank=None,
+                conflict=Conflict(has_conflict=False, reason=None),
+                excluded_from_decision=False,
+            )
 
         new_review = PanelReview(
             panel_id=param.panel_id,
