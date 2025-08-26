@@ -3,7 +3,7 @@ Utility functions to be used in tests
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -14,7 +14,11 @@ from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal.proposal_access import ProposalAccess
 from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
-from ska_oso_pdm.proposal_management.panel import Panel
+from ska_oso_pdm.proposal_management.panel import (
+    Panel,
+    ProposalAssignment,
+    ReviewerAssignment,
+)
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
 CUR_DIR = Path(__file__).parent
@@ -196,6 +200,43 @@ class TestDataFactory:
         return panel
 
     @staticmethod
+    def reviewer_assignment(
+        reviewer_id: str = "test_reviewer",
+        assigned_on: datetime | str = "2025-06-16T11:23:01Z",
+        status: str = "Pending",
+    ) -> ReviewerAssignment:
+        if isinstance(assigned_on, datetime):
+            assigned_on_str = assigned_on.astimezone(timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+        else:
+            assigned_on_str = assigned_on
+        data = {
+            "reviewer_id": reviewer_id,
+            "assigned_on": assigned_on_str,
+            "status": status,
+        }
+        assignment = ReviewerAssignment.model_validate_json(json.dumps(data))
+        return assignment
+
+    @staticmethod
+    def proposal_assignment(
+        prsl_id: str = "prsl-001", assigned_on: datetime | str = "2025-05-21T09:30:00Z"
+    ) -> dict:
+        if isinstance(assigned_on, datetime):
+            assigned_on_str = assigned_on.astimezone(timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+        else:
+            assigned_on_str = assigned_on
+        data = {
+            "prsl_id": prsl_id,
+            "assigned_on": assigned_on_str,
+        }
+        assignment = ProposalAssignment.model_validate_json(json.dumps(data))
+        return assignment
+
+    @staticmethod
     def panel(
         panel_id: str = "panel-test-20250616-00002",
         name: str = "Stargazers",
@@ -226,6 +267,31 @@ class TestDataFactory:
             ],
         }
         panel = Panel.model_validate_json(json.dumps(data))
+        set_identifier(panel, panel_id)
+
+        return panel
+
+    @staticmethod
+    def panel_with_assignment(
+        panel_id: str = "panel-test-20250616-00002",
+        name: str = "Stargazers",
+        sci_reviewers: list | None = None,
+        tech_reviewers: list | None = None,
+        proposals: list | None = None,
+        cycle: str | None = None,
+        expiry_date: str | None = None,
+    ) -> "Panel":
+        data = {
+            "panel_id": panel_id,
+            "name": name,
+            "sci_reviewers": sci_reviewers or [],
+            "tech_reviewers": tech_reviewers or [],
+            "proposals": proposals or [],
+            "cycle": cycle,
+            "expiry_date": expiry_date,
+        }
+        # Let Pydantic handle nested objects
+        panel = Panel.model_validate(data)
         set_identifier(panel, panel_id)
 
         return panel

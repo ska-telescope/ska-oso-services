@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Fixes the issue when a technical review already exists so a new one is not created
+* [BREAKING] Updates the PHT endpoints such that they are coherent e,g `POST entity/create`
+* [BREAKING] Updates the retrieval of entities endpoint from `entity/list/{id}` to be `entity/users/{id}/entity`
 
 3.1.1
 ***********

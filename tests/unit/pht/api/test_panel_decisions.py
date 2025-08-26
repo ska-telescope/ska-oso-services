@@ -31,7 +31,7 @@ class Testpanel_decisionAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.post(
-            f"{PANEL_DECISION_API_URL}/",
+            f"{PANEL_DECISION_API_URL}/create",
             data=VALID_PANEL_DECISION,
             headers={"Content-type": "application/json"},
         )
@@ -53,7 +53,7 @@ class Testpanel_decisionAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.post(
-            f"{PANEL_DECISION_API_URL}/",
+            f"{PANEL_DECISION_API_URL}/create",
             data=VALID_PANEL_DECISION,
             headers={"Content-Type": "application/json"},
         )
@@ -110,7 +110,7 @@ class Testpanel_decisionAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         user_id = "DefaultUser"
-        response = client.get(f"{PANEL_DECISION_API_URL}/list/{user_id}")
+        response = client.get(f"{PANEL_DECISION_API_URL}/users/{user_id}/decisions")
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(panel_decision_objs)
@@ -125,7 +125,7 @@ class Testpanel_decisionAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         user_id = "user123"
-        response = client.get(f"{PANEL_DECISION_API_URL}/list/{user_id}")
+        response = client.get(f"{PANEL_DECISION_API_URL}/users/{user_id}/decisions")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []

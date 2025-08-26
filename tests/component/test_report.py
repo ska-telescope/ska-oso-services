@@ -55,17 +55,19 @@ def test_get_report_for_user(authrequests):
 
     # --- Create panel, decision, review ---
     created_panel = authrequests.post(
-        f"{PHT_URL}/panels", data=panel.model_dump_json(), headers=HEADERS
+        f"{PHT_URL}/panels/create", data=panel.model_dump_json(), headers=HEADERS
     )
     assert created_panel.status_code == HTTPStatus.OK, created_panel.text
 
     created_decision = authrequests.post(
-        f"{PHT_URL}/panel/decision", data=decision.model_dump_json(), headers=HEADERS
+        f"{PHT_URL}/panel/decision/create",
+        data=decision.model_dump_json(),
+        headers=HEADERS,
     )
     assert created_decision.status_code == HTTPStatus.OK, created_decision.text
 
     created_review = authrequests.post(
-        f"{PHT_URL}/reviews", data=reviews.model_dump_json(), headers=HEADERS
+        f"{PHT_URL}/reviews/create", data=reviews.model_dump_json(), headers=HEADERS
     )
     assert created_review.status_code == HTTPStatus.OK, created_review.text
 

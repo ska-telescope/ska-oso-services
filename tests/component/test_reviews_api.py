@@ -23,7 +23,7 @@ def test_create_and_get_review(authrequests):
 
     # POST using JSON string
     post_response = authrequests.post(
-        f"{PHT_URL}/reviews/",
+        f"{PHT_URL}/reviews/create",
         data=VALID_REVIEW,
         headers={"Content-Type": "application/json"},
     )
@@ -59,7 +59,7 @@ def test_review_create_then_put(authrequests):
 
     # POST a new proposal
     post_response = authrequests.post(
-        f"{PHT_URL}/reviews/",
+        f"{PHT_URL}/reviews/create",
         data=VALID_REVIEW,
         headers={"Content-Type": "application/json"},
     )
@@ -110,7 +110,7 @@ def test_get_list_reviews_for_user(authrequests):
         review_json = review.model_dump_json()
 
         response = authrequests.post(
-            f"{PHT_URL}/reviews/",
+            f"{PHT_URL}/reviews/create",
             data=review_json,
             headers={"Content-Type": "application/json"},
         )
@@ -124,7 +124,7 @@ def test_get_list_reviews_for_user(authrequests):
     user_id = get_response.json()["metadata"]["created_by"]
 
     # GET /list/{user_id}
-    list_response = authrequests.get(f"{PHT_URL}/reviews/list/{user_id}")
+    list_response = authrequests.get(f"{PHT_URL}/reviews/users/{user_id}/reviews")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     reviews = list_response.json()
@@ -136,4 +136,4 @@ def test_get_list_reviews_for_user(authrequests):
     for review_id in created_ids:
         assert (
             review_id in returned_ids
-        ), f"Missing proposal {review_id} in GET /list/{user_id}"
+        ), f"Missing proposal {review_id} in GET /users/{user_id}/reviews"

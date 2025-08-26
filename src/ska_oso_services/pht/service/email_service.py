@@ -11,7 +11,7 @@ from jinja2 import Template
 from ska_oso_services.common.error_handling import UnprocessableEntityError
 from ska_oso_services.pht.utils.constants import HTML_TEMPLATE
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 # Email rendering
@@ -69,18 +69,18 @@ async def send_email_async(email: str, prsl_id: str):
             username=smtp_user,
             password=smtp_password,
         )
-        LOGGER.info("Email sent to %s for proposal %s", email, prsl_id)
+        logger.info("Email sent to %s for proposal %s", email, prsl_id)
 
     except SMTPConnectError as err:
-        LOGGER.error("SMTP connection error: %s", str(err))
+        logger.error("SMTP connection error: %s", str(err))
         raise HTTPException(status_code=503, detail="SMTP connection failed") from err
 
     except SMTPRecipientsRefused as err:
-        LOGGER.error("Recipient refused: %s", str(err))
+        logger.error("Recipient refused: %s", str(err))
         raise UnprocessableEntityError(
             detail="Unable to send email for this recipient."
         ) from err
 
     except SMTPException as err:
-        LOGGER.error("SMTP error for %s: %s", email, str(err))
+        logger.error("SMTP error for %s: %s", email, str(err))
         raise HTTPException(status_code=502, detail="SMTP send failed") from err

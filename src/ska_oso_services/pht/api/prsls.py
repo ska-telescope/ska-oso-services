@@ -4,6 +4,7 @@ from typing import Annotated
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, HTTPException
+from pydantic import ValidationError
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.query import CustomQuery
@@ -13,6 +14,7 @@ from ska_oso_pdm.proposal import (
     ProposalPermissions,
     ProposalRole,
 )
+from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
 from starlette.status import HTTP_400_BAD_REQUEST
 
@@ -20,6 +22,7 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
+    ForbiddenError,
     NotFoundError,
     UnprocessableEntityError,
 )
@@ -31,7 +34,7 @@ from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
     list_accessible_proposal_ids,
-    update_proposal_service,
+    transform_update_proposal,
 )
 from ska_oso_services.pht.service.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
@@ -46,7 +49,7 @@ from ska_oso_services.pht.utils.pht_helper import (
     get_latest_entity_by_id,
 )
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 
@@ -65,7 +68,8 @@ def get_osd_by_cycle(cycle: int) -> OsdDataModel:
         OsdDataModel: The OSD data validated against the defined schema.
 
     """
-    LOGGER.debug("GET OSD data cycle: %s", cycle)
+    # TODO: We may need to consider moving this to common
+    logger.debug("GET OSD data cycle: %s", cycle)
     data = get_osd_data(cycle_id=cycle, source="car")
     if type(data) is tuple and len(data) == 2:
         # Error happened at OSD
@@ -93,7 +97,7 @@ def create_proposal(
     Creates a new proposal in the ODA.
     """
 
-    LOGGER.debug("POST PROPOSAL create")
+    logger.debug("POST PROPOSAL create")
 
     try:
         # create a proposal level access when the proposal is created
@@ -113,10 +117,10 @@ def create_proposal(
 
             uow.prslacc.add(create_prslacc, auth.user_id)
             uow.commit()
-        LOGGER.info("Proposal successfully created with ID %s", created_prsl.prsl_id)
+        logger.info("Proposal successfully created with ID %s", created_prsl.prsl_id)
         return created_prsl.prsl_id
     except ValueError as err:
-        LOGGER.exception("ValueError when adding proposal to the ODA: %s", err)
+        logger.exception("ValueError when adding proposal to the ODA: %s", err)
         raise BadRequestError(
             detail=f"Failed when attempting to create a proposal: '{err.args[0]}'",
         ) from err
@@ -136,7 +140,11 @@ def get_proposals_for_user(
     List all proposals accessible to the authenticated user.
 
     The proposals are determined from the underlying data store by:
-    1.) Resolving accessible proposal IDs via, list_accessible_proposal_ids,
+    1.) Resolving accessible proposal IDs via, list_accessible_proposal_ids:
+        1.) This queries the proposal_acces table to see if there is a proposal
+        associated with the user_id.
+        Note: Once a proposal is created, an access is created and once Co-Is are added,
+        access is created as well
     2.) Fetching each proposal by ID and
     3.) Returning the proposals as a list (empty if none are found).
 
@@ -145,20 +153,20 @@ def get_proposals_for_user(
 
     """
 
-    LOGGER.debug("GET PROPOSAL LIST query for the user: %s", auth.user_id)
+    logger.debug("GET PROPOSAL LIST query for the user: %s", auth.user_id)
 
     with oda.uow() as uow:
         proposals = [
-            p
+            accessible_proposal
             for prsl_id in list_accessible_proposal_ids(uow, auth.user_id)
-            if (p := uow.prsls.get(prsl_id)) is not None
+            if (accessible_proposal := uow.prsls.get(prsl_id)) is not None
         ]
 
     if not proposals:
-        LOGGER.info("No proposals found for user: %s", auth.user_id)
+        logger.info("No proposals found for user: %s", auth.user_id)
         return []
 
-    LOGGER.debug("Found %d proposals for user: %s", len(proposals), auth.user_id)
+    logger.debug("Found %d proposals for user: %s", len(proposals), auth.user_id)
     return proposals
 
 
@@ -178,23 +186,24 @@ def get_proposal(
 ) -> Proposal:
     """
     Retrieves the latest proposal by prsl_id.
+    1.) Check that the authenticated user has the permission to access the proposal.
 
     Returns:
-        Proposal: Returns the latest proposal for the supplied prsl_id,
+        Proposal: Returns the latest version of the proposal for the supplied prsl_id,
                 including the metadata.
 
     """
-    LOGGER.debug("GET PROPOSAL prsl_id: %s", prsl_id)
+    logger.debug("GET PROPOSAL prsl_id: %s", prsl_id)
 
     try:
         with oda.uow() as uow:
             assert_user_has_permission_for_proposal(uow, auth.user_id, prsl_id)
             proposal = uow.prsls.get(prsl_id)
-        LOGGER.info("Proposal retrieved successfully: %s", prsl_id)
+        logger.info("Proposal retrieved successfully: %s", prsl_id)
         return proposal
 
     except KeyError as err:
-        LOGGER.warning("Proposal not found: %s", prsl_id)
+        logger.warning("Proposal not found: %s", prsl_id)
         raise NotFoundError(f"Could not find proposal: {prsl_id}") from err
 
 
@@ -208,10 +217,11 @@ def get_proposals_batch(
     prsl_ids: list[str] = Body(..., embed=True, description="List of proposal IDs"),
 ):
     """
-    AI is creating summary for get_proposals_batch
+    Batch retrieves proposals by accepting a list of proposal ids
+    and returning the proposals for those ids.
 
     """
-    LOGGER.debug("GET BATCH PROPOSAL(s): %s", prsl_ids)
+    logger.debug("GET BATCH PROPOSAL(s): %s", prsl_ids)
     proposals = []
     with oda.uow() as uow:
         for prsl_id in prsl_ids:
@@ -219,7 +229,7 @@ def get_proposals_batch(
             if proposal is not None:
                 proposals.append(proposal)
             else:
-                LOGGER.warning("Proposal not found: %s", prsl_id)
+                logger.warning("Proposal not found: %s", prsl_id)
     return proposals
 
 
@@ -230,7 +240,7 @@ def get_proposals_batch(
 )
 def get_proposals_by_status(status: str) -> list[Proposal]:
     """
-    Function that requests to GET /proposals/status are mapped to.
+    Function that requests to GET /prsls/status/{status} are mapped to.
 
     Retrieves the Proposals for the given status from the
     underlying data store, if available
@@ -239,12 +249,12 @@ def get_proposals_by_status(status: str) -> list[Proposal]:
         list[Proposal]
 
     """
-    LOGGER.debug("GET PROPOSAL status: %s", status)
+    logger.debug("GET PROPOSAL status: %s", status)
 
     with oda.uow() as uow:
         query_param = CustomQuery(status=status)
         proposals = get_latest_entity_by_id(uow.prsls.query(query_param), "prsl_id")
-        LOGGER.info("Proposal retrieved successfully for: %s", status)
+        logger.info("Proposal retrieved successfully for: %s", status)
 
         if proposals is None:
             return []
@@ -268,7 +278,7 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
         list[PanelReview]
 
     """
-    LOGGER.debug("GET reviews for a prsl_id: %s", prsl_id)
+    logger.debug("GET reviews for a prsl_id: %s", prsl_id)
     with oda.uow() as uow:
         query = CustomQuery(prsl_id=prsl_id)
         reviews = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
@@ -286,37 +296,82 @@ def update_proposal(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={Role.ANY, Role.SW_ENGINEER},
+            roles={Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
 ) -> Proposal:
     """
-    - DRAFT     -> require Update permission; persist as-is.
-    - SUBMITTED -> require Submit permission; update to UNDER_REVIEW; persist.
-    """
-    if prsl.prsl_id != prsl_id:
-        raise UnprocessableEntityError(
-            detail="Proposal ID in path and body do not match."
-        )
+    Updates a proposal in the underlying data store.
 
+    """
     with oda.uow() as uow:
-        updated = update_proposal_service(
-            uow=uow,
-            prsl_id=prsl_id,
-            payload=prsl,
-            user_id=auth.user_id,
+        # Check if user in propsal access - forbidden error raised inside
+        rows = assert_user_has_permission_for_proposal(
+            uow=uow, prsl_id=prsl_id, user_id=auth.user_id
         )
+        transform_body = transform_update_proposal(prsl)
+
+        # Assumption: status is final beyond this point
+        if transform_body.status == ProposalStatus.SUBMITTED:
+            if ProposalPermissions.Submit not in rows[0].permissions:
+                logger.info(
+                    "Forbidden submit attempt for proposal: %s by user_id: %s ",
+                    prsl_id,
+                    auth.user_id,
+                )
+                raise ForbiddenError(
+                    detail=(
+                        f"You do not have access to submit proposal with id:{prsl_id}"
+                    )
+                )
+        elif ProposalPermissions.Update not in rows[0].permissions:
+            logger.info(
+                "Forbidden update attempt for proposal: %s by user_id: %s ",
+                prsl_id,
+                auth.user_id,
+            )
+            raise ForbiddenError(
+                detail=(f"You do not have access to update proposal with id:{prsl_id}")
+            )
+
         try:
-            uow.commit()
-        except ValueError as err:
-            LOGGER.error("Commit failed for proposal %s: %s", prsl_id, err)
+            prsl = Proposal.model_validate(transform_body)  # test transformed
+        except ValidationError as err:
             raise BadRequestError(
-                detail=f"Validation error while saving proposal: {err.args[0]}"
+                detail=f"Validation error after transforming proposal: {err.args[0]}"
             ) from err
 
-        LOGGER.info("Proposal %s persisted successfully", prsl_id)
-        return updated
+        logger.debug("PUT PROPOSAL - Attempting update for prsl_id: %s", prsl_id)
+
+        # Ensure ID match
+        if prsl.prsl_id != prsl_id:
+            logger.warning(
+                "Proposal ID mismatch: Proposal ID=%s in path, body ID=%s",
+                prsl_id,
+                prsl.prsl_id,
+            )
+            raise UnprocessableEntityError(
+                detail="Proposal ID in path and body do not match."
+            )
+
+        # Verify proposal exists
+        existing = uow.prsls.get(prsl_id)
+        if not existing:
+            logger.info("Proposal not found for update: %s", prsl_id)
+            raise NotFoundError(detail="Proposal not found: {prsl_id}")
+
+        try:
+            updated_prsl = uow.prsls.add(prsl)  # Add is used for update
+            uow.commit()
+            logger.info("Proposal %s updated successfully", prsl_id)
+            return updated_prsl
+
+        except ValueError as err:
+            logger.error("Validation failed for proposal %s: %s", prsl_id, err)
+            raise BadRequestError(
+                detail="Validation error while saving proposal: {err.args[0]}"
+            ) from err
 
 
 @router.post(
@@ -334,7 +389,7 @@ def validate_proposal(prsl: Proposal) -> dict:
             "validation_errors": list[str]}.
 
     """
-    LOGGER.debug("POST PROPOSAL validate")
+    logger.debug("POST PROPOSAL validate")
     result = validation.validate_proposal(prsl)
 
     return result
@@ -377,12 +432,12 @@ def create_upload_pdf_url(filename: str) -> str:
         }
         raise UnprocessableEntityError(detail=validation_resp)
 
-    LOGGER.debug("POST Upload Signed URL for: %s", filename)
+    logger.debug("POST Upload Signed URL for: %s", filename)
 
     try:
         s3_client = get_aws_client()
     except BotoCoreError as boto_err:
-        LOGGER.exception("S3 client initialization failed: %s", boto_err)
+        logger.exception("S3 client initialization failed: %s", boto_err)
         raise HTTPException(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
             detail="Could not initialize S3 client {boto_err.args[0]}",
@@ -394,7 +449,7 @@ def create_upload_pdf_url(filename: str) -> str:
         )
     # TODO: Andrey to look into this and determine the correct code or if not needed
     except ClientError as client_err:
-        LOGGER.exception("S3 client failed to generate upload URL: %s", client_err)
+        logger.exception("S3 client failed to generate upload URL: %s", client_err)
         raise HTTPException(
             status_code=HTTPStatus.BAD_GATEWAY,
             detail="Failed to generate upload URL {client_err.args[0]}",
@@ -412,12 +467,12 @@ def create_download_pdf_url(filename: str) -> str:
 
     """
 
-    LOGGER.debug("POST Download Signed URL for: %s", filename)
+    logger.debug("POST Download Signed URL for: %s", filename)
 
     try:
         s3_client = get_aws_client()
     except BotoCoreError as boto_err:
-        LOGGER.exception("S3 client initialization failed: %s", boto_err)
+        logger.exception("S3 client initialization failed: %s", boto_err)
         raise HTTPException(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
             detail="Could not initialize S3 client {boto_err.args[0]}",
@@ -430,7 +485,7 @@ def create_download_pdf_url(filename: str) -> str:
     # TODO: Andrey to look into this when secrets are available
     # and determine the correct code or if not needed
     except ClientError as client_err:
-        LOGGER.exception("S3 client failed to generate download URL: %s", client_err)
+        logger.exception("S3 client failed to generate download URL: %s", client_err)
         raise HTTPException(
             status_code=HTTPStatus.BAD_GATEWAY,
             detail="Failed to generate download URL {client_err.args[0]}",
@@ -448,12 +503,12 @@ def create_delete_pdf_url(filename: str) -> str:
 
     """
 
-    LOGGER.debug("POST Delete Signed URL for: %s", filename)
+    logger.debug("POST Delete Signed URL for: %s", filename)
 
     try:
         s3_client = get_aws_client()
     except BotoCoreError as boto_err:
-        LOGGER.exception("S3 client initialize failed: %s", boto_err)
+        logger.exception("S3 client initialize failed: %s", boto_err)
         raise HTTPException(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
             detail="Could not initialize S3 client {boto_err.args[0]}",
@@ -466,7 +521,7 @@ def create_delete_pdf_url(filename: str) -> str:
     # TODO: Andrey to look into this when secrets are available
     # and determine the correct code or if not needed
     except ClientError as client_err:
-        LOGGER.exception("S3 client failed to generate delete URL: %s", client_err)
+        logger.exception("S3 client failed to generate delete URL: %s", client_err)
         raise HTTPException(
             status_code=HTTPStatus.BAD_GATEWAY,
             detail="Failed to generate delete URL {client_err.args[0]}",

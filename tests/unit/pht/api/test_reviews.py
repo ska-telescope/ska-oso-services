@@ -33,7 +33,7 @@ class TestReviewCreateAPI:
         mock_oda.return_value.__enter__.return_value = uow
 
         resp = client.post(
-            f"{REVIEWS_API_URL}/",
+            f"{REVIEWS_API_URL}/create",
             data=VALID_REVIEW,
             headers={"Content-type": "application/json"},
         )
@@ -61,7 +61,7 @@ class TestReviewCreateAPI:
         mock_oda.return_value.__enter__.return_value = uow
 
         resp = client.post(
-            f"{REVIEWS_API_URL}/",
+            f"{REVIEWS_API_URL}/create",
             data=VALID_REVIEW,
             headers={"Content-type": "application/json"},
         )
@@ -91,7 +91,7 @@ class TestReviewCreateAPI:
         mock_oda.return_value.__enter__.return_value = uow
 
         resp = client.post(
-            f"{REVIEWS_API_URL}/",
+            f"{REVIEWS_API_URL}/create",
             data=VALID_REVIEW,
             headers={"Content-type": "application/json"},
         )
@@ -112,7 +112,7 @@ class TestReviewCreateAPI:
         mock_oda.return_value.__enter__.return_value = uow
 
         resp = client.post(
-            f"{REVIEWS_API_URL}/",
+            f"{REVIEWS_API_URL}/create",
             data=VALID_REVIEW,
             headers={"Content-Type": "application/json"},
         )
@@ -127,7 +127,7 @@ class TestReviewCreateAPI:
         uow.commit.assert_not_called()
 
 
-class TestReviewAPI:
+class TestGetReviewAPI:
 
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_get_review_not_found(self, mock_oda, client):
@@ -174,7 +174,7 @@ class TestReviewAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         user_id = "DefaultUser"
-        response = client.get(f"{REVIEWS_API_URL}/list/{user_id}")
+        response = client.get(f"{REVIEWS_API_URL}/users/{user_id}/reviews")
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(review_objs)
@@ -189,7 +189,7 @@ class TestReviewAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         user_id = "user123"
-        response = client.get(f"{REVIEWS_API_URL}/list/{user_id}")
+        response = client.get(f"{REVIEWS_API_URL}/users/{user_id}/reviews")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []

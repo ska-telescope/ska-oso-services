@@ -14,13 +14,13 @@ from ska_oso_services.common.error_handling import (
 )
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/reviews", tags=["PMT API - Reviews"])
 
 
 @router.post(
-    "/",
+    "/create",
     summary="Create a new Review",
     dependencies=[
         Permissions(
@@ -34,7 +34,7 @@ def create_review(reviews: PanelReview) -> str:
     Creates a new Review in the ODA
     """
 
-    LOGGER.debug("POST REVIEW create")
+    logger.debug("POST REVIEW create")
 
     try:
 
@@ -55,7 +55,7 @@ def create_review(reviews: PanelReview) -> str:
             uow.commit()
         return created_review.review_id
     except ValueError as err:
-        LOGGER.exception("ValueError when adding Review to the ODA: %s", err)
+        logger.exception("ValueError when adding Review to the ODA: %s", err)
         raise BadRequestError(
             detail=f"Failed when attempting to create a Review: '{err.args[0]}'",
         ) from err
@@ -77,7 +77,7 @@ def create_review(reviews: PanelReview) -> str:
     ],
 )
 def get_review(review_id: str) -> PanelReview:
-    LOGGER.debug("GET Review review_id: %s", review_id)
+    logger.debug("GET Review review_id: %s", review_id)
 
     with oda.uow() as uow:
         Review = uow.rvws.get(review_id)
@@ -85,7 +85,7 @@ def get_review(review_id: str) -> PanelReview:
 
 
 @router.get(
-    "/list/{user_id}",
+    "/users/{user_id}/reviews",
     summary="Get a list of Reviews created by a user",
     dependencies=[
         Permissions(
@@ -104,7 +104,7 @@ def get_reviews_for_user(user_id: str) -> list[PanelReview]:
     underlying data store, if available
     """
 
-    LOGGER.debug("GET Review LIST query for the user: %s", user_id)
+    logger.debug("GET Review LIST query for the user: %s", user_id)
 
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
@@ -135,11 +135,11 @@ def update_review(review_id: str, review: PanelReview) -> PanelReview:
     :param review: Review object payload from the request body
     :return: the updated Review object
     """
-    LOGGER.debug("PUT Review - Attempting update for review_id: %s", review_id)
+    logger.debug("PUT Review - Attempting update for review_id: %s", review_id)
 
     # Ensure ID match
     if review.review_id != review_id:
-        LOGGER.warning(
+        logger.warning(
             "Review ID mismatch: Review ID=%s in path, body ID=%s",
             review_id,
             review.review_id,
@@ -152,17 +152,17 @@ def update_review(review_id: str, review: PanelReview) -> PanelReview:
         # Verify Review exists
         existing = uow.rvws.get(review_id)
         if not existing:
-            LOGGER.info("Review not found for update: %s", review_id)
+            logger.info("Review not found for update: %s", review_id)
             raise NotFoundError(detail="Review not found: {review_id}")
 
         try:
             updated_review = uow.rvws.add(review)  # Add is used for update
             uow.commit()
-            LOGGER.info("Review %s updated successfully", review_id)
+            logger.info("Review %s updated successfully", review_id)
             return updated_review
 
         except ValueError as err:
-            LOGGER.error("Validation failed for Review %s: %s", review_id, err)
+            logger.error("Validation failed for Review %s: %s", review_id, err)
             raise BadRequestError(
                 detail="Validation error while saving Review: {err.args[0]}"
             ) from err
