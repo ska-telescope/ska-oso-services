@@ -236,36 +236,36 @@ def ensure_submitted_proposals_under_review(uow, submitted_refs: Iterable[Any]) 
 
 
 def ensure_review_exist_or_create(uow, param, kind: str, reviewer_id: str, proposal_id: str) -> None:
-        query = CustomQuery(prsl_id=proposal_id, kind=kind, reviewer_id=reviewer_id)
-        existing = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
-        existing_rvw = existing[0] if existing else None
+    query = CustomQuery(prsl_id=proposal_id, kind=kind, reviewer_id=reviewer_id)
+    existing = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
+    existing_rvw = existing[0] if existing else None
 
-        if existing_rvw and existing_rvw.metadata.version == 1:
-            logger.debug(
-                "%s already exists (prsl_id=%s, reviewer=%s)",
-                kind,
-                proposal_id,
-                existing_rvw.reviewer_id,
-            )
-            return
-
-        if kind == "Technical Review":
-            review_type = TechnicalReview(kind="Technical Review")
-        else:
-            review_type = ScienceReview(
-                rank=None,
-                conflict=Conflict(has_conflict=False, reason=None),
-                excluded_from_decision=False,
-            )
-
-        new_review = PanelReview(
-            panel_id=param.panel_id,
-            review_id=generate_entity_id("rvs-tec" if kind == "Technical Review" else "rvs-sci"),
-            reviewer_id=reviewer_id,
-            cycle=param.cycle,
-            prsl_id=proposal_id,
-            status=ReviewStatus.TO_DO,
-            review_type=review_type,
+    if existing_rvw and existing_rvw.metadata.version == 1:
+        logger.debug(
+            "%s already exists (prsl_id=%s, reviewer=%s)",
+            kind,
+            proposal_id,
+            existing_rvw.reviewer_id,
         )
-        uow.rvws.add(new_review)
-        logger.info("Created %s (prsl_id=%s, reviewer=%s)", kind, proposal_id, reviewer_id)
+        return
+
+    if kind == "Technical Review":
+        review_type = TechnicalReview(kind="Technical Review")
+    else:
+        review_type = ScienceReview(
+            rank=None,
+            conflict=Conflict(has_conflict=False, reason=None),
+            excluded_from_decision=False,
+        )
+
+    new_review = PanelReview(
+        panel_id=param.panel_id,
+        review_id=generate_entity_id("rvs-tec" if kind == "Technical Review" else "rvs-sci"),
+        reviewer_id=reviewer_id,
+        cycle=param.cycle,
+        prsl_id=proposal_id,
+        status=ReviewStatus.TO_DO,
+        review_type=review_type,
+    )
+    uow.rvws.add(new_review)
+    logger.info("Created %s (prsl_id=%s, reviewer=%s)", kind, proposal_id, reviewer_id)
