@@ -186,6 +186,121 @@ class TestPanelsUpdateAPI:
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.generate_entity_id",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
+        autospec=True,
+    )
+    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_update_panel_creates_science_review_when_missing(
+        self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
+    ):
+        uow = mock.MagicMock()
+        mock_uow().__enter__.return_value = uow
+
+        # No existing science review for (proposal, reviewer, kind)
+        mock_get_latest_ops.return_value = []
+
+        # Deterministic ID for science review
+        mock_gen_id_ops.return_value = "rvs-sci-0001"
+
+        # Repos return passed object (upsert-like)
+        uow.rvws.add.side_effect = lambda r: r
+        uow.panels.add.side_effect = lambda p: p
+
+        assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        sci = TestDataFactory.reviewer_assignment(
+            reviewer_id="rev-sci-001", assigned_on=assigned_on
+        )
+        prop = TestDataFactory.proposal_assignment(
+            prsl_id="prsl-001", assigned_on=assigned_on
+        )
+        panel_body = TestDataFactory.panel_with_assignment(
+            panel_id="panel-123",
+            name="Cosmology",
+            sci_reviewers=[sci],
+            tech_reviewers=[],
+            proposals=[prop],
+        )
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{panel_body.panel_id}",
+            data=panel_body.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.json() == panel_body.panel_id
+
+        mock_validate.assert_called_once()
+        uow.rvws.add.assert_called_once()
+
+        created = uow.rvws.add.call_args[0][0]
+        assert created.review_id == "rvs-sci-0001"
+        assert created.prsl_id == "prsl-001"
+        assert created.reviewer_id == "rev-sci-001"
+
+        uow.panels.add.assert_called_once()
+        uow.commit.assert_called_once()
+
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.generate_entity_id",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
+        autospec=True,
+    )
+    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_update_panel_skips_creating_science_review_if_already_exists_v1(
+        self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
+    ):
+        uow = mock.MagicMock()
+        mock_uow().__enter__.return_value = uow
+
+        # Ref already indicates metadata.version == 1 → helper should skip creation
+        existing_ref = SimpleNamespace(
+            review_id="rvw-existing-sci",
+            reviewer_id="rev-sci-001",
+            metadata=SimpleNamespace(version=1),
+        )
+        mock_get_latest_ops.return_value = [existing_ref]
+
+        uow.panels.add.side_effect = lambda p: p
+
+        assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        sci = TestDataFactory.reviewer_assignment(
+            reviewer_id="rev-sci-001", assigned_on=assigned_on
+        )
+        prop = TestDataFactory.proposal_assignment(
+            prsl_id="prsl-001", assigned_on=assigned_on
+        )
+        panel_body = TestDataFactory.panel_with_assignment(
+            panel_id="panel-123",
+            name="Cosmology",
+            sci_reviewers=[sci],
+            tech_reviewers=[],
+            proposals=[prop],
+        )
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{panel_body.panel_id}",
+            data=panel_body.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.json() == panel_body.panel_id
+
+        mock_validate.assert_called_once()
+        uow.rvws.add.assert_not_called()
+        mock_gen_id_ops.assert_not_called()
+        uow.panels.add.assert_called_once()
+        uow.commit.assert_called_once()
+
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
     def test_update_panel_path_body_mismatch_returns_422(self, mock_uow, client):
         """
