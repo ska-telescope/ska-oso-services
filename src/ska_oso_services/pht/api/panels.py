@@ -101,6 +101,15 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
 
             if sv_panel_refs:
                 sv_panel_id = sv_panel_refs[0].panel_id
+
+                # If no submitted proposals and no reviewer update requested,
+                # do nothing.
+                reviewer_update_requested = bool(science_reviewers) or bool(
+                    technical_reviewers
+                )
+                if not submitted_proposal_refs and not reviewer_update_requested:
+                    return sv_panel_id
+
                 sv_panel = uow.panels.get(sv_panel_id)
 
                 sv_candidate_assignments = build_sv_panel_proposals(
@@ -243,36 +252,41 @@ def update_panel(panel_id: str, param: Panel) -> str:
             p if isinstance(p, str) else getattr(p, "prsl_id")
             for p in (param.proposals or [])
         ]
+        touched_review_ids: list[str] = []
 
         # Technical Review (only one technical reviewer is expected for now)
         if param.tech_reviewers:
             tech_reviewer_id = param.tech_reviewers[0].reviewer_id
             for prsl_id in proposal_ids:
-                ensure_review_exist_or_create(
+                rvw_ids = ensure_review_exist_or_create(
                     uow,
                     param,
                     kind="Technical Review",
                     reviewer_id=tech_reviewer_id,
                     proposal_id=prsl_id,
                 )
+                touched_review_ids.append(rvw_ids)
 
         # Science Reviews for every (science reviewer × proposal) pair
         if param.sci_reviewers:
             for sci in param.sci_reviewers:
                 sci_reviewer_id = sci.reviewer_id
                 for prsl_id in proposal_ids:
-                    ensure_review_exist_or_create(
+                    rvw_ids = ensure_review_exist_or_create(
                         uow,
                         param,
                         kind="Science Review",
                         reviewer_id=sci_reviewer_id,
                         proposal_id=prsl_id,
                     )
+                    touched_review_ids.append(rvw_ids)
 
         # Persist the panel itself
         panel = uow.panels.add(param)
         uow.commit()
-    logger.info("Panel successfully updated with ID %s", panel.panel_id)
+    logger.info(
+        "Panel %s updated; reviews touched=%d", panel.panel_id, len(touched_review_ids)
+    )
     return panel.panel_id
 
 

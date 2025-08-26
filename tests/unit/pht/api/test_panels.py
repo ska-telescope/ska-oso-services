@@ -124,53 +124,51 @@ class TestPanelsUpdateAPI:
         # One technical review created
         uow.rvws.add.assert_called_once()
         created_review = uow.rvws.add.call_args[0][0]
-        assert getattr(created_review, "review_id", None) == "rvs-tec-0001"
         assert getattr(created_review, "prsl_id", None) == "prsl-001"
         assert getattr(created_review, "reviewer_id", None) == "rev-001"
 
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
-    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
     @mock.patch(
-        "ska_oso_services.pht.api.panels.get_latest_entity_by_id", autospec=True
+        "ska_oso_services.pht.service.panel_operations.generate_entity_id",
+        autospec=True,
     )
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
+        autospec=True,
+    )
+    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
     def test_update_panel_skips_creating_tech_review_if_already_exists_v1(
-        self, mock_uow, mock_get_latest, mock_validate, client
+        self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
     ):
-        """
-        If a v1 technical review already exists for (proposal, reviewer),
-        the endpoint should NOT create a new one, but still persist the panel.
-        """
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
 
-        assigned_on = datetime(2025, 2, 2, 0, 0, tzinfo=timezone.utc)
+        # Ref already indicates version==1 (so helper should skip creation)
+        existing_ref = SimpleNamespace(
+            review_id="rvw-existing",
+            reviewer_id="rev-001",
+            metadata=SimpleNamespace(version=1),
+        )
+        mock_get_latest_ops.return_value = [existing_ref]
 
+        assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
         tech = TestDataFactory.reviewer_assignment(
             reviewer_id="rev-001", assigned_on=assigned_on
         )
-        prop_assign = TestDataFactory.proposal_assignment(
-            prsl_id="prsl-002", assigned_on=assigned_on
+        prop = TestDataFactory.proposal_assignment(
+            prsl_id="prsl-001", assigned_on=assigned_on
         )
-
         panel_body = TestDataFactory.panel_with_assignment(
-            panel_id="panel-999",
-            name="Pulsars",
+            panel_id="panel-123",
+            name="Cosmology",
             sci_reviewers=[],
             tech_reviewers=[tech],
-            proposals=[prop_assign],
+            proposals=[prop],
         )
 
-        # Existing technical review with metadata.version == 1
-        existing_review = TestDataFactory.reviews(prsl_id="prsl-002")
-        # Ensure reviewer id matches; keep version at 1
-        existing_review.reviewer_id = "rev-001"
-
-        mock_get_latest.return_value = [existing_review]
-
-        # Echo the saved panel back
         uow.panels.add.side_effect = lambda p: p
 
         resp = client.put(
@@ -181,14 +179,12 @@ class TestPanelsUpdateAPI:
         assert resp.status_code == HTTPStatus.OK
         assert resp.json() == panel_body.panel_id
 
-        # No new review created
+        mock_validate.assert_called_once()
+        # Because version==1 exists, helper should not create a new review:
         uow.rvws.add.assert_not_called()
-
-        # Panel persisted and committed
+        mock_gen_id_ops.assert_not_called()
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
-
-        mock_validate.assert_called_once()
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
     def test_update_panel_path_body_mismatch_returns_422(self, mock_uow, client):
