@@ -127,48 +127,7 @@ class TestReviewCreateAPI:
         uow.commit.assert_not_called()
 
 
-# class TestGetReviewAPI:
-#       @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-#     def test_get_reviews_for_proposal_with_wrong_id(self, mock_oda, client):
-#         """
-#         Test reviews for a proposal with a wrong ID returns an empty list.
-#         """
-#         uow_mock = mock.MagicMock()
-#         uow_mock.rvws.query.return_value = []
-#         mock_oda.return_value.__enter__.return_value = uow_mock
-
-#         prsl_id = "wrong id"
-#         response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
-
-#         assert response.status_code == HTTPStatus.OK
-#         assert response.json() == []
-
-#     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow")
-#     def test_get_reviews_for_panel_with_valid_id(self, mock_oda, client):
-#         """
-#         Test reviews for a proposal with a valid ID returns the expected reviews.
-#         """
-#         review_objs = [TestDataFactory.reviews(prsl_id="my proposal")]
-#         uow_mock = mock.MagicMock()
-#         uow_mock.rvws.query.return_value = review_objs
-#         mock_oda.return_value.__enter__.return_value = uow_mock
-
-#         prsl_id = "my proposal"
-#         response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
-#         assert response.status_code == HTTPStatus.OK
-
-#         expected = [
-#             obj.model_dump(mode="json", exclude={"metadata"}) for obj in review_objs
-#         ]
-#         payload = response.json()
-#         # align shapes by dropping metadata
-#         del payload[0]["metadata"]
-#         assert expected == payload
-#         assert payload[0]["review_id"] == expected[0]["review_id"]
-#         assert payload[0]["panel_id"] == expected[0]["panel_id"]
-
-
-class TestReviewAPI:
+class TestGetReviewAPI:
 
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_get_review_not_found(self, mock_oda, client):

@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import datetime, timezone
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
@@ -17,9 +18,31 @@ HEADERS = {"Content-type": "application/json"}
 
 class TestPanelsUpdateAPI:
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_update_panel_id_mismatch_returns_422(self, mock_uow, client):
+        """
+        If body.panel_id != path panel_id -> 422.
+        """
+        body_panel = TestDataFactory.panel(
+            panel_id="panel-ABC",
+            name="Cosmology",
+        )
+
+        path_id = "panel-XYZ"  # mismatch
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{path_id}",
+            data=body_panel.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert "do not match" in resp.text.lower()
+
+        mock_uow().__enter__.assert_not_called()
+
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
     def test_update_panel_success(self, mock_uow, client):
         """
-        PUT returns the panel_id when body.path IDs match and reviewer exists.
+        Returns the panel_id when body.path IDs match and reviewer exists.
         """
         uow_mock = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow_mock
@@ -43,6 +66,129 @@ class TestPanelsUpdateAPI:
         assert resp.json() == panel_id
         uow_mock.panels.add.assert_called_once()
         uow_mock.commit.assert_called_once()
+
+    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.panels.generate_entity_id", autospec=True)
+    @mock.patch(
+        "ska_oso_services.pht.api.panels.get_latest_entity_by_id", autospec=True
+    )
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_update_panel_creates_technical_review_when_missing(
+        self, mock_uow, mock_get_latest, mock_gen_id, mock_validate, client
+    ):
+        """
+        With a technical reviewer and no existing technical review
+        for (proposal, reviewer):
+        - create a Technical Review,
+        - persist the panel,
+        - return the panel_id.
+        """
+        uow = mock.MagicMock()
+        mock_uow().__enter__.return_value = uow
+
+        # No existing technical review
+        mock_get_latest.return_value = []
+
+        mock_gen_id.return_value = "rvs-tec-0001"
+
+        assigned_on = datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc)
+
+        tech = TestDataFactory.reviewer_assignment(
+            reviewer_id="rev-001", assigned_on=assigned_on
+        )
+        prop_assign = TestDataFactory.proposal_assignment(
+            prsl_id="prsl-001", assigned_on=assigned_on
+        )
+
+        panel_body = TestDataFactory.panel_with_assignment(
+            panel_id="panel-123",
+            name="Cosmology",
+            sci_reviewers=[],
+            tech_reviewers=[tech],
+            proposals=[prop_assign],
+        )
+
+        uow.panels.add.side_effect = lambda p: p
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{panel_body.panel_id}",
+            data=panel_body.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.json() == panel_body.panel_id
+
+        # Dedup validation called
+        mock_validate.assert_called_once()
+
+        # One technical review created
+        uow.rvws.add.assert_called_once()
+        created_review = uow.rvws.add.call_args[0][0]
+        assert getattr(created_review, "review_id", None) == "rvs-tec-0001"
+        assert getattr(created_review, "prsl_id", None) == "prsl-001"
+        assert getattr(created_review, "reviewer_id", None) == "rev-001"
+
+        uow.panels.add.assert_called_once()
+        uow.commit.assert_called_once()
+
+    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
+    @mock.patch(
+        "ska_oso_services.pht.api.panels.get_latest_entity_by_id", autospec=True
+    )
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_update_panel_skips_creating_tech_review_if_already_exists_v1(
+        self, mock_uow, mock_get_latest, mock_validate, client
+    ):
+        """
+        If a v1 technical review already exists for (proposal, reviewer),
+        the endpoint should NOT create a new one, but still persist the panel.
+        """
+        uow = mock.MagicMock()
+        mock_uow().__enter__.return_value = uow
+
+        assigned_on = datetime(2025, 2, 2, 0, 0, tzinfo=timezone.utc)
+
+        tech = TestDataFactory.reviewer_assignment(
+            reviewer_id="rev-001", assigned_on=assigned_on
+        )
+        prop_assign = TestDataFactory.proposal_assignment(
+            prsl_id="prsl-002", assigned_on=assigned_on
+        )
+
+        panel_body = TestDataFactory.panel_with_assignment(
+            panel_id="panel-999",
+            name="Pulsars",
+            sci_reviewers=[],
+            tech_reviewers=[tech],
+            proposals=[prop_assign],
+        )
+
+        # Existing technical review with metadata.version == 1
+        existing_review = TestDataFactory.reviews(prsl_id="prsl-002")
+        # Ensure reviewer id matches; keep version at 1
+        existing_review.reviewer_id = "rev-001"
+
+        mock_get_latest.return_value = [existing_review]
+
+        # Echo the saved panel back
+        uow.panels.add.side_effect = lambda p: p
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{panel_body.panel_id}",
+            data=panel_body.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.json() == panel_body.panel_id
+
+        # No new review created
+        uow.rvws.add.assert_not_called()
+
+        # Panel persisted and committed
+        uow.panels.add.assert_called_once()
+        uow.commit.assert_called_once()
+
+        mock_validate.assert_called_once()
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
     def test_update_panel_path_body_mismatch_returns_422(self, mock_uow, client):
@@ -188,11 +334,10 @@ class TestPanelAutoCreateAPI:
         assert resp.status_code == HTTPStatus.OK, resp.content
         assert resp.json() == "panel-888"
 
-        # No category path helpers
         mock_upsert_panel.assert_not_called()
         mock_build_panel_response.assert_not_called()
 
-        # SV path helpers
+        # SV helpers
         mock_build_sv_panel_proposals.assert_called_once_with([])
         added_panel = uow.panels.add.call_args[0][0]
         assert getattr(added_panel, "name") == "Science Verification"
@@ -251,7 +396,7 @@ class TestPanelAutoCreateAPI:
         assert {p["name"] for p in result} == {"Cosmology", "Stars"}
         assert all(p["proposal_count"] == 0 for p in result)
 
-        # Assert upsert was invoked once per bucket with empty proposals
+        # Assert upsert was invoked once
         assert mock_upsert_panel.call_count == 2
         for call in mock_upsert_panel.call_args_list:
             _, kwargs = call
@@ -332,7 +477,6 @@ class TestPanelAutoCreateAPI:
         class DummyNotFound(Exception):
             pass
 
-        # the endpoint catches panels_api.ODANotFound
         monkeypatch.setattr(panels_api, "ODANotFound", DummyNotFound, raising=False)
         uow.prsls.get.side_effect = DummyNotFound
 
@@ -401,7 +545,6 @@ class TestPanelAutoCreateAPI:
         assert uow.prsls.add.call_args_list == [mock.call(p1_db), mock.call(p2_db)]
         uow.commit.assert_called_once()
 
-    # NEW: verify category path passes grouped proposals into upsert_panel
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
@@ -427,14 +570,13 @@ class TestPanelAutoCreateAPI:
         mock_oda.return_value.__enter__.return_value = uow
 
         # Arrange proposals with categories (two matched, one unmatched)
-        p_cos = TestDataFactory.proposal_by_category("prsl-1", "Cosmology")
-        p_sta = TestDataFactory.proposal_by_category("prsl-2", "Stars")
-        p_unk = TestDataFactory.proposal_by_category("prsl-3", "Unknown")
+        p_cosmology = TestDataFactory.proposal_by_category("prsl-1", "Cosmology")
+        p_stars = TestDataFactory.proposal_by_category("prsl-2", "Stars")
+        p_unknown = TestDataFactory.proposal_by_category("prsl-3", "Unknown")
 
         # 1) submitted proposals (used for grouping)
-        mock_get_latest_entity_by_id.return_value = [p_cos, p_sta, p_unk]
+        mock_get_latest_entity_by_id.return_value = [p_cosmology, p_stars, p_unknown]
 
-        # deterministic pool and response
         monkeypatch.setattr(
             panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True
         )
@@ -474,7 +616,7 @@ class TestPanelAutoCreateAPI:
         assert mock_upsert_panel.call_count == 2
         assert ("Cosmology", ["prsl-1"]) in calls
         assert ("Stars", ["prsl-2"]) in calls
-        # 'Unknown' should be skipped
+        # 'Unknown' should be skipped here
         assert all("prsl-3" not in ids for _, ids in calls)
 
         mock_build_sv_panel_proposals.assert_not_called()

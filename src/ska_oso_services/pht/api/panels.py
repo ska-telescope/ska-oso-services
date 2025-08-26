@@ -117,9 +117,11 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
                     if proposal.status != ProposalStatus.UNDER_REVIEW:
                         proposal.status = ProposalStatus.UNDER_REVIEW
                         uow.prsls.add(proposal)
-                        logger.info("Proposal %s set to UNDER_REVIEW", proposal.prsl_id)
+                        logger.info("Proposal %s set to UNDER REVIEW", proposal.prsl_id)
                 except ODANotFound:
-                    raise BadRequestError(f"Proposal '{submitted_ref}' does not exist")
+                    raise BadRequestError(
+                        f"Proposal '{submitted_ref.prsl_id}' does not exist"
+                    )
 
             uow.commit()
             return created_panel.panel_id
@@ -176,10 +178,11 @@ def update_panel(panel_id: str, param: Panel) -> str:
     """
     Takes the incoming panel payload and creates the technical review.
 
-    Assumption: only one technical reviwer for a panel for now. Hence,
+    Assumption: Only one technical reviewer for a panel for now. Hence,
     only one technical review for each proposal in a panel is needed.
-    Note: In the future, check for new proposals added to the panel
-    and handle the status accordingly.
+    Note: In the future, if needed, check for new proposals added to the panel
+    and handle the status accordingly. This could be due to conflicts and
+    proposals being moved around.
     """
     logger.debug("PUT panel")
 
@@ -235,7 +238,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
                     )
         panel = uow.panels.add(param)
         uow.commit()
-    logger.info("Panel successfully created with ID %s", panel.panel_id)
+    logger.info("Panel successfully updated with ID %s", panel.panel_id)
     return panel.panel_id
 
 
