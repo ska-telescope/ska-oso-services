@@ -1,11 +1,13 @@
 import logging
 from datetime import datetime, timezone
-from typing import Iterable
+from typing import Any, Iterable
 
+from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal.proposal import Proposal, ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel, ProposalAssignment
 
+from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.models.schemas import PanelCreateResponse
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
@@ -105,6 +107,14 @@ def upsert_panel(
         and not both. We also need to update it here such that even when
         SV panel exist, it should use the OSD to determine the panel to use
         and also handle the overlap situations.
+
+    Args:
+        uow: The unit of work.
+        panel_name (str): The name of the panel to create or update.
+        science_reviewers (list): List of science reviewers.
+        technical_reviewers (list): List of technical reviewers.
+        proposal_list (list): List of proposal objects to assign to the panel.
+
     """
     assigned_at_utc = datetime.now(timezone.utc)
 
@@ -177,16 +187,6 @@ def upsert_panel(
             ProposalAssignment(prsl_id=prsl_id, assigned_on=assigned_at_utc)
         )
 
-        existing_prsl: Proposal = uow.prsls.get(prsl_id)  # assumed to exist
-        if existing_prsl.status != ProposalStatus.UNDER_REVIEW:
-            existing_prsl.status = ProposalStatus.UNDER_REVIEW
-            uow.prsls.add(existing_prsl)
-            logger.info(
-                "Proposal %s set to UNDER_REVIEW for new panel '%s'",
-                prsl_id,
-                panel_name,
-            )
-
     new_panel = Panel(
         panel_id=generate_entity_id("panel"),
         name=panel_name,
@@ -194,5 +194,38 @@ def upsert_panel(
         tech_reviewers=technical,
         proposals=assignments,
     )
-    logger.info("Created panel '%s' with %d proposal(s)", panel_name, len(assignments))
+    logger.info("Creating panel '%s' with %d proposal(s)", panel_name, len(assignments))
     return uow.panels.add(new_panel)
+
+
+def _ref_prsl_id(ref: Any) -> str:
+    """Extract prsl_id from either an object or a dict; raise if missing."""
+    pid = ref["prsl_id"] if isinstance(ref, dict) else getattr(ref, "prsl_id", None)
+    if not pid:
+        raise BadRequestError("Missing prsl_id in submitted proposal reference.")
+    return pid
+
+
+def ensure_submitted_proposals_under_review(uow, submitted_refs: Iterable[Any]) -> None:
+    """
+    For each submitted proposal reference, load from ODA and set status
+    to UNDER_REVIEW if not already.
+    Persist each update.
+    If a proposal doesn't exist, raise BadRequestError.
+
+    Args:
+        uow: Unit of work.
+        submitted_refs: Iterable of objects/dicts each carrying a 'prsl_id' field.
+    """
+    for ref in submitted_refs:
+        prsl_id = _ref_prsl_id(ref)
+        try:
+            proposal: Proposal = uow.prsls.get(prsl_id)
+            if proposal.status != ProposalStatus.UNDER_REVIEW:
+                proposal.status = ProposalStatus.UNDER_REVIEW
+                uow.prsls.add(proposal)
+                logger.info(
+                    "Setting proposal %s status to UNDER REVIEW", proposal.prsl_id
+                )
+        except ODANotFound as exc:
+            raise BadRequestError(f"Proposal '{prsl_id}' does not exist") from exc

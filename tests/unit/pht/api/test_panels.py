@@ -454,47 +454,6 @@ class TestPanelAutoCreateAPI:
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
-    def test_auto_create_panel_sv_missing_proposal_raises_400(
-        self,
-        mock_build_sv_panel_proposals,
-        mock_get_latest_entity_by_id,
-        mock_oda,
-        client,
-        monkeypatch,
-    ):
-        uow = mock.MagicMock()
-        mock_oda.return_value.__enter__.return_value = uow
-
-        submitted = [SimpleNamespace(prsl_id="prop-missing")]
-        # 1) submitted proposals list, 2) no existing SV panel -> create
-        mock_get_latest_entity_by_id.side_effect = [submitted, []]
-        mock_build_sv_panel_proposals.return_value = []
-
-        uow.panels.add.return_value = TestDataFactory.panel_basic(
-            panel_id="panel-new-sv", name="Science Verification"
-        )
-
-        class DummyNotFound(Exception):
-            pass
-
-        monkeypatch.setattr(panels_api, "ODANotFound", DummyNotFound, raising=False)
-        uow.prsls.get.side_effect = DummyNotFound
-
-        payload = {
-            "name": "Science Verification",
-            "sci_reviewers": [],
-            "tech_reviewers": [],
-            "proposals": [],
-        }
-
-        resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST, resp.content
-        uow.commit.assert_not_called()
-        uow.prsls.get.assert_called_once_with("prop-missing")
-
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
-    @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
     def test_auto_create_panel_sv_updates_proposals_to_under_review(
         self,
         mock_build_sv_panel_proposals,

@@ -3,24 +3,20 @@ from typing import Union
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
-from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm import PanelReview
-from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_pdm.proposal_management.review import ReviewStatus, TechnicalReview
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.common.error_handling import (
-    BadRequestError,
-    UnprocessableEntityError,
-)
+from ska_oso_services.common.error_handling import UnprocessableEntityError
 from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateResponse
 from ska_oso_services.pht.service.panel_operations import (
     build_panel_response,
     build_sv_panel_proposals,
+    ensure_submitted_proposals_under_review,
     group_proposals_by_science_category,
     upsert_panel,
 )
@@ -76,7 +72,7 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
     Auto creates panels:
     - If science verification, create a single panel called
       'Science Verification' with all submitted proposals assigned.
-    - Else: Create panels for PANEL_NAME_POOL, which is the science catgories
+    - Else: Create panels for PANEL_NAME_POOL, which is the science categories
         (to be pulled in from OSD when available) and assign proposals by
         science_category using the field science category in the proposal.
     """
@@ -111,18 +107,7 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
             created_panel = uow.panels.add(new_panel)
 
             # Update each referenced proposal to UNDER_REVIEW
-            for submitted_ref in submitted_proposals:
-                try:
-                    proposal: Proposal = uow.prsls.get(submitted_ref.prsl_id)
-                    if proposal.status != ProposalStatus.UNDER_REVIEW:
-                        proposal.status = ProposalStatus.UNDER_REVIEW
-                        uow.prsls.add(proposal)
-                        logger.info("Proposal %s set to UNDER REVIEW", proposal.prsl_id)
-                except ODANotFound:
-                    raise BadRequestError(
-                        f"Proposal '{submitted_ref.prsl_id}' does not exist"
-                    )
-
+            ensure_submitted_proposals_under_review(uow, submitted_proposals)
             uow.commit()
             return created_panel.panel_id
 
@@ -141,8 +126,10 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
             )
             for panel_name in PANEL_NAME_POOL
         }
+        ensure_submitted_proposals_under_review(uow, submitted_proposals)
 
         uow.commit()
+
         return build_panel_response(panels_by_name)
 
 
