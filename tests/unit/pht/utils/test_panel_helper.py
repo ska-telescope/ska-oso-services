@@ -5,6 +5,9 @@ from unittest import mock
 
 import pytest
 
+from ska_oso_services.common.error_handling import BadRequestError, ODANotFound
+from ska_oso_services.pht.api import panels as panels_api  # for ProposalStatus enum
+from ska_oso_services.pht.api.panels import ensure_submitted_proposals_under_review
 from ska_oso_services.pht.service import panel_operations as panel_ops
 from ska_oso_services.pht.service.panel_operations import (
     group_proposals_by_science_category,
@@ -266,3 +269,51 @@ class TestGroupProposalsByScienceCategory:
         assert len(msgs) == 1
         assert proposal.prsl_id in msgs[0]
         assert expected_cat_repr in msgs[0]
+
+
+class TestEnsureSubmittedProposalsUnderReview:
+    def test_sets_under_review_and_dedupes_ids(self):
+        """SUBMITTED --> UNDER_REVIEW; duplicates processed once; blanks ignored."""
+        uow = mock.MagicMock()
+
+        p1 = SimpleNamespace(
+            prsl_id="prop-1", status=panels_api.ProposalStatus.SUBMITTED
+        )
+        p2 = SimpleNamespace(
+            prsl_id="prop-2", status=panels_api.ProposalStatus.UNDER_REVIEW
+        )
+
+        # Only two unique lookups despite duplicate 'prop-1'
+        uow.prsls.get.side_effect = [p1, p2]
+
+        ensure_submitted_proposals_under_review(
+            uow, ["  prop-1  ", "prop-2", "prop-1", "", "   "]
+        )
+
+        # Lookups only for unique, non-blank IDs in order of first occurrence
+        assert [c.args[0] for c in uow.prsls.get.call_args_list] == ["prop-1", "prop-2"]
+
+        assert p1.status == panels_api.ProposalStatus.UNDER_REVIEW
+        uow.prsls.add.assert_called_once_with(p1)
+
+    def test_skips_when_already_under_review(self):
+        """When proposal already UNDER_REVIEW."""
+        uow = mock.MagicMock()
+        p = SimpleNamespace(
+            prsl_id="prop-ur", status=panels_api.ProposalStatus.UNDER_REVIEW
+        )
+        uow.prsls.get.return_value = p
+
+        ensure_submitted_proposals_under_review(uow, ["prop-ur"])
+
+        uow.prsls.add.assert_not_called()
+        uow.prsls.get.assert_called_once_with("prop-ur")
+
+    def test_ignores_blank_ids_entirely(self):
+        """Blank/whitespace IDs are ignored (no repo calls)."""
+        uow = mock.MagicMock()
+
+        ensure_submitted_proposals_under_review(uow, ["", "   ", "\n", "\t"])
+
+        uow.prsls.get.assert_not_called()
+        uow.prsls.add.assert_not_called()

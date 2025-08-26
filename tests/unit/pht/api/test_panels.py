@@ -408,6 +408,12 @@ class TestPanelsAPI:
 
 class TestPanelAutoCreateAPI:
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # SV: No existing SV panel --> create panel (even if no submitted)
+    # ─────────────────────────────────────────────────────────────────────────
+    @mock.patch(
+        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
+    )
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
@@ -420,6 +426,7 @@ class TestPanelAutoCreateAPI:
         mock_build_sv_panel_proposals,
         mock_get_latest_entity_by_id,
         mock_oda,
+        mock_ensure_under_review,
         client,
     ):
         uow = mock.MagicMock()
@@ -447,13 +454,19 @@ class TestPanelAutoCreateAPI:
 
         mock_upsert_panel.assert_not_called()
         mock_build_panel_response.assert_not_called()
-
-        # SV helpers
         mock_build_sv_panel_proposals.assert_called_once_with([])
+
         added_panel = uow.panels.add.call_args[0][0]
         assert getattr(added_panel, "name") == "Science Verification"
+        mock_ensure_under_review.assert_called_once()
         uow.commit.assert_called_once()
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Category panels (non-SV): No submitted --> upsert empty groups
+    # ─────────────────────────────────────────────────────────────────────────
+    @mock.patch(
+        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
+    )
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
@@ -466,6 +479,7 @@ class TestPanelAutoCreateAPI:
         mock_build_sv_panel_proposals,
         mock_get_latest_entity_by_id,
         mock_oda,
+        mock_ensure_under_review,
         client,
         monkeypatch,
     ):
@@ -477,7 +491,7 @@ class TestPanelAutoCreateAPI:
             panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True
         )
 
-        # No submitted proposals -> upsert gets [], []
+        # No submitted proposals --> upsert gets []
         mock_get_latest_entity_by_id.return_value = []
 
         def upsert_panel_side_effect(*args, **kwargs):
@@ -507,7 +521,6 @@ class TestPanelAutoCreateAPI:
         assert {p["name"] for p in result} == {"Cosmology", "Stars"}
         assert all(p["proposal_count"] == 0 for p in result)
 
-        # Assert upsert was invoked once
         assert mock_upsert_panel.call_count == 2
         for call in mock_upsert_panel.call_args_list:
             _, kwargs = call
@@ -519,8 +532,15 @@ class TestPanelAutoCreateAPI:
 
         mock_build_sv_panel_proposals.assert_not_called()
         mock_build_panel_response.assert_called_once()
+        mock_ensure_under_review.assert_called_once()
         uow.commit.assert_called_once()
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # SV: Existing panel present & nothing to do --> early return (no writes)
+    # ─────────────────────────────────────────────────────────────────────────
+    @mock.patch(
+        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
+    )
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
@@ -533,13 +553,14 @@ class TestPanelAutoCreateAPI:
         mock_build_sv_panel_proposals,
         mock_get_latest_entity_by_id,
         mock_oda,
+        mock_ensure_under_review,
         client,
     ):
         uow = mock.MagicMock()
         mock_oda.return_value.__enter__.return_value = uow
 
         # 1) submitted proposals -> []
-        # 2) existing SV panel present
+        # 2) existing SV panel present -> "panel-existing-sv"
         mock_get_latest_entity_by_id.side_effect = [
             [],
             [SimpleNamespace(panel_id="panel-existing-sv")],
@@ -561,7 +582,11 @@ class TestPanelAutoCreateAPI:
         mock_build_sv_panel_proposals.assert_not_called()
         mock_upsert_panel.assert_not_called()
         mock_build_panel_response.assert_not_called()
+        mock_ensure_under_review.assert_not_called()
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Create new panel with submitted proposals --> statuses set to UNDER_REVIEW
+    # ─────────────────────────────────────────────────────────────────────────
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
@@ -579,7 +604,8 @@ class TestPanelAutoCreateAPI:
             SimpleNamespace(prsl_id="prop-1"),
             SimpleNamespace(prsl_id="prop-2"),
         ]
-        # 1) submitted proposals, 2) no existing SV panel -> create
+        # 1) submitted proposals,
+        # 2) no existing SV panel -> create
         mock_get_latest_entity_by_id.side_effect = [submitted_ids, []]
         mock_build_sv_panel_proposals.return_value = []
 
@@ -615,6 +641,12 @@ class TestPanelAutoCreateAPI:
         assert uow.prsls.add.call_args_list == [mock.call(p1_db), mock.call(p2_db)]
         uow.commit.assert_called_once()
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Category panels: Grouping & passing only matched categories to upsert_panel
+    # ─────────────────────────────────────────────────────────────────────────
+    @mock.patch(
+        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
+    )
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
@@ -627,14 +659,14 @@ class TestPanelAutoCreateAPI:
         mock_build_sv_panel_proposals,
         mock_get_latest_entity_by_id,
         mock_oda,
+        mock_ensure_under_review,
         client,
         monkeypatch,
     ):
         """
         Ensure proposals are grouped by science_category and
-        passed through to upsert_panel
-        for each panel in PANEL_NAME_POOL; unmatched categories
-        are skipped.
+        passed through to upsert_panel for each panel in PANEL_NAME_POOL;
+        unmatched categories are skipped.
         """
         uow = mock.MagicMock()
         mock_oda.return_value.__enter__.return_value = uow
@@ -655,7 +687,6 @@ class TestPanelAutoCreateAPI:
             {"panel_id": "panel-stars", "name": "Stars", "proposal_count": 1},
         ]
 
-        # Capture proposals passed to each upsert call
         calls = []
 
         def upsert_panel_capture(**kwargs):
@@ -682,13 +713,157 @@ class TestPanelAutoCreateAPI:
         resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
         assert resp.status_code == HTTPStatus.OK, resp.content
 
-        # Verify the grouping reached upsert_panel
         assert mock_upsert_panel.call_count == 2
         assert ("Cosmology", ["prsl-1"]) in calls
         assert ("Stars", ["prsl-2"]) in calls
-        # 'Unknown' should be skipped here
         assert all("prsl-3" not in ids for _, ids in calls)
 
         mock_build_sv_panel_proposals.assert_not_called()
         mock_build_panel_response.assert_called_once()
+        mock_ensure_under_review.assert_called_once()
+        uow.commit.assert_called_once()
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # SV: Existing panel + submitted --> append only NEW assignments and update status
+    # ─────────────────────────────────────────────────────────────────────────
+    @mock.patch(
+        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
+    )
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
+    @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
+    def test_auto_create_panel_sv_existing_appends_only_new_and_sets_status_for_new(
+        self,
+        mock_build_sv_panel_proposals,
+        mock_get_latest_entity_by_id,
+        mock_oda,
+        mock_ensure_under_review,
+        client,
+    ):
+        uow = mock.MagicMock()
+        mock_oda.return_value.__enter__.return_value = uow
+
+        # submitted proposals includes prop-1 & prop-2
+        submitted_refs = [
+            SimpleNamespace(prsl_id="prop-1"),
+            SimpleNamespace(prsl_id="prop-2"),
+        ]
+        # existing SV panel present
+        mock_get_latest_entity_by_id.side_effect = [
+            submitted_refs,
+            [SimpleNamespace(panel_id="panel-existing-sv")],
+        ]
+
+        existing_assignment = TestDataFactory.proposal_assignment(
+            prsl_id="prop-1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+        )
+        existing_panel = TestDataFactory.panel_with_assignment(
+            panel_id="panel-existing-sv",
+            name="Science Verification",
+            proposals=[existing_assignment],
+        )
+        uow.panels.get.return_value = existing_panel
+
+        a1 = TestDataFactory.proposal_assignment(
+            prsl_id="prop-1", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+        )
+        a2 = TestDataFactory.proposal_assignment(
+            prsl_id="prop-2", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+        )
+        mock_build_sv_panel_proposals.return_value = [a1, a2]
+
+        captured_ids: list[str] = []
+
+        def _ensure_side_effect(_uow, ids_iter):
+            captured_ids.extend(list(ids_iter))
+
+        mock_ensure_under_review.side_effect = _ensure_side_effect
+
+        payload = {
+            "name": "Science Verification",
+            "sci_reviewers": [],
+            "tech_reviewers": [],
+            "proposals": [],
+        }
+
+        resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
+        assert resp.status_code == HTTPStatus.OK, resp.content
+        assert resp.json() == "panel-existing-sv"
+
+        # only prop-2 should be appended
+        added_panel = uow.panels.add.call_args[0][0]
+        panel_ids = [p.prsl_id for p in (added_panel.proposals or [])]
+        assert panel_ids.count("prop-1") == 1
+        assert "prop-2" in panel_ids
+
+        assert captured_ids == ["prop-2"]
+
+        uow.commit.assert_called_once()
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # SV: Existing panel, no submitted, reviewer lists provided --> update reviewers
+    # ─────────────────────────────────────────────────────────────────────────
+    @mock.patch(
+        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
+    )
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
+    @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
+    def test_auto_create_panel_sv_existing_updates_reviewers_only(
+        self,
+        mock_build_sv_panel_proposals,
+        mock_get_latest_entity_by_id,
+        mock_oda,
+        mock_ensure_under_review,
+        client,
+    ):
+        uow = mock.MagicMock()
+        mock_oda.return_value.__enter__.return_value = uow
+
+        # 1) submitted proposals -> []
+        # 2) existing SV panel present
+        mock_get_latest_entity_by_id.side_effect = [
+            [],
+            [SimpleNamespace(panel_id="panel-existing-sv")],
+        ]
+
+        mock_build_sv_panel_proposals.return_value = []
+
+        # Use a lightweight panel to avoid Pydantic assignment validation
+        existing_panel = SimpleNamespace(
+            panel_id="panel-existing-sv",
+            name="Science Verification",
+            proposals=[],
+            sci_reviewers=[],
+            tech_reviewers=[],
+        )
+        uow.panels.get.return_value = existing_panel
+
+        assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        sci = TestDataFactory.reviewer_assignment(
+            reviewer_id="sci-1", assigned_on=assigned_on
+        )
+        tec = TestDataFactory.reviewer_assignment(
+            reviewer_id="tec-1", assigned_on=assigned_on
+        )
+
+        payload = {
+            "name": "Science Verification",
+            "sci_reviewers": [sci.reviewer_id],
+            "tech_reviewers": [tec.reviewer_id],
+            "proposals": [],
+        }
+
+        resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
+        assert resp.status_code == HTTPStatus.OK, resp.content
+        assert resp.json() == "panel-existing-sv"
+
+        mock_build_sv_panel_proposals.assert_called_once_with([])
+
+        updated_panel = uow.panels.add.call_args[0][0]
+        assert updated_panel.sci_reviewers == ["sci-1"]
+        assert updated_panel.tech_reviewers == ["tec-1"]
+        assert (updated_panel.proposals or []) == (existing_panel.proposals or [])
+
+        mock_ensure_under_review.assert_called_once()
         uow.commit.assert_called_once()
