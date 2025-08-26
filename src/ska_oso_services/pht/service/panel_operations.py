@@ -221,7 +221,7 @@ def ensure_submitted_proposals_under_review(uow, submitted_refs: Iterable[Any]) 
         submitted_refs: Iterable of objects/dicts each carrying a 'prsl_id' field.
     """
     for ref in submitted_refs:
-        prsl_id = _ref_prsl_id(ref)
+        prsl_id = ref.prsl.id
         try:
             proposal: Proposal = uow.prsls.get(prsl_id)
             if proposal.status != ProposalStatus.UNDER_REVIEW:

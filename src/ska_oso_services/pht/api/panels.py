@@ -11,7 +11,7 @@ from ska_oso_pdm.proposal_management.review import ReviewStatus, TechnicalReview
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.common.error_handling import UnprocessableEntityError
+from ska_oso_services.common.error_handling import BadRequestError, UnprocessableEntityError
 from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateResponse
 from ska_oso_services.pht.service.panel_operations import (
     build_panel_response,
@@ -27,7 +27,9 @@ from ska_oso_services.pht.utils.pht_helper import (
     get_latest_entity_by_id,
     validate_duplicates,
 )
-
+from ska_db_oda.persistence.domain.errors import ODANotFound
+from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_oso_pdm.proposal.proposal import Proposal, ProposalStatus
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 
 logger = logging.getLogger(__name__)
@@ -94,6 +96,17 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
                 uow.panels.query(CustomQuery(name="Science Verification")), "panel_id"
             )
             if existing_sv_panels:
+                for ref in submitted_proposals:
+                    try:
+                        proposal: Proposal = uow.prsls.get(ref.prsl_id)
+                        if proposal.status != ProposalStatus.UNDER_REVIEW:
+                            proposal.status = ProposalStatus.UNDER_REVIEW
+                            uow.prsls.add(proposal)
+                            logger.info(
+                                "Setting proposal %s status to UNDER REVIEW", proposal.prsl_id
+                            )
+                    except ODANotFound as exc:
+                        raise BadRequestError(f"Proposal '{ref.prsl_id}' does not exist") from exc
                 ensure_submitted_proposals_under_review(uow, submitted_proposals)
                 return existing_sv_panels[0].panel_id
 
