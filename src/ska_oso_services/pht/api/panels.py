@@ -16,6 +16,7 @@ from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateR
 from ska_oso_services.pht.service.panel_operations import (
     build_panel_response,
     build_sv_panel_proposals,
+    ensure_review_exist_or_create,
     ensure_submitted_proposals_under_review,
     group_proposals_by_science_category,
     upsert_panel,
@@ -187,47 +188,32 @@ def update_panel(panel_id: str, param: Panel) -> str:
     # TODO: check for any new proposal added and handle status appropriately here
     # This will be situations where the Admin re-assignes proposals
 
+
     with oda.uow() as uow:
+            proposal_ids = [
+                p if isinstance(p, str) else getattr(p, "prsl_id")
+                for p in (param.proposals or [])
+            ]
 
-        if param.tech_reviewers:
-            for proposal in param.proposals:
-                query_param = CustomQuery(
-                    prsl_id=proposal.prsl_id,
-                    kind="Technical Review",
-                    reviewer_id=param.tech_reviewers[0].reviewer_id,
-                )
-                existing_tech_rvws = get_latest_entity_by_id(
-                    uow.rvws.query(query_param), "review_id"
-                )
-                existing_rvw = existing_tech_rvws[0] if existing_tech_rvws else None
+            # Technical Review (only one technical reviewer is expected for now)
+            if param.tech_reviewers:
+                tech_reviewer_id = param.tech_reviewers[0].reviewer_id
+                for prsl_id in proposal_ids:
+                    ensure_review_exist_or_create(uow, param, kind="Technical Review", reviewer_id=tech_reviewer_id, proposal_id=prsl_id)
 
-                if existing_rvw and existing_rvw.metadata.version == 1:
-                    logger.debug(
-                        "Technical review already exists (prsl_id=%s, reviewer=%s);",
-                        proposal.prsl_id,
-                        existing_rvw.reviewer_id,
-                    )
-                else:
-                    tec_review = PanelReview(
-                        panel_id=param.panel_id,
-                        review_id=generate_entity_id("rvs-tec"),
-                        reviewer_id=param.tech_reviewers[0].reviewer_id,
-                        cycle=param.cycle,
-                        prsl_id=(
-                            proposal if isinstance(proposal, str) else proposal.prsl_id
-                        ),
-                        status=ReviewStatus.TO_DO,
-                        review_type=TechnicalReview(kind="Technical Review"),
-                    )
+            # Science Reviews for every (science reviewer × proposal) pair
+            if param.sci_reviewers:
+                for sci in param.sci_reviewers:
+                    sci_reviewer_id = sci.reviewer_id
+                    for prsl_id in proposal_ids:
+                        ensure_review_exist_or_create(uow, param, kind="Science Review", reviewer_id=sci_reviewer_id, proposal_id=prsl_id)
 
-                    uow.rvws.add(tec_review)  # pylint: disable=E0606
-                    logger.info(
-                        "Created technical review (prsl_id=%s)", proposal.prsl_id
-                    )
-        panel = uow.panels.add(param)
-        uow.commit()
+            # Persist the panel itself
+            panel = uow.panels.add(param)
+            uow.commit()
     logger.info("Panel successfully updated with ID %s", panel.panel_id)
     return panel.panel_id
+
 
 
 @router.get(
