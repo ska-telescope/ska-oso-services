@@ -226,6 +226,10 @@ def ensure_submitted_proposals_under_review(uow, prsl_ids: Iterable[str]) -> Non
 def ensure_review_exist_or_create(
     uow, param, kind: str, reviewer_id: str, proposal_id: str
 ) -> str:
+    """
+    Ensure a review of the given kind exists for the given proposal and reviewer.
+    If not, create one with status TO_DO and return its review_id.
+    """
     query = CustomQuery(prsl_id=proposal_id, kind=kind, reviewer_id=reviewer_id)
     existing = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
     existing_rvw = existing[0] if existing else None
@@ -249,7 +253,7 @@ def ensure_review_exist_or_create(
     new_review = PanelReview(
         panel_id=param.panel_id,
         review_id=generate_entity_id(
-            "rvs-tec" if kind == "Technical Review" else "rvs-sci"
+            "rvw-tec" if kind == "Technical Review" else "rvw-sci"
         ),
         reviewer_id=reviewer_id,
         cycle=param.cycle,
@@ -258,5 +262,5 @@ def ensure_review_exist_or_create(
         review_type=review_type,
     )
     created_rvw = uow.rvws.add(new_review)
-    logger.info("Created %s (prsl_id=%s, reviewer=%s)", kind, proposal_id, reviewer_id)
+    logger.info("Creating %s (prsl_id=%s, reviewer=%s)", kind, proposal_id, reviewer_id)
     return created_rvw.review_id

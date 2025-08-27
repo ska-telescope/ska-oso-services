@@ -81,7 +81,13 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
     Note: This endpoint may be split into two in the future for clarity
         1. Auto-create-panel
         2. Auto-assign-proposals-to-panels
+        Additionally, we will need to use cycle (Match the cycle in the
+        proposal to the panel) here to detrrmine the appropriate panel to
+        assign a proposal to. This will soon be a problem after the first
+        cycle and when we get to multiple cycles as panels
+        can span across cycles.
     """
+    # TODO: Make the input just a str as the reviewers and proposals are not needed
     with oda.uow() as uow:
         submitted_proposal_refs = (
             get_latest_entity_by_id(
@@ -92,11 +98,14 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
 
         science_reviewers = request.sci_reviewers or []
         technical_reviewers = request.tech_reviewers or []
+        SV_NAME = "Science Verification"
+        is_science_verification = SV_NAME in (
+            name_title := request.name.strip().title()
+        )
 
-        is_science_verification = "SCIENCE VERIFICATION" in request.name.strip().upper()
         if is_science_verification:
             sv_panel_refs = get_latest_entity_by_id(
-                uow.panels.query(CustomQuery(name="Science Verification")), "panel_id"
+                uow.panels.query(CustomQuery(name=name_title)), "panel_id"
             )
 
             if sv_panel_refs:
@@ -117,11 +126,13 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
                 )
 
                 # Append only proposals not already assigned to the SV panel
-                existing_prsl_ids = {a.prsl_id for a in (sv_panel.proposals or [])}
+                existing_prsl_ids = {
+                    proposal.prsl_id for proposal in (sv_panel.proposals or [])
+                }
                 sv_assignments_to_add = [
-                    a
-                    for a in sv_candidate_assignments
-                    if a.prsl_id not in existing_prsl_ids
+                    candidate
+                    for candidate in sv_candidate_assignments
+                    if candidate.prsl_id not in existing_prsl_ids
                 ]
                 if sv_assignments_to_add:
                     sv_panel.proposals = (
@@ -153,7 +164,7 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
 
             new_panel = Panel(
                 panel_id=generate_entity_id("panel"),
-                name="Science Verification",
+                name=name_title,
                 sci_reviewers=science_reviewers,
                 tech_reviewers=technical_reviewers,
                 proposals=sv_assignments,
@@ -245,14 +256,15 @@ def update_panel(panel_id: str, param: Panel) -> str:
 
     validate_duplicates(param.sci_reviewers, "reviewer_id")
     # TODO: check for any new proposal added and handle status appropriately here
-    # This will be situations where the Admin re-assignes proposals
+    # This will be situations where the Admin re-assignes proposals due to
+    # conflicts or something else.
 
     with oda.uow() as uow:
         proposal_ids = [
             p if isinstance(p, str) else getattr(p, "prsl_id")
             for p in (param.proposals or [])
         ]
-        touched_review_ids: list[str] = []
+        updated_review_ids: list[str] = []
 
         # Technical Review (only one technical reviewer is expected for now)
         if param.tech_reviewers:
@@ -265,7 +277,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
                     reviewer_id=tech_reviewer_id,
                     proposal_id=prsl_id,
                 )
-                touched_review_ids.append(rvw_ids)
+                updated_review_ids.append(rvw_ids)
 
         # Science Reviews for every (science reviewer × proposal) pair
         if param.sci_reviewers:
@@ -279,13 +291,13 @@ def update_panel(panel_id: str, param: Panel) -> str:
                         reviewer_id=sci_reviewer_id,
                         proposal_id=prsl_id,
                     )
-                    touched_review_ids.append(rvw_ids)
+                    updated_review_ids.append(rvw_ids)
 
-        # Persist the panel itself
+        # Persist the panel
         panel = uow.panels.add(param)
         uow.commit()
     logger.info(
-        "Panel %s updated; reviews touched=%d", panel.panel_id, len(touched_review_ids)
+        "Panel %s updated; reviews updated=%d", panel.panel_id, len(updated_review_ids)
     )
     return panel.panel_id
 
