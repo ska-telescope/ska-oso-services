@@ -52,7 +52,7 @@ tests:
   - it: should set POSTGRES_HOST to default host if the values.yaml is not set
     documentIndex: 0
     set:
-      rest:
+      global:
         oda:
           postgres:
             host:
@@ -65,7 +65,7 @@ tests:
   - it: should set POSTGRES_HOST using the values.yaml when set
     documentIndex: 0
     set:
-      rest:
+      global:
         oda:
           postgres:
             host: foo
@@ -78,7 +78,7 @@ tests:
   - it: should set ADMIN_POSTGRES_USER using the values.yaml when set
     documentIndex: 0
     set:
-      rest:
+      global:
         oda:
           postgres:
             user: foo
@@ -91,11 +91,10 @@ tests:
   - it: should set POSTGRES_DB_NAME using the values.yaml when set
     documentIndex: 0
     set:
-      rest:
+      global:
         oda:
           postgres:
-            db:
-              name: foo
+            database: foo
     asserts:
       - equal:
           path: data.POSTGRES_DB_NAME
@@ -105,7 +104,7 @@ tests:
   - it: should set POSTGRES_PORT using the values.yaml when set
     documentIndex: 0
     set:
-      rest:
+      global:
         oda:
           postgres:
             port: foo
