@@ -23,18 +23,6 @@ tests:
       - isAPIVersion:
           of: v1
 
-  - it: should set ODA_BACKEND_TYPE from values.yaml
-    documentIndex: 0
-    set:
-      rest:
-        oda:
-          backendType: foo
-    asserts:
-      - equal:
-          path: data.ODA_BACKEND_TYPE
-          value:
-            foo
-
   - it: should set SKUID_URL to default cluster domain if SKUID_URL is not set
     documentIndex: 0
     set:
