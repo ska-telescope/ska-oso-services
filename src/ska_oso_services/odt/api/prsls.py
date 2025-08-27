@@ -41,10 +41,10 @@ class ProposalProjectDetails(AppModel):
     prj_id: str | None = None
     prj_version: int | None = None
     title: str | None = None
-    created_on: AwareDatetime
-    created_by: str
-    last_modified_on: AwareDatetime
-    last_modified_by: str
+    prj_created_on: AwareDatetime | None = None
+    prj_created_by: str | None = None
+    prj_last_modified_on: AwareDatetime | None = None
+    prj_last_modified_by: str | None = None
 
 
 @router.post(
@@ -108,10 +108,10 @@ def prj_details() -> list[ProposalProjectDetails]:
                 prj_version=project.metadata.version,
                 prsl_id=project.prsl_ref,
                 title=project.name,
-                created_by=project.metadata.created_by,
-                created_on=project.metadata.created_on,
-                last_modified_by=project.metadata.last_modified_by,
-                last_modified_on=project.metadata.last_modified_on,
+                prj_created_by=project.metadata.created_by,
+                prj_created_on=project.metadata.created_on,
+                prj_last_modified_by=project.metadata.last_modified_by,
+                prj_last_modified_on=project.metadata.last_modified_on,
             )
             for project in all_projects
         ]
@@ -137,10 +137,6 @@ def prj_details() -> list[ProposalProjectDetails]:
                 prsl_id=proposal.prsl_id,
                 prsl_version=proposal.metadata.version,
                 title=proposal.info.title,
-                created_by=proposal.metadata.created_by,
-                created_on=proposal.metadata.created_on,
-                last_modified_by=proposal.metadata.last_modified_by,
-                last_modified_on=proposal.metadata.last_modified_on,
             )
             for proposal in proposals_without_projects
         ]

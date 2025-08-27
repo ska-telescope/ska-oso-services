@@ -129,10 +129,6 @@ class TestProposalAndProjectView:
                 prsl_id=proposal.prsl_id,
                 prsl_version=1,
                 title=proposal.info.title,
-                last_modified_by=proposal.metadata.last_modified_by,
-                last_modified_on=proposal.metadata.last_modified_on,
-                created_by=proposal.metadata.created_by,
-                created_on=proposal.metadata.created_on,
             ).model_dump_json()
         )
 
@@ -163,10 +159,10 @@ class TestProposalAndProjectView:
                 prj_version=1,
                 prsl_id=proposal.prsl_id,
                 title=project.name,
-                last_modified_by=project.metadata.last_modified_by,
-                last_modified_on=project.metadata.last_modified_on,
-                created_by=project.metadata.created_by,
-                created_on=project.metadata.created_on,
+                prj_last_modified_by=project.metadata.last_modified_by,
+                prj_last_modified_on=project.metadata.last_modified_on,
+                prj_created_by=project.metadata.created_by,
+                prj_created_on=project.metadata.created_on,
             ).model_dump_json()
         )
 
@@ -196,9 +192,9 @@ class TestProposalAndProjectView:
                 prj_version=1,
                 prsl_id=None,
                 title=project.name,
-                last_modified_by=project.metadata.last_modified_by,
-                last_modified_on=project.metadata.last_modified_on,
-                created_by=project.metadata.created_by,
-                created_on=project.metadata.created_on,
+                prj_last_modified_by=project.metadata.last_modified_by,
+                prj_last_modified_on=project.metadata.last_modified_on,
+                prj_created_by=project.metadata.created_by,
+                prj_created_on=project.metadata.created_on,
             ).model_dump_json()
         )
