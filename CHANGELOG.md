@@ -12,6 +12,7 @@ Unreleased
 * Panel `auto-create` can now update the submitted proposals for `Science Verification`
 * Fixes the bug with the report endpoint.
 * Creates Science reviews as part of the panel update endpoint.
+* Updates ODA version to 11.5.0
 
 3.1.1
 ***********
