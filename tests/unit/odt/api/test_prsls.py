@@ -2,12 +2,15 @@
 Unit tests for ska_oso_services.api
 """
 
+import json
 from http import HTTPStatus
 from unittest import mock
 
 import pytest
+from ska_aaa_authhelpers.test_helpers import TEST_USER
 from ska_db_oda.persistence.domain.errors import ODANotFound
 
+from ska_oso_services.odt.api.prsls import ProposalProjectDetails
 from tests.unit.conftest import ODT_BASE_API_URL
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
@@ -37,7 +40,7 @@ class TestProjectCreationFromProposal:
 
         assert resp.status_code == HTTPStatus.OK
         assert_json_is_equal(resp.text, project.model_dump_json())
-        uow_mock.prjs.add.assert_called_with(project)
+        uow_mock.prjs.add.assert_called_with(project, user=TEST_USER)
 
     @mock.patch("ska_oso_services.odt.api.prsls.generate_project")
     @mock.patch("ska_oso_services.odt.api.prsls.oda.uow")
@@ -97,3 +100,101 @@ class TestProjectCreationFromProposal:
             assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
             assert result["title"] == "Internal Server Error"
             assert result["message"] == "OSError('test error')"
+
+
+class TestProposalAndProjectView:
+
+    @mock.patch("ska_oso_services.odt.api.prsls.oda.uow")
+    def test_proposal_without_project_returned_successfully(self, mock_uow, client):
+        uow_mock = mock.MagicMock()
+        proposal = TestDataFactory.complete_proposal()
+        uow_mock.prsls.query.return_value = [proposal]
+
+        uow_mock.prjs.query.return_value = []
+
+        mock_uow().__enter__.return_value = uow_mock
+
+        resp = client.get(
+            f"{PRSLS_API_URL}/project-view",
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        result = resp.json()
+
+        assert len(result) == 1
+        # Dump to json then load so the datetimes are serialised
+        assert result[0] == json.loads(
+            ProposalProjectDetails(
+                prj_id=None,
+                prsl_id=proposal.prsl_id,
+                prsl_version=1,
+                title=proposal.info.title,
+            ).model_dump_json()
+        )
+
+    @mock.patch("ska_oso_services.odt.api.prsls.oda.uow")
+    def test_project_and_proposal_returned_successfully(self, mock_uow, client):
+        uow_mock = mock.MagicMock()
+        proposal = TestDataFactory.complete_proposal()
+        uow_mock.prsls.query.return_value = [proposal]
+
+        project = TestDataFactory.project()
+        project.prsl_ref = proposal.prsl_id
+        uow_mock.prjs.query.return_value = [project]
+
+        mock_uow().__enter__.return_value = uow_mock
+
+        resp = client.get(
+            f"{PRSLS_API_URL}/project-view",
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        result = resp.json()
+
+        assert len(result) == 1
+        # Dump to json then load so the datetimes are serialised
+        assert result[0] == json.loads(
+            ProposalProjectDetails(
+                prj_id=project.prj_id,
+                prj_version=1,
+                prsl_id=proposal.prsl_id,
+                title=project.name,
+                prj_last_modified_by=project.metadata.last_modified_by,
+                prj_last_modified_on=project.metadata.last_modified_on,
+                prj_created_by=project.metadata.created_by,
+                prj_created_on=project.metadata.created_on,
+            ).model_dump_json()
+        )
+
+    @mock.patch("ska_oso_services.odt.api.prsls.oda.uow")
+    def test_project_without_proposal_returned_successfully(self, mock_uow, client):
+        uow_mock = mock.MagicMock()
+
+        uow_mock.prsls.query.return_value = []
+
+        project = TestDataFactory.project()
+        uow_mock.prjs.query.return_value = [project]
+
+        mock_uow().__enter__.return_value = uow_mock
+
+        resp = client.get(
+            f"{PRSLS_API_URL}/project-view",
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        result = resp.json()
+
+        assert len(result) == 1
+        # Dump to json then load so the datetimes are serialised
+        assert result[0] == json.loads(
+            ProposalProjectDetails(
+                prj_id=project.prj_id,
+                prj_version=1,
+                prsl_id=None,
+                title=project.name,
+                prj_last_modified_by=project.metadata.last_modified_by,
+                prj_last_modified_on=project.metadata.last_modified_on,
+                prj_created_by=project.metadata.created_by,
+                prj_created_on=project.metadata.created_on,
+            ).model_dump_json()
+        )

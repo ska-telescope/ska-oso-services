@@ -6,9 +6,10 @@ Connexion maps the function name to the operationId in the OpenAPI document path
 
 import logging
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
-from ska_aaa_authhelpers import Role
+from ska_aaa_authhelpers import AuthContext, Role
 from ska_oso_pdm import SBDStatusHistory
 from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
@@ -87,9 +88,14 @@ def sbds_get(identifier: str) -> SBDefinition:
 @router.post(
     "/",
     summary="Create a new SBDefinition",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
-def sbds_post(sbd: SBDefinition) -> SBDefinition:
+def sbds_post(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    sbd: SBDefinition,
+) -> SBDefinition:
     """
     Creates a new SchedulingBlockDefinition and related status entity
     in the underlying data store.
@@ -117,10 +123,10 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
 
     try:
         with oda.uow() as uow:
-            updated_sbd = uow.sbds.add(sbd)
+            updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
 
             sbd_status = _create_sbd_status_entity(updated_sbd)
-            uow.sbds_status_history.add(sbd_status)
+            uow.sbds_status_history.add(sbd_status, user=auth.user_id)
 
             uow.commit()
         return updated_sbd
@@ -134,9 +140,15 @@ def sbds_post(sbd: SBDefinition) -> SBDefinition:
 @router.put(
     "/{identifier}",
     summary="Update an SBDefinition by identifier",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
 )
-def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
+def sbds_put(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    sbd: SBDefinition,
+    identifier: str,
+) -> SBDefinition:
     """
     Updates the SchedulingBlockDefinition with the given identifier
     in the underlying data store to create a new version.
@@ -162,12 +174,12 @@ def sbds_put(sbd: SBDefinition, identifier: str) -> SBDefinition:
             # This get will check if the identifier already exists
             # and throw an error if it doesn't
             uow.sbds.get(identifier)
-            updated_sbd = uow.sbds.add(sbd)
+            updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
 
             # In this PUT should we be updating the existing status
             # and changing the version in it?
             sbd_status = _create_sbd_status_entity(updated_sbd)
-            uow.sbds_status_history.add(sbd_status)
+            uow.sbds_status_history.add(sbd_status, user=auth.user_id)
 
             uow.commit()
         return updated_sbd
