@@ -15,6 +15,8 @@ Unreleased
 * Updates ODA version to 11.5.0
 * Add `/odt/prsls/project-view` endpoint which returns a view for the UI of an outer join of the Proposals and Projects
 * Write user from auth context to entity metadata for ODT endpoints
+* [BREAKING] Use Helm global values for ODA configuration rather than ska-oso-services chart ones
+* Deploy Secret for ODA password rather than relying on external one from ODA chart
 
 3.1.1
 ***********

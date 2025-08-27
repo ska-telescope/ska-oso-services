@@ -35,9 +35,6 @@ RUN adduser $APP_USER --disabled-password --home $APP_DIR
 
 WORKDIR $APP_DIR
 
-# Used by the FilesystemRepository implementation of the ODA
-RUN mkdir -p /var/lib/oda && chown -R ${APP_USER} /var/lib/oda
-
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
 
