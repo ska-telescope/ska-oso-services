@@ -8,6 +8,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 
+4.0.2
+***********
+* Updates Roles to ANY for Validate endpoint
 
 4.0.1
 ***********
