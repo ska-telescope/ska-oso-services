@@ -212,7 +212,7 @@ def get_proposal(
     summary="Retrieve multiple proposals in batch",
     response_model=list[Proposal],
     dependencies=[
-        Permissions(roles=[Role.SW_ENGINEER, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])
+        Permissions(roles=[Role.ANY, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])
     ],
 )
 def get_proposals_batch(
