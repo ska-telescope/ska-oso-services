@@ -211,7 +211,9 @@ def get_proposal(
     "/batch",
     summary="Retrieve multiple proposals in batch",
     response_model=list[Proposal],
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+    dependencies=[
+        Permissions(roles=[Role.SW_ENGINEER, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])
+    ],
 )
 def get_proposals_batch(
     prsl_ids: list[str] = Body(..., embed=True, description="List of proposal IDs"),
@@ -236,7 +238,9 @@ def get_proposals_batch(
 @router.get(
     "/status/{status}",
     summary="Get a list of proposals by status",
-    dependencies=[Permissions(roles=[Role.ANY, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+    dependencies=[
+        Permissions(roles=[Role.ANY, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])
+    ],
 )
 def get_proposals_by_status(status: str) -> list[Proposal]:
     """
@@ -265,7 +269,11 @@ def get_proposals_by_status(status: str) -> list[Proposal]:
 @router.get(
     "/reviews/{prsl_id}",
     summary="Get all reviews for a particular proposal",
-    dependencies=[Permissions(roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
+    dependencies=[
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
+    ],
 )
 def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
     """
