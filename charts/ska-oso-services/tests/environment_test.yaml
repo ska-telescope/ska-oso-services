@@ -23,18 +23,6 @@ tests:
       - isAPIVersion:
           of: v1
 
-  - it: should set ODA_BACKEND_TYPE from values.yaml
-    documentIndex: 0
-    set:
-      rest:
-        oda:
-          backendType: foo
-    asserts:
-      - equal:
-          path: data.ODA_BACKEND_TYPE
-          value:
-            foo
-
   - it: should set SKUID_URL to default cluster domain if SKUID_URL is not set
     documentIndex: 0
     set:
@@ -64,7 +52,7 @@ tests:
   - it: should set POSTGRES_HOST to default host if the values.yaml is not set
     documentIndex: 0
     set:
-      rest:
+      global:
         oda:
           postgres:
             host:
@@ -77,7 +65,7 @@ tests:
   - it: should set POSTGRES_HOST using the values.yaml when set
     documentIndex: 0
     set:
-      rest:
+      global:
         oda:
           postgres:
             host: foo
@@ -90,7 +78,7 @@ tests:
   - it: should set ADMIN_POSTGRES_USER using the values.yaml when set
     documentIndex: 0
     set:
-      rest:
+      global:
         oda:
           postgres:
             user: foo
@@ -103,11 +91,10 @@ tests:
   - it: should set POSTGRES_DB_NAME using the values.yaml when set
     documentIndex: 0
     set:
-      rest:
+      global:
         oda:
           postgres:
-            db:
-              name: foo
+            database: foo
     asserts:
       - equal:
           path: data.POSTGRES_DB_NAME
@@ -117,7 +104,7 @@ tests:
   - it: should set POSTGRES_PORT using the values.yaml when set
     documentIndex: 0
     set:
-      rest:
+      global:
         oda:
           postgres:
             port: foo

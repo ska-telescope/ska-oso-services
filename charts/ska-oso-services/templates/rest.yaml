@@ -79,11 +79,11 @@ spec:
           - name: ADMIN_POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                {{ if .Values.rest.oda.postgres.password.secret }}
-                name: {{ .Values.rest.oda.postgres.password.secret }}
-                key: {{ .Values.rest.oda.postgres.password.key }}
+                {{ if .Values.global.oda.postgres.password.secret }}
+                name: {{ .Values.global.oda.postgres.password.secret }}
+                key: {{ .Values.global.oda.postgres.password.key }}
                 {{ else }}
-                name: ska-db-oda-umbrella-postgres-{{ $.Release.Name }}
+                name: {{ template "ska-oso-services.oda-secret-name" $ }}
                 key: ADMIN_POSTGRES_PASSWORD
                 {{ end }}
           - name: AWS_SERVER_PUBLIC_KEY

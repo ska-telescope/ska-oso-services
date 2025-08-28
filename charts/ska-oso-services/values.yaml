@@ -13,7 +13,20 @@ pipeline_test_deployment: false
 global:
   minikube: true
   cluster_domain: techops.internal.skao.int
-
+  oda:
+    postgres:
+      # The below values are used to set environment variables that are used in the ODA Repository. If they are not set then
+      # default are set in the environment.yaml that point at an ODA postgres instance in the same namespace.
+      host: ~
+      port: ~
+      database: ~
+      user: ~
+      # The password should be pulled from Vault via a k8s Secret. If these values are left as null, a new
+      # secret will be created by this chart. These values are exposed so a different secret can be defined,
+      # for example if the Secrets are managed elsewhere.
+      password:
+        secret: ~ # This is the resource name of a k8s Secret
+        key: ~ # This is the key the password is stored under within that Secret
 
 rest:
   component: rest
@@ -26,20 +39,6 @@ rest:
     image: ska-oso-services
     tag: ~ # Defaults to the chart appVersion if not set
     pullPolicy: IfNotPresent
-  oda:
-    backendType: postgres
-    postgres:
-      # The below values are used to set environment variables that are used in the ODA Repository. If they are not set then the defaults defined by the ODA will be used.
-      host: ~
-      port: ~
-      user: ~
-      db:
-        name: ~
-      password:
-        # This is the resource name of a k8s secret and the key the password is stored under.
-        # If left as null the default secret deployed by the ODA umbrella will be used.
-        secret: ~
-        key: ~
   pht:
     aws_server_public_key:
       # This is the resource name of a k8s secret and the key the password is stored under.
@@ -72,7 +71,7 @@ rest:
   ingress:
     enabled: true
 
-# The following values are used by the all_secrets.yaml template
+# The following values are used by the pht_secrets.yaml and oda_secret.yaml templates
 vault:
   enabled: true
   mount: dev
@@ -83,6 +82,9 @@ vault:
   - "SMTP_PASSWORD"
   - "AWS_PHT_BUCKET_NAME"
   - "OSO_CLIENT_SECRET"
+  odaSecretPath: "team-buttons/ska-db-oda/credentials"
+  odaSecretKeys:
+  - "ADMIN_POSTGRES_PASSWORD"
 
 nodeSelector: {}
 
