@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Updates email, pdfs endpoints for the PHT to use Role.Any
 
 4.0.0
 ***********
