@@ -398,7 +398,7 @@ def validate_proposal(prsl: Proposal) -> dict:
 @router.post(
     "/send-email/",
     summary="Send an async email",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
+    dependencies=[Permissions(roles=[Role.ANY], scopes=[Scope.PHT_READWRITE])],
 )
 async def send_email(
     request: EmailRequest,
@@ -415,7 +415,7 @@ async def send_email(
 @router.post(
     "/signed-url/upload/{filename}",
     summary="Create upload PDF URL",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
+    dependencies=[Permissions(roles=[Role.ANY], scopes=[Scope.PHT_READWRITE])],
 )
 def create_upload_pdf_url(filename: str) -> str:
     """
@@ -459,7 +459,7 @@ def create_upload_pdf_url(filename: str) -> str:
 @router.post(
     "/signed-url/download/{filename}",
     summary="Create download PDF URL",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
+    dependencies=[Permissions(roles=[Role.ANY], scopes=[Scope.PHT_READWRITE])],
 )
 def create_download_pdf_url(filename: str) -> str:
     """
@@ -495,7 +495,7 @@ def create_download_pdf_url(filename: str) -> str:
 @router.post(
     "/signed-url/delete/{filename}",
     summary="Create delete PDF URL",
-    dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READWRITE])],
+    dependencies=[Permissions(roles=[Role.ANY], scopes=[Scope.PHT_READWRITE])],
 )
 def create_delete_pdf_url(filename: str) -> str:
     """
