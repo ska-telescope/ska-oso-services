@@ -1,14 +1,18 @@
 import logging
 from datetime import datetime, timezone
-from typing import Any, Iterable
+from typing import Iterable
 
 from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_oso_pdm import PanelReview
 from ska_oso_pdm.proposal.proposal import Proposal, ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel, ProposalAssignment
-from ska_oso_pdm.proposal_management.review import ReviewStatus, TechnicalReview, ScienceReview, Conflict
-from ska_oso_pdm import PanelReview
-
+from ska_oso_pdm.proposal_management.review import (
+    Conflict,
+    ReviewStatus,
+    ScienceReview,
+    TechnicalReview,
+)
 
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.models.schemas import PanelCreateResponse
@@ -201,41 +205,31 @@ def upsert_panel(
     return uow.panels.add(new_panel)
 
 
-def _ref_prsl_id(ref: Any) -> str:
-    """Extract prsl_id from either an object or a dict; raise if missing."""
-    pid = ref["prsl_id"] if isinstance(ref, dict) else getattr(ref, "prsl_id", None)
-    if not pid:
-        raise BadRequestError("Missing prsl_id in submitted proposal reference.")
-    return pid
+def ensure_submitted_proposals_under_review(uow, prsl_ids: Iterable[str]) -> None:
+    seen: set[str] = set()
+    for raw in prsl_ids:
+        prsl_id = str(raw).strip()
+        if not prsl_id or prsl_id in seen:
+            continue
+        seen.add(prsl_id)
 
-
-def ensure_submitted_proposals_under_review(uow, submitted_refs: Iterable[Any]) -> None:
-    """
-    For each submitted proposal reference, load from ODA and set status
-    to UNDER_REVIEW if not already.
-    Persist each update.
-    If a proposal doesn't exist, raise BadRequestError.
-
-    Args:
-        uow: Unit of work.
-        submitted_refs: Iterable of objects/dicts each carrying a 'prsl_id' field.
-    """
-    for ref in submitted_refs:
-        prsl_id = _ref_prsl_id(ref)
         try:
             proposal: Proposal = uow.prsls.get(prsl_id)
-            if proposal.status != ProposalStatus.UNDER_REVIEW:
-                proposal.status = ProposalStatus.UNDER_REVIEW
-                uow.prsls.add(proposal)
-                logger.info(
-                    "Setting proposal %s status to UNDER REVIEW", proposal.prsl_id
-                )
         except ODANotFound as exc:
             raise BadRequestError(f"Proposal '{prsl_id}' does not exist") from exc
 
+        if proposal.status != ProposalStatus.UNDER_REVIEW:
+            proposal.status = ProposalStatus.UNDER_REVIEW
+            uow.prsls.add(proposal)
 
 
-def ensure_review_exist_or_create(uow, param, kind: str, reviewer_id: str, proposal_id: str) -> None:
+def ensure_review_exist_or_create(
+    uow, param, kind: str, reviewer_id: str, proposal_id: str
+) -> str:
+    """
+    Ensure a review of the given kind exists for the given proposal and reviewer.
+    If not, create one with status TO_DO and return its review_id.
+    """
     query = CustomQuery(prsl_id=proposal_id, kind=kind, reviewer_id=reviewer_id)
     existing = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
     existing_rvw = existing[0] if existing else None
@@ -247,25 +241,26 @@ def ensure_review_exist_or_create(uow, param, kind: str, reviewer_id: str, propo
             proposal_id,
             existing_rvw.reviewer_id,
         )
-        return
+        return existing_rvw.review_id
 
     if kind == "Technical Review":
         review_type = TechnicalReview(kind="Technical Review")
     else:
         review_type = ScienceReview(
-            rank=None,
-            conflict=Conflict(has_conflict=False, reason=None),
-            excluded_from_decision=False,
+            kind="Science Review", conflict=Conflict(has_conflict=False)
         )
 
     new_review = PanelReview(
         panel_id=param.panel_id,
-        review_id=generate_entity_id("rvs-tec" if kind == "Technical Review" else "rvs-sci"),
+        review_id=generate_entity_id(
+            "rvw-tec" if kind == "Technical Review" else "rvw-sci"
+        ),
         reviewer_id=reviewer_id,
         cycle=param.cycle,
         prsl_id=proposal_id,
         status=ReviewStatus.TO_DO,
         review_type=review_type,
     )
-    uow.rvws.add(new_review)
-    logger.info("Created %s (prsl_id=%s, reviewer=%s)", kind, proposal_id, reviewer_id)
+    created_rvw = uow.rvws.add(new_review)
+    logger.info("Creating %s (prsl_id=%s, reviewer=%s)", kind, proposal_id, reviewer_id)
+    return created_rvw.review_id

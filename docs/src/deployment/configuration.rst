@@ -25,35 +25,30 @@ but also can be overwritten via the values.yaml
      - Required
      - ``ska-oso-services.rest.skuid.url``
      - Optional - will fall back on: ``ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.{{ .Values.global.cluster_domain }}:9870``
-   * - ODA_BACKEND_TYPE
-     - Defines whether the ODA interfaces should connect to a Postgresql instance or use the filesystem.
-     - Optional - default: ``postgres``
-     - ``ska-oso-services.rest.oda.backendType``
-     - Required - default set to ``postgres``
    * - POSTGRES_HOST
      - The address of the PostgreSQL instance that the postgres ODA will connect to.
-     - Required if ``ODA_BACKEND_TYPE`` is ``postgres``
-     - ``ska-oso-services.rest.oda.postgres.host``
+     - Required
+     - ``global.oda.postgres.host``
      - Optional - will fall back on: ``{{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.{{ .Values.global.cluster_domain }}``
    * - ADMIN_POSTGRES_USER
      - The admin user of the PostgreSQL instance that the postgres ODA will connect to.
      - Optional - default: ``postgres``
-     - ``ska-oso-services.rest.oda.postgres.user``
+     - ``global.oda.postgres.user``
      - Optional - no default in chart
    * - ADMIN_POSTGRES_PASSWORD
      - The admin password of the PostgreSQL instance that the postgres ODA will connect to.
-     - Required if ``ODA_BACKEND_TYPE`` is ``postgres``
+     - Required
      - Pulled from Vault - see :doc:`secret_management`
      -
    * - POSTGRES_PORT
      - The port of the PostgreSQL instance that the postgres ODA will connect to.
      - Optional - default: ``5432``
-     - ``ska-oso-services.rest.oda.postgres.port``
+     - ``global.oda.postgres.port``
      - Optional - no default in chart
    * - POSTGRES_DB_NAME
      - The name of the database within a PostgreSQL instance that the postgres ODA will connect to.
      - Optional - default: ``postgres``
-     - ``ska-oso-services.rest.oda.postgres.db.name``
+     - ``global.oda.postgres.database``
      - Optional - no default in chart
    * - AWS_SERVER_PUBLIC_KEY
      - The aws server public key used to connect to the AWS account. Used by PHT to work with S3.

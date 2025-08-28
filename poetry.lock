@@ -3242,14 +3242,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-db-oda"
-version = "11.4.0"
+version = "11.5.0"
 description = "SKA Database OSO Data Archive"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_db_oda-11.4.0-py3-none-any.whl", hash = "sha256:2a7e482cd223404c4e52d8a24317aade5d62ab7b3dc627d777df73b17a4cd7ae"},
-    {file = "ska_db_oda-11.4.0.tar.gz", hash = "sha256:3a210fbbf75901d78349139709fedc774e8aaab1d460532973fdcf67002b0d50"},
+    {file = "ska_db_oda-11.5.0-py3-none-any.whl", hash = "sha256:66f81c04e6a75178b0504bccbee8e381e68582778475625d8fbe837677e18df7"},
+    {file = "ska_db_oda-11.5.0.tar.gz", hash = "sha256:f8c7fb4f9a948acac373ba612082d5c272d17018a9b90a63378c60add6ad5d21"},
 ]
 
 [package.dependencies]
@@ -4255,4 +4255,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "fec3245b84cf63086a6fcb990216b11b8b44039da54453f6873d788031c7bce6"
+content-hash = "57a7fbe2d8071bf7fb77a796069a06c79e65f9feaf97325d24efb84a11d0add2"
