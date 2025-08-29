@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 
+4.0.3
+***********
+* Updates ODA version to 11.5.1 
+
 4.0.2
 ***********
 * Updates Roles to ANY for Validate endpoint
