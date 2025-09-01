@@ -90,6 +90,7 @@ def group_proposals_by_science_category(
 def upsert_panel(
     *,
     uow,
+    auth,
     panel_name: str,
     science_reviewers: list | None,
     technical_reviewers: list | None,
@@ -159,7 +160,7 @@ def upsert_panel(
                 existing_prsl: Proposal = uow.prsls.get(prsl_id)  # assumed to exist
                 if existing_prsl.status != ProposalStatus.UNDER_REVIEW:
                     existing_prsl.status = ProposalStatus.UNDER_REVIEW
-                    uow.prsls.add(existing_prsl)
+                    uow.prsls.add(existing_prsl, auth.user_id)
                     logger.info(
                         "Proposal %s set to UNDER_REVIEW (already in panel '%s')",
                         prsl_id,
@@ -181,7 +182,7 @@ def upsert_panel(
                         panel_name,
                     )
 
-        return uow.panels.add(panel)
+        return uow.panels.add(panel, auth.user_id)
 
     # No existing panel → create it; assign proposals, then set status for each
     # This part of the code may not be needed - discuss logic with SciOps
@@ -202,10 +203,10 @@ def upsert_panel(
         proposals=assignments,
     )
     logger.info("Creating panel '%s' with %d proposal(s)", panel_name, len(assignments))
-    return uow.panels.add(new_panel)
+    return uow.panels.add(new_panel, auth.user_id)
 
 
-def ensure_submitted_proposals_under_review(uow, prsl_ids: Iterable[str]) -> None:
+def ensure_submitted_proposals_under_review(uow, auth, prsl_ids: Iterable[str]) -> None:
     seen: set[str] = set()
     for raw in prsl_ids:
         prsl_id = str(raw).strip()
@@ -220,7 +221,7 @@ def ensure_submitted_proposals_under_review(uow, prsl_ids: Iterable[str]) -> Non
 
         if proposal.status != ProposalStatus.UNDER_REVIEW:
             proposal.status = ProposalStatus.UNDER_REVIEW
-            uow.prsls.add(proposal)
+            uow.prsls.add(proposal, auth.user_id)  # type: ignore[attr-defined]
 
 
 def ensure_review_exist_or_create(
