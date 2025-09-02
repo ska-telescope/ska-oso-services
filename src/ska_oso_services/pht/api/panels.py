@@ -313,7 +313,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
 
 
 @router.get(
-    "/users/{user_id}/panels",
+    "/users/{cycle_id}/panels",
     summary="Get all panels matching the given query parameters",
     dependencies=[
         Permissions(
@@ -321,24 +321,23 @@ def update_panel(panel_id: str, param: Panel) -> str:
         )
     ],
 )
-def get_panels_for_user(
-    user_id: str,
+def get_panels_for_cycle(
+    cycle_id: str,
 ) -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
 
-    Retrieves the Panels for the given user ID from the
+    Retrieves the Panels for the given cycle ID from the
     underlying data store, if available
 
-    :param user_id: identifier of the Panel
+    :param cycle_id: identifier of the active cycle
     :return: a tuple of a list of Panel
     """
-    # TODO: Agree on path name and fix list in path - also in proposals  Tonye
-    logger.debug("GET PANEL LIST query for the user: %s", user_id)
+    logger.debug("GET PANEL LIST query for cycle: %s", cycle_id)
 
     with oda.uow() as uow:
-        query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
+        query_param = UserQuery(cycle=cycle_id, match_type=MatchType.EQUALS)
         panels = get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
 
-        logger.debug("Found %d panels for user: %s", len(panels), user_id)
+        logger.debug("Found %d panels for cycle: %s", len(panels), cycle_id)
         return panels
