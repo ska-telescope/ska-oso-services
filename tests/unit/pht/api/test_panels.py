@@ -403,7 +403,7 @@ class TestPanelsAPI:
         response = client.get(f"{PANELS_API_URL}/users/{user_id}/panels")
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
-        assert len(response.json()) == len(panels_objs)
+        assert len(response.json()) == 1
 
 
 class TestPanelAutoCreateAPI:

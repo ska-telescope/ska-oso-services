@@ -338,7 +338,7 @@ def get_panels_for_user(
 
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        panels = uow.panels.query(query_param)  # pylint: disable=no-member
+        panels = get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
 
         logger.debug("Found %d panels for user: %s", len(panels), user_id)
         return panels
