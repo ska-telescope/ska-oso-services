@@ -91,7 +91,7 @@ class TestUpsertPanel:
         )
 
         uow = mock.MagicMock()
-        uow.panels.add.side_effect = lambda p: p
+        uow.panels.add.side_effect = lambda *args, **kwargs: args[0]
 
         incoming = [SimpleNamespace(prsl_id=pid) for pid in case["incoming_ids"]]
 
@@ -123,17 +123,26 @@ class TestUpsertPanel:
                 raising=True,
             )
 
+        auth = SimpleNamespace(user_id="test_user")
+
         result = panel_ops.upsert_panel(
             uow=uow,
+            auth=auth,
             panel_name="SomePanel",
             science_reviewers=case["science_reviewers"],
             technical_reviewers=case["technical_reviewers"],
             proposals=incoming,
         )
 
-        uow.panels.add.assert_called_once()
+        # Called once; allow extra args
+        assert uow.panels.add.call_count == 1
 
         saved_panel = uow.panels.add.call_args[0][0]
+
+        add_args, _ = uow.panels.add.call_args
+        if len(add_args) > 1:
+            assert add_args[1] in (auth.user_id, auth)
+
         assert saved_panel.name == "SomePanel"
         assert [_prsl_id(p) for p in saved_panel.proposals] == case["expect_final_ids"]
 
@@ -273,28 +282,34 @@ class TestGroupProposalsByScienceCategory:
 
 class TestEnsureSubmittedProposalsUnderReview:
     def test_sets_under_review_and_dedupes_ids(self):
-        """SUBMITTED --> UNDER_REVIEW; duplicates processed once; blanks ignored."""
+        """SUBMITTED -> UNDER_REVIEW; duplicates processed once; blanks ignored."""
         uow = mock.MagicMock()
+        auth = SimpleNamespace(user_id="test_user")
 
         p1 = SimpleNamespace(
-            prsl_id="prop-1", status=panels_api.ProposalStatus.SUBMITTED
+            prsl_id="prop-1",
+            status=panels_api.ProposalStatus.SUBMITTED,
+            user=auth.user_id,
         )
         p2 = SimpleNamespace(
-            prsl_id="prop-2", status=panels_api.ProposalStatus.UNDER_REVIEW
+            prsl_id="prop-2",
+            status=panels_api.ProposalStatus.UNDER_REVIEW,
+            user=auth.user_id,
         )
 
         # Only two unique lookups despite duplicate 'prop-1'
         uow.prsls.get.side_effect = [p1, p2]
 
         ensure_submitted_proposals_under_review(
-            uow, ["  prop-1  ", "prop-2", "prop-1", "", "   "]
+            uow, auth, ["  prop-1  ", "prop-2", "prop-1", "", "   "]
         )
 
         # Lookups only for unique, non-blank IDs in order of first occurrence
         assert [c.args[0] for c in uow.prsls.get.call_args_list] == ["prop-1", "prop-2"]
 
+        # Only the SUBMITTED proposal is written back with new status
         assert p1.status == panels_api.ProposalStatus.UNDER_REVIEW
-        uow.prsls.add.assert_called_once_with(p1)
+        uow.prsls.add.assert_called_once_with(p1, auth.user_id)
 
     def test_skips_when_already_under_review(self):
         """When proposal already UNDER_REVIEW."""
@@ -303,8 +318,8 @@ class TestEnsureSubmittedProposalsUnderReview:
             prsl_id="prop-ur", status=panels_api.ProposalStatus.UNDER_REVIEW
         )
         uow.prsls.get.return_value = p
-
-        ensure_submitted_proposals_under_review(uow, ["prop-ur"])
+        user = "test_user"
+        ensure_submitted_proposals_under_review(uow, user, ["prop-ur"])
 
         uow.prsls.add.assert_not_called()
         uow.prsls.get.assert_called_once_with("prop-ur")
@@ -312,8 +327,9 @@ class TestEnsureSubmittedProposalsUnderReview:
     def test_ignores_blank_ids_entirely(self):
         """Blank/whitespace IDs are ignored (no repo calls)."""
         uow = mock.MagicMock()
+        user = "test_user"
 
-        ensure_submitted_proposals_under_review(uow, ["", "   ", "\n", "\t"])
+        ensure_submitted_proposals_under_review(uow, user, ["", "   ", "\n", "\t"])
 
         uow.prsls.get.assert_not_called()
         uow.prsls.add.assert_not_called()

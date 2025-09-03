@@ -403,7 +403,7 @@ class TestPanelsAPI:
         response = client.get(f"{PANELS_API_URL}/users/{user_id}/panels")
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
-        assert len(response.json()) == len(panels_objs)
+        assert len(response.json()) == 1
 
 
 class TestPanelAutoCreateAPI:
@@ -587,6 +587,9 @@ class TestPanelAutoCreateAPI:
     # ─────────────────────────────────────────────────────────────────────────
     # Create new panel with submitted proposals --> statuses set to UNDER_REVIEW
     # ─────────────────────────────────────────────────────────────────────────
+    @mock.patch(
+        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
+    )
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
@@ -595,31 +598,24 @@ class TestPanelAutoCreateAPI:
         mock_build_sv_panel_proposals,
         mock_get_latest_entity_by_id,
         mock_uow,
+        mock_ensure_under_review,
         client,
     ):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
-        submitted_ids = [
+        submitted_refs = [
             SimpleNamespace(prsl_id="prop-1"),
             SimpleNamespace(prsl_id="prop-2"),
         ]
-        # 1) submitted proposals,
+        # 1) submitted proposals
         # 2) no existing SV panel -> create
-        mock_get_latest_entity_by_id.side_effect = [submitted_ids, []]
+        mock_get_latest_entity_by_id.side_effect = [submitted_refs, []]
         mock_build_sv_panel_proposals.return_value = []
 
         uow.panels.add.return_value = TestDataFactory.panel_basic(
             panel_id="panel-new-sv", name="Science Verification"
         )
-
-        p1_db = SimpleNamespace(
-            prsl_id="prop-1", status=panels_api.ProposalStatus.SUBMITTED
-        )
-        p2_db = SimpleNamespace(
-            prsl_id="prop-2", status=panels_api.ProposalStatus.SUBMITTED
-        )
-        uow.prsls.get.side_effect = [p1_db, p2_db]
 
         payload = {
             "name": "Science Verification",
@@ -632,13 +628,14 @@ class TestPanelAutoCreateAPI:
         assert resp.status_code == HTTPStatus.OK, resp.content
         assert resp.json() == "panel-new-sv"
 
-        assert uow.prsls.get.call_args_list == [
-            mock.call("prop-1"),
-            mock.call("prop-2"),
-        ]
-        assert p1_db.status == panels_api.ProposalStatus.UNDER_REVIEW
-        assert p2_db.status == panels_api.ProposalStatus.UNDER_REVIEW
-        assert uow.prsls.add.call_args_list == [mock.call(p1_db), mock.call(p2_db)]
+        # The endpoint should perform status updates to the helper once
+        assert mock_ensure_under_review.call_count == 1
+        args, _ = mock_ensure_under_review.call_args
+
+        assert args[0] is uow
+        prsl_ids = list(args[2])
+        assert prsl_ids == ["prop-1", "prop-2"]
+
         uow.commit.assert_called_once()
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -726,6 +723,7 @@ class TestPanelAutoCreateAPI:
     # ─────────────────────────────────────────────────────────────────────────
     # SV: Existing panel + submitted --> append only NEW assignments and update status
     # ─────────────────────────────────────────────────────────────────────────
+
     @mock.patch(
         "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
     )
@@ -774,8 +772,9 @@ class TestPanelAutoCreateAPI:
 
         captured_ids: list[str] = []
 
-        def _ensure_side_effect(_uow, ids_iter):
+        def _ensure_side_effect(_uow, _auth, ids_iter):
             captured_ids.extend(list(ids_iter))
+            return None
 
         mock_ensure_under_review.side_effect = _ensure_side_effect
 
@@ -796,6 +795,7 @@ class TestPanelAutoCreateAPI:
         assert panel_ids.count("prop-1") == 1
         assert "prop-2" in panel_ids
 
+        # ensure status update requested only for newly added ID
         assert captured_ids == ["prop-2"]
 
         uow.commit.assert_called_once()

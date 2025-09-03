@@ -1,8 +1,9 @@
 import logging
-from typing import Union
+from typing import Annotated, Union
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
+from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
@@ -34,14 +35,17 @@ logger = logging.getLogger(__name__)
 @router.post(
     "/create",
     summary="Create a panel",
-    dependencies=[
-        Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READWRITE],
-        )
-    ],
 )
-def create_panel(param: Panel) -> str:
+def create_panel(
+    param: Panel,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> str:
     """This endpoint may not be needed in the future.
 
     The idea is to auto-generate panels and assign proposals.
@@ -49,7 +53,7 @@ def create_panel(param: Panel) -> str:
     logger.debug("POST panel")
 
     with oda.uow() as uow:
-        panel: Panel = uow.panels.add(param)  # pylint: disable=no-member
+        panel: Panel = uow.panels.add(param, auth.user_id)  # pylint: disable=no-member
         uow.commit()
 
     logger.info("Panel successfully created with ID %s", panel.panel_id)
@@ -60,13 +64,17 @@ def create_panel(param: Panel) -> str:
     "/auto-create",
     summary="Create a panel",
     response_model=Union[str, list[PanelCreateResponse]],
-    dependencies=[
-        Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
-        )
-    ],
 )
-def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResponse]:
+def auto_create_panel(
+    request: PanelCreateRequest,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> str | list[PanelCreateResponse]:
     """
     Auto creates panels:
     - If science verification (SV), create a single panel called
@@ -143,11 +151,11 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
                 sv_panel.sci_reviewers = science_reviewers
                 sv_panel.tech_reviewers = technical_reviewers
 
-                uow.panels.add(sv_panel)
+                uow.panels.add(sv_panel, auth.user_id)
 
                 # ---------Set UNDER_REVIEW only for newly added proposals------
                 ensure_submitted_proposals_under_review(
-                    uow, (a.prsl_id for a in sv_assignments_to_add)
+                    uow, auth, (a.prsl_id for a in sv_assignments_to_add)
                 )
 
                 uow.commit()
@@ -169,11 +177,11 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
                 tech_reviewers=technical_reviewers,
                 proposals=sv_assignments,
             )
-            created_panel = uow.panels.add(new_panel)
+            created_panel = uow.panels.add(new_panel, auth.user_id)
 
             # ---------Update each referenced proposal to UNDER_REVIEW-------
             ensure_submitted_proposals_under_review(
-                uow, (r.prsl_id for r in submitted_proposal_refs)
+                uow, auth, (r.prsl_id for r in submitted_proposal_refs)
             )
             uow.commit()
             logger.info("Science Verification panel created and proposals assigned")
@@ -187,6 +195,7 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
         panels_by_name = {
             panel_name: upsert_panel(
                 uow=uow,
+                auth=auth,
                 panel_name=panel_name,
                 science_reviewers=science_reviewers,
                 technical_reviewers=technical_reviewers,
@@ -197,7 +206,7 @@ def auto_create_panel(request: PanelCreateRequest) -> str | list[PanelCreateResp
 
         # -------Update statuses for all SUBMITTED to UNDER_REVIEW----------
         ensure_submitted_proposals_under_review(
-            uow, (r.prsl_id for r in submitted_proposal_refs)
+            uow, auth, (r.prsl_id for r in submitted_proposal_refs)
         )
 
         uow.commit()
@@ -268,16 +277,17 @@ def update_panel(panel_id: str, param: Panel) -> str:
 
         # Technical Review (only one technical reviewer is expected for now)
         if param.tech_reviewers:
-            tech_reviewer_id = param.tech_reviewers[0].reviewer_id
-            for prsl_id in proposal_ids:
-                rvw_ids = ensure_review_exist_or_create(
-                    uow,
-                    param,
-                    kind="Technical Review",
-                    reviewer_id=tech_reviewer_id,
-                    proposal_id=prsl_id,
-                )
-                updated_review_ids.append(rvw_ids)
+            for tech in param.tech_reviewers:
+                tech_reviewer_id = tech.reviewer_id
+                for prsl_id in proposal_ids:
+                    rvw_ids = ensure_review_exist_or_create(
+                        uow,
+                        param,
+                        kind="Technical Review",
+                        reviewer_id=tech_reviewer_id,
+                        proposal_id=prsl_id,
+                    )
+                    updated_review_ids.append(rvw_ids)
 
         # Science Reviews for every (science reviewer × proposal) pair
         if param.sci_reviewers:
@@ -328,7 +338,7 @@ def get_panels_for_user(
 
     with oda.uow() as uow:
         query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        panels = uow.panels.query(query_param)  # pylint: disable=no-member
+        panels = get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
 
         logger.debug("Found %d panels for user: %s", len(panels), user_id)
         return panels
