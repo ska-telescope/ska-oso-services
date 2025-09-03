@@ -4,7 +4,7 @@ from typing import Annotated, Union
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
+from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
 
@@ -336,7 +336,7 @@ def get_panels_for_cycle(
     logger.debug("GET PANEL LIST query for cycle: %s", cycle_id)
 
     with oda.uow() as uow:
-        query_param = UserQuery(cycle=cycle_id, match_type=MatchType.EQUALS)
+        query_param = CustomQuery(cycle=cycle_id)
         panels = get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
 
         logger.debug("Found %d panels for cycle: %s", len(panels), cycle_id)

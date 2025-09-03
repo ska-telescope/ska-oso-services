@@ -109,9 +109,11 @@ def get_reviews_for_user(
     """
 
     logger.debug("GET Review LIST query for the user: %s", auth.user_id)
-
+    is_allowed = (Role.SW_ENGINEER in auth.roles) or (
+        Role.OPS_PROPOSAL_ADMIN in auth.roles
+    )
     with oda.uow() as uow:
-        if Role.SW_ENGINEER or Role.OPS_PROPOSAL_ADMIN in auth.roles:
+        if is_allowed:
             Reviews = get_latest_entity_by_id(CustomQuery(), "review_id")
         else:
             query_param = CustomQuery(reviewer_id=auth.user_id)
@@ -166,8 +168,11 @@ def update_review(
             raise NotFoundError(detail="Review not found: {review_id}")
 
         try:
-            #check that the user is the owner of the review or has SW_ENGINEER role
-            if existing.reviewer_id != auth.user_id and Role.SW_ENGINEER not in auth.roles:
+            # check that the user is the owner of the review or has SW_ENGINEER role
+            if (
+                existing.reviewer_id != auth.user_id
+                and Role.SW_ENGINEER not in auth.roles
+            ):
                 logger.warning(
                     "User %s attempted to update review %s owned by %s",
                     auth.user_id,

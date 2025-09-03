@@ -163,36 +163,47 @@ class TestGetReviewAPI:
         data = response.json()
         assert data["review_id"] == review_id
 
+    @mock.patch(
+        "ska_oso_services.pht.api.reviews.get_latest_entity_by_id", autospec=True
+    )
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
-    def test_get_review_list_success(self, mock_oda, client):
+    def test_get_review_list_success(self, mock_oda, mock_get_latest, client):
         """
         Check if the get_reviews_for_user returns reviews correctly.
         """
         review_objs = [TestDataFactory.reviews(), TestDataFactory.reviews()]
+
         uow_mock = mock.MagicMock()
         uow_mock.rvws.query.return_value = review_objs
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        user_id = "DefaultUser"
-        response = client.get(f"{REVIEWS_API_URL}/users/{user_id}/reviews")
+        mock_get_latest.return_value = review_objs
+
+        response = client.get(f"{REVIEWS_API_URL}/users/reviews")
+
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(review_objs)
 
+    @mock.patch(
+        "ska_oso_services.pht.api.reviews.get_latest_entity_by_id", autospec=True
+    )
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
-    def test_get_review_list_none(self, mock_oda, client):
+    def test_get_review_list_none(self, mock_oda, mock_get_latest, client):
         """
         Should return empty list if no reviews are found.
         """
         uow_mock = mock.MagicMock()
-        uow_mock.rvws.query.return_value = []
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        user_id = "user123"
-        response = client.get(f"{REVIEWS_API_URL}/users/{user_id}/reviews")
+        mock_get_latest.return_value = []
+
+        response = client.get(f"{REVIEWS_API_URL}/users/reviews")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
+
+        mock_get_latest.assert_called_once()
 
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_review_put_success(self, mock_uow, client):
