@@ -166,6 +166,17 @@ def update_review(
             raise NotFoundError(detail="Review not found: {review_id}")
 
         try:
+            #check that the user is the owner of the review or has SW_ENGINEER role
+            if existing.reviewer_id != auth.user_id and Role.SW_ENGINEER not in auth.roles:
+                logger.warning(
+                    "User %s attempted to update review %s owned by %s",
+                    auth.user_id,
+                    review_id,
+                    existing.reviewer_id,
+                )
+                raise BadRequestError(
+                    detail="You do not have permission to update this review."
+                )
             updated_review = uow.rvws.add(
                 review, auth.user_id
             )  # Add is used for update
