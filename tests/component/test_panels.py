@@ -66,7 +66,6 @@ def test_auto_create_category_panels(authrequests):
         json=payload,
         headers={"Content-Type": "application/json"},
     )
-    print(response)
 
     assert response.status_code == HTTPStatus.OK
     result = response.json()

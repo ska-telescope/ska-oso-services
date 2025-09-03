@@ -8,7 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 * Allows multiple technical reviews creation for a panel
-* Adds the created by for panels
+* Adds the `created_by` for panels
 
 4.0.3
 ***********
