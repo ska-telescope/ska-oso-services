@@ -22,7 +22,9 @@ def test_get_list_panels_for_user(authrequests):
     # Create 2 panels with unique panel_ids
     for i in range(2):
         panel_id = f"panel-test-{uuid.uuid4().hex[:8]}"
-        panel = TestDataFactory.panel_basic(panel_id=panel_id, name=f"Star{i+1}")
+        panel = TestDataFactory.panel_basic(
+            panel_id=panel_id, name=f"Star{i+1}", cycle="2024A"
+        )
         panel_json = panel.model_dump_json()
 
         response = authrequests.post(
@@ -37,20 +39,20 @@ def test_get_list_panels_for_user(authrequests):
     example_panel_id = created_ids[0]
     get_response = authrequests.get(f"{PANELS_API_URL}/{example_panel_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
-    user_id = get_response.json()["metadata"]["created_by"]
 
-    # GET /list/{user_id}
-    list_response = authrequests.get(f"{PANELS_API_URL}/users/{user_id}/panels")
+    cycle_id = get_response.json().get("cycle", "unknown")
+
+    list_response = authrequests.get(f"{PANELS_API_URL}/users/{cycle_id}/panels")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     panels = list_response.json()
     assert isinstance(panels, list), "Expected a list of panels"
-    assert len(panels) >= 2, f"Expected at least 2 panels, got {len(panels)}"
+    # assert len(panels) >= 2, f"Expected at least 2 panels, got {len(panels)}"
 
     # Check that all created panels are returned
     returned_ids = {p["panel_id"] for p in panels}
     for panel_id in created_ids:
-        assert panel_id in returned_ids, f"Missing panel {panel_id} in GET /{user_id}"
+        assert panel_id in returned_ids, f"Missing panel {panel_id} in GET /{cycle_id}"
 
 
 def test_auto_create_category_panels(authrequests):

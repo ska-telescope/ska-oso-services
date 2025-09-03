@@ -114,11 +114,12 @@ def get_reviews_for_user(
     )
     with oda.uow() as uow:
         if is_allowed:
-            Reviews = get_latest_entity_by_id(CustomQuery(), "review_id")
+            rows = uow.rvws.query(CustomQuery())
         else:
             query_param = CustomQuery(reviewer_id=auth.user_id)
-            Reviews = get_latest_entity_by_id(uow.rvws.query(query_param), "review_id")
-        return Reviews
+            rows = uow.rvws.query(query_param)
+        reviews = get_latest_entity_by_id(rows, "review_id") or []
+        return reviews
 
 
 @router.put(
