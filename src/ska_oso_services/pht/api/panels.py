@@ -314,7 +314,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
 
 
 @router.get(
-    "/users/{cycle_id}/panels",
+    "/",
     summary="Get all panels matching the given query parameters",
     dependencies=[
         Permissions(
@@ -323,7 +323,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
     ],
 )
 def get_panels_for_cycle(
-    cycle_id: str,
+
 ) -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
@@ -334,11 +334,11 @@ def get_panels_for_cycle(
     :param cycle_id: identifier of the active cycle
     :return: a tuple of a list of Panel
     """
-    logger.debug("GET PANEL LIST query for cycle: %s", cycle_id)
+    logger.debug("GET PANEL LIST query")
 
     with oda.uow() as uow:
         query_param = CustomQuery()
         panels = get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
 
-        logger.debug("Found %d panels for cycle: %s", len(panels), cycle_id)
+        logger.debug("Found %d panels", len(panels))
         return panels
