@@ -172,6 +172,7 @@ def auto_create_panel(
 
             new_panel = Panel(
                 panel_id=generate_entity_id("panel"),
+                cycle= "SKAO_2027_1",
                 name=name_title,
                 sci_reviewers=science_reviewers,
                 tech_reviewers=technical_reviewers,
@@ -336,7 +337,7 @@ def get_panels_for_cycle(
     logger.debug("GET PANEL LIST query for cycle: %s", cycle_id)
 
     with oda.uow() as uow:
-        query_param = CustomQuery(cycle=cycle_id)
+        query_param = CustomQuery()
         panels = get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
 
         logger.debug("Found %d panels for cycle: %s", len(panels), cycle_id)
