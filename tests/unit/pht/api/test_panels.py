@@ -399,8 +399,7 @@ class TestPanelsAPI:
         uow_mock.panels.query.return_value = panels_objs
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        user_id = "DefaultUser"
-        response = client.get(f"{PANELS_API_URL}/users/{user_id}/panels")
+        response = client.get(f"{PANELS_API_URL}/")
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
         assert len(response.json()) == 1

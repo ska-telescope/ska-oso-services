@@ -172,7 +172,7 @@ def auto_create_panel(
 
             new_panel = Panel(
                 panel_id=generate_entity_id("panel"),
-                cycle= "SKAO_2027_1",
+                cycle="SKAO_2027_1",
                 name=name_title,
                 sci_reviewers=science_reviewers,
                 tech_reviewers=technical_reviewers,
@@ -322,9 +322,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
         )
     ],
 )
-def get_panels_for_cycle(
-
-) -> list[Panel]:
+def get_panels_for_cycle() -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
 

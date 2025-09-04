@@ -40,9 +40,7 @@ def test_get_list_panels_for_user(authrequests):
     get_response = authrequests.get(f"{PANELS_API_URL}/{example_panel_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
-    cycle_id = get_response.json().get("cycle", "unknown")
-
-    list_response = authrequests.get(f"{PANELS_API_URL}/users/{cycle_id}/panels")
+    list_response = authrequests.get(f"{PANELS_API_URL}/")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     panels = list_response.json()
@@ -52,7 +50,7 @@ def test_get_list_panels_for_user(authrequests):
     # Check that all created panels are returned
     returned_ids = {p["panel_id"] for p in panels}
     for panel_id in created_ids:
-        assert panel_id in returned_ids, f"Missing panel {panel_id} in GET /{cycle_id}"
+        assert panel_id in returned_ids, f"Missing panel {panel_id}"
 
 
 def test_auto_create_category_panels(authrequests):
