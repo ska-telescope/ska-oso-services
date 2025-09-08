@@ -263,7 +263,7 @@ def get_proposals_by_status(status: str) -> list[Proposal]:
         if proposals is None:
             return []
 
-        return get_latest_entity_by_id(proposals, "prsl_id")
+        return proposals
 
 
 @router.get(

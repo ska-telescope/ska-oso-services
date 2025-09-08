@@ -749,7 +749,7 @@ class TestGetProposalsByStatus:
         assert len(result) == 1
         assert result[0].prsl_id == "prsl-ska-00002"
         uow_mock.prsls.query.assert_called_once_with(CustomQuery(status="draft"))
-        assert mock_get_latest.call_count == 2
+        assert mock_get_latest.call_count == 1
 
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     @mock.patch("ska_oso_services.pht.api.prsls.get_latest_entity_by_id")
