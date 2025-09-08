@@ -8,7 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 * Allows multiple technical reviews creation for a panel
-* Adds the created by for panels
+* Adds the `created_by` for panels
 * [BREAKING] Updates the `/users/{user_id}/panels` to `/` to return all panels regardless the user
 * [BREAKING] Updates `/users/{user_id}/reviews` to `/users/reviews` to retriev user from token
 
