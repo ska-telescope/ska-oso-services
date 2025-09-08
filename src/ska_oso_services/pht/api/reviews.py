@@ -175,7 +175,8 @@ def update_review(
                 and Role.SW_ENGINEER not in auth.roles
             ):
                 logger.warning(
-                    "User %s attempted to update review %s owned by %s",
+                    "User %s attempted to update review %s owned by %s. "
+                    "Review not updated.",
                     auth.user_id,
                     review_id,
                     existing.reviewer_id,

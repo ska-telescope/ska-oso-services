@@ -117,8 +117,6 @@ def test_get_list_reviews_for_user2(authrequests):
         assert response.status_code == HTTPStatus.OK, response.content
         created_ids.append(response.json())
 
-    print(created_ids)
-
     # Get created_by from one of the created reviews
     example_review_id = created_ids[0]
     get_response = authrequests.get(f"{PHT_URL}/reviews/{example_review_id}")

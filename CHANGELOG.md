@@ -9,6 +9,8 @@ Unreleased
 ***********
 * Allows multiple technical reviews creation for a panel
 * Adds the created by for panels
+* [BREAKING] Updates the `/users/{user_id}/panels` to `/` to return all panels regardless the user
+* [BREAKING] Updates `/users/{user_id}/reviews` to `/users/reviews` to retriev user from token
 
 4.0.3
 ***********

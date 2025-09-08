@@ -322,14 +322,13 @@ def update_panel(panel_id: str, param: Panel) -> str:
         )
     ],
 )
-def get_panels_for_cycle() -> list[Panel]:
+def get_panels() -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
 
     Retrieves the Panels for the given cycle ID from the
     underlying data store, if available
 
-    :param cycle_id: identifier of the active cycle
     :return: a tuple of a list of Panel
     """
     logger.debug("GET PANEL LIST query")
