@@ -14,7 +14,12 @@ from ska_oso_pdm.proposal import (
     ProposalPermissions,
     ProposalRole,
 )
-from ska_oso_pdm.proposal.proposal import ProposalStatus, ProposalNew, ProposalOld
+from ska_oso_pdm.proposal.proposal import (
+    ProposalNew,
+    ProposalOld,
+    ProposalStatus,
+    ProposalUnion,
+)
 from ska_oso_pdm.proposal_management.review import PanelReview
 from starlette.status import HTTP_400_BAD_REQUEST
 
@@ -53,8 +58,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 
-ProposalResponse = Union[ProposalNew,ProposalOld]
-
 
 @router.get(
     "/osd/{cycle}",
@@ -90,7 +93,7 @@ def create_proposal(
             scopes={Scope.PHT_READWRITE},
         ),
     ],
-    proposal: ProposalResponse = Body(
+    proposal: ProposalUnion = Body(
         ...,
         example=EXAMPLE_PROPOSAL,
     ),
@@ -137,7 +140,7 @@ def get_proposals_for_user(
             scopes={Scope.PHT_READ, Scope.ODT_READ},
         ),
     ]
-) -> list[ProposalResponse]:
+) -> list[ProposalUnion]:
     """
     List all proposals accessible to the authenticated user.
 
@@ -185,7 +188,7 @@ def get_proposal(
             scopes={Scope.PHT_READ},
         ),
     ],
-) -> ProposalResponse:
+) -> ProposalUnion:
     """
     Retrieves the latest proposal by prsl_id.
     1.) Check that the authenticated user has the permission to access the proposal.
@@ -212,7 +215,7 @@ def get_proposal(
 @router.post(
     "/batch",
     summary="Retrieve multiple proposals in batch",
-    response_model=list[ProposalResponse],
+    response_model=list[ProposalUnion],
     dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
 )
 def get_proposals_batch(
@@ -240,7 +243,7 @@ def get_proposals_batch(
     summary="Get a list of proposals by status",
     dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
 )
-def get_proposals_by_status(status: str) -> list[ProposalResponse]:
+def get_proposals_by_status(status: str) -> list[ProposalUnion]:
     """
     Function that requests to GET /prsls/status/{status} are mapped to.
 
@@ -294,7 +297,7 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
 )
 def update_proposal(
     prsl_id: str,
-    prsl: ProposalResponse,
+    prsl: ProposalUnion,
     auth: Annotated[
         AuthContext,
         Permissions(
@@ -302,7 +305,7 @@ def update_proposal(
             scopes={Scope.PHT_READWRITE},
         ),
     ],
-) -> ProposalResponse:
+) -> ProposalUnion:
     """
     Updates a proposal in the underlying data store.
 
@@ -381,7 +384,7 @@ def update_proposal(
     summary="Validate a proposal",
     dependencies=[Permissions(roles=[Role.SW_ENGINEER], scopes=[Scope.PHT_READ])],
 )
-def validate_proposal(prsl: ProposalResponse) -> dict:
+def validate_proposal(prsl: ProposalUnion) -> dict:
     """
     Validates a submitted proposal via POST.
 

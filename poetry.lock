@@ -3271,14 +3271,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-oso-pdm"
-version = "21.0.0+dev.c1fca8662"
+version = "21.0.0+dev.c54f3f5a1"
 description = "SKA Project Data Model serialisation library"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_oso_pdm-21.0.0+dev.c1fca8662-py3-none-any.whl", hash = "sha256:10c68e299b0ee36298ff631004f5e7fc30ddf3f21c5d65c3fc0b76e8d134fb44"},
-    {file = "ska_oso_pdm-21.0.0+dev.c1fca8662.tar.gz", hash = "sha256:6f9dfae8af5c48ebe475f4c2f9888254326ee69ca5159174ae0d7225b96c161d"},
+    {file = "ska_oso_pdm-21.0.0+dev.c54f3f5a1-py3-none-any.whl", hash = "sha256:599a9b8ab4f0eae9c7f46c83d2eabc759a966bacb88601b67463e1786ec22568"},
+    {file = "ska_oso_pdm-21.0.0+dev.c54f3f5a1.tar.gz", hash = "sha256:fa67e7732fc7387525648263c8ac7acdabcff0efccc753a5adecb581b42aafb4"},
 ]
 
 [package.dependencies]
@@ -4255,4 +4255,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "aba95f214b721eb88fa0c3ae4c6f6ef00e2124d61d8d7be159992852ce2a68c0"
+content-hash = "645fdbd3a5ebecf38f0ca5b5fdaa883c0a669ce55354d1483e4f4314922f5eec"
