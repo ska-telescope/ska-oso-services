@@ -45,7 +45,7 @@ def test_get_list_panels_for_user(authrequests):
 
     panels = list_response.json()
     assert isinstance(panels, list), "Expected a list of panels"
-    # assert len(panels) >= 2, f"Expected at least 2 panels, got {len(panels)}"
+    assert len(panels) >= 2, f"Expected at least 2 panels, got {len(panels)}"
 
     # Check that all created panels are returned
     returned_ids = {p["panel_id"] for p in panels}
