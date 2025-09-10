@@ -256,7 +256,7 @@ def get_proposals_by_status() -> list[Proposal]:
         list[Proposal]
 
     """
-    logger.debug("GET PROPOSAL status: %s", status)
+    logger.debug("GET PROPOSAL status")
 
     preferred_statuses = [ProposalStatus.UNDER_REVIEW, ProposalStatus.SUBMITTED]
     picked_by_id: OrderedDict[str, Proposal] = OrderedDict()
