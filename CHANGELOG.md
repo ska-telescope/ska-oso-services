@@ -11,6 +11,7 @@ Unreleased
 * Adds the `created_by` for panels
 * [BREAKING] Updates the `/users/{user_id}/panels` to `/` to return all panels regardless the user
 * [BREAKING] Updates `/users/{user_id}/reviews` to `/users/reviews` to retriev user from token
+* [BREAKING] Updates `/status/{status}` to `/filters/reviewable`
 
 4.0.3
 ***********

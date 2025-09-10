@@ -1,5 +1,5 @@
-from collections import OrderedDict
 import logging
+from collections import OrderedDict
 from http import HTTPStatus
 from typing import Annotated
 
@@ -213,7 +213,9 @@ def get_proposal(
     summary="Retrieve multiple proposals in batch",
     response_model=list[Proposal],
     dependencies=[
-        Permissions(roles=[Role.ANY, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])
+        Permissions(
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+        )
     ],
 )
 def get_proposals_batch(
@@ -237,10 +239,12 @@ def get_proposals_batch(
 
 
 @router.get(
-    "/status/submitted",
+    "/filters/reviewable",
     summary="Get a list of proposals by status",
     dependencies=[
-        Permissions(roles=[Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READ])
+        Permissions(
+            roles=[Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READ]
+        )
     ],
 )
 def get_proposals_by_status() -> list[Proposal]:
@@ -264,14 +268,14 @@ def get_proposals_by_status() -> list[Proposal]:
     with oda.uow() as uow:
         for status in preferred_statuses:
             rows = uow.prsls.query(CustomQuery(status=status))
-            for p in rows:
-                # only take first occurrence (latest, thanks to order_by DESC)
-                if p.prsl_id not in picked_by_id:
-                    picked_by_id[p.prsl_id] = p
+            for proposal in rows:
+                # only take latest status per prsl_id
+                if proposal.prsl_id not in picked_by_id:
+                    picked_by_id[proposal.prsl_id] = proposal
 
     proposals = list(picked_by_id.values())
     logger.info(
-        "Retrieved %d proposals with precedence [UNDER_REVIEW > SUBMITTED]",
+        "Retrieved %d proposals with preference of UNDER_REVIEW over SUBMITTED",
         len(proposals),
     )
     return proposals
