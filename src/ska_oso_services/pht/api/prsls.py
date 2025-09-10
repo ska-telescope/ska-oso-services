@@ -237,7 +237,7 @@ def get_proposals_batch(
 
 
 @router.get(
-    "/submitted",
+    "/status/submitted",
     summary="Get a list of proposals by status",
     dependencies=[
         Permissions(roles=[Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READ])
