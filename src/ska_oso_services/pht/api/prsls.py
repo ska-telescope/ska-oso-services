@@ -240,10 +240,10 @@ def get_proposals_batch(
     "/submitted",
     summary="Get a list of proposals by status",
     dependencies=[
-        Permissions(roles=[Role.ANY, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])
+        Permissions(roles=[Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READ])
     ],
 )
-def get_proposals_by_status(status: str) -> list[Proposal]:
+def get_proposals_by_status() -> list[Proposal]:
     """
     Function that requests to GET /prsls/status/{status} are mapped to.
 
