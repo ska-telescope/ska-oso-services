@@ -186,9 +186,10 @@ class TestDataFactory:
         return proposal
 
     @staticmethod
-    def panel_basic(panel_id: str = None, name: str = None) -> Panel:
+    def panel_basic(panel_id: str = None, name: str = None, cycle: str = None) -> Panel:
         data = {
             "panel_id": panel_id,
+            "cycle": cycle,
             "name": name,
             "sci_reviewers": [],
             "tech_reviewers": [],

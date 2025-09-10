@@ -1,5 +1,20 @@
 .. _prsl:
 
+
+
+Reviews Roles and Permission Matrix 
+====================================
+
+The diagram below shows the basic workflow for reviews permissions implementation. It highlights which roles have access to specific actions GET/PUT.
+
+.. image:: diagrams/reviews_permissions.svg
+   :width: 800
+   :alt: Review Permission Workflow
+
+
+
+
+
 Sequence diagrams for PPT endpoints
 ====================================
 

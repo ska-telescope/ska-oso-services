@@ -1,8 +1,10 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter
+from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
-from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
+from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm import PanelReview
 
 from ska_oso_services.common import oda
@@ -19,17 +21,17 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/reviews", tags=["PMT API - Reviews"])
 
 
-@router.post(
-    "/create",
-    summary="Create a new Review",
-    dependencies=[
+@router.post("/create", summary="Create a new Review")
+def create_review(
+    reviews: PanelReview,
+    auth: Annotated[
+        AuthContext,
         Permissions(
-            roles=[Role.ANY, Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN],
-            scopes=[Scope.PHT_READWRITE],
-        )
+            roles={Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN},
+            scopes={Scope.PHT_READWRITE},
+        ),
     ],
-)
-def create_review(reviews: PanelReview) -> str:
+) -> str:
     """
     Creates a new Review in the ODA
     """
@@ -51,7 +53,7 @@ def create_review(reviews: PanelReview) -> str:
 
             if existing_rvw and existing_rvw.metadata.version == 1:
                 return existing_rvw.review_id
-            created_review = uow.rvws.add(reviews)
+            created_review = uow.rvws.add(reviews, auth.user_id)
             uow.commit()
         return created_review.review_id
     except ValueError as err:
@@ -70,7 +72,6 @@ def create_review(reviews: PanelReview) -> str:
                 Role.SW_ENGINEER,
                 Role.OPS_REVIEWER_SCIENCE,
                 Role.OPS_REVIEWER_TECHNICAL,
-                Role.OPS_PROPOSAL_ADMIN,
             ],
             scopes=[Scope.PHT_READ],
         )
@@ -85,49 +86,61 @@ def get_review(review_id: str) -> PanelReview:
 
 
 @router.get(
-    "/users/{user_id}/reviews",
+    "/users/reviews",
     summary="Get a list of Reviews created by a user",
-    dependencies=[
+)
+def get_reviews_for_user(
+    auth: Annotated[
+        AuthContext,
         Permissions(
-            roles=[
+            roles={
                 Role.SW_ENGINEER,
+                Role.OPS_PROPOSAL_ADMIN,
                 Role.OPS_REVIEWER_SCIENCE,
                 Role.OPS_REVIEWER_TECHNICAL,
-            ],
-            scopes=[Scope.PHT_READ],
-        )
+            },
+            scopes={Scope.PHT_READ},
+        ),
     ],
-)
-def get_reviews_for_user(user_id: str) -> list[PanelReview]:
+) -> list[PanelReview]:
     """
     Retrieves the Reviews for the given user ID from the
     underlying data store, if available
     """
 
-    logger.debug("GET Review LIST query for the user: %s", user_id)
-
+    logger.debug("GET Review LIST query for the user: %s", auth.user_id)
+    is_allowed = (Role.SW_ENGINEER in auth.roles) or (
+        Role.OPS_PROPOSAL_ADMIN in auth.roles
+    )
     with oda.uow() as uow:
-        query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        Reviews = uow.rvws.query(query_param)
-        return Reviews
+        if is_allowed:
+            rows = uow.rvws.query(CustomQuery())
+        else:
+            query_param = CustomQuery(reviewer_id=auth.user_id)
+            rows = uow.rvws.query(query_param)
+        reviews = get_latest_entity_by_id(rows, "review_id") or []
+        return reviews
 
 
 @router.put(
     "/{review_id}",
     summary="Update an existing Review",
-    dependencies=[
+)
+def update_review(
+    review_id: str,
+    review: PanelReview,
+    auth: Annotated[
+        AuthContext,
         Permissions(
-            roles=[
+            roles={
                 Role.SW_ENGINEER,
                 Role.OPS_REVIEWER_SCIENCE,
                 Role.OPS_REVIEWER_TECHNICAL,
-                Role.OPS_PROPOSAL_ADMIN,
-            ],
-            scopes=[Scope.PHT_READWRITE],
-        )
+            },
+            scopes={Scope.PHT_READWRITE},
+        ),
     ],
-)
-def update_review(review_id: str, review: PanelReview) -> PanelReview:
+) -> PanelReview:
     """
     Updates a Review in the underlying data store.
 
@@ -156,7 +169,24 @@ def update_review(review_id: str, review: PanelReview) -> PanelReview:
             raise NotFoundError(detail="Review not found: {review_id}")
 
         try:
-            updated_review = uow.rvws.add(review)  # Add is used for update
+            # check that the user is the owner of the review or has SW_ENGINEER role
+            if (
+                existing.reviewer_id != auth.user_id
+                and Role.SW_ENGINEER not in auth.roles
+            ):
+                logger.warning(
+                    "User %s attempted to update review %s owned by %s. "
+                    "Review not updated.",
+                    auth.user_id,
+                    review_id,
+                    existing.reviewer_id,
+                )
+                raise BadRequestError(
+                    detail="You do not have permission to update this review."
+                )
+            updated_review = uow.rvws.add(
+                review, auth.user_id
+            )  # Add is used for update
             uow.commit()
             logger.info("Review %s updated successfully", review_id)
             return updated_review

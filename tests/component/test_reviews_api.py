@@ -97,7 +97,7 @@ def test_get_list_reviews_for_user(authrequests):
     Integration test:
     - Create multiple reviews
     - Fetch created_by from one
-    - Use GET /list/{user_id} to retrieve them
+    - Use GET /users/reviews to retrieve them
     - Ensure all created reviews are returned
     """
 
@@ -106,7 +106,7 @@ def test_get_list_reviews_for_user(authrequests):
     # Create 2 reviews with unique review_ids
     for _ in range(2):
         prsl_id = f"prsl-test-{uuid.uuid4().hex[:8]}"
-        review = TestDataFactory.reviews(prsl_id=prsl_id)
+        review = TestDataFactory.reviews(prsl_id=prsl_id, reviewer_id="test_user")
         review_json = review.model_dump_json()
 
         response = authrequests.post(
@@ -121,10 +121,9 @@ def test_get_list_reviews_for_user(authrequests):
     example_review_id = created_ids[0]
     get_response = authrequests.get(f"{PHT_URL}/reviews/{example_review_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
-    user_id = get_response.json()["metadata"]["created_by"]
 
     # GET /list/{user_id}
-    list_response = authrequests.get(f"{PHT_URL}/reviews/users/{user_id}/reviews")
+    list_response = authrequests.get(f"{PHT_URL}/reviews/users/reviews")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     reviews = list_response.json()
@@ -136,4 +135,4 @@ def test_get_list_reviews_for_user(authrequests):
     for review_id in created_ids:
         assert (
             review_id in returned_ids
-        ), f"Missing proposal {review_id} in GET /users/{user_id}/reviews"
+        ), f"Missing proposal {review_id} in GET /users/reviews"

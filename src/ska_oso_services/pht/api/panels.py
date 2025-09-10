@@ -4,7 +4,7 @@ from typing import Annotated, Union
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_db_oda.persistence.domain.query import CustomQuery, MatchType, UserQuery
+from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
 
@@ -172,6 +172,7 @@ def auto_create_panel(
 
             new_panel = Panel(
                 panel_id=generate_entity_id("panel"),
+                cycle="SKAO_2027_1",
                 name=name_title,
                 sci_reviewers=science_reviewers,
                 tech_reviewers=technical_reviewers,
@@ -270,8 +271,8 @@ def update_panel(panel_id: str, param: Panel) -> str:
 
     with oda.uow() as uow:
         proposal_ids = [
-            p if isinstance(p, str) else getattr(p, "prsl_id")
-            for p in (param.proposals or [])
+            proposal if isinstance(proposal, str) else getattr(proposal, "prsl_id")
+            for proposal in (param.proposals or [])
         ]
         updated_review_ids: list[str] = []
 
@@ -302,6 +303,18 @@ def update_panel(panel_id: str, param: Panel) -> str:
                         proposal_id=prsl_id,
                     )
                     updated_review_ids.append(rvw_ids)
+        # TODO: Check if proposals are already assigned to other panels in next MR
+        # for prsl_id in proposal_ids:
+        #     query_param = CustomQuery(prsl_id=prsl_id)
+        #     assigned_proposal =
+        # get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
+        #     existing_panel = assigned_proposal[0] if assigned_proposal else None
+
+        #     if existing_panel and existing_panel.panel_id != panel_id:
+        #         raise UnprocessableEntityError(
+        #             detail=f"Proposal '{prsl_id}' is already
+        # assigned to panel '{existing_panel.panel_id}'."
+        #         )
 
         # Persist the panel
         panel = uow.panels.add(param)
@@ -313,7 +326,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
 
 
 @router.get(
-    "/users/{user_id}/panels",
+    "/",
     summary="Get all panels matching the given query parameters",
     dependencies=[
         Permissions(
@@ -321,24 +334,20 @@ def update_panel(panel_id: str, param: Panel) -> str:
         )
     ],
 )
-def get_panels_for_user(
-    user_id: str,
-) -> list[Panel]:
+def get_panels() -> list[Panel]:
     """
     Function that requests to GET /panels are mapped to
 
-    Retrieves the Panels for the given user ID from the
+    Retrieves the Panels for the given cycle ID from the
     underlying data store, if available
 
-    :param user_id: identifier of the Panel
     :return: a tuple of a list of Panel
     """
-    # TODO: Agree on path name and fix list in path - also in proposals  Tonye
-    logger.debug("GET PANEL LIST query for the user: %s", user_id)
+    logger.debug("GET PANEL LIST query")
 
     with oda.uow() as uow:
-        query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
+        query_param = CustomQuery()
         panels = get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
 
-        logger.debug("Found %d panels for user: %s", len(panels), user_id)
+        logger.debug("Found %d panels", len(panels))
         return panels
