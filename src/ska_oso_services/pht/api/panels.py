@@ -42,7 +42,7 @@ def create_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -71,7 +71,7 @@ def auto_create_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -224,7 +224,7 @@ def auto_create_panel(
     summary="Retrieve an existing panel by panel_id",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
         )
     ],
 )
@@ -251,8 +251,6 @@ def update_panel(panel_id: str, param: Panel) -> str:
     """
     Takes the incoming panel payload and creates the technical review.
 
-    Assumption: Only one technical reviewer for a panel for now. Hence,
-    only one technical review for each proposal in a panel is needed.
     Note: In the future, if needed, check for new proposals added to the panel
     and handle the status accordingly. This could be due to conflicts and
     proposals being moved around.
@@ -334,7 +332,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
     summary="Get all panels matching the given query parameters",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
         )
     ],
 )
