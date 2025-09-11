@@ -11,6 +11,7 @@ from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import UnprocessableEntityError
+from ska_oso_services.pht.models.domain import PrslRole
 from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateResponse
 from ska_oso_services.pht.service.panel_operations import (
     build_panel_response,
@@ -238,7 +239,7 @@ def get_panel_by_id(panel_id: str) -> Panel:
     summary="Update a panel",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN],
             scopes=[Scope.PHT_READWRITE],
         )
     ],
