@@ -28,7 +28,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.common.osdmapper import get_osd_data
-from ska_oso_services.pht.models.domain import OsdDataModel
+from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
@@ -132,7 +132,8 @@ def create_proposal(
     summary="Get a list of proposals by status",
     dependencies=[
         Permissions(
-            roles=[Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READ]
+            roles=[Role.SW_ENGINEER, PrslRole.OPS_PROPOSAL_ADMIN],
+            scopes=[Scope.PHT_READ],
         )
     ],
 )
@@ -257,7 +258,8 @@ def get_proposal(
     response_model=list[Proposal],
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READ],
         )
     ],
 )
@@ -286,7 +288,8 @@ def get_proposals_batch(
     summary="Get all reviews for a particular proposal",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READ],
         )
     ],
 )

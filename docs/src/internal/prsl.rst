@@ -2,8 +2,13 @@
 
 
 
-Reviews Roles and Permission Matrix 
-====================================
+Proposals Endpoints, Roles and Permission Matrix 
+================================================
+
+
+
+Reviews Endpoints, Roles and Permission Matrix 
+===============================================
 
 The diagram below shows the basic workflow for reviews permissions implementation. It highlights which roles have access to specific actions GET/PUT.
 

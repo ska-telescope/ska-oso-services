@@ -14,6 +14,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.pht.models.domain import PrslRole
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ def create_review(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN},
+            roles={Role.SW_ENGINEER, PrslRole.OPS_PROPOSAL_ADMIN},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -95,7 +96,7 @@ def get_reviews_for_user(
         Permissions(
             roles={
                 Role.SW_ENGINEER,
-                Role.OPS_PROPOSAL_ADMIN,
+                PrslRole.OPS_PROPOSAL_ADMIN,
                 Role.OPS_REVIEWER_SCIENCE,
                 Role.OPS_REVIEWER_TECHNICAL,
             },
@@ -110,7 +111,7 @@ def get_reviews_for_user(
 
     logger.debug("GET Review LIST query for the user: %s", auth.user_id)
     is_allowed = (Role.SW_ENGINEER in auth.roles) or (
-        Role.OPS_PROPOSAL_ADMIN in auth.roles
+        PrslRole.OPS_PROPOSAL_ADMIN in auth.roles
     )
     with oda.uow() as uow:
         if is_allowed:
