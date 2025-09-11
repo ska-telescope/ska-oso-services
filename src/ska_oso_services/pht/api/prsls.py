@@ -127,8 +127,6 @@ def create_proposal(
         ) from err
 
 
-
-
 @router.get(
     "/reviewable",
     summary="Get a list of proposals by status",
@@ -180,7 +178,7 @@ def get_proposals_for_user(
             roles={Role.ANY, Role.SW_ENGINEER},
             scopes={Scope.PHT_READ, Scope.ODT_READ},
         ),
-    ]
+    ],
 ) -> list[Proposal]:
     """
     List all proposals accessible to the authenticated user.
@@ -281,9 +279,6 @@ def get_proposals_batch(
             else:
                 logger.warning("Proposal not found: %s", prsl_id)
     return proposals
-
-
-
 
 
 @router.get(
