@@ -10,9 +10,9 @@ from unittest import mock
 import pytest
 from ska_aaa_authhelpers.test_helpers import TEST_USER
 from ska_db_oda.persistence.domain.errors import ODANotFound
+from ska_oso_pdm.proposal.proposal import ProposalStatus
 
 from ska_oso_services.odt.api.prsls import ProposalProjectDetails
-from ska_oso_pdm.proposal.proposal import ProposalStatus
 from tests.unit.conftest import ODT_BASE_API_URL
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
@@ -250,7 +250,9 @@ class TestProposalAndProjectView:
     @mock.patch("ska_oso_services.odt.api.prsls.oda.uow")
     def test_does_not_return_draft_proposals(self, mock_uow, client):
         uow_mock = mock.MagicMock()
-        proposal_with_prj = TestDataFactory.complete_proposal(status=ProposalStatus.SUBMITTED)
+        proposal_with_prj = TestDataFactory.complete_proposal(
+            status=ProposalStatus.SUBMITTED
+        )
         proposal_with_prj.prsl_id = "prp-test-id"
         proposal_draft = TestDataFactory.proposal()
         uow_mock.prsls.query.return_value = [proposal_with_prj, proposal_draft]
