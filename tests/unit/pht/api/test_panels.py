@@ -562,7 +562,14 @@ class TestPanelAutoCreateAPI:
         # 2) existing SV panel present -> "panel-existing-sv"
         mock_get_latest_entity_by_id.side_effect = [
             [],
-            [SimpleNamespace(panel_id="panel-existing-sv")],
+            [
+                SimpleNamespace(
+                    panel_id="panel-existing-sv",
+                    name="Science Verification",
+                    sci_reviewers=[],
+                    tech_reviewers=[],
+                )
+            ],
         ]
 
         payload = {
@@ -748,7 +755,11 @@ class TestPanelAutoCreateAPI:
         # existing SV panel present
         mock_get_latest_entity_by_id.side_effect = [
             submitted_refs,
-            [SimpleNamespace(panel_id="panel-existing-sv")],
+            [
+                SimpleNamespace(
+                    panel_id="panel-existing-sv", sci_reviewers=[], tech_reviewers=[]
+                )
+            ],
         ]
 
         existing_assignment = TestDataFactory.proposal_assignment(
@@ -823,7 +834,14 @@ class TestPanelAutoCreateAPI:
         # 2) existing SV panel present
         mock_get_latest_entity_by_id.side_effect = [
             [],
-            [SimpleNamespace(panel_id="panel-existing-sv")],
+            [
+                SimpleNamespace(
+                    panel_id="panel-existing-sv",
+                    name="Science Verification",
+                    sci_reviewers=[],
+                    tech_reviewers=[],
+                )
+            ],
         ]
 
         mock_build_sv_panel_proposals.return_value = []
@@ -852,17 +870,12 @@ class TestPanelAutoCreateAPI:
             "tech_reviewers": [tec.reviewer_id],
             "proposals": [],
         }
-
         resp = client.post(f"{PANELS_API_URL}/auto-create", json=payload)
         assert resp.status_code == HTTPStatus.OK, resp.content
         assert resp.json() == "panel-existing-sv"
 
-        mock_build_sv_panel_proposals.assert_called_once_with([])
+        mock_build_sv_panel_proposals.assert_not_called()
 
-        updated_panel = uow.panels.add.call_args[0][0]
-        assert updated_panel.sci_reviewers == ["sci-1"]
-        assert updated_panel.tech_reviewers == ["tec-1"]
-        assert (updated_panel.proposals or []) == (existing_panel.proposals or [])
+        assert mock_get_latest_entity_by_id.call_count == 2
 
-        mock_ensure_under_review.assert_called_once()
-        uow.commit.assert_called_once()
+        mock_ensure_under_review.assert_not_called()

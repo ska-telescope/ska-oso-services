@@ -6,7 +6,6 @@ from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm import PanelReview
-from ska_oso_services.pht.models.domain import PrslRole
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -15,6 +14,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.pht.models.domain import PrslRole
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,6 @@ for submission and creation processes.
 """
 
 import uuid
-from typing import Any, Optional
 
 from ska_oso_services.common.error_handling import DuplicateError
 
@@ -29,7 +28,8 @@ def _get_attr_or_key(obj, key, default=None):
     return getattr(obj, key, default)
 
 
-# def get_latest_entity_by_id(entities: Optional[list[Any]], entity_id: str) -> list[Any]:
+# def get_latest_entity_by_id(entities: Optional[list[Any]],
+# entity_id: str) -> list[Any]:
 #     """
 #     Returns the latest version of each entity based on a unique identifier.
 #     Works for dicts and objects.
@@ -54,9 +54,10 @@ def _get_attr_or_key(obj, key, default=None):
 
 #     return list(latest.values())
 
+
 def get_latest_entity_by_id(items, id_attr):
     latest = {}
-    for e in items:  
+    for e in items:
         k = getattr(e, id_attr, None)
         if k is None:
             continue
