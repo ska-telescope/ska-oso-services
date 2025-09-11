@@ -272,8 +272,8 @@ def update_panel(panel_id: str, param: Panel) -> str:
 
     with oda.uow() as uow:
         proposal_ids = [
-            p if isinstance(p, str) else getattr(p, "prsl_id")
-            for p in (param.proposals or [])
+            proposal if isinstance(proposal, str) else getattr(proposal, "prsl_id")
+            for proposal in (param.proposals or [])
         ]
         updated_review_ids: list[str] = []
 
@@ -304,6 +304,18 @@ def update_panel(panel_id: str, param: Panel) -> str:
                         proposal_id=prsl_id,
                     )
                     updated_review_ids.append(rvw_ids)
+        # TODO: Check if proposals are already assigned to other panels in next MR
+        # for prsl_id in proposal_ids:
+        #     query_param = CustomQuery(prsl_id=prsl_id)
+        #     assigned_proposal =
+        # get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
+        #     existing_panel = assigned_proposal[0] if assigned_proposal else None
+
+        #     if existing_panel and existing_panel.panel_id != panel_id:
+        #         raise UnprocessableEntityError(
+        #             detail=f"Proposal '{prsl_id}' is already
+        # assigned to panel '{existing_panel.panel_id}'."
+        #         )
 
         # Persist the panel
         panel = uow.panels.add(param)

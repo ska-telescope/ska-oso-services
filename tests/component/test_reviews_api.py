@@ -92,7 +92,7 @@ def test_review_create_then_put(authrequests):
     assert put_response.json()["metadata"]["version"] == initial_version + 1
 
 
-def test_get_list_reviews_for_user2(authrequests):
+def test_get_list_reviews_for_user(authrequests):
     """
     Integration test:
     - Create multiple reviews

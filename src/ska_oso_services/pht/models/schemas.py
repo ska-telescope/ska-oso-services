@@ -1,4 +1,4 @@
-""" Schemas specific for the proposal handling tool (PHT) """
+"""Schemas specific for the proposal handling tool (PHT)"""
 
 from pydantic import EmailStr, Field
 from ska_oso_pdm.proposal import ProposalAccess, ProposalPermissions, ProposalRole
