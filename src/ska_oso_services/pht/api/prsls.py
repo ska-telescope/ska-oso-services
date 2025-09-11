@@ -20,6 +20,7 @@ from ska_oso_pdm.proposal_management.review import PanelReview
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from ska_oso_services.common import oda
+
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
@@ -28,7 +29,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.common.osdmapper import get_osd_data
-from ska_oso_services.pht.models.domain import OsdDataModel
+from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
@@ -214,7 +215,7 @@ def get_proposal(
     response_model=list[Proposal],
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
         )
     ],
 )
@@ -243,7 +244,7 @@ def get_proposals_batch(
     summary="Get a list of proposals by status",
     dependencies=[
         Permissions(
-            roles=[Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READ]
+            roles=[Role.SW_ENGINEER, PrslRole.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READ]
         )
     ],
 )
@@ -286,7 +287,7 @@ def get_proposals_by_status() -> list[Proposal]:
     summary="Get all reviews for a particular proposal",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
         )
     ],
 )
