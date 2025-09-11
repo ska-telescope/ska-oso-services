@@ -494,7 +494,7 @@ def test_get_proposals_by_status(authrequests):
         created_ids_with_other_status.append(prsl_id)
 
     # Get proposals by 'draft' status
-    status_response = authrequests.get(f"{PHT_URL}/prsls/filters/reviewable")
+    status_response = authrequests.get(f"{PHT_URL}/prsls/reviewable")
     assert status_response.status_code == HTTPStatus.OK, status_response.content
 
     proposals = status_response.json()
