@@ -119,6 +119,8 @@ def auto_create_panel(
 
             if sv_panel_refs:
                 sv_panel_id = sv_panel_refs[0].panel_id
+                science_reviewers = sv_panel_refs[0].sci_reviewers or []
+                technical_reviewers = sv_panel_refs[0].tech_reviewers or []
 
                 # If no submitted proposals and no reviewer update requested,
                 # do nothing.
