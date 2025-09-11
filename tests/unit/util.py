@@ -12,6 +12,7 @@ from ska_db_oda.persistence.domain import set_identifier
 from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal
+from ska_oso_pdm.proposal.proposal import ProposalUnion
 from ska_oso_pdm.proposal.proposal_access import ProposalAccess
 from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import (
@@ -174,7 +175,7 @@ class TestDataFactory:
         return decision
 
     @staticmethod
-    def proposal(prsl_id: str = "prsl-mvp01-20220923-00001") -> Proposal:
+    def proposal(prsl_id: str = "prsl-mvp01-20220923-00001") -> ProposalUnion:
         """
         Load a valid Proposal object from file and override prsl_id,
         """
@@ -299,7 +300,7 @@ class TestDataFactory:
     @staticmethod
     def complete_proposal(
         prsl_id: str = "prsl-mvp01-20220923-00001", status="draft"
-    ) -> Proposal:
+    ) -> ProposalUnion:
         filename = "complete_proposal.json"
         data = load_string_from_file(filename)
         prsl = Proposal.model_validate_json(data)

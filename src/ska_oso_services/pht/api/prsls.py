@@ -103,11 +103,19 @@ def create_proposal(
     """
 
     logger.debug("POST PROPOSAL create")
-
+    print('create \n\n\n\n\n\n\n\n\n\n create')
+    print('again \n\n\n\n\n\n\n\n\n\n again')
+    print('proposal', proposal)
+    print('type(proposal)', type(proposal))
     try:
         # create a proposal level access when the proposal is created
+        logger.debug('proposal', proposal)
+        logger.debug('type(proposal)', type(proposal))
+
         with oda.uow() as uow:
             created_prsl = uow.prsls.add(proposal, auth.user_id)
+            
+            logger.debug('created_prsl', created_prsl)
             create_prslacc = ProposalAccess(
                 access_id=generate_entity_id("prslacc"),
                 prsl_id=created_prsl.prsl_id,

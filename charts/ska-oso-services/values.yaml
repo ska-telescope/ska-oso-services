@@ -32,7 +32,7 @@ rest:
   component: rest
   function: oso-services
   domain: operations
-  logLevel: INFO
+  logLevel: DEBUG #INFO
   enabled: true
   image:
     registry: artefact.skao.int
