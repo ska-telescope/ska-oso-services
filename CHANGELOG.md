@@ -11,6 +11,7 @@ Unreleased
 4.0.4
 ***********
 * Return only the latest version of projects and proposals from `prsls/project-view` endpoint
+* Return only proposals that are not in DRAFT from `prsls/project-view` endpoint
 
 4.0.3
 ***********

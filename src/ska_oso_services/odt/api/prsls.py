@@ -11,6 +11,7 @@ from pydantic import AwareDatetime
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.persistence.domain.query import DateQuery
 from ska_oso_pdm.project import Project
+from ska_oso_pdm.proposal.proposal import ProposalStatus
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -124,6 +125,10 @@ def prj_details() -> list[ProposalProjectDetails]:
         ]
 
         all_proposals = get_latest_entities(uow.prsls.query(date_query), "prsl_id")
+        # Filter out any proposals that are in draft (see SKB-1031 for details)
+        all_proposals = [
+            prsl for prsl in all_proposals if prsl.status != ProposalStatus.DRAFT
+        ]
         # As the Project/Proposal relationship is stored as a foreign key
         # on the Project, to find Proposals without Projects we need to filter
         # in this roundabout way
