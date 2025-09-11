@@ -138,7 +138,7 @@ def create_proposal(
 )
 def get_proposals_by_status() -> list[Proposal]:
     """
-    Function that requests to GET /prsls/filters/reviewable are mapped to.
+    Function that requests to GET /prsls/reviewable are mapped to.
 
     Retrieves the Proposals from the
     underlying data store, if available
