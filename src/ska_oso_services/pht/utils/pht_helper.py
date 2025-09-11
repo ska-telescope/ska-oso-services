@@ -29,29 +29,39 @@ def _get_attr_or_key(obj, key, default=None):
     return getattr(obj, key, default)
 
 
-def get_latest_entity_by_id(entities: Optional[list[Any]], entity_id: str) -> list[Any]:
-    """
-    Returns the latest version of each entity based on a unique identifier.
-    Works for dicts and objects.
-    """
-    if not entities:
-        return []
+# def get_latest_entity_by_id(entities: Optional[list[Any]], entity_id: str) -> list[Any]:
+#     """
+#     Returns the latest version of each entity based on a unique identifier.
+#     Works for dicts and objects.
+#     """
+#     if not entities:
+#         return []
 
+#     latest = {}
+#     for entity in entities:
+#         key = _get_attr_or_key(entity, entity_id)
+#         metadata = _get_attr_or_key(entity, "metadata", {})
+#         version = _get_attr_or_key(metadata, "version", 0)
+#         if key is None:
+#             continue  # skip entities with no key
+#         # Only keep new version
+#         old_version = 0
+#         if key in latest:
+#             old_metadata = _get_attr_or_key(latest[key], "metadata", {})
+#             old_version = _get_attr_or_key(old_metadata, "version", 0)
+#         if key not in latest or version > old_version:
+#             latest[key] = entity
+
+#     return list(latest.values())
+
+def get_latest_entity_by_id(items, id_attr):
     latest = {}
-    for entity in entities:
-        key = _get_attr_or_key(entity, entity_id)
-        metadata = _get_attr_or_key(entity, "metadata", {})
-        version = _get_attr_or_key(metadata, "version", 0)
-        if key is None:
-            continue  # skip entities with no key
-        # Only keep new version
-        old_version = 0
-        if key in latest:
-            old_metadata = _get_attr_or_key(latest[key], "metadata", {})
-            old_version = _get_attr_or_key(old_metadata, "version", 0)
-        if key not in latest or version > old_version:
-            latest[key] = entity
-
+    for e in items:  
+        k = getattr(e, id_attr, None)
+        if k is None:
+            continue
+        if k not in latest or e.metadata.version > latest[k].metadata.version:
+            latest[k] = e
     return list(latest.values())
 
 

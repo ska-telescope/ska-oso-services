@@ -21,7 +21,7 @@ from ska_oso_services.pht.service.panel_operations import (
     group_proposals_by_science_category,
     upsert_panel,
 )
-from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL
+from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
     get_latest_entity_by_id,
@@ -107,14 +107,12 @@ def auto_create_panel(
 
         science_reviewers = request.sci_reviewers or []
         technical_reviewers = request.tech_reviewers or []
-        SV_NAME = "Science Verification"
-        is_science_verification = SV_NAME in (
-            name_title := request.name.strip().title()
-        )
+        name_raw = (request.name or "").strip()
 
-        if is_science_verification:
+        if SV_NAME.casefold() in name_raw.casefold():
+      
             sv_panel_refs = get_latest_entity_by_id(
-                uow.panels.query(CustomQuery(name=name_title)), "panel_id"
+                uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id"
             )
 
             if sv_panel_refs:
@@ -171,6 +169,7 @@ def auto_create_panel(
                 return sv_panel_id
 
             # ----------No existing SV panel, create with assignments----------------
+          
             sv_assignments = build_sv_panel_proposals(submitted_proposal_refs)
 
             new_panel = Panel(
@@ -192,6 +191,8 @@ def auto_create_panel(
             return created_panel.panel_id
 
         # ------------------Science category panels-------------
+        #TODO: In the future, if needed, check for any existing panels with
+        # the same proposals assigned and handle that appropriately.
         proposals_by_category = group_proposals_by_science_category(
             submitted_proposal_refs, PANEL_NAME_POOL
         )
