@@ -239,7 +239,7 @@ def get_panel_by_id(panel_id: str) -> Panel:
     summary="Update a panel",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN],
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READWRITE],
         )
     ],
