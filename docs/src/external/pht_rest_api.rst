@@ -1,6 +1,6 @@
 .. _pht_rest_api:
 
-Proposal Handling Tool REST API
+Proposal Handling Tool (PHT) REST API
 =================================
 
 A SwaggerUI for the latest main branch of the API is available at
@@ -8,8 +8,8 @@ A SwaggerUI for the latest main branch of the API is available at
 https://k8s.stfc.skao.int/integration-ska-oso-services/oso/api/v2/ui/
 
 
-The API provides proposal preparation and management resources, including proposal creation, submission, review, and decision processes. 
-Outlined below endpoints grouped by resources.
+The API provides proposal preparation and management resources that support proposal creation, submission, review, and decision processes. 
+Outlined below are the endpoints grouped by different functionality of the PHT.
 
 * Proposal Preparation:
 
