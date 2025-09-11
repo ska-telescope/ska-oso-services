@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 
+4.0.4
+***********
+* Return only the latest version of projects and proposals from `prsls/project-view` endpoint
+
 4.0.3
 ***********
 * Updates ODA version to 11.5.1 

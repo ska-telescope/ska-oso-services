@@ -2,6 +2,7 @@
 Unit tests for ska_oso_services.api
 """
 
+import copy
 import json
 from http import HTTPStatus
 from unittest import mock
@@ -196,5 +197,51 @@ class TestProposalAndProjectView:
                 prj_last_modified_on=project.metadata.last_modified_on,
                 prj_created_by=project.metadata.created_by,
                 prj_created_on=project.metadata.created_on,
+            ).model_dump_json()
+        )
+
+    @mock.patch("ska_oso_services.odt.api.prsls.oda.uow")
+    def test_only_highest_version_returned_successfully(self, mock_uow, client):
+        uow_mock = mock.MagicMock()
+        proposal_v1 = TestDataFactory.complete_proposal()
+        proposal_v2 = copy.deepcopy(proposal_v1)
+        proposal_v2.metadata.version = 2
+
+        uow_mock.prsls.query.return_value = [proposal_v1, proposal_v2]
+
+        project_v1 = TestDataFactory.project()
+        project_v2 = copy.deepcopy(project_v1)
+        project_v2.metadata.version = 2
+        uow_mock.prjs.query.return_value = [project_v1, project_v2]
+
+        mock_uow().__enter__.return_value = uow_mock
+
+        resp = client.get(
+            f"{PRSLS_API_URL}/project-view",
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        result = resp.json()
+
+        assert len(result) == 2
+        # Dump to json then load so the datetimes are serialised
+        assert result[0] == json.loads(
+            ProposalProjectDetails(
+                prj_id=project_v2.prj_id,
+                prj_version=2,
+                prsl_id=None,
+                title=project_v2.name,
+                prj_last_modified_by=project_v2.metadata.last_modified_by,
+                prj_last_modified_on=project_v2.metadata.last_modified_on,
+                prj_created_by=project_v2.metadata.created_by,
+                prj_created_on=project_v2.metadata.created_on,
+            ).model_dump_json()
+        )
+        assert result[1] == json.loads(
+            ProposalProjectDetails(
+                prj_id=None,
+                prsl_id=proposal_v2.prsl_id,
+                prsl_version=2,
+                title=proposal_v2.info.title,
             ).model_dump_json()
         )
