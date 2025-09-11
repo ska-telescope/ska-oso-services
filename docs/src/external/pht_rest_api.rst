@@ -1,7 +1,7 @@
 .. _pht_rest_api:
 
 Proposal Handling Tool (PHT) REST API
-=================================
+=====================================
 
 A SwaggerUI for the latest main branch of the API is available at
 
