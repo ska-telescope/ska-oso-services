@@ -542,12 +542,9 @@ def create_delete_pdf_url(filename: str) -> str:
     summary="Retrieve user by email",
     dependencies=[
         Permissions(
-            roles=[
-                Role.SW_ENGINEER,
-                # Role.OPS_PROPOSAL_ADMIN
-            ],
-            scopes=[Scope.PHT_READ],
-        )
+            roles={Role.ANY},
+            scopes={Scope.PHT_READWRITE},
+        ),
     ],
 )
 def get_user_by_email(email: str) -> dict:
