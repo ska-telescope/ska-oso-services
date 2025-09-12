@@ -816,5 +816,5 @@ class TestGetUserEmail:
 
         response = client.get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.json() == {}
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert response.json() == {"detail": f"User not found with email: {email}"}

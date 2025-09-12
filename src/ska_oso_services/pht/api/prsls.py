@@ -577,4 +577,4 @@ def get_user_by_email(email: str) -> dict:
     if result:
         return result[0]
     else:
-        return {}
+        raise NotFoundError(detail=f"User not found with email: {email}")
