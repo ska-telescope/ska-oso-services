@@ -11,6 +11,7 @@ from pydantic import AwareDatetime
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.persistence.domain.query import DateQuery
 from ska_oso_pdm.project import Project
+from ska_oso_pdm.proposal.proposal import ProposalStatus
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -97,8 +98,15 @@ def prj_details() -> list[ProposalProjectDetails]:
             start=datetime.fromisoformat("1970-01-01T00:00:00.000000+00:00"),
         )
 
-        all_projects = uow.prjs.query(date_query)
+        def get_latest_entities(entity_list, id_field):
+            return list(
+                {
+                    getattr(entity, id_field): entity
+                    for entity in sorted(entity_list, key=lambda x: x.metadata.version)
+                }.values()
+            )
 
+        all_projects = get_latest_entities(uow.prjs.query(date_query), "prj_id")
         # As we only display the Proposal ID which is already present in the Project,
         # we can handle the Project with and without Proposal cases in the same
         # way here, without having to search through all_proposals for extra fields
@@ -116,7 +124,11 @@ def prj_details() -> list[ProposalProjectDetails]:
             for project in all_projects
         ]
 
-        all_proposals = uow.prsls.query(date_query)
+        all_proposals = get_latest_entities(uow.prsls.query(date_query), "prsl_id")
+        # Filter out any proposals that are in draft (see SKB-1031 for details)
+        all_proposals = [
+            prsl for prsl in all_proposals if prsl.status != ProposalStatus.DRAFT
+        ]
         # As the Project/Proposal relationship is stored as a foreign key
         # on the Project, to find Proposals without Projects we need to filter
         # in this roundabout way

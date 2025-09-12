@@ -13,6 +13,11 @@ Unreleased
 * [BREAKING] Updates `/users/{user_id}/reviews` to `/users/reviews` to retriev user from token
 * [BREAKING] Updates `/status/{status}` to `/reviewable` and no user input
 
+4.0.4
+***********
+* Return only the latest version of projects and proposals from `prsls/project-view` endpoint
+* Return only proposals that are not in DRAFT from `prsls/project-view` endpoint
+
 4.0.3
 ***********
 * Updates ODA version to 11.5.1 
