@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Add `/pht/prsls/member/{email}` to search user by email
 
 5.0.0
 ***********
@@ -14,7 +15,6 @@ Unreleased
 * Adds the `created_by` for panels
 * [BREAKING] Updates the `/users/{user_id}/panels` to `/` to return all panels regardless the user
 * [BREAKING] Updates `/users/{user_id}/reviews` to `/users/reviews` to retriev user from token
-* Add `/pht/prsls/member/{email}` to search user by email
 * [BREAKING] Updates `/status/{status}` to `/reviewable` and no user input
 * Adds PHT specific roles
 
