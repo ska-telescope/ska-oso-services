@@ -121,6 +121,7 @@ package "pht" as pht_pkg {
           + send_email()
           + update_proposal()
           + validate_proposal()
+          + get_user_by_email()
         }
       }
   

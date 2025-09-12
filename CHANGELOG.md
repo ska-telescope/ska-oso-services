@@ -11,6 +11,7 @@ Unreleased
 * Adds the `created_by` for panels
 * [BREAKING] Updates the `/users/{user_id}/panels` to `/` to return all panels regardless the user
 * [BREAKING] Updates `/users/{user_id}/reviews` to `/users/reviews` to retriev user from token
+* Add `/pht/prsls/member/{email}` to search user by email
 
 4.0.3
 ***********
