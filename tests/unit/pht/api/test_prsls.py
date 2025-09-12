@@ -769,3 +769,36 @@ class TestGetProposalsByStatus:
             CustomQuery(status="non-existent-status")
         )
         mock_get_latest.assert_called_once()
+
+
+EMAIL_TEST_CASES = [
+    (
+        "user@example.com",
+        [{"id": "1", "mail": "user@example.com", "displayName": "User"}],
+        {"id": "1", "mail": "user@example.com", "displayName": "User"},
+    ),
+]
+
+
+class TestGetUserEmail:
+    @pytest.mark.parametrize("email, mock_return, expected_response", EMAIL_TEST_CASES)
+    @mock.patch("ska_oso_services.pht.utils.ms_graph.make_graph_call")
+    def test_get_user_by_email_success(
+        self, mock_make_graph_call, email, mock_return, expected_response, client
+    ):
+        mock_make_graph_call.return_value = mock_return
+
+        response = client.get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.json() == expected_response
+
+    @mock.patch("ska_oso_services.pht.utils.ms_graph.make_graph_call")
+    def test_get_user_by_email_user_not_found(self, mock_make_graph_call, client):
+        email = "no_user@example.com"
+        mock_make_graph_call.return_value = []
+
+        response = client.get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.json() == {}
