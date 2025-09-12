@@ -728,49 +728,65 @@ class TestProposalEmailAPI:
 class TestGetProposalsByStatus:
 
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    @mock.patch("ska_oso_services.pht.api.prsls.get_latest_entity_by_id")
-    def test_get_proposals_by_status_success(self, mock_get_latest, mock_uow):
-        sample_proposal = TestDataFactory.complete_proposal(
-            prsl_id="prsl-ska-00002", status="draft"
+    def test_get_proposals_by_status_success(self, mock_uow):
+        # Arrange: UNDER_REVIEW wins over SUBMITTED for the same prsl_id
+        p_under_review = TestDataFactory.complete_proposal(
+            prsl_id="prsl-ska-00001", status="under review"
         )
-        mock_query_result = [sample_proposal]
+        p_submitted_same = TestDataFactory.complete_proposal(
+            prsl_id="prsl-ska-00001", status="submitted"
+        )
+        p_submitted_other = TestDataFactory.complete_proposal(
+            prsl_id="prsl-ska-00002", status="submitted"
+        )
 
         uow_mock = mock.MagicMock()
-        uow_mock.prsls.query.return_value = mock_query_result
+        # First call (UNDER_REVIEW) returns latest for prsl-00001,
+        # Second call (SUBMITTED) returns one duplicate id and one new id
+        uow_mock.prsls.query.side_effect = [
+            [p_under_review],
+            [p_submitted_other, p_submitted_same],
+        ]
         mock_uow.return_value.__enter__.return_value = uow_mock
 
-        # Call returns raw proposal
-        # Returns filtered/latest
-        mock_get_latest.side_effect = [mock_query_result, mock_query_result]
-
-        result = get_proposals_by_status("draft")
+        result = get_proposals_by_status()
 
         assert isinstance(result, list)
-        assert len(result) == 1
-        assert result[0].prsl_id == "prsl-ska-00002"
-        uow_mock.prsls.query.assert_called_once_with(CustomQuery(status="draft"))
-        assert mock_get_latest.call_count == 1
+        ids = {p.prsl_id for p in result}
+        assert ids == {"prsl-ska-00001", "prsl-ska-00002"}
+        assert result[0].prsl_id == "prsl-ska-00001"
+
+        # ODA was queried twice, in precedence order
+        calls = uow_mock.prsls.query.call_args_list
+        assert len(calls) == 2
+        st1 = getattr(calls[0].args[0], "status", None)
+        st2 = getattr(calls[1].args[0], "status", None)
+
+        assert st1 == "under review"
+        assert st2 == "submitted"
 
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    @mock.patch("ska_oso_services.pht.api.prsls.get_latest_entity_by_id")
-    def test_get_proposals_by_status_empty(self, mock_get_latest, mock_uow):
-        empty_result = []
-
+    def test_get_proposals_by_status_empty(self, mock_uow):
         uow_mock = mock.MagicMock()
-        uow_mock.prsls.query.return_value = empty_result
+        uow_mock.prsls.query.side_effect = [[], []]  # under review, submitted
         mock_uow.return_value.__enter__.return_value = uow_mock
 
-        mock_get_latest.side_effect = [None]
-
-        result = get_proposals_by_status("non-existent-status")
+        result = get_proposals_by_status()
 
         assert result == []
-        uow_mock.prsls.query.assert_called_once_with(
-            CustomQuery(status="non-existent-status")
-        )
-        mock_get_latest.assert_called_once()
 
+        calls = uow_mock.prsls.query.call_args_list
+        assert len(calls) == 2
 
+        st1 = getattr(calls[0].args[0], "status", None)
+        st2 = getattr(calls[1].args[0], "status", None)
+        st1 = getattr(st1, "value", st1)
+        st2 = getattr(st2, "value", st2)
+
+        assert str(st1).lower() == "under review"
+        assert str(st2).lower() == "submitted"
+        
+        
 EMAIL_TEST_CASES = [
     (
         "user@example.com",
@@ -802,3 +818,4 @@ class TestGetUserEmail:
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == {}
+

@@ -12,6 +12,13 @@ Unreleased
 * [BREAKING] Updates the `/users/{user_id}/panels` to `/` to return all panels regardless the user
 * [BREAKING] Updates `/users/{user_id}/reviews` to `/users/reviews` to retriev user from token
 * Add `/pht/prsls/member/{email}` to search user by email
+* [BREAKING] Updates `/status/{status}` to `/reviewable` and no user input
+* Adds PHT specific roles
+
+4.0.4
+***********
+* Return only the latest version of projects and proposals from `prsls/project-view` endpoint
+* Return only proposals that are not in DRAFT from `prsls/project-view` endpoint
 
 4.0.3
 ***********

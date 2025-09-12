@@ -1,4 +1,5 @@
 import logging
+from collections import OrderedDict
 from http import HTTPStatus
 from typing import Annotated
 
@@ -27,7 +28,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.common.osdmapper import get_osd_data
-from ska_oso_services.pht.models.domain import OsdDataModel
+from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
@@ -127,6 +128,50 @@ def create_proposal(
         ) from err
 
 
+@router.get(
+    "/reviewable",
+    summary="Get a list of proposals by status",
+    dependencies=[
+        Permissions(
+            roles=[Role.SW_ENGINEER, PrslRole.OPS_PROPOSAL_ADMIN],
+            scopes=[Scope.PHT_READ],
+        )
+    ],
+)
+def get_proposals_by_status() -> list[Proposal]:
+    """
+    Function that requests to GET /prsls/reviewable are mapped to.
+
+    Retrieves the Proposals from the
+    underlying data store, if available
+        Return proposals, preferring UNDER_REVIEW over SUBMITTED.
+    One latest proposal per prsl_id.
+
+    Returns:
+        list[Proposal]
+
+    """
+    logger.debug("GET PROPOSAL status")
+
+    preferred_statuses = [ProposalStatus.UNDER_REVIEW, ProposalStatus.SUBMITTED]
+    picked_by_id: OrderedDict[str, Proposal] = OrderedDict()
+
+    with oda.uow() as uow:
+        for status in preferred_statuses:
+            rows = uow.prsls.query(CustomQuery(status=status))
+            for proposal in rows:
+                # only take latest status per prsl_id
+                if proposal.prsl_id not in picked_by_id:
+                    picked_by_id[proposal.prsl_id] = proposal
+
+    proposals = list(picked_by_id.values())
+    logger.info(
+        "Retrieved %d proposals with preference of UNDER_REVIEW over SUBMITTED",
+        len(proposals),
+    )
+    return proposals
+
+
 @router.get("/mine", summary="Get a list of proposals the user can access")
 def get_proposals_for_user(
     auth: Annotated[
@@ -135,7 +180,7 @@ def get_proposals_for_user(
             roles={Role.ANY, Role.SW_ENGINEER},
             scopes={Scope.PHT_READ, Scope.ODT_READ},
         ),
-    ]
+    ],
 ) -> list[Proposal]:
     """
     List all proposals accessible to the authenticated user.
@@ -213,7 +258,10 @@ def get_proposal(
     summary="Retrieve multiple proposals in batch",
     response_model=list[Proposal],
     dependencies=[
-        Permissions(roles=[Role.ANY, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])
+        Permissions(
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READ],
+        )
     ],
 )
 def get_proposals_batch(
@@ -237,42 +285,12 @@ def get_proposals_batch(
 
 
 @router.get(
-    "/status/{status}",
-    summary="Get a list of proposals by status",
-    dependencies=[
-        Permissions(roles=[Role.ANY, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])
-    ],
-)
-def get_proposals_by_status(status: str) -> list[Proposal]:
-    """
-    Function that requests to GET /prsls/status/{status} are mapped to.
-
-    Retrieves the Proposals for the given status from the
-    underlying data store, if available
-
-    Returns:
-        list[Proposal]
-
-    """
-    logger.debug("GET PROPOSAL status: %s", status)
-
-    with oda.uow() as uow:
-        query_param = CustomQuery(status=status)
-        proposals = get_latest_entity_by_id(uow.prsls.query(query_param), "prsl_id")
-        logger.info("Proposal retrieved successfully for: %s", status)
-
-        if proposals is None:
-            return []
-
-        return proposals
-
-
-@router.get(
     "/reviews/{prsl_id}",
     summary="Get all reviews for a particular proposal",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READ],
         )
     ],
 )
