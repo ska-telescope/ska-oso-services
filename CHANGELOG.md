@@ -12,6 +12,7 @@ Unreleased
 * [BREAKING] Updates the `/users/{user_id}/panels` to `/` to return all panels regardless the user
 * [BREAKING] Updates `/users/{user_id}/reviews` to `/users/reviews` to retriev user from token
 * [BREAKING] Updates `/status/{status}` to `/reviewable` and no user input
+* Adds PHT specific roles
 
 4.0.4
 ***********

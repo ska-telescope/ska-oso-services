@@ -161,3 +161,4 @@ REVIEWERS = {
 
 ACCESS_ID = "access_id"
 PRSL_ID = "prsl_id"
+SV_NAME = "Science Verification"

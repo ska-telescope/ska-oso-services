@@ -11,6 +11,7 @@ from ska_oso_pdm.proposal_management.panel import Panel
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import UnprocessableEntityError
+from ska_oso_services.pht.models.domain import PrslRole
 from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateResponse
 from ska_oso_services.pht.service.panel_operations import (
     build_panel_response,
@@ -20,7 +21,7 @@ from ska_oso_services.pht.service.panel_operations import (
     group_proposals_by_science_category,
     upsert_panel,
 )
-from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL
+from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
     get_latest_entity_by_id,
@@ -41,7 +42,7 @@ def create_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -70,7 +71,7 @@ def auto_create_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -106,18 +107,18 @@ def auto_create_panel(
 
         science_reviewers = request.sci_reviewers or []
         technical_reviewers = request.tech_reviewers or []
-        SV_NAME = "Science Verification"
-        is_science_verification = SV_NAME in (
-            name_title := request.name.strip().title()
-        )
+        name_raw = (request.name or "").strip()
 
-        if is_science_verification:
+        if SV_NAME.casefold() in name_raw.casefold():
+
             sv_panel_refs = get_latest_entity_by_id(
-                uow.panels.query(CustomQuery(name=name_title)), "panel_id"
+                uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id"
             )
 
             if sv_panel_refs:
                 sv_panel_id = sv_panel_refs[0].panel_id
+                science_reviewers = sv_panel_refs[0].sci_reviewers or []
+                technical_reviewers = sv_panel_refs[0].tech_reviewers or []
 
                 # If no submitted proposals and no reviewer update requested,
                 # do nothing.
@@ -168,12 +169,13 @@ def auto_create_panel(
                 return sv_panel_id
 
             # ----------No existing SV panel, create with assignments----------------
+
             sv_assignments = build_sv_panel_proposals(submitted_proposal_refs)
 
             new_panel = Panel(
                 panel_id=generate_entity_id("panel"),
                 cycle="SKAO_2027_1",
-                name=name_title,
+                name=SV_NAME,
                 sci_reviewers=science_reviewers,
                 tech_reviewers=technical_reviewers,
                 proposals=sv_assignments,
@@ -189,6 +191,8 @@ def auto_create_panel(
             return created_panel.panel_id
 
         # ------------------Science category panels-------------
+        # TODO: In the future, if needed, check for any existing panels with
+        # the same proposals assigned and handle that appropriately.
         proposals_by_category = group_proposals_by_science_category(
             submitted_proposal_refs, PANEL_NAME_POOL
         )
@@ -220,7 +224,8 @@ def auto_create_panel(
     summary="Retrieve an existing panel by panel_id",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READ],
         )
     ],
 )
@@ -238,7 +243,7 @@ def get_panel_by_id(panel_id: str) -> Panel:
     summary="Update a panel",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READWRITE],
         )
     ],
@@ -330,7 +335,8 @@ def update_panel(panel_id: str, param: Panel) -> str:
     summary="Get all panels matching the given query parameters",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ]
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            scopes=[Scope.PHT_READ],
         )
     ],
 )

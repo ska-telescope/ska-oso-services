@@ -12,6 +12,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.pht.models.domain import PrslRole
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ router = APIRouter(prefix="/panel/decision", tags=["PMT API - Panel Decision"])
     summary="Create a new Panel decision for proposals",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READWRITE],
         )
     ],
@@ -59,7 +60,7 @@ def create_panel_decision(decisions: PanelDecision) -> str:
     summary="Retrieve an existing panel decision for proposals",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READ],
         )
     ],
@@ -84,7 +85,7 @@ def get_panel_decision(decision_id: str) -> PanelDecision:
     summary="Get a list of Decisions created by the given user",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READ],
         )
     ],
@@ -108,7 +109,7 @@ def get_panel_decisions_for_user(user_id: str) -> list[PanelDecision]:
     summary="Update an existing Decision",
     dependencies=[
         Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READWRITE],
         )
     ],
