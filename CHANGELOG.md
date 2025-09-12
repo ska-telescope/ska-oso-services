@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Add `/pht/prsls/member/{email}` to search user by email
 
 5.0.0
 ***********
