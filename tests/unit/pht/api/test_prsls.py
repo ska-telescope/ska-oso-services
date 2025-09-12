@@ -785,8 +785,8 @@ class TestGetProposalsByStatus:
 
         assert str(st1).lower() == "under review"
         assert str(st2).lower() == "submitted"
-        
-        
+
+
 EMAIL_TEST_CASES = [
     (
         "user@example.com",
@@ -818,4 +818,3 @@ class TestGetUserEmail:
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == {}
-
