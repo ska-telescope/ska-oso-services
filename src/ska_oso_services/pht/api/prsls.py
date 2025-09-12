@@ -44,6 +44,7 @@ from ska_oso_services.pht.service.s3_bucket import (
     get_aws_client,
 )
 from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
+from ska_oso_services.pht.utils.ms_graph import get_users_by_mail
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
     get_latest_entity_by_id,
@@ -534,3 +535,31 @@ def create_delete_pdf_url(filename: str) -> str:
             status_code=HTTPStatus.BAD_GATEWAY,
             detail="Failed to generate delete URL {client_err.args[0]}",
         ) from client_err
+
+
+@router.get(
+    "/member/{email}",
+    summary="Retrieve user by email",
+    dependencies=[
+        Permissions(
+            roles=[
+                Role.SW_ENGINEER,
+                # Role.OPS_PROPOSAL_ADMIN
+            ],
+            scopes=[Scope.PHT_READ],
+        )
+    ],
+)
+def get_user_by_email(email: str) -> dict:
+    """Returns an MS Entra user by email from MS Graph
+
+    Returns:
+        dict
+    """
+    logger.debug("GET PROPOSAL user by email")
+    result = get_users_by_mail(email)
+
+    if result:
+        return result[0]
+    else:
+        return {}
