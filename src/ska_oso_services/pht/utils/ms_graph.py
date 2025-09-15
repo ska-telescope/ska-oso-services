@@ -3,26 +3,18 @@ from os import getenv
 import msal
 import requests
 
-AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
-
-TENANT_ID = "78887040-bad7-494b-8760-88dcacfb3805"
-CLIENT_ID = "e4d6bb9b-cdd0-46c4-b30a-d045091b501b"
-CLIENT_SECRET = getenv("OSO_CLIENT_SECRET", "OSO_CLIENT_SECRET")
-
-MS_GRAPH_URL = "https://graph.microsoft.com/v1.0"
-
-
-config = {
-    "client_id": CLIENT_ID,
-    "client_secret": CLIENT_SECRET,
-    "authority": f"https://login.microsoftonline.com/{TENANT_ID}",
-    "scope": ["https://graph.microsoft.com/.default"],
-}
+from ska_oso_services.pht.utils.constants import (
+    CLIENT_ID,
+    CLIENT_SECRET,
+    MS_GRAPH_URL,
+    SCOPE,
+    TENANT_ID,
+)
 
 client = msal.ConfidentialClientApplication(
-    config["client_id"],
-    authority=config["authority"],
-    client_credential=config["client_secret"],
+    client_id=CLIENT_ID,
+    authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+    client_credential=CLIENT_SECRET,
 )
 
 
@@ -44,12 +36,12 @@ def make_graph_call(url, pagination=True):
         (collection endpoint).
         Returns an empty list if the request fails or no token is acquired.
     """
-    token_result = client.acquire_token_silent(config["scope"], account=None)
+    token_result = client.acquire_token_silent(SCOPE, account=None)
 
     if token_result:
         print("Access token loaded from cache.")
     else:
-        token_result = client.acquire_token_for_client(scopes=config["scope"])
+        token_result = client.acquire_token_for_client(scopes=SCOPE)
         print("New access token acquired from MS Entra")
 
     if "access_token" in token_result:
