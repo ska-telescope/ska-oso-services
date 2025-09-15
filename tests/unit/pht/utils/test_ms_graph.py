@@ -2,6 +2,7 @@ from unittest import mock
 
 import pytest
 
+from ska_oso_services.pht.utils.constants import MS_GRAPH_URL
 from ska_oso_services.pht.utils.ms_graph import make_graph_call
 
 
@@ -19,7 +20,7 @@ class TestMakeGraphCall:
             "value": [{"id": "1", "name": "Username"}]
         }
 
-        results = make_graph_call("https://graph.microsoft.com/v1.0/users")
+        results = make_graph_call(f"{MS_GRAPH_URL}/users")
 
         assert len(results) == 1
         assert results[0]["name"] == "Username"
@@ -29,7 +30,7 @@ class TestMakeGraphCall:
     def test_pagination(self, mock_get, mock_acquire_token_silent):
         mock_acquire_token_silent.return_value = {"access_token": "mock-token"}
 
-        next_link = "https://graph.microsoft.com/v1.0/users?$skiptoken=abc"
+        next_link = f"{MS_GRAPH_URL}users?$skiptoken=abc"
         mock_get.side_effect = [
             mock.Mock(
                 json=lambda: {
@@ -40,7 +41,7 @@ class TestMakeGraphCall:
             mock.Mock(json=lambda: {"value": [{"id": "2"}]}),
         ]
 
-        results = make_graph_call("https://graph.microsoft.com/v1.0/users")
+        results = make_graph_call(f"{MS_GRAPH_URL}/users")
 
         ids = [r["id"] for r in results]
         assert ids == ["1", "2"]
@@ -55,7 +56,7 @@ class TestMakeGraphCall:
         with pytest.raises(
             RuntimeError, match="Failed to acquire token: invalid_client"
         ):
-            make_graph_call("https://graph.microsoft.com/v1.0/users")
+            make_graph_call(f"{MS_GRAPH_URL}/v1.0/users")
 
     @mock.patch("ska_oso_services.pht.utils.ms_graph.client.acquire_token_silent")
     @mock.patch("ska_oso_services.pht.utils.ms_graph.requests.get")
@@ -64,4 +65,4 @@ class TestMakeGraphCall:
         mock_get.side_effect = Exception("Network error")
 
         with pytest.raises(RuntimeError, match="Error fetching data from Graph API"):
-            make_graph_call("https://graph.microsoft.com/v1.0/users")
+            make_graph_call(f"{MS_GRAPH_URL}v1.0/users")
