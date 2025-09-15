@@ -293,7 +293,7 @@ def ensure_decision_exist_or_create(
         ),
         cycle=param.cycle,
         prsl_id=proposal_id    )
-    created_pnld = uow.rvws.add(new_review)
+    created_pnld = uow.pnlds.add(new_review)
     #logger.info("Creating %s (prsl_id=%s, reviewer=%s)", kind, proposal_id, reviewer_id) # figure out this log for Sarah
     return created_pnld.decision_id
 
