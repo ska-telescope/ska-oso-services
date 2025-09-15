@@ -249,7 +249,7 @@ def get_panel_by_id(panel_id: str) -> Panel:
         )
     ],
 )
-def update_panel(panel_id: str, param: Panel) -> str:
+def update_panel(panel_id: str, param: Panel) -> Panel:
     """
     Takes the incoming panel payload and creates the technical review.
 
