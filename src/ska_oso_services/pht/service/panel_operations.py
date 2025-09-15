@@ -4,7 +4,7 @@ from typing import Iterable
 
 from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_db_oda.persistence.domain.query import CustomQuery
-from ska_oso_pdm import PanelReview
+from ska_oso_pdm import PanelReview, PanelDecision
 from ska_oso_pdm.proposal.proposal import Proposal, ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel, ProposalAssignment
 from ska_oso_pdm.proposal_management.review import (
@@ -265,3 +265,35 @@ def ensure_review_exist_or_create(
     created_rvw = uow.rvws.add(new_review)
     logger.info("Creating %s (prsl_id=%s, reviewer=%s)", kind, proposal_id, reviewer_id)
     return created_rvw.review_id
+
+
+def ensure_decision_exist_or_create(
+    uow, param, proposal_id: str
+) -> str:
+    """
+    Ensure a review of the given kind exists for the given proposal and reviewer.
+    If not, create one with status TO_DO and return its review_id.
+    """
+    query = CustomQuery(prsl_id=proposal_id)
+    existing = get_latest_entity_by_id(uow.pnlds.query(query), "decision_id")
+    existing_pnld = existing[0] if existing else None
+
+    if existing_pnld:
+        logger.debug(
+            "%s already exists (prsl_id=%s)",
+            proposal_id,
+            existing_pnld.decision_id,
+        )
+        return existing_pnld.decision_id
+
+    new_review = PanelDecision(
+        panel_id=param.panel_id,
+        decisin_id=generate_entity_id(
+            "pnld"
+        ),
+        cycle=param.cycle,
+        prsl_id=proposal_id    )
+    created_pnld = uow.rvws.add(new_review)
+    #logger.info("Creating %s (prsl_id=%s, reviewer=%s)", kind, proposal_id, reviewer_id) # figure out this log for Sarah
+    return created_pnld.decision_id
+

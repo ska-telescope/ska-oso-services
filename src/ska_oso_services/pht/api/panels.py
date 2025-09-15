@@ -16,6 +16,7 @@ from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateR
 from ska_oso_services.pht.service.panel_operations import (
     build_panel_response,
     build_sv_panel_proposals,
+    ensure_decision_exist_or_create,
     ensure_review_exist_or_create,
     ensure_submitted_proposals_under_review,
     group_proposals_by_science_category,
@@ -280,8 +281,19 @@ def update_panel(panel_id: str, param: Panel) -> str:
             for proposal in (param.proposals or [])
         ]
         updated_review_ids: list[str] = []
+        updated_decison_ids: list[str] = []
 
-        # Technical Review (only one technical reviewer is expected for now)
+
+        # check if a decision  exist
+        for prsl_id in proposal_ids:
+            pnld_id =  ensure_decision_exist_or_create(
+                        uow,param, prsl_id)
+            updated_decison_ids.append(pnld_id)
+
+        # if it exist, return the decision id
+        # if it does not then create a new decision for each proposal
+
+        # Technical Review for every (technical reviewer × proposal) pair
         if param.tech_reviewers:
             for tech in param.tech_reviewers:
                 tech_reviewer_id = tech.reviewer_id
@@ -327,6 +339,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
     logger.info(
         "Panel %s updated; reviews updated=%d", panel.panel_id, len(updated_review_ids)
     )
+    #TODO: return the updated panel details instead of just the ID
     return panel.panel_id
 
 
