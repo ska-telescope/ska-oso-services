@@ -1,5 +1,3 @@
-from os import getenv
-
 import msal
 import requests
 

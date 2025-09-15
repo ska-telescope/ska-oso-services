@@ -29,11 +29,12 @@ class TestMakeGraphCall:
     def test_pagination(self, mock_get, mock_acquire_token_silent):
         mock_acquire_token_silent.return_value = {"access_token": "mock-token"}
 
+        next_link = "https://graph.microsoft.com/v1.0/users?$skiptoken=abc"
         mock_get.side_effect = [
             mock.Mock(
                 json=lambda: {
                     "value": [{"id": "1"}],
-                    "@odata.nextLink": "https://graph.microsoft.com/v1.0/users?$skiptoken=abc",
+                    "@odata.nextLink": next_link,
                 }
             ),
             mock.Mock(json=lambda: {"value": [{"id": "2"}]}),
