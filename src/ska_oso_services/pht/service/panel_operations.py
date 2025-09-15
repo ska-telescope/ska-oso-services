@@ -288,7 +288,7 @@ def ensure_decision_exist_or_create(
 
     new_review = PanelDecision(
         panel_id=param.panel_id,
-        decisin_id=generate_entity_id(
+        decision_id=generate_entity_id(
             "pnld"
         ),
         cycle=param.cycle,
