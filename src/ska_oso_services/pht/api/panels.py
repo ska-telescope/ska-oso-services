@@ -340,7 +340,7 @@ def update_panel(panel_id: str, param: Panel) -> str:
         "Panel %s updated; reviews updated=%d", panel.panel_id, len(updated_review_ids)
     )
     #TODO: return the updated panel details instead of just the ID
-    return panel.panel_id
+    return panel
 
 
 @router.get(
