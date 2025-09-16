@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -10,7 +11,7 @@ from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.pht.api import panels as panels_api
 from tests.unit.conftest import PHT_BASE_API_URL
-from tests.unit.util import REVIEWERS, TestDataFactory
+from tests.unit.util import REVIEWERS, TestDataFactory, assert_json_is_equal
 
 PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
@@ -42,7 +43,7 @@ class TestPanelsUpdateAPI:
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
     def test_update_panel_success(self, mock_uow, client):
         """
-        Returns the panel_id when body.path IDs match and reviewer exists.
+        Returns the panel object when body.path IDs match and reviewer exists.
         """
         uow_mock = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow_mock
@@ -63,7 +64,7 @@ class TestPanelsUpdateAPI:
         )
 
         assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == panel_id
+        assert_json_is_equal(resp.text, panel_obj.model_dump_json())
         uow_mock.panels.add.assert_called_once()
         uow_mock.commit.assert_called_once()
 
@@ -81,7 +82,7 @@ class TestPanelsUpdateAPI:
         for (proposal, reviewer):
         - create a Technical Review,
         - persist the panel,
-        - return the panel_id.
+        - return the panel object.
         """
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
@@ -116,7 +117,7 @@ class TestPanelsUpdateAPI:
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == panel_body.panel_id
+        assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         # Dedup validation called
         mock_validate.assert_called_once()
@@ -177,10 +178,10 @@ class TestPanelsUpdateAPI:
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == panel_body.panel_id
+        assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         mock_validate.assert_called_once()
-        # Because version==1 exists, helper should not create a new review:
+        # Because version==1 exists, helper should not create a new review: 
         uow.rvws.add.assert_not_called()
         mock_gen_id_ops.assert_not_called()
         uow.panels.add.assert_called_once()
@@ -233,7 +234,7 @@ class TestPanelsUpdateAPI:
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == panel_body.panel_id
+        assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         mock_validate.assert_called_once()
         uow.rvws.add.assert_called_once()
@@ -293,7 +294,7 @@ class TestPanelsUpdateAPI:
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == panel_body.panel_id
+        assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
