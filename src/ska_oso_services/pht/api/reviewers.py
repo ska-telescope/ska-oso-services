@@ -16,14 +16,19 @@ router = APIRouter(tags=["PMT API - Reviewers"])
         )
     ],
 )
-def get_reviewers() -> list:
-    """Returns a list of reviewers from MS Graph
+def get_reviewers() -> dict:
+    """Returns a list of reviewers from MS Graph for science reviewers and technical reviewers
 
     Returns:
-        list[dict]
+        dict: {
+            "sci_reviewers": list[dict],
+            "tech_reviewers": list[dict]
+        }
     """
-    print("sci reviewer", Role.OPS_REVIEWER_SCIENCE)
 
-    result = get_users_by_group_id(Role.OPS_REVIEWER_SCIENCE)
+    sci_reviewers = get_users_by_group_id(Role.OPS_REVIEWER_SCIENCE)
+    tech_reviewers = get_users_by_group_id(Role.OPS_REVIEWER_TECHNICAL)
+
+    result = {"sci_reviewers": sci_reviewers, "tech_reviewers": tech_reviewers}
 
     return result
