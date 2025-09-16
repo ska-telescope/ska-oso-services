@@ -17,7 +17,7 @@ router = APIRouter(tags=["PMT API - Reviewers"])
     ],
 )
 def get_reviewers() -> dict:
-    """Returns a list of reviewers from MS Graph for science reviewers and technical reviewers
+    """Returns a list of science and technical reviewers from MS Graph
 
     Returns:
         dict: {
