@@ -334,7 +334,6 @@ def update_panel(panel_id: str, param: Panel) -> Panel:
     logger.info(
         "Panel %s updated; reviews updated=%d", panel.panel_id, len(updated_review_ids)
     )
-    # TODO: fix tests as we are now returning Panel not id str
     return panel
 
 
