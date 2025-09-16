@@ -283,15 +283,10 @@ def update_panel(panel_id: str, param: Panel) -> Panel:
         updated_review_ids: list[str] = []
         updated_decison_ids: list[str] = []
 
-
-        # check if a decision  exist
+        # Panel Decision for every proposal in the panel
         for prsl_id in proposal_ids:
-            pnld_id =  ensure_decision_exist_or_create(
-                        uow,param, prsl_id)
+            pnld_id = ensure_decision_exist_or_create(uow, param, prsl_id)
             updated_decison_ids.append(pnld_id)
-
-        # if it exist, return the decision id
-        # if it does not then create a new decision for each proposal
 
         # Technical Review for every (technical reviewer × proposal) pair
         if param.tech_reviewers:
@@ -339,7 +334,7 @@ def update_panel(panel_id: str, param: Panel) -> Panel:
     logger.info(
         "Panel %s updated; reviews updated=%d", panel.panel_id, len(updated_review_ids)
     )
-    #TODO: return the updated panel details instead of just the ID
+    # TODO: fix tests as we are now returning Panel not id str
     return panel
 
 
