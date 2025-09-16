@@ -282,8 +282,6 @@ def ensure_decision_exist_or_create(uow, param, proposal_id: str) -> str:
             proposal_id,
             existing_pnld.decision_id,
         )
-        print("Existing:", existing)
-        print("Existing decision:", existing_pnld)
         return existing_pnld.decision_id
 
     new_review = PanelDecision(
