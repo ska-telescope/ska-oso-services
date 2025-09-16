@@ -185,7 +185,7 @@ class TestPanelsUpdateAPI:
         # Because version==1 exists, helper should not create a new review:
         uow.rvws.add.assert_not_called()
         uow.pnlds.add.assert_called_once()
-        mock_gen_id_ops.assert_called_once()  # called once for decision generation, but not called for tech review generation
+        mock_gen_id_ops.assert_called_once()  # called for decision generation, not for tech review
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
@@ -415,7 +415,7 @@ class TestPanelsUpdateAPI:
         mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
         uow.pnlds.add.assert_called_once()
-        mock_gen_id_ops.assert_called_once()  # called once for decision generation, but not called for science review generation
+        mock_gen_id_ops.assert_called_once()  # called for decision generation, not for science review
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
