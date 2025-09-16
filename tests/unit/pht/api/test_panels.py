@@ -146,6 +146,7 @@ class TestPanelsUpdateAPI:
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
+        mock_gen_id_ops.return_value = "pnld-123"
 
         # Ref already indicates version==1 (so helper should skip creation)
         existing_ref = SimpleNamespace(
@@ -181,9 +182,9 @@ class TestPanelsUpdateAPI:
         assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         mock_validate.assert_called_once()
-        # Because version==1 exists, helper should not create a new review: 
+        # Because version==1 exists, helper should not create a new review:
         uow.rvws.add.assert_not_called()
-        mock_gen_id_ops.assert_not_called()
+        mock_gen_id_ops.assert_called_once()  # called once for decision generation, but not called for tech review generation
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
@@ -260,8 +261,10 @@ class TestPanelsUpdateAPI:
     def test_update_panel_skips_creating_science_review_if_already_exists_v1(
         self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
     ):
+
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
+        mock_gen_id_ops.return_value = "pnld-123"
 
         # Ref already indicates metadata.version == 1 → helper should skip creation
         existing_ref = SimpleNamespace(
@@ -298,7 +301,7 @@ class TestPanelsUpdateAPI:
 
         mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
-        mock_gen_id_ops.assert_not_called()
+        mock_gen_id_ops.assert_called_once()  # called once for decision generation, but not called for science review generation
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 

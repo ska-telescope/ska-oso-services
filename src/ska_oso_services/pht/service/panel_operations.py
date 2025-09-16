@@ -269,19 +269,21 @@ def ensure_review_exist_or_create(
 
 def ensure_decision_exist_or_create(uow, param, proposal_id: str) -> str:
     """
-    Ensure a review of the given kind exists for the given proposal and reviewer.
-    If not, create one with status TO_DO and return its review_id.
+    Ensure a decision exists for the given proposal.
+    If not, create one with status TO_DO and return its decision_id.
     """
     query = CustomQuery(prsl_id=proposal_id)
     existing = get_latest_entity_by_id(uow.pnlds.query(query), "decision_id")
     existing_pnld = existing[0] if existing else None
 
-    if existing_pnld:
+    if existing_pnld and hasattr(existing_pnld, "decision_id"):
         logger.debug(
             "%s already exists (prsl_id=%s)",
             proposal_id,
             existing_pnld.decision_id,
         )
+        print("Existing:", existing)
+        print("Existing decision:", existing_pnld)
         return existing_pnld.decision_id
 
     new_review = PanelDecision(
