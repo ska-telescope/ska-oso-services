@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from ska_aaa_authhelpers.roles import Role
 
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.pht.utils.constants import REVIEWERS
+from ska_oso_services.pht.utils.ms_graph import get_users_by_group_id
 
 router = APIRouter(tags=["PMT API - Reviewers"])
 
@@ -16,11 +16,14 @@ router = APIRouter(tags=["PMT API - Reviewers"])
         )
     ],
 )
-def get_reviewers() -> dict:
-    """Returns a mocked list of reviewers
+def get_reviewers() -> list:
+    """Returns a list of reviewers from MS Graph
 
     Returns:
         list[dict]
     """
-    # once aaa is implemented, this will be replaced with a call to the MS graph API
-    return REVIEWERS
+    print("sci reviewer", Role.OPS_REVIEWER_SCIENCE)
+
+    result = get_users_by_group_id(Role.OPS_REVIEWER_SCIENCE)
+
+    return result

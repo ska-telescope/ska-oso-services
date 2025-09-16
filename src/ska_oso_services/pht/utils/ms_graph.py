@@ -77,3 +77,30 @@ def get_users_by_mail(email: str):
     """
     url = f"{MS_GRAPH_URL}/users?$filter=mail eq '{email}'"
     return make_graph_call(url, pagination=False)
+
+
+def get_users_by_group_id(group_id):
+    members_url = f"{MS_GRAPH_URL}/groups/{group_id}/members"
+    members = make_graph_call(members_url, False)
+
+    print("members", members)
+
+    return [
+        member
+        for member in members
+        if member.get("@odata.type") == "#microsoft.graph.user"
+    ]
+
+
+def get_users_by_group_ids(group_ids):
+    all_members = []
+    for group_id in group_ids:
+        members_url = f"{MS_GRAPH_URL}/groups/{group_id}/members"
+        members = make_graph_call(members_url, False)
+        all_members.extend(
+            member
+            for member in members
+            if member.get("@odata.type") == "#microsoft.graph.user"
+        )
+    unique_members = {m["id"]: m for m in all_members}.values()
+    return list(unique_members)
