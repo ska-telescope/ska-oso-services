@@ -77,3 +77,25 @@ def get_users_by_mail(email: str):
     """
     url = f"{MS_GRAPH_URL}/users?$filter=mail eq '{email}'"
     return make_graph_call(url, pagination=False)
+
+
+def get_users_by_group_id(group_id):
+    """
+    Retrieve a list of users from Microsoft Graph by group id.
+
+    Args:
+        group_id (str): The group id of the user to search for.
+
+    Returns:
+        list: A list of user objects matching the group id.
+        Returns an empty list if no users
+        are found or if the API call fails.
+    """
+    members_url = f"{MS_GRAPH_URL}/groups/{group_id}/members"
+    members = make_graph_call(members_url, False)
+
+    return [
+        member
+        for member in members
+        if member.get("@odata.type") == "#microsoft.graph.user"
+    ]
