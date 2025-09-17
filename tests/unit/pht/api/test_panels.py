@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -10,7 +11,7 @@ from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.pht.api import panels as panels_api
 from tests.unit.conftest import PHT_BASE_API_URL
-from tests.unit.util import REVIEWERS, TestDataFactory
+from tests.unit.util import REVIEWERS, TestDataFactory, assert_json_is_equal
 
 PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
@@ -42,7 +43,7 @@ class TestPanelsUpdateAPI:
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
     def test_update_panel_success(self, mock_uow, client):
         """
-        Returns the panel_id when body.path IDs match and reviewer exists.
+        Returns the panel object when body.path IDs match and reviewer exists.
         """
         uow_mock = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow_mock
@@ -63,7 +64,7 @@ class TestPanelsUpdateAPI:
         )
 
         assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == panel_id
+        assert_json_is_equal(resp.text, panel_obj.model_dump_json())
         uow_mock.panels.add.assert_called_once()
         uow_mock.commit.assert_called_once()
 
@@ -81,7 +82,7 @@ class TestPanelsUpdateAPI:
         for (proposal, reviewer):
         - create a Technical Review,
         - persist the panel,
-        - return the panel_id.
+        - return the panel object.
         """
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
@@ -116,7 +117,7 @@ class TestPanelsUpdateAPI:
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == panel_body.panel_id
+        assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         # Dedup validation called
         mock_validate.assert_called_once()
@@ -145,6 +146,7 @@ class TestPanelsUpdateAPI:
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
+        mock_gen_id_ops.return_value = "pnld-123"
 
         # Ref already indicates version==1 (so helper should skip creation)
         existing_ref = SimpleNamespace(
@@ -177,12 +179,125 @@ class TestPanelsUpdateAPI:
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == panel_body.panel_id
+        assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         mock_validate.assert_called_once()
         # Because version==1 exists, helper should not create a new review:
         uow.rvws.add.assert_not_called()
+        uow.pnlds.add.assert_called_once()
+        mock_gen_id_ops.assert_called_once()  # called for decision, not tech review
+        uow.panels.add.assert_called_once()
+        uow.commit.assert_called_once()
+
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.generate_entity_id",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
+        autospec=True,
+    )
+    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_update_panel_skips_creating_decision_if_already_exists(
+        self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
+    ):
+        uow = mock.MagicMock()
+        mock_uow().__enter__.return_value = uow
+
+        # Ref already indicates version==1 (so helper should skip creation)
+        existing_decision_ref = SimpleNamespace(
+            panel_id="panel-existing",
+            decision_id="pnld-001",
+            cycle="science verification",
+            prsl_id="prsl-001",
+            metadata=SimpleNamespace(version=1),
+        )
+        mock_get_latest_ops.return_value = [existing_decision_ref]
+
+        panel_body = TestDataFactory.panel_with_assignment(
+            panel_id="panel-existing",
+            name="Cosmology",
+        )
+
+        uow.panels.add.side_effect = lambda p: p
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{panel_body.panel_id}",
+            data=panel_body.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == HTTPStatus.OK
+        assert_json_is_equal(resp.text, panel_body.model_dump_json())
+
+        mock_validate.assert_called_once()
+        # Because version==1 exists, helper should not create a new review:
+        uow.pnlds.add.assert_not_called()
+        uow.rvws.add.assert_not_called()
         mock_gen_id_ops.assert_not_called()
+        uow.panels.add.assert_called_once()
+        uow.commit.assert_called_once()
+
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.generate_entity_id",
+        autospec=True,
+    )
+    @mock.patch(
+        "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
+        autospec=True,
+    )
+    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    def test_update_panel_creates_decision_and_science_review_when_missing(
+        self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
+    ):
+        uow = mock.MagicMock()
+        mock_uow().__enter__.return_value = uow
+
+        # No existing decision for (proposal)
+        mock_get_latest_ops.return_value = []
+
+        # Deterministic ID for decision
+        mock_gen_id_ops.return_value = "pnld-0001"
+
+        # Repos return passed object (upsert-like)
+        uow.pnlds.add.side_effect = lambda r: r
+        uow.panels.add.side_effect = lambda p: p
+
+        assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        sci = TestDataFactory.reviewer_assignment(
+            reviewer_id="rev-sci-001", assigned_on=assigned_on
+        )
+        prop = TestDataFactory.proposal_assignment(
+            prsl_id="prsl-001", assigned_on=assigned_on
+        )
+        panel_body = TestDataFactory.panel_with_assignment(
+            panel_id="panel-123",
+            name="Cosmology",
+            sci_reviewers=[sci],
+            tech_reviewers=[],
+            proposals=[prop],
+        )
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{panel_body.panel_id}",
+            data=panel_body.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == HTTPStatus.OK
+        assert_json_is_equal(resp.text, panel_body.model_dump_json())
+
+        mock_validate.assert_called_once()
+        uow.rvws.add.assert_called_once()
+        uow.pnlds.add.assert_called_once()
+
+        created = uow.pnlds.add.call_args[0][0]
+        assert created.decision_id == "pnld-0001"
+        assert created.prsl_id == "prsl-001"
+        assert (
+            mock_gen_id_ops.call_count == 2
+        )  # called once for decision generation & once for science review generation
+
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
@@ -233,7 +348,7 @@ class TestPanelsUpdateAPI:
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == panel_body.panel_id
+        assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         mock_validate.assert_called_once()
         uow.rvws.add.assert_called_once()
@@ -259,8 +374,10 @@ class TestPanelsUpdateAPI:
     def test_update_panel_skips_creating_science_review_if_already_exists_v1(
         self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
     ):
+
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
+        mock_gen_id_ops.return_value = "pnld-123"
 
         # Ref already indicates metadata.version == 1 → helper should skip creation
         existing_ref = SimpleNamespace(
@@ -293,11 +410,12 @@ class TestPanelsUpdateAPI:
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == panel_body.panel_id
+        assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
-        mock_gen_id_ops.assert_not_called()
+        uow.pnlds.add.assert_called_once()
+        mock_gen_id_ops.assert_called_once()  # called for decision, not science review
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
