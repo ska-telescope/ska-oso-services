@@ -7,8 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
-* Added `/pht/prsls/member/{email}` to search user by email
-* Updated the put panel endpoint to create proposal decisions.
+* Adds `/pht/prsls/member/{email}` to search user by email
+* Updates the put panel endpoint to create proposal decisions.
 
 5.0.0
 ***********
