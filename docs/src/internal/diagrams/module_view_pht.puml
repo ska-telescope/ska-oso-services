@@ -84,6 +84,7 @@ package "pht" as pht_pkg {
             object ms_graph_items {
                 + make_graph_call()
                 + get_users_by_mail()
+                + get_users_by_group_id()
             }
         }
         package "s3_bucket" <<Rectangle>> {

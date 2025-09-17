@@ -10,7 +10,6 @@ from ska_aaa_authhelpers.roles import Role
 
 from ska_oso_services.pht.api.reviewers import get_reviewers
 from tests.unit.conftest import PHT_BASE_API_URL
-from tests.unit.util import REVIEWERS
 
 REVIEWERS_API_URL = f"{PHT_BASE_API_URL}/reviewers"
 
@@ -64,7 +63,7 @@ class TestGetReviewersEndpoint:
     ):
         mock_make_graph_call.side_effect = [sci_mock, tech_mock]
 
-        response = client.get(f"{PHT_BASE_API_URL}/reviewers")
+        response = client.get(f"{REVIEWERS_API_URL}")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == expected_response
