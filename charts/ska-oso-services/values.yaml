@@ -3,6 +3,8 @@
 # Declare variables to be passed into your templates.
 minikube: true
 
+nameOverride: ~ # This should be set if the chart is being deployed with an alias (e.g. when multiple versions can be deployed)
+
 system: TM-mid
 telescope: SKA-mid
 subsystem: ska-oso-services

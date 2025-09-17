@@ -9,6 +9,7 @@ Unreleased
 ***********
 * Adds `/pht/prsls/member/{email}` to search user by email
 * Updates the put panel endpoint to create proposal decisions.
+* Update ingress rule and add Values.nameOverride so that multiple major versions of the chart can be deployed into the same namespace
 * Updates `/pht/prsls/reviewers` to retrieve users with science/techical reviewer roles
 
 5.0.0

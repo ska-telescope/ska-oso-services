@@ -3,7 +3,11 @@
 Expand the name of the chart.
 */}}
 {{- define "ska-oso-services.name" -}}
+{{- if .Values.nameOverride -}}
+{{- .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -47,4 +51,11 @@ Create chart name and version as used by the chart label.
 {{- define "ska-oso-services.oda-secret-name" -}}
 {{- $name := include "ska-oso-services.name" .}}
 {{- printf "%s-%s-%s" $name "oda-secret" .Release.Name  -}}
+{{- end -}}
+
+{{/*
+Get the major version of the chart release
+*/}}
+{{- define "ska-oso-services.major-version" }}
+{{- with $x := printf "%s" .Chart.Version | split "."}}{{index $x "_0"}}{{end}}
 {{- end -}}

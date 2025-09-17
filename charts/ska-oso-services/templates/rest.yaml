@@ -17,7 +17,7 @@ spec:
   rules:
     - http:
         paths:
-          - path: /{{ .Release.Namespace }}/oso/api
+          - path: /{{ .Release.Namespace }}/oso/api/v{{ template "ska-oso-services.major-version" . }}
             pathType: Prefix
             backend:
               service:
