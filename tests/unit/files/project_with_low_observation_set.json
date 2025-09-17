@@ -63,15 +63,9 @@
                 ]
               },
               "reference_coordinate": {
-                "kind": "equatorial",
-                "ra": "00:24:05.3590",
-                "dec": "-72:04:53.200",
-                "reference_frame": "icrs",
-                "epoch": 2000,
-                "unit": [
-                  "hourangle",
-                  "deg"
-                ]
+                "kind": "icrs",
+                "ra": "16:40:00.0",
+                "dec": "30:00:00.0"
               },
               "radial_velocity": {
                 "quantity": {
@@ -97,15 +91,9 @@
                 ]
               },
               "reference_coordinate": {
-                "kind": "equatorial",
-                "ra": "00:24:05.3590",
-                "dec": "-72:04:53.200",
-                "reference_frame": "icrs",
-                "epoch": 2000,
-                "unit": [
-                  "hourangle",
-                  "deg"
-                ]
+                "kind": "icrs",
+                "ra": "16:40:00.0",
+                "dec": "30:00:00.0"
               },
               "radial_velocity": {
                 "quantity": {
