@@ -4,13 +4,15 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-
 Unreleased
+***********
+
+5.1.0
 ***********
 * Adds `/pht/prsls/member/{email}` to search user by email
 * Updates the put panel endpoint to create proposal decisions.
 * Update ingress rule and add Values.nameOverride so that multiple major versions of the chart can be deployed into the same namespace
-* Updates `/pht/prsls/reviewers` to retrieve users with science/techical reviewer roles
+* Updates `/pht/prsls/reviewers` to retrieve users with science/technical reviewer roles
 * Update to ODA v11.6.0 which pulls in PDM v22.0.0
 
 5.0.0
