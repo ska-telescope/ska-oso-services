@@ -11,6 +11,7 @@ Unreleased
 * Updates the put panel endpoint to create proposal decisions.
 * Update ingress rule and add Values.nameOverride so that multiple major versions of the chart can be deployed into the same namespace
 * Updates `/pht/prsls/reviewers` to retrieve users with science/techical reviewer roles
+* Update to ODA v11.6.0 which pulls in PDM v22.0.0
 
 5.0.0
 ***********
