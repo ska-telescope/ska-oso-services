@@ -9,6 +9,7 @@ Unreleased
 ***********
 * Adds `/pht/prsls/member/{email}` to search user by email
 * Updates the put panel endpoint to create proposal decisions.
+* Updates `/pht/prsls/reviewers` to retrieve users with science/techical reviewer roles
 
 5.0.0
 ***********
