@@ -13,7 +13,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.models.domain import PrslRole
-from src.ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
