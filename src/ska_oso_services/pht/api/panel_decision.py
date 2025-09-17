@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers.roles import Role
-from ska_db_oda.persistence.domain.query import MatchType, UserQuery
+from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm import PanelDecision
 
 from ska_oso_services.common import oda
@@ -13,6 +13,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.models.domain import PrslRole
+from src.ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ def create_panel_decision(decisions: PanelDecision) -> str:
     summary="Retrieve an existing panel decision for proposals",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER, PrslRole.REVIEW_CHAIR],
             scopes=[Scope.PHT_READ],
         )
     ],
@@ -80,36 +81,13 @@ def get_panel_decision(decision_id: str) -> PanelDecision:
     return decision
 
 
-@router.get(
-    "/users/{user_id}/decisions",
-    summary="Get a list of Decisions created by the given user",
-    dependencies=[
-        Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READ],
-        )
-    ],
-)
-def get_panel_decisions_for_user(user_id: str) -> list[PanelDecision]:
-    """
-    Retrieves the panel Decision for the given user ID from the
-    ODA, if available
-    """
-
-    logger.debug("GET Decision LIST query for the user: %s", user_id)
-
-    with oda.uow() as uow:
-        query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        decisions = uow.pnlds.query(query_param)
-    return decisions
-
 
 @router.put(
     "/{decision_id}",
     summary="Update an existing Decision",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[Role.SW_ENGINEER, PrslRole.OPS_REVIEW_CHAIR],
             scopes=[Scope.PHT_READWRITE],
         )
     ],
@@ -118,6 +96,9 @@ def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDec
     """
     Updates a decision in the ODA.
     """
+    #TODO: Admin can only view but not update the decision
+    # Review Chair can update the decision
+    # Software eng can update the decision
     logger.debug("PUT Decision - Attempting update for Decision_id: %s", decision_id)
 
     # Ensure ID match
@@ -149,3 +130,29 @@ def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDec
             raise BadRequestError(
                 detail="Validation error while saving Decision: {err.args[0]}"
             ) from err
+
+
+
+@router.get(
+    "/",
+    summary="Get a list of Decisions for all proposals",
+    dependencies=[
+        Permissions(
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER, PrslRole.OPS_REVIEW_CHAIR],
+            scopes=[Scope.PHT_READ],
+        )
+    ],
+)
+def get_panel_decisions_for_user() -> list[PanelDecision]:
+    """
+    Retrieves the latest panel Decision for all proposals from the
+    ODA, if available
+    """
+
+    logger.debug("GET Decision LIST query for the user")
+
+    with oda.uow() as uow:
+        decisions = get_latest_entity_by_id(
+                uow.pnlds.query(CustomQuery()), "decision_id"
+            )
+    return decisions
