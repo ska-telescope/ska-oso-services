@@ -61,7 +61,7 @@ def create_panel_decision(decisions: PanelDecision) -> str:
     summary="Retrieve an existing panel decision for proposals",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER, PrslRole.REVIEW_CHAIR],
+            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER, PrslRole.OPS_REVIEW_CHAIR],
             scopes=[Scope.PHT_READ],
         )
     ],
