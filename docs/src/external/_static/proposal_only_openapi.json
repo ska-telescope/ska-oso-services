@@ -5,14 +5,14 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/ska-oso-services/oso/api/v2/pht/prsls/osd/{cycle}": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/osd/{cycle}": {
       "get": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Retrieve OSD data for a given cycle",
-        "description": "This queries the OSD data by cycle id. \n\nThis data is made available for the PHT UI.\n\nReturns:\n    OsdDataModel: The OSD data validated against the defined schema.",
-        "operationId": "get_osd_by_cycle_ska_oso_services_oso_api_v2_pht_prsls_osd__cycle__get",
+        "description": "This queries the OSD data by cycle id.\n\nThis data is made available for the PHT UI.\n\nReturns:\n    OsdDataModel: The OSD data validated against the defined schema.",
+        "operationId": "get_osd_by_cycle_ska_oso_services_oso_api_v5_pht_prsls_osd__cycle__get",
         "parameters": [
           {
             "name": "cycle",
@@ -48,14 +48,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/create": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/create": {
       "post": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Create a new proposal",
         "description": "Creates a new proposal in the ODA.",
-        "operationId": "create_proposal_ska_oso_services_oso_api_v2_pht_prsls_create_post",
+        "operationId": "create_proposal_ska_oso_services_oso_api_v5_pht_prsls_create_post",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -87,25 +87,19 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Proposal",
-                "examples": {
-                  "default": {
-                    "summary": "Example Proposal",
-                    "description": "A minimal example of a proposal entity.",
-                    "value": {
-                      "prsl_id": "prp-ska01-202204-02",
-                      "status": "draft",
-                      "cycle": "5000_2023",
-                      "info": {
-                        "title": "The Milky Way View",
-                        "proposal_type": {
-                          "main_type": "standard_proposal",
-                          "attributes": [
-                            "coordinated_proposal"
-                          ]
-                        }
-                      }
-                    }
+                "$ref": "#/components/schemas/Proposal"
+              },
+              "example": {
+                "prsl_id": "prp-ska01-202204-02",
+                "status": "draft",
+                "cycle": "5000_2023",
+                "info": {
+                  "title": "The Milky Way View",
+                  "proposal_type": {
+                    "main_type": "standard_proposal",
+                    "attributes": [
+                      "coordinated_proposal"
+                    ]
                   }
                 }
               }
@@ -119,7 +113,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Create Proposal Ska Oso Services Oso Api V2 Pht Prsls Create Post"
+                  "title": "Response Create Proposal Ska Oso Services Oso Api V5 Pht Prsls Create Post"
                 }
               }
             }
@@ -137,14 +131,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/mine": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/reviewable": {
       "get": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
-        "summary": "Get a list of proposals the user can access",
-        "description": "List all proposals accessible to the authenticated user.\n\nThe proposals are determined from the underlying data store by:\n1.) Resolving accessible proposal IDs via, list_accessible_proposal_ids,\n2.) Fetching each proposal by ID and \n3.) Returning the proposals as a list (empty if none are found).\n\nReturns:\n    list[Proposal]: Proposals accessible to the current user.",
-        "operationId": "get_proposals_for_user_ska_oso_services_oso_api_v2_pht_prsls_mine_get",
+        "summary": "Get a list of proposals by status",
+        "description": "Function that requests to GET /prsls/reviewable are mapped to.\n\nRetrieves the Proposals from the\nunderlying data store, if available\n    Return proposals, preferring UNDER_REVIEW over SUBMITTED.\nOne latest proposal per prsl_id.\n\nReturns:\n    list[Proposal]",
+        "operationId": "get_proposals_by_status_ska_oso_services_oso_api_v5_pht_prsls_reviewable_get",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -181,7 +175,7 @@
                   "items": {
                     "$ref": "#/components/schemas/Proposal"
                   },
-                  "title": "Response Get Proposals For User Ska Oso Services Oso Api V2 Pht Prsls Mine Get"
+                  "title": "Response Get Proposals By Status Ska Oso Services Oso Api V5 Pht Prsls Reviewable Get"
                 }
               }
             }
@@ -199,14 +193,76 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/{prsl_id}": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/mine": {
+      "get": {
+        "tags": [
+          "PPT API - Proposal Preparation"
+        ],
+        "summary": "Get a list of proposals the user can access",
+        "description": "List all proposals accessible to the authenticated user.\n\nThe proposals are determined from the underlying data store by:\n1.) Resolving accessible proposal IDs via, list_accessible_proposal_ids:\n    1.) This queries the proposal_acces table to see if there is a proposal\n    associated with the user_id.\n    Note: Once a proposal is created, an access is created and once Co-Is are added,\n    access is created as well\n2.) Fetching each proposal by ID and\n3.) Returning the proposals as a list (empty if none are found).\n\nReturns:\n    list[Proposal]: Proposals accessible to the current user.",
+        "operationId": "get_proposals_for_user_ska_oso_services_oso_api_v5_pht_prsls_mine_get",
+        "security": [
+          {
+            "SKAO Entra ID Authentication": []
+          },
+          {
+            "SKAO Entra ID Authentication": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Request-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Request-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Proposal"
+                  },
+                  "title": "Response Get Proposals For User Ska Oso Services Oso Api V5 Pht Prsls Mine Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ska-oso-services/oso/api/v5/pht/prsls/{prsl_id}": {
       "get": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Retrieve an existing proposal",
-        "description": "Retrieves the latest proposal by prsl_id.\n\nReturns:\n    Proposal: Returns the latest proposal for the supplied prsl_id, including the metadata.",
-        "operationId": "get_proposal_ska_oso_services_oso_api_v2_pht_prsls__prsl_id__get",
+        "description": "Retrieves the latest proposal by prsl_id.\n1.) Check that the authenticated user has the permission to access the proposal.\n\nReturns:\n    Proposal: Returns the latest version of the proposal for the supplied prsl_id,\n            including the metadata.",
+        "operationId": "get_proposal_ska_oso_services_oso_api_v5_pht_prsls__prsl_id__get",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -271,7 +327,7 @@
         ],
         "summary": "Update an existing proposal",
         "description": "Updates a proposal in the underlying data store.",
-        "operationId": "update_proposal_ska_oso_services_oso_api_v2_pht_prsls__prsl_id__put",
+        "operationId": "update_proposal_ska_oso_services_oso_api_v5_pht_prsls__prsl_id__put",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -341,14 +397,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/batch": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/batch": {
       "post": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Retrieve multiple proposals in batch",
-        "description": "AI is creating summary for get_proposals_batch",
-        "operationId": "get_proposals_batch_ska_oso_services_oso_api_v2_pht_prsls_batch_post",
+        "description": "Batch retrieves proposals by accepting a list of proposal ids\nand returning the proposals for those ids.",
+        "operationId": "get_proposals_batch_ska_oso_services_oso_api_v5_pht_prsls_batch_post",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -380,7 +436,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Body_get_proposals_batch_ska_oso_services_oso_api_v2_pht_prsls_batch_post"
+                "$ref": "#/components/schemas/Body_get_proposals_batch_ska_oso_services_oso_api_v5_pht_prsls_batch_post"
               }
             }
           }
@@ -395,7 +451,7 @@
                   "items": {
                     "$ref": "#/components/schemas/Proposal"
                   },
-                  "title": "Response Get Proposals Batch Ska Oso Services Oso Api V2 Pht Prsls Batch Post"
+                  "title": "Response Get Proposals Batch Ska Oso Services Oso Api V5 Pht Prsls Batch Post"
                 }
               }
             }
@@ -413,85 +469,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/status/{status}": {
-      "get": {
-        "tags": [
-          "PPT API - Proposal Preparation"
-        ],
-        "summary": "Get a list of proposals by status",
-        "description": "Function that requests to GET /proposals/status are mapped to.\n\nRetrieves the Proposals for the given status from the\nunderlying data store, if available\n\nReturns:\n    list[Proposal]",
-        "operationId": "get_proposals_by_status_ska_oso_services_oso_api_v2_pht_prsls_status__status__get",
-        "security": [
-          {
-            "SKAO Entra ID Authentication": []
-          },
-          {
-            "SKAO Entra ID Authentication": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "status",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Status"
-            }
-          },
-          {
-            "name": "X-Request-ID",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Request-Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Proposal"
-                  },
-                  "title": "Response Get Proposals By Status Ska Oso Services Oso Api V2 Pht Prsls Status  Status  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/ska-oso-services/oso/api/v2/pht/prsls/reviews/{prsl_id}": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/reviews/{prsl_id}": {
       "get": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Get all reviews for a particular proposal",
         "description": "Function that requests to GET /reviews/{prsl_id} are mapped to.\n\nGet reviews for a given proposal ID from the\nunderlying data store, if available.\n\nReturns:\n    list[PanelReview]",
-        "operationId": "get_reviews_for_proposal_ska_oso_services_oso_api_v2_pht_prsls_reviews__prsl_id__get",
+        "operationId": "get_reviews_for_proposal_ska_oso_services_oso_api_v5_pht_prsls_reviews__prsl_id__get",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -537,7 +522,7 @@
                   "items": {
                     "$ref": "#/components/schemas/PanelReview"
                   },
-                  "title": "Response Get Reviews For Proposal Ska Oso Services Oso Api V2 Pht Prsls Reviews  Prsl Id  Get"
+                  "title": "Response Get Reviews For Proposal Ska Oso Services Oso Api V5 Pht Prsls Reviews  Prsl Id  Get"
                 }
               }
             }
@@ -555,14 +540,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/validate": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/validate": {
       "post": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Validate a proposal",
         "description": "Validates a submitted proposal via POST.\n\nReturns:\n    dict: {\n        \"result\": bool,\n        \"validation_errors\": list[str]}.",
-        "operationId": "validate_proposal_ska_oso_services_oso_api_v2_pht_prsls_validate_post",
+        "operationId": "validate_proposal_ska_oso_services_oso_api_v5_pht_prsls_validate_post",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -607,7 +592,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Validate Proposal Ska Oso Services Oso Api V2 Pht Prsls Validate Post"
+                  "title": "Response Validate Proposal Ska Oso Services Oso Api V5 Pht Prsls Validate Post"
                 }
               }
             }
@@ -625,14 +610,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/send-email/": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/send-email/": {
       "post": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Send an async email",
         "description": "Endpoint to send SKAO email asynchronously via SMTP.",
-        "operationId": "send_email_ska_oso_services_oso_api_v2_pht_prsls_send_email__post",
+        "operationId": "send_email_ska_oso_services_oso_api_v5_pht_prsls_send_email__post",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -691,14 +676,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/signed-url/upload/{filename}": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/signed-url/upload/{filename}": {
       "post": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Create upload PDF URL",
         "description": "Generate a presigned S3 upload URL for the given filename.",
-        "operationId": "create_upload_pdf_url_ska_oso_services_oso_api_v2_pht_prsls_signed_url_upload__filename__post",
+        "operationId": "create_upload_pdf_url_ska_oso_services_oso_api_v5_pht_prsls_signed_url_upload__filename__post",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -741,7 +726,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Create Upload Pdf Url Ska Oso Services Oso Api V2 Pht Prsls Signed Url Upload  Filename  Post"
+                  "title": "Response Create Upload Pdf Url Ska Oso Services Oso Api V5 Pht Prsls Signed Url Upload  Filename  Post"
                 }
               }
             }
@@ -759,14 +744,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/signed-url/download/{filename}": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/signed-url/download/{filename}": {
       "post": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Create download PDF URL",
         "description": "Generate a presigned S3 download URL for the given filename.",
-        "operationId": "create_download_pdf_url_ska_oso_services_oso_api_v2_pht_prsls_signed_url_download__filename__post",
+        "operationId": "create_download_pdf_url_ska_oso_services_oso_api_v5_pht_prsls_signed_url_download__filename__post",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -809,7 +794,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Create Download Pdf Url Ska Oso Services Oso Api V2 Pht Prsls Signed Url Download  Filename  Post"
+                  "title": "Response Create Download Pdf Url Ska Oso Services Oso Api V5 Pht Prsls Signed Url Download  Filename  Post"
                 }
               }
             }
@@ -827,14 +812,14 @@
         }
       }
     },
-    "/ska-oso-services/oso/api/v2/pht/prsls/signed-url/delete/{filename}": {
+    "/ska-oso-services/oso/api/v5/pht/prsls/signed-url/delete/{filename}": {
       "post": {
         "tags": [
           "PPT API - Proposal Preparation"
         ],
         "summary": "Create delete PDF URL",
         "description": "Generate a presigned S3 delete URL for the given filename.",
-        "operationId": "create_delete_pdf_url_ska_oso_services_oso_api_v2_pht_prsls_signed_url_delete__filename__post",
+        "operationId": "create_delete_pdf_url_ska_oso_services_oso_api_v5_pht_prsls_signed_url_delete__filename__post",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -877,7 +862,76 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Create Delete Pdf Url Ska Oso Services Oso Api V2 Pht Prsls Signed Url Delete  Filename  Post"
+                  "title": "Response Create Delete Pdf Url Ska Oso Services Oso Api V5 Pht Prsls Signed Url Delete  Filename  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ska-oso-services/oso/api/v5/pht/prsls/member/{email}": {
+      "get": {
+        "tags": [
+          "PPT API - Proposal Preparation"
+        ],
+        "summary": "Retrieve user by email",
+        "description": "Returns an MS Entra user by email from MS Graph\n\nReturns:\n    dict",
+        "operationId": "get_user_by_email_ska_oso_services_oso_api_v5_pht_prsls_member__email__get",
+        "security": [
+          {
+            "SKAO Entra ID Authentication": []
+          },
+          {
+            "SKAO Entra ID Authentication": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Email"
+            }
+          },
+          {
+            "name": "X-Request-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Request-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get User By Email Ska Oso Services Oso Api V5 Pht Prsls Member  Email  Get"
                 }
               }
             }
@@ -1126,8 +1180,8 @@
         "properties": {
           "station_id": {
             "type": "integer",
-            "maximum": 511.0,
-            "minimum": 0.0,
+            "maximum": 511,
+            "minimum": 0,
             "title": "Station Id"
           },
           "substation_id": {
@@ -1267,7 +1321,7 @@
         "title": "BeamMapping",
         "description": "Class to hold mapping of beam parameters to scans"
       },
-      "Body_get_proposals_batch_ska_oso_services_oso_api_v2_pht_prsls_batch_post": {
+      "Body_get_proposals_batch_ska_oso_services_oso_api_v5_pht_prsls_batch_post": {
         "properties": {
           "prsl_ids": {
             "items": {
@@ -1282,7 +1336,7 @@
         "required": [
           "prsl_ids"
         ],
-        "title": "Body_get_proposals_batch_ska_oso_services_oso_api_v2_pht_prsls_batch_post"
+        "title": "Body_get_proposals_batch_ska_oso_services_oso_api_v5_pht_prsls_batch_post"
       },
       "CSPConfiguration": {
         "properties": {
@@ -1492,12 +1546,12 @@
           "x": {
             "type": "number",
             "title": "X",
-            "default": 0.0
+            "default": 0
           },
           "y": {
             "type": "number",
             "title": "Y",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -1521,8 +1575,8 @@
           },
           "zoom_factor": {
             "type": "integer",
-            "maximum": 7.0,
-            "minimum": 0.0,
+            "maximum": 7,
+            "minimum": 0,
             "title": "Zoom Factor",
             "description": "Integer (0-7) defining the zoom window to use. '0' means non-zoom i.e. standard continuum"
           },
@@ -1558,8 +1612,8 @@
         "properties": {
           "spw_id": {
             "type": "integer",
-            "maximum": 27.0,
-            "minimum": 1.0,
+            "maximum": 27,
+            "minimum": 1,
             "title": "Spw Id"
           },
           "logical_fsp_ids": {
@@ -1578,8 +1632,8 @@
           },
           "zoom_factor": {
             "type": "integer",
-            "maximum": 6.0,
-            "minimum": 0.0,
+            "maximum": 6,
+            "minimum": 0,
             "title": "Zoom Factor"
           },
           "centre_frequency": {
@@ -1588,7 +1642,7 @@
           },
           "number_of_channels": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Number Of Channels"
           },
           "channel_averaging_factor": {
@@ -1597,8 +1651,8 @@
           },
           "time_integration_factor": {
             "type": "integer",
-            "maximum": 10.0,
-            "minimum": 1.0,
+            "maximum": 10,
+            "minimum": 1,
             "title": "Time Integration Factor"
           }
         },
@@ -1625,7 +1679,7 @@
           "offset_arcsec": {
             "type": "number",
             "title": "Offset Arcsec",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -1862,7 +1916,7 @@
               }
             ],
             "title": "Ra",
-            "default": 0.0
+            "default": 0
           },
           "dec": {
             "anyOf": [
@@ -1874,7 +1928,7 @@
               }
             ],
             "title": "Dec",
-            "default": 0.0
+            "default": 0
           },
           "reference_frame": {
             "$ref": "#/components/schemas/EquatorialCoordinatesReferenceFrame",
@@ -1884,7 +1938,7 @@
             "type": "number",
             "title": "Epoch",
             "description": "Epoch of proper motion, date when proper motion offset was zero. Note this is an astronomical epoch, not a Unix epoch timestamp",
-            "default": 2000.0
+            "default": 2000
           },
           "unit": {
             "prefixItems": [
@@ -1929,7 +1983,7 @@
               }
             ],
             "title": "Pm Ra",
-            "default": 0.0
+            "default": 0
           },
           "pm_dec": {
             "anyOf": [
@@ -1941,7 +1995,7 @@
               }
             ],
             "title": "Pm Dec",
-            "default": 0.0
+            "default": 0
           },
           "parallax": {
             "anyOf": [
@@ -1953,13 +2007,13 @@
               }
             ],
             "title": "Parallax",
-            "default": 0.0
+            "default": 0
           },
           "epoch": {
             "type": "number",
             "title": "Epoch",
             "description": "Epoch of proper motion, date when proper motion offset was zero. Note this is an astronomical epoch, not a Unix epoch timestamp",
-            "default": 2000.0
+            "default": 2000
           },
           "target_id": {
             "type": "string",
@@ -2056,27 +2110,6 @@
         "title": "ExecutionBlock",
         "description": "ExecutionBlock captures the Execution Block resources and pipeline configuration\nrequired to process an execution block.\n\n:param eb_id: execution block ID\n:param max_length: maximum length\n:param context: context\n:param beams: list of Beams\n:param scan_types: list of EB scan types\n:param channels: list of EB channels\n:param polarisations: list of polarisations"
       },
-      "Feasibility": {
-        "properties": {
-          "is_feasible": {
-            "$ref": "#/components/schemas/FeasibilityStatus",
-            "default": "Yes"
-          },
-          "comments": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Comments"
-          }
-        },
-        "type": "object",
-        "title": "Feasibility"
-      },
       "FeasibilityStatus": {
         "type": "string",
         "enum": [
@@ -2124,7 +2157,7 @@
           "offset_arcsec": {
             "type": "number",
             "title": "Offset Arcsec",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -2223,7 +2256,7 @@
             "type": "number",
             "title": "Epoch",
             "description": "Epoch of proper motion, date when proper motion offset was zero. Note this is an astronomical epoch, not a Unix epoch timestamp",
-            "default": 2000.0
+            "default": 2000
           },
           "parallax": {
             "type": "number",
@@ -2396,7 +2429,7 @@
               }
             ],
             "title": "Pm Ra",
-            "default": 0.0
+            "default": 0
           },
           "pm_dec": {
             "anyOf": [
@@ -2408,7 +2441,7 @@
               }
             ],
             "title": "Pm Dec",
-            "default": 0.0
+            "default": 0
           },
           "parallax": {
             "anyOf": [
@@ -2420,13 +2453,13 @@
               }
             ],
             "title": "Parallax",
-            "default": 0.0
+            "default": 0
           },
           "epoch": {
             "type": "number",
             "title": "Epoch",
             "description": "Epoch of proper motion, date when proper motion offset was zero. Note this is an astronomical epoch, not a Unix epoch timestamp",
-            "default": 2000.0
+            "default": 2000
           },
           "kind": {
             "type": "string",
@@ -2645,25 +2678,49 @@
       "Investigator": {
         "properties": {
           "user_id": {
-            "type": "string",
-            "title": "Investigator Id",
-            "description": "Unique identifier for the Proposal investigators class"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
           },
           "given_name": {
-            "type": "string",
-            "title": "Given Name",
-            "description": "First/fore name of the investigator"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given Name"
           },
           "family_name": {
-            "type": "string",
-            "title": "Family Name",
-            "description": "family name of the investigator"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Name"
           },
           "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email",
-            "description": "Email address for the investigator"
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
           },
           "organization": {
             "anyOf": [
@@ -2674,8 +2731,7 @@
                 "type": "null"
               }
             ],
-            "title": "Organization",
-            "description": "Organization to which the investigator belongs"
+            "title": "Organization"
           },
           "for_phd": {
             "type": "boolean",
@@ -2697,10 +2753,6 @@
         },
         "type": "object",
         "required": [
-          "user_id",
-          "given_name",
-          "family_name",
-          "email",
           "status"
         ],
         "title": "Investigator"
@@ -2736,8 +2788,8 @@
           },
           "number_of_stations": {
             "type": "integer",
-            "maximum": 512.0,
-            "minimum": 0.0,
+            "maximum": 512,
+            "minimum": 0,
             "title": "Number Of Stations",
             "description": "Number of stations to use in the observation",
             "default": 0
@@ -2864,7 +2916,7 @@
             "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[-\\w]+)?(?:\\+dev\\.[a-zA-Z0-9]+)?$",
             "title": "PDM version",
             "description": "The version of the PDM used to generate the entity",
-            "default": "19.1.0"
+            "default": "21.0.0"
           }
         },
         "type": "object",
@@ -2902,32 +2954,32 @@
           },
           "weather": {
             "type": "integer",
-            "maximum": 25.0,
-            "minimum": 3.0,
+            "maximum": 25,
+            "minimum": 3,
             "title": "Weather",
             "description": "Amount of accepted rainfall in mm",
             "default": 3
           },
           "number_15_antennas": {
             "type": "integer",
-            "maximum": 133.0,
-            "minimum": 0.0,
+            "maximum": 133,
+            "minimum": 0,
             "title": "Number 15 Antennas",
             "description": "Number of 15mm antennas to use in the observation",
             "default": 0
           },
           "number_13_antennas": {
             "type": "integer",
-            "maximum": 64.0,
-            "minimum": 0.0,
+            "maximum": 64,
+            "minimum": 0,
             "title": "Number 13 Antennas",
             "description": "Number of 13.5mm antennas to use in the observation",
             "default": 0
           },
           "number_sub_bands": {
             "type": "integer",
-            "maximum": 32.0,
-            "minimum": 0.0,
+            "maximum": 32,
+            "minimum": 0,
             "title": "Number Sub Bands",
             "description": "Number of Sub bands",
             "default": 0
@@ -3022,8 +3074,8 @@
           },
           "elevation": {
             "type": "integer",
-            "maximum": 90.0,
-            "minimum": 15.0,
+            "maximum": 90,
+            "minimum": 15,
             "title": "Elevation",
             "description": "Elevation from the horizon to be used",
             "default": 15
@@ -3277,6 +3329,18 @@
             ],
             "title": "Cycle"
           },
+          "expiry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Date"
+          },
           "proposals": {
             "items": {
               "$ref": "#/components/schemas/ProposalAssignment"
@@ -3284,12 +3348,19 @@
             "type": "array",
             "title": "Proposals"
           },
-          "reviewers": {
+          "sci_reviewers": {
             "items": {
               "$ref": "#/components/schemas/ReviewerAssignment"
             },
             "type": "array",
-            "title": "Reviewers"
+            "title": "Sci Reviewers"
+          },
+          "tech_reviewers": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewerAssignment"
+            },
+            "type": "array",
+            "title": "Tech Reviewers"
           }
         },
         "type": "object",
@@ -3305,12 +3376,21 @@
             "type": "string",
             "title": "Name"
           },
-          "reviewers": {
+          "sci_reviewers": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Reviewers",
+            "title": "Sci Reviewers",
+            "description": "List of reviewer entries.",
+            "example": []
+          },
+          "tech_reviewers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tech Reviewers",
             "description": "List of reviewer entries.",
             "example": []
           },
@@ -3401,8 +3481,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 9.0,
-                "minimum": 0.0
+                "maximum": 9,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -3420,29 +3500,6 @@
               }
             ],
             "title": "Recommendation"
-          },
-          "decided_by": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Decided By"
-          },
-          "decided_on": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Decided On"
           },
           "status": {
             "$ref": "#/components/schemas/PanelReviewStatus",
@@ -4115,8 +4172,7 @@
         },
         "type": "object",
         "required": [
-          "prsl_id",
-          "assigned_on"
+          "prsl_id"
         ],
         "title": "ProposalAssignment"
       },
@@ -4129,6 +4185,115 @@
         ],
         "title": "ProposalPermissions",
         "description": "Permissions for a user on a proposal."
+      },
+      "ProposalProjectDetails": {
+        "properties": {
+          "prsl_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prsl Id"
+          },
+          "prsl_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prsl Version"
+          },
+          "prj_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Id"
+          },
+          "prj_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Version"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "prj_created_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Created On"
+          },
+          "prj_created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Created By"
+          },
+          "prj_last_modified_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Last Modified On"
+          },
+          "prj_last_modified_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Last Modified By"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ProposalProjectDetails",
+        "description": "A view of the Proposal + Projects for the UI"
       },
       "ProposalReportResponse": {
         "properties": {
@@ -4248,7 +4413,7 @@
           "review_rank": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -4355,7 +4520,7 @@
             ],
             "title": "Decision On"
           },
-          "country": {
+          "review_type": {
             "anyOf": [
               {
                 "type": "string"
@@ -4364,7 +4529,7 @@
                 "type": "null"
               }
             ],
-            "title": "Country"
+            "title": "Review Type"
           }
         },
         "additionalProperties": false,
@@ -4435,8 +4600,8 @@
         "properties": {
           "spw_id": {
             "type": "integer",
-            "maximum": 27.0,
-            "minimum": 1.0,
+            "maximum": 27,
+            "minimum": 1,
             "title": "Spw Id"
           },
           "logical_fsp_ids": {
@@ -4459,7 +4624,7 @@
           },
           "number_of_channels": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Number Of Channels"
           }
         },
@@ -4523,7 +4688,7 @@
           "redshift": {
             "type": "number",
             "title": "Redshift",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -4582,12 +4747,12 @@
           "row_length_arcsec": {
             "type": "number",
             "title": "Row Length Arcsec",
-            "default": 0.0
+            "default": 0
           },
           "row_offset_arcsec": {
             "type": "number",
             "title": "Row Offset Arcsec",
-            "default": 0.0
+            "default": 0
           },
           "n_rows": {
             "type": "integer",
@@ -4597,7 +4762,7 @@
           "pa": {
             "type": "number",
             "title": "Pa",
-            "default": 0.0
+            "default": 0
           },
           "unidirectional": {
             "type": "boolean",
@@ -4750,7 +4915,7 @@
         "type": "string",
         "enum": [
           "In Progress",
-          "Decided",
+          "Reviewed",
           "To Do"
         ],
         "title": "ReviewStatus"
@@ -4773,8 +4938,7 @@
         },
         "type": "object",
         "required": [
-          "reviewer_id",
-          "assigned_on"
+          "reviewer_id"
         ],
         "title": "ReviewerAssignment"
       },
@@ -5216,8 +5380,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 9.0,
-                "minimum": 0.0
+                "maximum": 9,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -5321,12 +5485,12 @@
           "offset_x_arcsec": {
             "type": "number",
             "title": "Offset X Arcsec",
-            "default": 0.0
+            "default": 0
           },
           "offset_y_arcsec": {
             "type": "number",
             "title": "Offset Y Arcsec",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -5489,12 +5653,12 @@
           "twist_factor": {
             "type": "number",
             "title": "Twist Factor",
-            "default": 1.0
+            "default": 1
           },
           "high_el_slowdown_factor": {
             "type": "number",
             "title": "High El Slowdown Factor",
-            "default": 2.0
+            "default": 2
           }
         },
         "type": "object",
@@ -5512,7 +5676,7 @@
           "row_length_arcsec": {
             "type": "number",
             "title": "Row Length Arcsec",
-            "default": 0.0
+            "default": 0
           },
           "n_rows": {
             "type": "integer",
@@ -5522,7 +5686,7 @@
           "row_offset_angle": {
             "type": "number",
             "title": "Row Offset Angle",
-            "default": 0.0
+            "default": 0
           },
           "unidirectional": {
             "type": "boolean",
@@ -5589,8 +5753,8 @@
           },
           "subarray_beam_id": {
             "type": "integer",
-            "maximum": 48.0,
-            "minimum": 1.0,
+            "maximum": 48,
+            "minimum": 1,
             "title": "Subarray Beam Id"
           },
           "scan_sequence": {
@@ -5830,14 +5994,18 @@
             "title": "Kind",
             "default": "Technical Review"
           },
-          "feasibility": {
-            "$ref": "#/components/schemas/Feasibility"
+          "is_feasible": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeasibilityStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "feasibility"
-        ],
         "title": "TechnicalReview"
       },
       "TelescopeCapabilities": {

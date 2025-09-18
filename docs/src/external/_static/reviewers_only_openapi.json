@@ -5,14 +5,14 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/ska-oso-services/oso/api/v2/pht/reviewers": {
+    "/ska-oso-services/oso/api/v5/pht/reviewers": {
       "get": {
         "tags": [
           "PMT API - Reviewers"
         ],
         "summary": "Retrieve a list of reviewers",
-        "description": "Returns a mocked list of reviewers\n\nReturns:\n    list[dict]",
-        "operationId": "get_reviewers_ska_oso_services_oso_api_v2_pht_reviewers_get",
+        "description": "Returns a list of science and technical reviewers from MS Graph\n\nReturns:\n    dict: {\n        \"sci_reviewers\": list[dict],\n        \"tech_reviewers\": list[dict]\n    }",
+        "operationId": "get_reviewers_ska_oso_services_oso_api_v5_pht_reviewers_get",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -45,12 +45,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": true
-                  },
-                  "title": "Response Get Reviewers Ska Oso Services Oso Api V2 Pht Reviewers Get"
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Reviewers Ska Oso Services Oso Api V5 Pht Reviewers Get"
                 }
               }
             }
@@ -299,8 +296,8 @@
         "properties": {
           "station_id": {
             "type": "integer",
-            "maximum": 511.0,
-            "minimum": 0.0,
+            "maximum": 511,
+            "minimum": 0,
             "title": "Station Id"
           },
           "substation_id": {
@@ -440,7 +437,7 @@
         "title": "BeamMapping",
         "description": "Class to hold mapping of beam parameters to scans"
       },
-      "Body_get_proposals_batch_ska_oso_services_oso_api_v2_pht_prsls_batch_post": {
+      "Body_get_proposals_batch_ska_oso_services_oso_api_v5_pht_prsls_batch_post": {
         "properties": {
           "prsl_ids": {
             "items": {
@@ -455,7 +452,7 @@
         "required": [
           "prsl_ids"
         ],
-        "title": "Body_get_proposals_batch_ska_oso_services_oso_api_v2_pht_prsls_batch_post"
+        "title": "Body_get_proposals_batch_ska_oso_services_oso_api_v5_pht_prsls_batch_post"
       },
       "CSPConfiguration": {
         "properties": {
@@ -665,12 +662,12 @@
           "x": {
             "type": "number",
             "title": "X",
-            "default": 0.0
+            "default": 0
           },
           "y": {
             "type": "number",
             "title": "Y",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -694,8 +691,8 @@
           },
           "zoom_factor": {
             "type": "integer",
-            "maximum": 7.0,
-            "minimum": 0.0,
+            "maximum": 7,
+            "minimum": 0,
             "title": "Zoom Factor",
             "description": "Integer (0-7) defining the zoom window to use. '0' means non-zoom i.e. standard continuum"
           },
@@ -731,8 +728,8 @@
         "properties": {
           "spw_id": {
             "type": "integer",
-            "maximum": 27.0,
-            "minimum": 1.0,
+            "maximum": 27,
+            "minimum": 1,
             "title": "Spw Id"
           },
           "logical_fsp_ids": {
@@ -751,8 +748,8 @@
           },
           "zoom_factor": {
             "type": "integer",
-            "maximum": 6.0,
-            "minimum": 0.0,
+            "maximum": 6,
+            "minimum": 0,
             "title": "Zoom Factor"
           },
           "centre_frequency": {
@@ -761,7 +758,7 @@
           },
           "number_of_channels": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Number Of Channels"
           },
           "channel_averaging_factor": {
@@ -770,8 +767,8 @@
           },
           "time_integration_factor": {
             "type": "integer",
-            "maximum": 10.0,
-            "minimum": 1.0,
+            "maximum": 10,
+            "minimum": 1,
             "title": "Time Integration Factor"
           }
         },
@@ -798,7 +795,7 @@
           "offset_arcsec": {
             "type": "number",
             "title": "Offset Arcsec",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -1035,7 +1032,7 @@
               }
             ],
             "title": "Ra",
-            "default": 0.0
+            "default": 0
           },
           "dec": {
             "anyOf": [
@@ -1047,7 +1044,7 @@
               }
             ],
             "title": "Dec",
-            "default": 0.0
+            "default": 0
           },
           "reference_frame": {
             "$ref": "#/components/schemas/EquatorialCoordinatesReferenceFrame",
@@ -1057,7 +1054,7 @@
             "type": "number",
             "title": "Epoch",
             "description": "Epoch of proper motion, date when proper motion offset was zero. Note this is an astronomical epoch, not a Unix epoch timestamp",
-            "default": 2000.0
+            "default": 2000
           },
           "unit": {
             "prefixItems": [
@@ -1102,7 +1099,7 @@
               }
             ],
             "title": "Pm Ra",
-            "default": 0.0
+            "default": 0
           },
           "pm_dec": {
             "anyOf": [
@@ -1114,7 +1111,7 @@
               }
             ],
             "title": "Pm Dec",
-            "default": 0.0
+            "default": 0
           },
           "parallax": {
             "anyOf": [
@@ -1126,13 +1123,13 @@
               }
             ],
             "title": "Parallax",
-            "default": 0.0
+            "default": 0
           },
           "epoch": {
             "type": "number",
             "title": "Epoch",
             "description": "Epoch of proper motion, date when proper motion offset was zero. Note this is an astronomical epoch, not a Unix epoch timestamp",
-            "default": 2000.0
+            "default": 2000
           },
           "target_id": {
             "type": "string",
@@ -1229,27 +1226,6 @@
         "title": "ExecutionBlock",
         "description": "ExecutionBlock captures the Execution Block resources and pipeline configuration\nrequired to process an execution block.\n\n:param eb_id: execution block ID\n:param max_length: maximum length\n:param context: context\n:param beams: list of Beams\n:param scan_types: list of EB scan types\n:param channels: list of EB channels\n:param polarisations: list of polarisations"
       },
-      "Feasibility": {
-        "properties": {
-          "is_feasible": {
-            "$ref": "#/components/schemas/FeasibilityStatus",
-            "default": "Yes"
-          },
-          "comments": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Comments"
-          }
-        },
-        "type": "object",
-        "title": "Feasibility"
-      },
       "FeasibilityStatus": {
         "type": "string",
         "enum": [
@@ -1297,7 +1273,7 @@
           "offset_arcsec": {
             "type": "number",
             "title": "Offset Arcsec",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -1396,7 +1372,7 @@
             "type": "number",
             "title": "Epoch",
             "description": "Epoch of proper motion, date when proper motion offset was zero. Note this is an astronomical epoch, not a Unix epoch timestamp",
-            "default": 2000.0
+            "default": 2000
           },
           "parallax": {
             "type": "number",
@@ -1569,7 +1545,7 @@
               }
             ],
             "title": "Pm Ra",
-            "default": 0.0
+            "default": 0
           },
           "pm_dec": {
             "anyOf": [
@@ -1581,7 +1557,7 @@
               }
             ],
             "title": "Pm Dec",
-            "default": 0.0
+            "default": 0
           },
           "parallax": {
             "anyOf": [
@@ -1593,13 +1569,13 @@
               }
             ],
             "title": "Parallax",
-            "default": 0.0
+            "default": 0
           },
           "epoch": {
             "type": "number",
             "title": "Epoch",
             "description": "Epoch of proper motion, date when proper motion offset was zero. Note this is an astronomical epoch, not a Unix epoch timestamp",
-            "default": 2000.0
+            "default": 2000
           },
           "kind": {
             "type": "string",
@@ -1818,25 +1794,49 @@
       "Investigator": {
         "properties": {
           "user_id": {
-            "type": "string",
-            "title": "Investigator Id",
-            "description": "Unique identifier for the Proposal investigators class"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
           },
           "given_name": {
-            "type": "string",
-            "title": "Given Name",
-            "description": "First/fore name of the investigator"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given Name"
           },
           "family_name": {
-            "type": "string",
-            "title": "Family Name",
-            "description": "family name of the investigator"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Name"
           },
           "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email",
-            "description": "Email address for the investigator"
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
           },
           "organization": {
             "anyOf": [
@@ -1847,8 +1847,7 @@
                 "type": "null"
               }
             ],
-            "title": "Organization",
-            "description": "Organization to which the investigator belongs"
+            "title": "Organization"
           },
           "for_phd": {
             "type": "boolean",
@@ -1870,10 +1869,6 @@
         },
         "type": "object",
         "required": [
-          "user_id",
-          "given_name",
-          "family_name",
-          "email",
           "status"
         ],
         "title": "Investigator"
@@ -1909,8 +1904,8 @@
           },
           "number_of_stations": {
             "type": "integer",
-            "maximum": 512.0,
-            "minimum": 0.0,
+            "maximum": 512,
+            "minimum": 0,
             "title": "Number Of Stations",
             "description": "Number of stations to use in the observation",
             "default": 0
@@ -2037,7 +2032,7 @@
             "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[-\\w]+)?(?:\\+dev\\.[a-zA-Z0-9]+)?$",
             "title": "PDM version",
             "description": "The version of the PDM used to generate the entity",
-            "default": "19.1.0"
+            "default": "21.0.0"
           }
         },
         "type": "object",
@@ -2075,32 +2070,32 @@
           },
           "weather": {
             "type": "integer",
-            "maximum": 25.0,
-            "minimum": 3.0,
+            "maximum": 25,
+            "minimum": 3,
             "title": "Weather",
             "description": "Amount of accepted rainfall in mm",
             "default": 3
           },
           "number_15_antennas": {
             "type": "integer",
-            "maximum": 133.0,
-            "minimum": 0.0,
+            "maximum": 133,
+            "minimum": 0,
             "title": "Number 15 Antennas",
             "description": "Number of 15mm antennas to use in the observation",
             "default": 0
           },
           "number_13_antennas": {
             "type": "integer",
-            "maximum": 64.0,
-            "minimum": 0.0,
+            "maximum": 64,
+            "minimum": 0,
             "title": "Number 13 Antennas",
             "description": "Number of 13.5mm antennas to use in the observation",
             "default": 0
           },
           "number_sub_bands": {
             "type": "integer",
-            "maximum": 32.0,
-            "minimum": 0.0,
+            "maximum": 32,
+            "minimum": 0,
             "title": "Number Sub Bands",
             "description": "Number of Sub bands",
             "default": 0
@@ -2195,8 +2190,8 @@
           },
           "elevation": {
             "type": "integer",
-            "maximum": 90.0,
-            "minimum": 15.0,
+            "maximum": 90,
+            "minimum": 15,
             "title": "Elevation",
             "description": "Elevation from the horizon to be used",
             "default": 15
@@ -2450,6 +2445,18 @@
             ],
             "title": "Cycle"
           },
+          "expiry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Date"
+          },
           "proposals": {
             "items": {
               "$ref": "#/components/schemas/ProposalAssignment"
@@ -2457,12 +2464,19 @@
             "type": "array",
             "title": "Proposals"
           },
-          "reviewers": {
+          "sci_reviewers": {
             "items": {
               "$ref": "#/components/schemas/ReviewerAssignment"
             },
             "type": "array",
-            "title": "Reviewers"
+            "title": "Sci Reviewers"
+          },
+          "tech_reviewers": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewerAssignment"
+            },
+            "type": "array",
+            "title": "Tech Reviewers"
           }
         },
         "type": "object",
@@ -2478,23 +2492,38 @@
             "type": "string",
             "title": "Name"
           },
-          "reviewers": {
-            "items": {},
+          "sci_reviewers": {
+            "items": {
+              "type": "string"
+            },
             "type": "array",
-            "title": "Reviewers"
+            "title": "Sci Reviewers",
+            "description": "List of reviewer entries.",
+            "example": []
+          },
+          "tech_reviewers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tech Reviewers",
+            "description": "List of reviewer entries.",
+            "example": []
           },
           "proposals": {
-            "items": {},
+            "items": {
+              "type": "string"
+            },
             "type": "array",
-            "title": "Proposals"
+            "title": "Proposals",
+            "description": "List of proposal entries.",
+            "example": []
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "name",
-          "reviewers",
-          "proposals"
+          "name"
         ],
         "title": "PanelCreateRequest",
         "description": "Schema for creating a new panel."
@@ -2568,8 +2597,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 9.0,
-                "minimum": 0.0
+                "maximum": 9,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -2587,29 +2616,6 @@
               }
             ],
             "title": "Recommendation"
-          },
-          "decided_by": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Decided By"
-          },
-          "decided_on": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Decided On"
           },
           "status": {
             "$ref": "#/components/schemas/PanelReviewStatus",
@@ -3116,6 +3122,158 @@
         "title": "Proposal",
         "description": "Proposal: Represents an astronomy proposal."
       },
+      "ProposalAccess": {
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata",
+            "description": "The metadata of this Proposal access."
+          },
+          "access_id": {
+            "type": "string",
+            "title": "Access Id"
+          },
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal.",
+            "default": [
+              "view"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_id",
+          "prsl_id",
+          "user_id",
+          "role"
+        ],
+        "title": "ProposalAccess"
+      },
+      "ProposalAccessByProposalResponse": {
+        "properties": {
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal."
+          },
+          "access_id": {
+            "type": "string",
+            "title": "Access Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "permissions",
+          "access_id",
+          "user_id"
+        ],
+        "title": "ProposalAccessByProposalResponse"
+      },
+      "ProposalAccessCreate": {
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata",
+            "description": "The metadata of this Proposal access."
+          },
+          "access_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Id"
+          },
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal.",
+            "default": [
+              "view"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "prsl_id",
+          "user_id",
+          "role"
+        ],
+        "title": "ProposalAccessCreate"
+      },
+      "ProposalAccessResponse": {
+        "properties": {
+          "prsl_id": {
+            "type": "string",
+            "title": "Prsl Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProposalRole"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalPermissions"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissions granted to this user for this proposal."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "permissions"
+        ],
+        "title": "ProposalAccessResponse"
+      },
       "ProposalAssignment": {
         "properties": {
           "prsl_id": {
@@ -3130,10 +3288,128 @@
         },
         "type": "object",
         "required": [
-          "prsl_id",
-          "assigned_on"
+          "prsl_id"
         ],
         "title": "ProposalAssignment"
+      },
+      "ProposalPermissions": {
+        "type": "string",
+        "enum": [
+          "submit",
+          "update",
+          "view"
+        ],
+        "title": "ProposalPermissions",
+        "description": "Permissions for a user on a proposal."
+      },
+      "ProposalProjectDetails": {
+        "properties": {
+          "prsl_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prsl Id"
+          },
+          "prsl_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prsl Version"
+          },
+          "prj_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Id"
+          },
+          "prj_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Version"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "prj_created_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Created On"
+          },
+          "prj_created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Created By"
+          },
+          "prj_last_modified_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Last Modified On"
+          },
+          "prj_last_modified_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prj Last Modified By"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ProposalProjectDetails",
+        "description": "A view of the Proposal + Projects for the UI"
       },
       "ProposalReportResponse": {
         "properties": {
@@ -3253,7 +3529,7 @@
           "review_rank": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -3359,6 +3635,17 @@
               }
             ],
             "title": "Decision On"
+          },
+          "review_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Type"
           }
         },
         "additionalProperties": false,
@@ -3374,6 +3661,14 @@
         ],
         "title": "ProposalReportResponse",
         "description": "Schema for proposal report response."
+      },
+      "ProposalRole": {
+        "type": "string",
+        "enum": [
+          "Principal Investigator",
+          "Co-Investigator"
+        ],
+        "title": "ProposalRole"
       },
       "ProposalStatus": {
         "type": "string",
@@ -3421,8 +3716,8 @@
         "properties": {
           "spw_id": {
             "type": "integer",
-            "maximum": 27.0,
-            "minimum": 1.0,
+            "maximum": 27,
+            "minimum": 1,
             "title": "Spw Id"
           },
           "logical_fsp_ids": {
@@ -3445,7 +3740,7 @@
           },
           "number_of_channels": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Number Of Channels"
           }
         },
@@ -3509,7 +3804,7 @@
           "redshift": {
             "type": "number",
             "title": "Redshift",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -3568,12 +3863,12 @@
           "row_length_arcsec": {
             "type": "number",
             "title": "Row Length Arcsec",
-            "default": 0.0
+            "default": 0
           },
           "row_offset_arcsec": {
             "type": "number",
             "title": "Row Offset Arcsec",
-            "default": 0.0
+            "default": 0
           },
           "n_rows": {
             "type": "integer",
@@ -3583,7 +3878,7 @@
           "pa": {
             "type": "number",
             "title": "Pa",
-            "default": 0.0
+            "default": 0
           },
           "unidirectional": {
             "type": "boolean",
@@ -3736,7 +4031,7 @@
         "type": "string",
         "enum": [
           "In Progress",
-          "Decided",
+          "Reviewed",
           "To Do"
         ],
         "title": "ReviewStatus"
@@ -3759,8 +4054,7 @@
         },
         "type": "object",
         "required": [
-          "reviewer_id",
-          "assigned_on"
+          "reviewer_id"
         ],
         "title": "ReviewerAssignment"
       },
@@ -4202,8 +4496,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 9.0,
-                "minimum": 0.0
+                "maximum": 9,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -4307,12 +4601,12 @@
           "offset_x_arcsec": {
             "type": "number",
             "title": "Offset X Arcsec",
-            "default": 0.0
+            "default": 0
           },
           "offset_y_arcsec": {
             "type": "number",
             "title": "Offset Y Arcsec",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -4475,12 +4769,12 @@
           "twist_factor": {
             "type": "number",
             "title": "Twist Factor",
-            "default": 1.0
+            "default": 1
           },
           "high_el_slowdown_factor": {
             "type": "number",
             "title": "High El Slowdown Factor",
-            "default": 2.0
+            "default": 2
           }
         },
         "type": "object",
@@ -4498,7 +4792,7 @@
           "row_length_arcsec": {
             "type": "number",
             "title": "Row Length Arcsec",
-            "default": 0.0
+            "default": 0
           },
           "n_rows": {
             "type": "integer",
@@ -4508,7 +4802,7 @@
           "row_offset_angle": {
             "type": "number",
             "title": "Row Offset Angle",
-            "default": 0.0
+            "default": 0
           },
           "unidirectional": {
             "type": "boolean",
@@ -4575,8 +4869,8 @@
           },
           "subarray_beam_id": {
             "type": "integer",
-            "maximum": 48.0,
-            "minimum": 1.0,
+            "maximum": 48,
+            "minimum": 1,
             "title": "Subarray Beam Id"
           },
           "scan_sequence": {
@@ -4816,14 +5110,18 @@
             "title": "Kind",
             "default": "Technical Review"
           },
-          "feasibility": {
-            "$ref": "#/components/schemas/Feasibility"
+          "is_feasible": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeasibilityStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "feasibility"
-        ],
         "title": "TechnicalReview"
       },
       "TelescopeCapabilities": {
