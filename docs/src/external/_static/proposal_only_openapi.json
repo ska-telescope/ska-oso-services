@@ -894,6 +894,75 @@
           }
         }
       }
+    },
+    "/ska-oso-services/oso/api/v5/pht/prsls/member/{email}": {
+      "get": {
+        "tags": [
+          "PPT API - Proposal Preparation"
+        ],
+        "summary": "Retrieve user by email",
+        "description": "Returns an MS Entra user by email from MS Graph\n\nReturns:\n    dict",
+        "operationId": "get_user_by_email_ska_oso_services_oso_api_v5_pht_prsls_member__email__get",
+        "security": [
+          {
+            "SKAO Entra ID Authentication": []
+          },
+          {
+            "SKAO Entra ID Authentication": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Email"
+            }
+          },
+          {
+            "name": "X-Request-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Request-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get User By Email Ska Oso Services Oso Api V5 Pht Prsls Member  Email  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
