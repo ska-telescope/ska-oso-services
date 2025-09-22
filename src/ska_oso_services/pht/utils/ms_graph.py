@@ -1,3 +1,6 @@
+import re
+from urllib.parse import quote
+
 import msal
 import requests
 
@@ -75,7 +78,12 @@ def get_users_by_mail(email: str):
         Returns an empty list if no users
         are found or if the API call fails.
     """
-    url = f"{MS_GRAPH_URL}/users?$filter=mail eq '{email}'"
+    if not re.match(r"^[A-Za-z0-9._+-]+@[A-Za-z0-9._-]+\.[a-zA-Z]{2,}$", email):
+        return []
+
+    escaped = email.replace("'", "''")
+    ms_graph_filter = f"mail eq '{escaped}' or userPrincipalName eq '{escaped}'"
+    url = f"{MS_GRAPH_URL}/users?$filter={quote(ms_graph_filter, safe='')}"
     return make_graph_call(url, pagination=False)
 
 
