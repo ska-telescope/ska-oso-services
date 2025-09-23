@@ -818,3 +818,15 @@ class TestGetUserEmail:
 
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert response.json() == {"detail": f"User not found with email: {email}"}
+
+    @mock.patch("ska_oso_services.pht.utils.ms_graph.make_graph_call")
+    def test_get_user_by_invalid_email_user_not_found(
+        self, mock_make_graph_call, client
+    ):
+        email = "invalid*address@example.com"
+        mock_make_graph_call.return_value = []
+
+        response = client.get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
+
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert response.json() == {"detail": f"User not found with email: {email}"}
