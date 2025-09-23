@@ -14,6 +14,6 @@ dependencies:
 # The ODA umbrella chart includes ODA API, PostgreSQL database and SKUID
 - name: ska-db-oda-umbrella
   # If updating this, also remember to update the Python dependency
-  version: 11.6.0
+  version: 11.7.0
   repository: https://artefact.skao.int/repository/helm-internal
   condition: ska-db-oda-umbrella.enabled

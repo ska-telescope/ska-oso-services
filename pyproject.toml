@@ -53,14 +53,13 @@ python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
 # PDM dependency is pulled in via the ODA rather than being explicitly set here
 # If updating this, also remember to update the Helm dependency in the umbrella chart
-ska-db-oda = "^11.6.0"
+ska-db-oda = "^11.7.0"
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
-ska-ost-osd = "^4.0.0"
+ska-ost-osd = "^4.2.1"
 aiosmtplib = "^4.0.1"
 boto3 = "^1.38.13"
-
 ska-aaa-authhelpers = "^1.2.0"
 # Need to pin as otherwise pip cannot resolve the dependencies in the tests.
 # This dependency comes through the osd > telmodel, so reasses when updating those.
