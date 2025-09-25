@@ -102,15 +102,14 @@ class Testpanel_decisionAPI:
         Check if the get_panel_decisions_for_user returns panel_decisions correctly.
         """
         panel_decision_objs = [
-            TestDataFactory.panel_decision(),
-            TestDataFactory.panel_decision(),
+            TestDataFactory.panel_decision(decision_id="pnld-1"),
+            TestDataFactory.panel_decision(decision_id="pnld-2"),
         ]
         uow_mock = mock.MagicMock()
         uow_mock.pnlds.query.return_value = panel_decision_objs
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        user_id = "DefaultUser"
-        response = client.get(f"{PANEL_DECISION_API_URL}/users/{user_id}/decisions")
+        response = client.get(f"{PANEL_DECISION_API_URL}/")
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(panel_decision_objs)
@@ -124,8 +123,7 @@ class Testpanel_decisionAPI:
         uow_mock.pnlds.query.return_value = []
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        user_id = "user123"
-        response = client.get(f"{PANEL_DECISION_API_URL}/users/{user_id}/decisions")
+        response = client.get(f"{PANEL_DECISION_API_URL}/")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []

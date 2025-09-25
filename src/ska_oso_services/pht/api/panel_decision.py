@@ -1,6 +1,8 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter
+from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm import PanelDecision
@@ -23,14 +25,17 @@ router = APIRouter(prefix="/panel/decision", tags=["PMT API - Panel Decision"])
 @router.post(
     "/create",
     summary="Create a new Panel decision for proposals",
-    dependencies=[
-        Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READWRITE],
-        )
-    ],
 )
-def create_panel_decision(decisions: PanelDecision) -> str:
+def create_panel_decision(
+    decisions: PanelDecision,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> str:
     """
     Create a new panel decision for proposals in a panel.
 
@@ -44,7 +49,7 @@ def create_panel_decision(decisions: PanelDecision) -> str:
 
     try:
         with oda.uow() as uow:
-            created_decision = uow.pnlds.add(decisions)
+            created_decision = uow.pnlds.add(decisions, auth.user_id)
             uow.commit()
         return created_decision.decision_id
     except ValueError as err:
@@ -61,7 +66,11 @@ def create_panel_decision(decisions: PanelDecision) -> str:
     summary="Retrieve an existing panel decision for proposals",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER, PrslRole.OPS_REVIEW_CHAIR],
+            roles=[
+                PrslRole.OPS_PROPOSAL_ADMIN,
+                PrslRole.OPS_REVIEW_CHAIR,
+                Role.SW_ENGINEER,
+            ],
             scopes=[Scope.PHT_READ],
         )
     ],
@@ -81,24 +90,25 @@ def get_panel_decision(decision_id: str) -> PanelDecision:
     return decision
 
 
-
 @router.put(
     "/{decision_id}",
     summary="Update an existing Decision",
-    dependencies=[
-        Permissions(
-            roles=[Role.SW_ENGINEER, PrslRole.OPS_REVIEW_CHAIR],
-            scopes=[Scope.PHT_READWRITE],
-        )
-    ],
 )
-def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDecision:
+def update_panel_decision(
+    decision_id: str,
+    decision: PanelDecision,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.SW_ENGINEER, PrslRole.OPS_REVIEW_CHAIR},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> PanelDecision:
     """
     Updates a decision in the ODA.
     """
-    #TODO: Admin can only view but not update the decision
-    # Review Chair can update the decision
-    # Software eng can update the decision
+
     logger.debug("PUT Decision - Attempting update for Decision_id: %s", decision_id)
 
     # Ensure ID match
@@ -120,7 +130,7 @@ def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDec
             raise NotFoundError(detail="Decision not found: {decision_id}")
 
         try:
-            updated_decision = uow.pnlds.add(decision)  # Add is used for update
+            updated_decision = uow.pnlds.add(decision, auth.user_id)
             uow.commit()
             logger.info("Decision %s updated successfully", decision_id)
             return updated_decision
@@ -132,13 +142,16 @@ def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDec
             ) from err
 
 
-
 @router.get(
     "/",
     summary="Get a list of Decisions for all proposals",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER, PrslRole.OPS_REVIEW_CHAIR],
+            roles=[
+                PrslRole.OPS_PROPOSAL_ADMIN,
+                Role.SW_ENGINEER,
+                PrslRole.OPS_REVIEW_CHAIR,
+            ],
             scopes=[Scope.PHT_READ],
         )
     ],
@@ -153,6 +166,6 @@ def get_panel_decisions_for_user() -> list[PanelDecision]:
 
     with oda.uow() as uow:
         decisions = get_latest_entity_by_id(
-                uow.pnlds.query(CustomQuery()), "decision_id"
-            )
+            uow.pnlds.query(CustomQuery()), "decision_id"
+        )
     return decisions

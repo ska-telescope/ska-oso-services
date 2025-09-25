@@ -121,11 +121,8 @@ def test_get_list_panel_decision_for_user(authrequests):
     example_decision_id = created_ids[0]
     get_response = authrequests.get(f"{PHT_URL}/panel/decision/{example_decision_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
-    user_id = get_response.json()["metadata"]["created_by"]
 
-    list_response = authrequests.get(
-        f"{PHT_URL}/panel/decision/users/{user_id}/decisions"
-    )
+    list_response = authrequests.get(f"{PHT_URL}/panel/decision/")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     reviews = list_response.json()
@@ -135,6 +132,4 @@ def test_get_list_panel_decision_for_user(authrequests):
     # Check that all created reviews are returned
     returned_ids = {p["decision_id"] for p in reviews}
     for decision_id in created_ids:
-        assert (
-            decision_id in returned_ids
-        ), f"Missing proposal {decision_id} in GET /users/{user_id}/decisions"
+        assert decision_id in returned_ids, f"Missing proposal {decision_id} in GET /"

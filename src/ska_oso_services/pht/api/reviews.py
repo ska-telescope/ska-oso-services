@@ -171,7 +171,7 @@ def update_review(
 
         try:
             # check that the user is the owner of the review or has SW_ENGINEER role
-            #TODO: update this with roles in 2 places
+            # TODO: update this with roles in 2 places
             if (
                 existing.reviewer_id != auth.user_id
                 and Role.SW_ENGINEER not in auth.roles
