@@ -207,5 +207,5 @@ class Testpanel_decisionAPI:
             headers={"Content-Type": "application/json"},
         )
 
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert "validation error" in response.json()["detail"].lower()
+        assert response.status_code == HTTPStatus.FORBIDDEN
+        assert "permission to update" in response.json()["detail"].lower()
