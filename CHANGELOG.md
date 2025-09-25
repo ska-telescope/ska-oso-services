@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Updates permissions for panel decisions
+* [BREAKING] Updates `pht/panel/users/{user_id}/decision` to `pht/panel/decision` so user id is pulled from token.
 
 5.1.0
 ***********
