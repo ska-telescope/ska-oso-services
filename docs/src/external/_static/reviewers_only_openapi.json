@@ -5,14 +5,14 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/ska-oso-services/oso/api/v2/pht/reviewers": {
+    "/ska-oso-services/oso/api/v5/pht/reviewers": {
       "get": {
         "tags": [
           "PMT API - Reviewers"
         ],
         "summary": "Retrieve a list of reviewers",
-        "description": "Returns a mocked list of reviewers\n\nReturns:\n    list[dict]",
-        "operationId": "get_reviewers_ska_oso_services_oso_api_v2_pht_reviewers_get",
+        "description": "Returns a list of science and technical reviewers from MS Graph\n\nReturns:\n- dict: {\n- \"sci_reviewers\": list of dict\n- \"tech_reviewers\": list of dict\n}",
+        "operationId": "get_reviewers_ska_oso_services_oso_api_v5_pht_reviewers_get",
         "security": [
           {
             "SKAO Entra ID Authentication": []
@@ -45,12 +45,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": true
-                  },
-                  "title": "Response Get Reviewers Ska Oso Services Oso Api V2 Pht Reviewers Get"
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Reviewers Ska Oso Services Oso Api V5 Pht Reviewers Get"
                 }
               }
             }

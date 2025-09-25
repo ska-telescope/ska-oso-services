@@ -83,7 +83,7 @@ def get_panel_decision(decision_id: str) -> PanelDecision:
         PanelDecision: The created panel decision, validated against the schema.
         This includes the metadata such as `created_by`, and `created_on`.
     """
-    logger.debug("GET panel DECISION decision_id: %s", decision_id)
+    logger.info("GET panel DECISION decision_id: %s", decision_id)
 
     with oda.uow() as uow:
         decision = uow.pnlds.get(decision_id)
