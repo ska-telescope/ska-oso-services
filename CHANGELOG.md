@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+
+5.2.0
+***********
 * Update to OSD v4.2.1 and add the Band 5b sub-bands to the ODT /configuration endpoint response
 * Update to ODA v11.7.0 which pulls in PDM v22.1.0
 
