@@ -19,3 +19,4 @@ def test_configuration_get():
     assert len(response.ska_mid.frequency_band) == 6
     assert len(response.ska_mid.subarrays) == 2
     assert len(response.ska_low.subarrays) == 2
+    assert len(response.ska_mid.frequency_band[-1].band5b_subbands) == 3

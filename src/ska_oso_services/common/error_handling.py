@@ -98,9 +98,7 @@ async def oda_not_found_handler(request: Request, err: ODANotFound) -> JSONRespo
     return the correct HTTP 404 response.
     """
     LOGGER.debug("NotFoundInODA for path parameters %s", request.path_params)
-    return JSONResponse(
-        status_code=HTTPStatus.NOT_FOUND, content={"detail": err.message}
-    )
+    return JSONResponse(status_code=HTTPStatus.NOT_FOUND, content={"detail": str(err)})
 
 
 async def oda_error_handler(_: Request, err: ODAError) -> JSONResponse:
@@ -108,9 +106,9 @@ async def oda_error_handler(_: Request, err: ODAError) -> JSONResponse:
     A custom handler function to deal with general ODAError and
     return the correct 500 response.
     """
-    LOGGER.error("ODAError with message %s", err.message)
+    LOGGER.error("ODAError with message %s", str(err))
     return JSONResponse(
-        status_code=HTTPStatus.INTERNAL_SERVER_ERROR, content={"detail": err.message}
+        status_code=HTTPStatus.INTERNAL_SERVER_ERROR, content={"detail": str(err)}
     )
 
 
