@@ -3,7 +3,7 @@ This module calls the OSD and converts the relevant parts into the
 configuration needed for the application.
 """
 
-from typing import Optional
+from importlib.metadata import version
 
 from pydantic import dataclasses
 from ska_ost_osd.osd.common.error_handling import OSDModelError
@@ -15,12 +15,25 @@ from ska_oso_services.common.model import AppModel
 
 SUPPORTED_ARRAY_ASSEMBLIES = ["AA0.5", "AA1"]
 
+OSD_VERSION = version("ska-ost-osd")
+OSD_SOURCE = "car"
+
+
+@dataclasses.dataclass
+class Band5bSubband:
+    sub_band: int
+    max_frequency_hz: float
+    min_frequency_hz: float
+    lo_frequency_hz: float
+    sideband: str
+
 
 @dataclasses.dataclass
 class FrequencyBand:
     max_frequency_hz: float
     min_frequency_hz: float
-    rx_id: Optional[str] = None
+    rx_id: str | None = None
+    band5b_subbands: list[Band5bSubband] | None = None
 
 
 @dataclasses.dataclass
@@ -64,7 +77,10 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
     subarrays = []
     for array_assembly in SUPPORTED_ARRAY_ASSEMBLIES:
         mid_response = get_osd_data(
-            array_assembly=array_assembly, capabilities="mid", source="car"
+            array_assembly=array_assembly,
+            capabilities="mid",
+            source=OSD_SOURCE,
+            osd_version=OSD_VERSION,
         )
         subarrays.append(
             Subarray(
@@ -81,9 +97,23 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
     receiver_information = mid_response["capabilities"]["mid"]["basic_capabilities"][
         "receiver_information"
     ]
+
+    def frequency_band_from_receiver_information_for_band(receiver_information):
+        band5b_subbands = (
+            [
+                Band5bSubband(**sub_band)
+                for sub_band in receiver_information["sub_bands"]
+            ]
+            if receiver_information["rx_id"] == "Band_5b"
+            else None
+        )
+
+        return FrequencyBand(**receiver_information, band5b_subbands=band5b_subbands)
+
     return MidConfiguration(
         frequency_band=[
-            FrequencyBand(**reciever_info) for reciever_info in receiver_information
+            frequency_band_from_receiver_information_for_band(receiver_info)
+            for receiver_info in receiver_information
         ],
         subarrays=subarrays,
     )
@@ -93,7 +123,10 @@ def _get_low_telescope_configuration() -> LowConfiguration:
     subarrays = []
     for array_assembly in SUPPORTED_ARRAY_ASSEMBLIES:
         low_response = get_osd_data(
-            array_assembly=array_assembly, capabilities="low", source="car"
+            array_assembly=array_assembly,
+            capabilities="low",
+            source=OSD_SOURCE,
+            osd_version=OSD_VERSION,
         )
         subarrays.append(
             Subarray(

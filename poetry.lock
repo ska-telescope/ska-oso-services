@@ -977,14 +977,14 @@ standard-no-fastapi-cloud-cli = ["uvicorn[standard] (>=0.15.0)"]
 
 [[package]]
 name = "fastapi-cloud-cli"
-version = "0.2.0"
+version = "0.2.1"
 description = "Deploy and manage FastAPI Cloud apps from the command line 🚀"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "fastapi_cloud_cli-0.2.0-py3-none-any.whl", hash = "sha256:8dc13f95246d80e625e2789a21760494e855d887f70caae109423d00064772d1"},
-    {file = "fastapi_cloud_cli-0.2.0.tar.gz", hash = "sha256:115d9b1f198b09ecc66f67156d183babb4fc14431414cc2e57a7649624782da6"},
+    {file = "fastapi_cloud_cli-0.2.1-py3-none-any.whl", hash = "sha256:245447bfb17b01ae5f7bc15dec0833bce85381ecf34532e8fa4bcf279ad1c361"},
+    {file = "fastapi_cloud_cli-0.2.1.tar.gz", hash = "sha256:aa22a4b867bf53165b6551d2f4eb21b079bad4aa74047cb889acf941e34699d9"},
 ]
 
 [package.dependencies]
@@ -4304,4 +4304,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "8e7bc9c5cd477e7cd697ca041fb2f236e9669534c3d2a8c569c02c9a06f18001"
+content-hash = "be5b943d7909f4b476f9fef8dc9b42e5cec889f1008cc0b3f842a735694b8a4c"

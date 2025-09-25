@@ -9,6 +9,11 @@ Unreleased
 * Updates permissions for panel decisions
 * [BREAKING] Updates `pht/panel/users/{user_id}/decision` to `pht/panel/decision` so user id is pulled from token.
 
+5.2.0
+***********
+* Update to OSD v4.2.1 and add the Band 5b sub-bands to the ODT /configuration endpoint response
+* Update to ODA v11.7.0 which pulls in PDM v22.1.0
+
 5.1.0
 ***********
 * Adds `/pht/prsls/member/{email}` to search user by email
