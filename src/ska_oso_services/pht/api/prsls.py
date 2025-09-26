@@ -108,7 +108,7 @@ def create_proposal(
             user_id=auth.user_id,
             given_name="Jack",
             family_name="trevor",
-            email=auth.unique_name,
+            email="john@doe.com",
             status= "Accepted",
             principal_investigator=True,
         )
