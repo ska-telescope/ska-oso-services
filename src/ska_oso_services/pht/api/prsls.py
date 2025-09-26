@@ -15,6 +15,7 @@ from ska_oso_pdm.proposal import (
     ProposalPermissions,
     ProposalRole,
 )
+from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
 from starlette.status import HTTP_400_BAD_REQUEST
@@ -104,7 +105,13 @@ def create_proposal(
     try:
         # create a proposal level access when the proposal is created
         with oda.uow() as uow:
-
+            proposal.info.investigators = Investigator(
+                user_id=auth.user_id,
+                given_name=auth.given_name,
+                family_name=auth.family_name,
+                email=auth.unique_name,
+                principal_investigator=True,
+            )
             created_prsl = uow.prsls.add(proposal, auth.user_id)
             # Create permissions
             create_prslacc = ProposalAccess(
