@@ -84,14 +84,10 @@ def get_panel_decision(
         This includes the metadata such as `created_by`, and `created_on`.
     """
     logger.info("GET panel DECISION decision_id: %s", decision_id)
-    required_groups = {
-        PrslRole.OPS_PROPOSAL_ADMIN,
-        PrslRole.OPS_REVIEW_CHAIR,
-        Role.SW_ENGINEER,
-    }
-    has_groups = required_groups.issubset(getattr(auth, "groups", set()))
-
-    if not has_groups:
+    if Role.SW_ENGINEER not in getattr(auth, "roles", ()) and not any(
+        g in getattr(auth, "groups", ())
+        for g in (PrslRole.OPS_PROPOSAL_ADMIN, PrslRole.OPS_REVIEW_CHAIR)
+    ):
         raise ForbiddenError(
             detail=(
                 f"You do not have permission to \
@@ -124,15 +120,13 @@ def update_panel_decision(
     """
 
     logger.debug("PUT Decision - Attempting update for Decision_id: %s", decision_id)
-    required_groups = {PrslRole.OPS_REVIEW_CHAIR, Role.SW_ENGINEER}
-    has_groups = required_groups.issubset(getattr(auth, "groups", set()))
+    has_group = PrslRole.OPS_REVIEW_CHAIR in (getattr(auth, "groups", set()) or set())
+    has_role = Role.SW_ENGINEER in (getattr(auth, "roles", set()) or set())
 
-    if not has_groups:
+    if not (has_group or has_role):
         raise ForbiddenError(
-            detail=(
-                f"You do not have permission to update \
-                this decision with id:{decision_id}"
-            )
+            detail=f"You do not have permission to \
+                update this decision with id:{decision_id}"
         )
 
     # Ensure ID match
@@ -182,17 +176,14 @@ def get_panel_decisions_for_user(
     """
 
     logger.debug("GET Decision LIST query for the user")
-    required_groups = {
-        PrslRole.OPS_PROPOSAL_ADMIN,
-        PrslRole.OPS_REVIEW_CHAIR,
-        Role.SW_ENGINEER,
-    }
-    has_groups = required_groups.issubset(getattr(auth, "groups", set()))
+    ALLOWED_ROLES = {Role.SW_ENGINEER}
+    ALLOWED_GROUPS = {PrslRole.OPS_PROPOSAL_ADMIN, PrslRole.OPS_REVIEW_CHAIR}
 
-    if not has_groups:
-        raise ForbiddenError(
-            detail=("You do not have permission to retrieve decisions.")
-        )
+    if not (
+        ALLOWED_ROLES & (getattr(auth, "roles", set()) or set())
+        or ALLOWED_GROUPS & (getattr(auth, "groups", set()) or set())
+    ):
+        raise ForbiddenError("You do not have permission to retrieve decisions.")
 
     with oda.uow() as uow:
         decisions = get_latest_entity_by_id(
