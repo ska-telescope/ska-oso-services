@@ -45,8 +45,8 @@ from ska_oso_services.pht.service.s3_bucket import (
     create_presigned_url_upload_pdf,
     get_aws_client,
 )
-from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
-from ska_oso_services.pht.utils.ms_graph import get_users_by_mail
+from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL, MS_GRAPH_URL
+from ska_oso_services.pht.utils.ms_graph import get_users_by_mail, make_graph_call
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
     get_latest_entity_by_id,
@@ -103,19 +103,10 @@ def create_proposal(
     logger.debug("POST PROPOSAL create")
 
     try:
-        # create a proposal level access when the proposal is created
-        new_inv = Investigator(
-            user_id=auth.user_id,
-            given_name="Jack",
-            family_name="trevor",
-            email="john@doe.com",
-            status= "Accepted",
-            principal_investigator=True,
-        )
+        #TODO: add the principal investigator to the proposal
         with oda.uow() as uow:
-            proposal.info.investigators.append(new_inv)
             created_prsl = uow.prsls.add(proposal, auth.user_id)
-            # Create permissions
+            # create a proposal level access when the proposal is created
             create_prslacc = ProposalAccess(
                 access_id=generate_entity_id("prslacc"),
                 prsl_id=created_prsl.prsl_id,
@@ -127,7 +118,6 @@ def create_proposal(
                     ProposalPermissions.View,
                 ],
             )
-            # Update created proposal
 
             uow.prslacc.add(create_prslacc, auth.user_id)
             uow.commit()
