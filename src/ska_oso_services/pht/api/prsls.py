@@ -106,9 +106,10 @@ def create_proposal(
         # create a proposal level access when the proposal is created
         new_inv = Investigator(
             user_id=auth.user_id,
-            given_name="John",
-            family_name="John",
-            email="ane@doe.com",
+            given_name=auth.given_name,
+            family_name=auth.family_name,
+            email=auth.unique_name,
+            status= "Accepted",
             principal_investigator=True,
         )
         with oda.uow() as uow:
