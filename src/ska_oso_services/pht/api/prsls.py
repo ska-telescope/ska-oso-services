@@ -104,7 +104,9 @@ def create_proposal(
     try:
         # create a proposal level access when the proposal is created
         with oda.uow() as uow:
+
             created_prsl = uow.prsls.add(proposal, auth.user_id)
+            # Create permissions
             create_prslacc = ProposalAccess(
                 access_id=generate_entity_id("prslacc"),
                 prsl_id=created_prsl.prsl_id,
@@ -116,6 +118,7 @@ def create_proposal(
                     ProposalPermissions.View,
                 ],
             )
+            # Update created proposal
 
             uow.prslacc.add(create_prslacc, auth.user_id)
             uow.commit()

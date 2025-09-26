@@ -115,7 +115,7 @@ def get_reviews_for_user(
     )
     with oda.uow() as uow:
         if is_allowed:
-            rows = uow.rvws.query(CustomQuery())
+            rows = get_latest_entity_by_id(uow.rvws.query(CustomQuery()), "review_id")
         else:
             query_param = CustomQuery(reviewer_id=auth.user_id)
             rows = uow.rvws.query(query_param)
