@@ -106,8 +106,8 @@ def create_proposal(
         # create a proposal level access when the proposal is created
         new_inv = Investigator(
             user_id=auth.user_id,
-            given_name=auth.given_name,
-            family_name=auth.family_name,
+            given_name="Jack",
+            family_name="trevor",
             email=auth.unique_name,
             status= "Accepted",
             principal_investigator=True,
