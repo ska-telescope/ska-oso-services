@@ -6,6 +6,23 @@ from ska_oso_pdm.proposal import ProposalAccess, ProposalPermissions, ProposalRo
 from ska_oso_services.common.model import AppModel
 
 
+
+class ProposalType(AppModel):
+    main_type: str = Field(..., description="e.g. 'standard_proposal'")
+    attributes: list[str] = Field(default_factory=list)
+
+class ProposalInfo(AppModel):
+    title: str
+    proposal_type: ProposalType
+
+class ProposalCreate(AppModel):
+    prsl_id: str
+    status: str
+    cycle: str
+    info: ProposalInfo
+
+
+
 class EmailRequest(AppModel):
     """
     Schema for incoming email request.

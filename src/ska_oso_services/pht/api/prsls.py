@@ -30,7 +30,7 @@ from ska_oso_services.common.error_handling import (
 )
 from ska_oso_services.common.osdmapper import get_osd_data
 from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
-from ska_oso_services.pht.models.schemas import EmailRequest
+from ska_oso_services.pht.models.schemas import EmailRequest, ProposalCreate
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
@@ -45,7 +45,7 @@ from ska_oso_services.pht.service.s3_bucket import (
     create_presigned_url_upload_pdf,
     get_aws_client,
 )
-from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL, MS_GRAPH_URL
+from ska_oso_services.pht.utils.constants import MS_GRAPH_URL
 from ska_oso_services.pht.utils.ms_graph import get_users_by_mail, make_graph_call
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
@@ -91,10 +91,7 @@ def create_proposal(
             scopes={Scope.PHT_READWRITE},
         ),
     ],
-    proposal: Proposal = Body(
-        ...,
-        example=EXAMPLE_PROPOSAL,
-    ),
+proposal: ProposalCreate
 ) -> str:
     """
     Creates a new proposal in the ODA.
@@ -157,7 +154,7 @@ def get_proposals_by_status() -> list[Proposal]:
 
     Retrieves the Proposals from the
     underlying data store, if available
-        Return proposals, preferring UNDER_REVIEW over SUBMITTED.
+    Return proposals, preferring UNDER_REVIEW over SUBMITTED.
     One latest proposal per prsl_id.
 
     Returns:
@@ -200,10 +197,10 @@ def get_proposals_for_user(
 
     The proposals are determined from the underlying data store by:
     1.) Resolving accessible proposal IDs via, list_accessible_proposal_ids:
-        1.) This queries the proposal_acces table to see if there is a proposal
+        - This queries the proposal_acces table to see if there is a proposal
         associated with the user_id.
         Note: Once a proposal is created, an access is created and once Co-Is are added,
-        access is created as well
+        access is created as well.
     2.) Fetching each proposal by ID and
     3.) Returning the proposals as a list (empty if none are found).
 
@@ -579,7 +576,7 @@ def create_delete_pdf_url(filename: str) -> str:
     ],
 )
 def get_user_by_email(email: str) -> dict:
-    """Returns an MS Entra user by email from MS Graph
+    """Returns an MS Entra user by email from MS Graph.
 
     Returns:
         dict
