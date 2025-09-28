@@ -176,13 +176,14 @@ def get_panel_decisions_for_user(
     """
 
     logger.debug("GET Decision LIST query for the user")
-    ALLOWED_ROLES = {Role.SW_ENGINEER}
-    ALLOWED_GROUPS = {PrslRole.OPS_PROPOSAL_ADMIN, PrslRole.OPS_REVIEW_CHAIR}
+    groups = getattr(auth, "groups", set()) or set()
 
-    if not (
-        ALLOWED_ROLES & (getattr(auth, "roles", set()) or set())
-        or ALLOWED_GROUPS & (getattr(auth, "groups", set()) or set())
-    ):
+    has_role = Role.SW_ENGINEER in getattr(auth, "roles", set()) or set()
+    has_group = (
+        PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
+    )
+
+    if not (has_role or has_group):
         raise ForbiddenError("You do not have permission to retrieve decisions.")
 
     with oda.uow() as uow:
