@@ -15,6 +15,7 @@ from ska_oso_pdm.proposal import (
     ProposalPermissions,
     ProposalRole,
 )
+from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
 from starlette.status import HTTP_400_BAD_REQUEST
@@ -44,8 +45,8 @@ from ska_oso_services.pht.service.s3_bucket import (
     create_presigned_url_upload_pdf,
     get_aws_client,
 )
-from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
-from ska_oso_services.pht.utils.ms_graph import get_users_by_mail
+from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL, MS_GRAPH_URL
+from ska_oso_services.pht.utils.ms_graph import get_users_by_mail, make_graph_call
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
     get_latest_entity_by_id,
@@ -102,10 +103,21 @@ def create_proposal(
     logger.debug("POST PROPOSAL create")
 
     try:
-        # TODO: add the principal investigator to the proposal
+        # create a proposal level access when the proposal is created
+        user_url = f"{MS_GRAPH_URL}/users/{auth.user_id}"
+        investigator = make_graph_call(user_url, False)
+        new_investigator = Investigator(
+            user_id=auth.user_id,
+            given_name=investigator[0]["givenName"],
+            family_name=investigator[0]["surname"],
+            email=investigator[0]["userPrincipalName"],
+            status="Accepted",  # This needs to be updated in the datamodel
+            principal_investigator=True,
+        )
         with oda.uow() as uow:
+            proposal.info.investigators.append(new_investigator)
             created_prsl = uow.prsls.add(proposal, auth.user_id)
-            # create a proposal level access when the proposal is created
+            # Create permissions
             create_prslacc = ProposalAccess(
                 access_id=generate_entity_id("prslacc"),
                 prsl_id=created_prsl.prsl_id,
