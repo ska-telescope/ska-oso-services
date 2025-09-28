@@ -30,7 +30,7 @@ from ska_oso_services.common.error_handling import (
 )
 from ska_oso_services.common.osdmapper import get_osd_data
 from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
-from ska_oso_services.pht.models.schemas import EmailRequest, ProposalCreate
+from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
@@ -45,7 +45,7 @@ from ska_oso_services.pht.service.s3_bucket import (
     create_presigned_url_upload_pdf,
     get_aws_client,
 )
-from ska_oso_services.pht.utils.constants import MS_GRAPH_URL
+from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL, MS_GRAPH_URL
 from ska_oso_services.pht.utils.ms_graph import get_users_by_mail, make_graph_call
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
@@ -91,7 +91,10 @@ def create_proposal(
             scopes={Scope.PHT_READWRITE},
         ),
     ],
-proposal: ProposalCreate
+    proposal: Proposal = Body(
+        ...,
+        example=EXAMPLE_PROPOSAL,
+    ),
 ) -> str:
     """
     Creates a new proposal in the ODA.
