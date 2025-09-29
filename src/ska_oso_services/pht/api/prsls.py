@@ -126,7 +126,7 @@ def create_proposal(
             user_id=auth.user_id,
             given_name= getattr(auth, "given_name", "") ,
             family_name=getattr(auth, "family_name", "") ,
-            email=getattr(auth, "upn", ""),
+            email=getattr(auth, "upn", "jane@doe.com"),
             status="Accepted",  # This needs to be updated in the datamodel
             principal_investigator=True,
         )
