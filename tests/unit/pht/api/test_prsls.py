@@ -207,13 +207,11 @@ class TestProposalAPI:
         Check the proposal_create method returns the expected prsl_id and 200 status,
         stubbing MS Graph and the UoW.
         """
-        mock_make_graph_call.return_value = [
-            {
-                "givenName": "Jane",
-                "surname": "Doe",
-                "userPrincipalName": "jane.doe@example.edu",
-            }
-        ]
+        mock_make_graph_call.return_value = {
+            "givenName": "Jane",
+            "surname": "Doe",
+            "userPrincipalName": "jane.doe@example.edu",
+        }
 
         proposal_obj = TestDataFactory.proposal()
         uow_mock = mock.MagicMock()
@@ -244,13 +242,11 @@ class TestProposalAPI:
         Simulate ValueError in proposal creation and
         ensure it raises BadRequestError (400).
         """
-        mock_make_graph_call.return_value = [
-            {
-                "givenName": "Jane",
-                "surname": "Doe",
-                "userPrincipalName": "jane.doe@example.edu",
-            }
-        ]
+        mock_make_graph_call.return_value = {
+            "givenName": "Jane",
+            "surname": "Doe",
+            "userPrincipalName": "jane.doe@example.edu",
+        }
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.add.side_effect = ValueError("mock-failure")

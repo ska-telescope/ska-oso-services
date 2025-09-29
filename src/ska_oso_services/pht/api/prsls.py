@@ -108,9 +108,9 @@ def create_proposal(
         investigator = make_graph_call(user_url, False)
         new_investigator = Investigator(
             user_id=auth.user_id,
-            given_name=investigator[0]["givenName"],
-            family_name=investigator[0]["surname"],
-            email=investigator[0]["userPrincipalName"],
+            given_name=investigator["givenName"],
+            family_name=investigator["surname"],
+            email=investigator["userPrincipalName"],
             status="Accepted",  # This needs to be updated in the datamodel
             principal_investigator=True,
         )
