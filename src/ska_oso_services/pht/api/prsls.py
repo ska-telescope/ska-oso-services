@@ -105,7 +105,7 @@ def create_proposal(
     try:
         # create a proposal level access when the proposal is created
         user_url = f"{MS_GRAPH_URL}/users/{auth.user_id}"
-        investigator = make_graph_call(user_url, False)
+        investigator = make_graph_call(user_url, False)[0]
         new_investigator = Investigator(
             user_id=auth.user_id,
             given_name=investigator["givenName"],
