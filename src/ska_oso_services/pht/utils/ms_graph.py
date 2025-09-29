@@ -32,13 +32,13 @@ def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
         claims = jwt.decode(
             tok, options={"verify_signature": False, "verify_exp": False}
         )
-    except Exception:
-        claims = {}
+    except jwt.InvalidTokenError:
+        return "", "", ""
 
     given = claims.get("given_name") or ""
     family = claims.get("family_name") or ""
 
-    email = claims.get("upn")
+    email = claims.get("upn") or ""
 
     return given, family, email
 
