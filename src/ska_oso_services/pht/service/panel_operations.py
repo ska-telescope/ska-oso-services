@@ -235,7 +235,7 @@ def ensure_review_exist_or_create(
     existing = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
     existing_rvw = existing[0] if existing else None
 
-    if existing_rvw and existing_rvw.metadata.version == 1:
+    if existing_rvw:  # TODO: check for where the metadata version ==1
         logger.debug(
             "%s already exists (prsl_id=%s, reviewer=%s)",
             kind,

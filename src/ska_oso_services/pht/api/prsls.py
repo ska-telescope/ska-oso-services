@@ -45,8 +45,11 @@ from ska_oso_services.pht.service.s3_bucket import (
     create_presigned_url_upload_pdf,
     get_aws_client,
 )
-from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL, MS_GRAPH_URL
-from ska_oso_services.pht.utils.ms_graph import get_users_by_mail, make_graph_call
+from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
+from ska_oso_services.pht.utils.ms_graph import (
+    extract_profile_from_access_token,
+    get_users_by_mail,
+)
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
     get_latest_entity_by_id,
@@ -56,25 +59,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 
-import jwt  
-
-def _raw(tok: str) -> str:
-    return tok.split()[1] if tok and tok.startswith("Bearer ") else tok or ""
-
-def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
-    
-    claims = jwt.decode(_raw(auth.access_token), options={"verify_signature": False, "verify_exp": False})
-
-    given  = claims.get("given_name") or claims.get("name") or ""
-    family = claims.get("family_name") or claims.get("surname") or ""
-    email  = (
-        claims.get("preferred_username")
-        or claims.get("upn")
-        or claims.get("email")
-        or (claims.get("emails") or [None])[0]
-        or ""
-    )
-    return given, family, email
 
 @router.get(
     "/osd/{cycle}",
@@ -125,7 +109,7 @@ def create_proposal(
         given, family, email = extract_profile_from_access_token(auth)
         new_investigator = Investigator(
             user_id=auth.user_id,
-            given_name= given,
+            given_name=given,
             family_name=family,
             email=email,
             status="Accepted",  # This needs to be updated in the datamodel

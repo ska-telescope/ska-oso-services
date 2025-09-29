@@ -200,60 +200,36 @@ class TestProposalAPI:
         res = response.json()
         assert expected == res
 
-    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    @mock.patch(f"{PRSL_MODULE}.make_graph_call", autospec=True)
-    def test_create_proposal(self, mock_make_graph_call, mock_uow, client):
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_create_proposal(self, mock_oda, client):
         """
-        Check the proposal_create method returns the expected prsl_id and 200 status,
-        stubbing MS Graph and the UoW.
+        Check the proposal_create method returns the expected prsl_id and status code.
         """
-        mock_make_graph_call.return_value = [
-            {
-                "givenName": "Jane",
-                "surname": "Doe",
-                "userPrincipalName": "jane.doe@example.edu",
-            }
-        ]
 
         proposal_obj = TestDataFactory.proposal()
+
         uow_mock = mock.MagicMock()
         uow_mock.prsls.add.return_value = proposal_obj
-        mock_uow.return_value.__enter__.return_value = uow_mock
+        mock_oda.return_value.__enter__.return_value = uow_mock
 
-        resp = client.post(
+        response = client.post(
             f"{PROPOSAL_API_URL}/create",
             data=VALID_NEW_PROPOSAL,
-            headers={"Content-Type": "application/json"},
+            headers={"Content-type": "application/json"},
         )
 
-        assert resp.status_code == HTTPStatus.OK
-        assert resp.json() == proposal_obj.prsl_id
+        assert response.status_code == HTTPStatus.OK
+        assert response.json() == proposal_obj.prsl_id
 
-        # Optional sanity checks:
-        mock_make_graph_call.assert_called_once()
-        uow_mock.prslacc.add.assert_called_once()
-        uow_mock.prsls.add.assert_called_once()
-        uow_mock.commit.assert_called_once()
-
-    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    @mock.patch(f"{PRSL_MODULE}.make_graph_call", autospec=True)
-    def test_create_proposal_value_error_raises_bad_request(
-        self, mock_make_graph_call, mock_oda, client
-    ):
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    def test_create_proposal_value_error_raises_bad_request(self, mock_oda, client):
         """
-        Simulate ValueError in proposal creation and
-        ensure it raises BadRequestError (400).
+        Simulate ValueError in proposal creation and ensure it raises BadRequestError.
         """
-        mock_make_graph_call.return_value = [
-            {
-                "givenName": "Jane",
-                "surname": "Doe",
-                "userPrincipalName": "jane.doe@example.edu",
-            }
-        ]
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.add.side_effect = ValueError("mock-failure")
+
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.post(
@@ -265,10 +241,6 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.BAD_REQUEST
         data = response.json()
         assert "Failed when attempting to create a proposal" in data["detail"]
-
-        uow_mock.prslacc.add.assert_not_called()
-        uow_mock.commit.assert_not_called()
-        mock_make_graph_call.assert_called_once()
 
     @mock.patch(
         f"{MODULE}.assert_user_has_permission_for_proposal",

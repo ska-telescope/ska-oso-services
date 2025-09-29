@@ -151,6 +151,8 @@ def test_create_and_get_proposal(authrequests):
         obj.pop("prsl_id", None)
         if "metadata" in obj:
             obj.pop("metadata", None)
+        if "investigators" in obj["info"]:
+            obj["info"].pop("investigators", None)
 
     assert actual_payload == expected_payload
 

@@ -1,6 +1,7 @@
 import re
 from urllib.parse import quote
 
+import jwt
 import msal
 import requests
 
@@ -11,6 +12,35 @@ from ska_oso_services.pht.utils.constants import (
     SCOPE,
     TENANT_ID,
 )
+
+client = msal.ConfidentialClientApplication(
+    client_id=CLIENT_ID,
+    authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+    client_credential=CLIENT_SECRET,
+)
+
+
+def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
+    """
+    Returns (given_name, family_name, email_like) from an already-verified access token.
+    """
+    tok = getattr(auth, "access_token", "") or ""
+    if tok.startswith("Bearer "):
+        tok = tok.split(" ", 1)[1]
+
+    try:
+        claims = jwt.decode(
+            tok, options={"verify_signature": False, "verify_exp": False}
+        )
+    except Exception:
+        claims = {}
+
+    given = claims.get("given_name") or ""
+    family = claims.get("family_name") or ""
+
+    email = claims.get("upn")
+
+    return given, family, email
 
 
 def make_graph_call(url, pagination=True):
@@ -31,11 +61,7 @@ def make_graph_call(url, pagination=True):
         (collection endpoint).
         Returns an empty list if the request fails or no token is acquired.
     """
-    client = msal.ConfidentialClientApplication(
-        client_id=CLIENT_ID,
-        authority=f"https://login.microsoftonline.com/{TENANT_ID}",
-        client_credential=CLIENT_SECRET,
-    )
+
     token_result = client.acquire_token_silent(SCOPE, account=None)
 
     if token_result:
