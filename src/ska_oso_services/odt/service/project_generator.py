@@ -3,7 +3,8 @@ from random import randint
 
 from ska_oso_pdm import Project, Proposal
 from ska_oso_pdm.project import ObservingBlock, ScienceProgramme
-from ska_oso_pdm.proposal import Info, ObservationSets
+from ska_oso_pdm.proposal import ObservationSets
+from ska_oso_pdm.proposal.info import ObservationInfo, ProposalInfo
 
 
 def generate_project(proposal: Proposal) -> Project:
@@ -63,7 +64,7 @@ def _group_observation_sets(proposal: Proposal) -> list[list[ObservationSets]]:
     """
     grouped_observation_sets = defaultdict(list)
     ungrouped_observation_sets = []
-    for observation_set in proposal.info.observation_sets:
+    for observation_set in proposal.observation_info.observation_sets:
         group_id = observation_set.group_id
         if group_id is None:
             ungrouped_observation_sets.append([observation_set])
@@ -74,7 +75,7 @@ def _group_observation_sets(proposal: Proposal) -> list[list[ObservationSets]]:
 
 
 def science_programme_from_observation_set(
-    observation_set: ObservationSets, proposal_info: Info
+    observation_set: ObservationSets, observation_info: ObservationInfo
 ) -> ScienceProgramme:
     """
     Create a ScienceProgramme by copying the ObservationSet over and the other
@@ -84,7 +85,7 @@ def science_programme_from_observation_set(
 
     results_for_observation_set = [
         result_detail
-        for result_detail in proposal_info.result_details
+        for result_detail in observation_info.result_details
         if result_detail.observation_set_ref == observation_set_id
     ]
 
@@ -94,12 +95,12 @@ def science_programme_from_observation_set(
     ]
 
     targets_for_observation_set = [
-        target for target in proposal_info.targets if target.target_id in target_ids
+        target for target in observation_info.targets if target.target_id in target_ids
     ]
 
     sdp_data_products_for_observation_set = [
         data_product
-        for data_product in proposal_info.data_product_sdps
+        for data_product in observation_info.data_product_sdps
         if observation_set_id in data_product.observation_set_refs
     ]
 

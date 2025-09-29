@@ -153,6 +153,63 @@ class Testpanel_decisionAPI:
         assert_json_is_equal(result.text, panel_decision_obj.model_dump_json())
 
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
+    def test_panel_decision_put_success_for_decided(self, mock_uow, client):
+        """
+        Check the pnlds_put method returns the expected response when status is decided
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.pnlds.__contains__.return_value = True
+        uow_mock.prsls.__contains__.return_value = True
+        panel_decision_obj = TestDataFactory.panel_decision(
+            status="Decided", recommendation="ACCEPTED"
+        )
+        decision_id = panel_decision_obj.decision_id
+        uow_mock.pnlds.add.return_value = panel_decision_obj
+        uow_mock.pnlds.get.return_value = panel_decision_obj
+        uow_mock.prsls.get.return_value = TestDataFactory.proposal()
+
+        mock_uow().__enter__.return_value = uow_mock
+
+        result = client.put(
+            f"{PANEL_DECISION_API_URL}/{decision_id}",
+            data=panel_decision_obj.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert result.status_code == HTTPStatus.OK
+        assert_json_is_equal(result.text, panel_decision_obj.model_dump_json())
+        uow_mock.prsls.add.assert_called_once()
+
+    @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
+    def test_panel_decision_put_success_for_non_decided(self, mock_uow, client):
+        """
+        Check the pnlds_put method returns the expected response when status is not decided
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.pnlds.__contains__.return_value = True
+        uow_mock.prsls.__contains__.return_value = True
+        panel_decision_obj = TestDataFactory.panel_decision(
+            status="In Progress", recommendation="ACCEPTED"
+        )
+        decision_id = panel_decision_obj.decision_id
+        uow_mock.pnlds.add.return_value = panel_decision_obj
+        uow_mock.pnlds.get.return_value = panel_decision_obj
+        uow_mock.prsls.get.return_value = TestDataFactory.proposal()
+
+        mock_uow().__enter__.return_value = uow_mock
+
+        result = client.put(
+            f"{PANEL_DECISION_API_URL}/{decision_id}",
+            data=panel_decision_obj.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert result.status_code == HTTPStatus.OK
+        assert_json_is_equal(result.text, panel_decision_obj.model_dump_json())
+        uow_mock.prsls.get.assert_not_called()
+        uow_mock.prsls.add.assert_not_called()
+
+    @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
     def test_update_panel_decision_not_found(self, mock_uow, client):
         """
         Should return 404 if panel_decision doesn't exist.

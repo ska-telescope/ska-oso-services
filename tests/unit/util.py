@@ -161,6 +161,8 @@ class TestDataFactory:
     def panel_decision(
         decision_id: str = "pnld-mvp01-20220923-00001",
         prsl_id: str = "prsl-mvp01-20220923-00001",
+        status: str = "In Progress",
+        recommendation: str = None,
     ) -> PanelDecision:
         """
         Load a valid proposal panel decision object from file and override decision_id,
@@ -170,6 +172,8 @@ class TestDataFactory:
         decision = PanelDecision.model_validate_json(data)
         decision.decision_id = decision_id
         decision.prsl_id = prsl_id
+        decision.status = status
+        decision.recommendation = recommendation
 
         return decision
 
