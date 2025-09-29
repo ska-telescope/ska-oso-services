@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+
+6.0.0
+***********
 * Updates permissions for panel decisions
 * [BREAKING] Updates `pht/panel/users/{user_id}/decision` to `pht/panel/decision` so user id is pulled from token.
 * Update to ODA v11.7.1 which pulls in PDM v22.1.1
