@@ -12,12 +12,6 @@ from ska_oso_services.pht.utils.constants import (
     TENANT_ID,
 )
 
-client = msal.ConfidentialClientApplication(
-    client_id=CLIENT_ID,
-    authority=f"https://login.microsoftonline.com/{TENANT_ID}",
-    client_credential=CLIENT_SECRET,
-)
-
 
 def make_graph_call(url, pagination=True):
     """
@@ -37,6 +31,11 @@ def make_graph_call(url, pagination=True):
         (collection endpoint).
         Returns an empty list if the request fails or no token is acquired.
     """
+    client = msal.ConfidentialClientApplication(
+        client_id=CLIENT_ID,
+        authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+        client_credential=CLIENT_SECRET,
+    )
     token_result = client.acquire_token_silent(SCOPE, account=None)
 
     if token_result:

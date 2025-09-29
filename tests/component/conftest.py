@@ -8,6 +8,11 @@ from ska_aaa_authhelpers.test_helpers import mint_test_token
 
 AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
 
+TENANT_ID = "78887040-bad7-494b-8760-88dcacfb3805"
+CLIENT_ID = "e4d6bb9b-cdd0-46c4-b30a-d045091b501b"
+CLIENT_SECRET = getenv("OSO_CLIENT_SECRET", "OSO_CLIENT_SECRET")
+SCOPE = ["https://graph.microsoft.com/.default"]
+
 
 class Scope(str, Enum):
     ODT_READ = "odt:read"
