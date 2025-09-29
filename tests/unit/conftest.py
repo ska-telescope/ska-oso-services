@@ -13,6 +13,7 @@ from ska_aaa_authhelpers.test_helpers import mint_test_token, monkeypatch_pubkey
 
 from ska_oso_services import create_app
 from ska_oso_services.common.auth import AUDIENCE, Scope
+from ska_oso_services.pht.models.domain import PrslRole
 
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 APP_BASE_API_URL = f"/ska-oso-services/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
@@ -48,6 +49,7 @@ def client(test_app: FastAPI) -> TestClient:
             Scope.PHT_READ,
             Scope.PHT_READWRITE,
         ],
+        groups=[Role.OPS_PROPOSAL_ADMIN, PrslRole.OPS_REVIEW_CHAIR],
     )
     headers = {"Authorization": f"Bearer {token}"}
     return TestClient(test_app, headers=headers)

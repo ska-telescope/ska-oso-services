@@ -1,8 +1,10 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter
+from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
-from ska_db_oda.persistence.domain.query import MatchType, UserQuery
+from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm import PanelDecision, Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel_decision import (
@@ -14,10 +16,12 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
+    ForbiddenError,
     NotFoundError,
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.models.domain import PrslRole
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +31,17 @@ router = APIRouter(prefix="/panel/decision", tags=["PMT API - Panel Decision"])
 @router.post(
     "/create",
     summary="Create a new Panel decision for proposals",
-    dependencies=[
-        Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READWRITE],
-        )
-    ],
 )
-def create_panel_decision(decisions: PanelDecision) -> str:
+def create_panel_decision(
+    decisions: PanelDecision,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> str:
     """
     Create a new panel decision for proposals in a panel.
 
@@ -48,7 +55,7 @@ def create_panel_decision(decisions: PanelDecision) -> str:
 
     try:
         with oda.uow() as uow:
-            created_decision = uow.pnlds.add(decisions)
+            created_decision = uow.pnlds.add(decisions, auth.user_id)
             uow.commit()
         return created_decision.decision_id
     except ValueError as err:
@@ -63,14 +70,17 @@ def create_panel_decision(decisions: PanelDecision) -> str:
 @router.get(
     "/{decision_id}",
     summary="Retrieve an existing panel decision for proposals",
-    dependencies=[
-        Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READ],
-        )
-    ],
 )
-def get_panel_decision(decision_id: str) -> PanelDecision:
+def get_panel_decision(
+    decision_id: str,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READ},
+        ),
+    ],
+) -> PanelDecision:
     """
     Retrieves a decision for a panel from the ODA based on the decision_id.
 
@@ -79,51 +89,54 @@ def get_panel_decision(decision_id: str) -> PanelDecision:
         This includes the metadata such as `created_by`, and `created_on`.
     """
     logger.info("GET panel DECISION decision_id: %s", decision_id)
+    if Role.SW_ENGINEER not in getattr(auth, "roles", ()) and not any(
+        g in getattr(auth, "groups", ())
+        for g in (PrslRole.OPS_PROPOSAL_ADMIN, PrslRole.OPS_REVIEW_CHAIR)
+    ):
+        raise ForbiddenError(
+            detail=(
+                f"You do not have permission to \
+                    retrieve this decision with id:{decision_id}"
+            )
+        )
 
     with oda.uow() as uow:
         decision = uow.pnlds.get(decision_id)
     return decision
 
 
-@router.get(
-    "/users/{user_id}/decisions",
-    summary="Get a list of Decisions created by the given user",
-    dependencies=[
-        Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READ],
-        )
-    ],
-)
-def get_panel_decisions_for_user(user_id: str) -> list[PanelDecision]:
-    """
-    Retrieves the panel Decision for the given user ID from the
-    ODA, if available
-    """
-
-    logger.debug("GET Decision LIST query for the user: %s", user_id)
-
-    with oda.uow() as uow:
-        query_param = UserQuery(user=user_id, match_type=MatchType.EQUALS)
-        decisions = uow.pnlds.query(query_param)
-    return decisions
-
-
 @router.put(
     "/{decision_id}",
     summary="Update an existing Decision",
-    dependencies=[
-        Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READWRITE],
-        )
-    ],
 )
-def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDecision:
+def update_panel_decision(
+    decision_id: str,
+    decision: PanelDecision,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> PanelDecision:
     """
     Updates a decision in the ODA.
     """
+
     logger.debug("PUT Decision - Attempting update for Decision_id: %s", decision_id)
+    has_group = PrslRole.OPS_REVIEW_CHAIR in (
+        getattr(auth, "groups", set()) or set()
+    )  # TODO: revisit if or set() is needed
+    has_role = Role.SW_ENGINEER in (
+        getattr(auth, "roles", set()) or set()
+    )  # TODO: revisit if or set() is needed
+
+    if not (has_group or has_role):
+        raise ForbiddenError(
+            detail=f"You do not have permission to \
+                update this decision with id:{decision_id}"
+        )
 
     # Ensure ID match
     if decision.decision_id != decision_id:
@@ -145,7 +158,7 @@ def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDec
             raise NotFoundError(detail="Decision not found: {decision_id}")
 
         try:
-            updated_decision = uow.pnlds.add(decision)  # Add is used for update
+            updated_decision = uow.pnlds.add(decision, auth.user_id)
 
             if updated_decision.status == PanelReviewStatus.DECIDED:
 
@@ -187,3 +200,40 @@ def update_panel_decision(decision_id: str, decision: PanelDecision) -> PanelDec
             raise BadRequestError(
                 detail="Validation error while saving Decision: {err.args[0]}"
             ) from err
+
+
+@router.get("/", summary="Get a list of Decisions for all proposals")
+def get_panel_decisions_for_user(
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> list[PanelDecision]:
+    """
+    Retrieves the latest panel Decision for all proposals from the
+    ODA, if available
+    """
+
+    logger.debug("GET Decision LIST query for the user")
+    groups = (
+        getattr(auth, "groups", set()) or set()
+    )  # TODO: revisit if or set() is needed
+
+    has_role = (
+        Role.SW_ENGINEER in getattr(auth, "roles", set()) or set()
+    )  # TODO: revisit if or set() is needed
+    has_group = (
+        PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
+    )
+
+    if not (has_role or has_group):
+        raise ForbiddenError("You do not have permission to retrieve decisions.")
+
+    with oda.uow() as uow:
+        decisions = get_latest_entity_by_id(
+            uow.pnlds.query(CustomQuery()), "decision_id"
+        )
+    return decisions

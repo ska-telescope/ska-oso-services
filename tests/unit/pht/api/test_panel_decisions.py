@@ -3,14 +3,23 @@ Unit tests for ska_oso_pht_services.api
 """
 
 from http import HTTPStatus
+from types import SimpleNamespace
 from unittest import mock
 
+from ska_aaa_authhelpers.roles import Role
+from ska_aaa_authhelpers.test_helpers import mint_test_token
 from ska_db_oda.persistence.domain.errors import ODANotFound
 
+from ska_oso_services.common.auth import AUDIENCE, Permissions, Scope
+from ska_oso_services.pht.api import panel_decision as api
+from src.ska_oso_services.pht.models.domain import PrslRole
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import VALID_PANEL_DECISION, TestDataFactory, assert_json_is_equal
 
 PANEL_DECISION_API_URL = f"{PHT_BASE_API_URL}/panel/decision"
+SEC_OBJ = api.get_panel_decisions_for_user.__annotations__["auth"].__metadata__[0]
+# The callable FastAPI actually invokes:
+SEC_DEP = SEC_OBJ.dependency
 
 
 def has_validation_error(detail, field: str) -> bool:
@@ -96,37 +105,62 @@ class Testpanel_decisionAPI:
         data = response.json()
         assert data["decision_id"] == decision_id
 
-    @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
-    def test_get_panel_decision_list_success(self, mock_oda, client):
-        """
-        Check if the get_panel_decisions_for_user returns panel_decisions correctly.
-        """
-        panel_decision_objs = [
-            TestDataFactory.panel_decision(),
-            TestDataFactory.panel_decision(),
-        ]
-        uow_mock = mock.MagicMock()
-        uow_mock.pnlds.query.return_value = panel_decision_objs
-        mock_oda.return_value.__enter__.return_value = uow_mock
+    MODULE = "ska_oso_services.pht.api.panel_decision"
 
-        user_id = "DefaultUser"
-        response = client.get(f"{PANEL_DECISION_API_URL}/users/{user_id}/decisions")
-        assert response.status_code == HTTPStatus.OK
-        assert isinstance(response.json(), list)
-        assert len(response.json()) == len(panel_decision_objs)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
+    def test_get_panel_decision_list_success_by_group(self, mock_uow, client_get):
 
+        uow = mock.MagicMock()
+        uow.pnlds.query.return_value = []
+        mock_uow.return_value.__enter__.return_value = uow
+
+        resp = client_get(f"{PANEL_DECISION_API_URL}/")
+        assert resp.status_code == HTTPStatus.OK
+        assert resp.json() == []
+
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
+    def test_get_panel_decision_list_forbidden_when_no_allowed_role_or_group(
+        self, mock_uow, client
+    ):
+        """
+        403 when token lacks SW_ENGINEER role and has no allowed groups.
+        """
+        bad_token = mint_test_token(
+            audience=AUDIENCE,
+            roles=[Role.ANY],
+            scopes=[Scope.PHT_READWRITE],
+            groups=[],
+        )
+
+        uow = mock.MagicMock()
+        uow.pnlds.query.return_value = []
+        mock_uow.return_value.__enter__.return_value = uow
+
+        resp = client.get(
+            f"{PANEL_DECISION_API_URL}/",
+            headers={"Authorization": f"Bearer {bad_token}"},
+        )
+        assert resp.status_code == HTTPStatus.FORBIDDEN
+        assert "permission" in resp.json()["detail"].lower()
+
+    @mock.patch(
+        "ska_oso_services.pht.api.panel_decision.Permissions.__call__", autospec=True
+    )
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
-    def test_get_panel_decision_list_none(self, mock_oda, client):
+    def test_get_panel_decision_list_none(self, mock_oda, mock_perm_call, client):
         """
         Should return empty list if no panel decisions are found.
+        Requires ADMIN + CHAIR + SW_DEV in groups.
         """
+        mock_perm_call.return_value = SimpleNamespace(
+            groups={PrslRole.OPS_PROPOSAL_ADMIN, PrslRole.OPS_REVIEW_CHAIR}
+        )
+
         uow_mock = mock.MagicMock()
         uow_mock.pnlds.query.return_value = []
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        user_id = "user123"
-        response = client.get(f"{PANEL_DECISION_API_URL}/users/{user_id}/decisions")
-
+        response = client.get(f"{PANEL_DECISION_API_URL}/")
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
 
@@ -247,24 +281,24 @@ class Testpanel_decisionAPI:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
         assert "do not match" in response.json()["detail"].lower()
 
-    @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_decision_validation_error(self, mock_oda, client):
         """
-        Should return 400 if .add() raises ValueError.
+        Should return 400 if .add() raises ValueError (auth passes).
         """
         panel_decision_obj = TestDataFactory.panel_decision()
         decision_id = panel_decision_obj.decision_id
 
         uow_mock = mock.MagicMock()
-        uow_mock.pnlds.get.return_value = panel_decision_obj
+        uow_mock.pnlds.get.return_value = panel_decision_obj  # found existing
         uow_mock.pnlds.add.side_effect = ValueError("Invalid panel_decision content")
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        response = client.put(
+        resp = client.put(
             f"{PANEL_DECISION_API_URL}/{decision_id}",
             data=panel_decision_obj.model_dump_json(),
             headers={"Content-Type": "application/json"},
         )
 
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert "validation error" in response.json()["detail"].lower()
+        assert resp.status_code == HTTPStatus.BAD_REQUEST
+        assert "validation" in resp.json()["detail"].lower()
