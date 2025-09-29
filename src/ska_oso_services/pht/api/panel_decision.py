@@ -120,8 +120,12 @@ def update_panel_decision(
     """
 
     logger.debug("PUT Decision - Attempting update for Decision_id: %s", decision_id)
-    has_group = PrslRole.OPS_REVIEW_CHAIR in (getattr(auth, "groups", set()) or set())
-    has_role = Role.SW_ENGINEER in (getattr(auth, "roles", set()) or set())
+    has_group = PrslRole.OPS_REVIEW_CHAIR in (
+        getattr(auth, "groups", set()) or set()
+    )  # TODO: revisit if or set() is needed
+    has_role = Role.SW_ENGINEER in (
+        getattr(auth, "roles", set()) or set()
+    )  # TODO: revisit if or set() is needed
 
     if not (has_group or has_role):
         raise ForbiddenError(
@@ -176,9 +180,13 @@ def get_panel_decisions_for_user(
     """
 
     logger.debug("GET Decision LIST query for the user")
-    groups = getattr(auth, "groups", set()) or set()
+    groups = (
+        getattr(auth, "groups", set()) or set()
+    )  # TODO: revisit if or set() is needed
 
-    has_role = Role.SW_ENGINEER in getattr(auth, "roles", set()) or set()
+    has_role = (
+        Role.SW_ENGINEER in getattr(auth, "roles", set()) or set()
+    )  # TODO: revisit if or set() is needed
     has_group = (
         PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
     )
