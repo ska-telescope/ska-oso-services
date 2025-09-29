@@ -124,9 +124,9 @@ def create_proposal(
         # )
         new_investigator = Investigator(
             user_id=auth.user_id,
-            given_name=auth.get("given_name") or getattr(auth, "given_name", "") ,
-            family_name=auth.get("family_name") or getattr(auth, "family_name", "") ,
-            email=auth.get("upn") or getattr(auth, "upn", ""),
+            given_name= getattr(auth, "given_name", "") ,
+            family_name=getattr(auth, "family_name", "") ,
+            email=getattr(auth, "upn", ""),
             status="Accepted",  # This needs to be updated in the datamodel
             principal_investigator=True,
         )
