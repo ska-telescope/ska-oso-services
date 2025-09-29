@@ -104,14 +104,29 @@ def create_proposal(
 
     try:
         # create a proposal level access when the proposal is created
-        user_url = f"{MS_GRAPH_URL}/users/{auth.user_id}"
-        investigator = make_graph_call(user_url, False)
-        print(investigator)
+        # user_url = f"{MS_GRAPH_URL}/users/{auth.user_id}"
+        # raw = make_graph_call(user_url, False)
+
+        # investigator = (
+        #     raw["value"][0] if isinstance(raw, dict) and isinstance(raw.get("value"), list) and raw["value"]
+        #     else raw if isinstance(raw, dict)
+        #     else {}
+        # )
+        # # investigator = make_graph_call(user_url, False)
+        # print(investigator)
+        # new_investigator = Investigator(
+        #     user_id=auth.user_id,
+        #     given_name=investigator.get("givenName") or getattr(auth, "given_name", "") ,
+        #     family_name=investigator.get("surname") or getattr(auth, "surname", "") ,
+        #     email=investigator.get("userPrincipalName") or getattr(auth, "userPrincipalName", ""),
+        #     status="Accepted",  # This needs to be updated in the datamodel
+        #     principal_investigator=True,
+        # )
         new_investigator = Investigator(
             user_id=auth.user_id,
-            given_name=investigator["givenName"],
-            family_name=investigator["surname"],
-            email=investigator["userPrincipalName"],
+            given_name=auth.get("given_name") or getattr(auth, "given_name", "") ,
+            family_name=auth.get("family_name") or getattr(auth, "family_name", "") ,
+            email=auth.get("upn") or getattr(auth, "upn", ""),
             status="Accepted",  # This needs to be updated in the datamodel
             principal_investigator=True,
         )
