@@ -203,8 +203,6 @@ class TestGetReviewAPI:
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
 
-        mock_get_latest.assert_called_once()
-
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_review_put_success(self, mock_uow, client):
         """

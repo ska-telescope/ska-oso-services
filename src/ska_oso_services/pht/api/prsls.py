@@ -102,9 +102,10 @@ def create_proposal(
     logger.debug("POST PROPOSAL create")
 
     try:
-        # create a proposal level access when the proposal is created
+        # TODO: add the principal investigator to the proposal
         with oda.uow() as uow:
             created_prsl = uow.prsls.add(proposal, auth.user_id)
+            # create a proposal level access when the proposal is created
             create_prslacc = ProposalAccess(
                 access_id=generate_entity_id("prslacc"),
                 prsl_id=created_prsl.prsl_id,
