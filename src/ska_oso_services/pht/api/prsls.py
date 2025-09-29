@@ -56,6 +56,25 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 
+import jwt  
+
+def _raw(tok: str) -> str:
+    return tok.split()[1] if tok and tok.startswith("Bearer ") else tok or ""
+
+def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
+    
+    claims = jwt.decode(_raw(auth.access_token), options={"verify_signature": False, "verify_exp": False})
+
+    given  = claims.get("given_name") or claims.get("name") or ""
+    family = claims.get("family_name") or claims.get("surname") or ""
+    email  = (
+        claims.get("preferred_username")
+        or claims.get("upn")
+        or claims.get("email")
+        or (claims.get("emails") or [None])[0]
+        or ""
+    )
+    return given, family, email
 
 @router.get(
     "/osd/{cycle}",
@@ -103,30 +122,12 @@ def create_proposal(
     logger.debug("POST PROPOSAL create")
 
     try:
-        # create a proposal level access when the proposal is created
-        # user_url = f"{MS_GRAPH_URL}/users/{auth.user_id}"
-        # raw = make_graph_call(user_url, False)
-
-        # investigator = (
-        #     raw["value"][0] if isinstance(raw, dict) and isinstance(raw.get("value"), list) and raw["value"]
-        #     else raw if isinstance(raw, dict)
-        #     else {}
-        # )
-        # # investigator = make_graph_call(user_url, False)
-        # print(investigator)
-        # new_investigator = Investigator(
-        #     user_id=auth.user_id,
-        #     given_name=investigator.get("givenName") or getattr(auth, "given_name", "") ,
-        #     family_name=investigator.get("surname") or getattr(auth, "surname", "") ,
-        #     email=investigator.get("userPrincipalName") or getattr(auth, "userPrincipalName", ""),
-        #     status="Accepted",  # This needs to be updated in the datamodel
-        #     principal_investigator=True,
-        # )
+        given, family, email = extract_profile_from_access_token(auth)
         new_investigator = Investigator(
             user_id=auth.user_id,
-            given_name= getattr(auth, "given_name", "") ,
-            family_name=getattr(auth, "family_name", "") ,
-            email=getattr(auth, "upn", "jane@doe.com"),
+            given_name= given,
+            family_name=family,
+            email=email,
             status="Accepted",  # This needs to be updated in the datamodel
             principal_investigator=True,
         )
