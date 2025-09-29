@@ -24,6 +24,7 @@ def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
     """
     Returns (given_name, family_name, email_like) from an already-verified access token.
     """
+
     tok = getattr(auth, "access_token", "") or ""
     if tok.startswith("Bearer "):
         tok = tok.split(" ", 1)[1]
@@ -38,7 +39,7 @@ def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
     given = claims.get("given_name") or ""
     family = claims.get("family_name") or ""
 
-    email = claims.get("upn") or ""
+    email = claims.get("upn")
 
     return given, family, email
 
@@ -82,8 +83,10 @@ def make_graph_call(url, pagination=True):
                     url = graph_result["@odata.nextLink"]
                 else:
                     url = None
-            except Exception as e:
-                raise RuntimeError(f"Error fetching data from Graph API: {e}") from e
+            except Exception as err:
+                raise RuntimeError(
+                    f"Error fetching data from Graph API: {err}"
+                ) from err
         return graph_results
     else:
         error = token_result.get("error")
