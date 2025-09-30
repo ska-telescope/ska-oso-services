@@ -22,18 +22,18 @@ client = msal.ConfidentialClientApplication(
 
 def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
     """
-    Returns (given_name, family_name, email_like) from an already-verified access token.
+    Returns (given_name, family_name, email) from an already-verified access token.
     """
     # TODO: remove this entire function when the final decision
     # about how to save the investigators details is made
 
-    tok = getattr(auth, "access_token", "") or ""
-    if tok.startswith("Bearer "):
-        tok = tok.split(" ", 1)[1]
+    token = getattr(auth, "access_token", "") or ""
+    if token.startswith("Bearer "):
+        token = token.split(" ", 1)[1]
 
     try:
         claims = jwt.decode(
-            tok, options={"verify_signature": False, "verify_exp": False}
+            token, options={"verify_signature": False, "verify_exp": False}
         )
     except jwt.InvalidTokenError:
         return "", "", ""
