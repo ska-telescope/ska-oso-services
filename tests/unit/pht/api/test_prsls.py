@@ -219,7 +219,7 @@ class TestProposalAPI:
         )
 
         assert response.status_code == HTTPStatus.OK
-        assert response.json() == proposal_obj.prsl_id
+        assert response.json()["prsl_id"] == proposal_obj.prsl_id
 
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_create_proposal_value_error_raises_bad_request(self, mock_oda, client):

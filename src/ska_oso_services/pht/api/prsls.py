@@ -98,7 +98,7 @@ def create_proposal(
         ...,
         example=EXAMPLE_PROPOSAL,
     ),
-) -> str:
+) -> Proposal:
     """
     Creates a new proposal in the ODA.
     """
@@ -134,7 +134,7 @@ def create_proposal(
             uow.prslacc.add(create_prslacc, auth.user_id)
             uow.commit()
         logger.info("Proposal successfully created with ID %s", created_prsl.prsl_id)
-        return created_prsl.prsl_id
+        return created_prsl
     except ValueError as err:
         logger.exception("ValueError when adding proposal to the ODA: %s", err)
         raise BadRequestError(

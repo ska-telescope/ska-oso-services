@@ -24,6 +24,8 @@ def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
     """
     Returns (given_name, family_name, email_like) from an already-verified access token.
     """
+    # TODO: remove this entire function when the final decision
+    # about how to save the investigators details is made
 
     tok = getattr(auth, "access_token", "") or ""
     if tok.startswith("Bearer "):

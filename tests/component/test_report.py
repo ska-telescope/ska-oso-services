@@ -45,13 +45,13 @@ def test_get_report_for_user(authrequests):
         f"{PHT_URL}/prsls/create", data=proposal1.model_dump_json(), headers=HEADERS
     )
     assert created_proposal1.status_code == HTTPStatus.OK, created_proposal1.text
-    assert created_proposal1.json() == prsl1_id
+    assert created_proposal1.json()["prsl_id"] == prsl1_id
 
     created_proposal2 = authrequests.post(
         f"{PHT_URL}/prsls/create", data=proposal2.model_dump_json(), headers=HEADERS
     )
     assert created_proposal2.status_code == HTTPStatus.OK, created_proposal2.text
-    assert created_proposal2.json() == prsl2_id
+    assert created_proposal2.json()["prsl_id"] == prsl2_id
 
     # --- Create panel, decision, review ---
     created_panel = authrequests.post(

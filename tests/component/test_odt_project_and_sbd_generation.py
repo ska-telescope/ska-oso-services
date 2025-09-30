@@ -17,7 +17,7 @@ def test_project_generated_from_proposal(authrequests):
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
-    prsl_id = post_response.json()
+    prsl_id = post_response.json()["prsl_id"]
 
     # Generate the Project
     generate_response = authrequests.post(f"{ODT_URL}/prsls/{prsl_id}/generateProject")

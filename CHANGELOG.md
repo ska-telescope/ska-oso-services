@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* [BREAKING] Updates `pht/prsl/create` to return the created proposals.
+* Adds PI details to the proposal when created.
 
 6.0.0
 ***********
