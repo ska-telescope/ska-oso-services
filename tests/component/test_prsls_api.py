@@ -135,7 +135,7 @@ def test_create_and_get_proposal(authrequests):
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
-    prsl_id = post_response.json()
+    prsl_id = post_response.json()["prsl_id"]
     assert isinstance(prsl_id, str), f"Expected string, got {type(prsl_id)}: {prsl_id}"
 
     # GET created proposal
@@ -151,6 +151,8 @@ def test_create_and_get_proposal(authrequests):
         obj.pop("prsl_id", None)
         if "metadata" in obj:
             obj.pop("metadata", None)
+        if "investigators" in obj["info"]:
+            obj["info"].pop("investigators", None)
 
     assert actual_payload == expected_payload
 
@@ -172,7 +174,7 @@ def test_proposal_create_then_put(authrequests):
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
-    prsl_id = post_response.json()
+    prsl_id = post_response.json()["prsl_id"]
 
     # Get the created proposal
     get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
@@ -215,7 +217,7 @@ def test_proposal_create_then_put_submit(authrequests):
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
-    prsl_id = post_response.json()
+    prsl_id = post_response.json()["prsl_id"]
 
     # Get the created proposal
     get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
@@ -260,7 +262,7 @@ def test_proposal_create_then_put_update_forbidden(authrequests):
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
-    prsl_id = post_response.json()
+    prsl_id = post_response.json()["prsl_id"]
 
     # Get the created proposal
     get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
@@ -323,7 +325,7 @@ def test_proposal_create_then_put_submit_forbidden(authrequests):
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
-    prsl_id = post_response.json()
+    prsl_id = post_response.json()["prsl_id"]
 
     # Get the created proposal
     get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
@@ -385,7 +387,7 @@ def test_get_proposals_batch(authrequests):
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == HTTPStatus.OK, response.content
-        created_ids.append(response.json())
+        created_ids.append(response.json()["prsl_id"])
 
     # Use POST /batch to retrieve them
     batch_response = authrequests.post(

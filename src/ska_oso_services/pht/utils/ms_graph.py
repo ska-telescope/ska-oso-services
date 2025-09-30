@@ -1,6 +1,7 @@
 import re
 from urllib.parse import quote
 
+import jwt
 import msal
 import requests
 
@@ -17,6 +18,32 @@ client = msal.ConfidentialClientApplication(
     authority=f"https://login.microsoftonline.com/{TENANT_ID}",
     client_credential=CLIENT_SECRET,
 )
+
+
+def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
+    """
+    Returns (given_name, family_name, email) from an already-verified access token.
+    """
+    # TODO: remove this entire function when the final decision
+    # about how to save the investigators details is made
+
+    token = getattr(auth, "access_token", "") or ""
+    if token.startswith("Bearer "):
+        token = token.split(" ", 1)[1]
+
+    try:
+        claims = jwt.decode(
+            token, options={"verify_signature": False, "verify_exp": False}
+        )
+    except jwt.InvalidTokenError:
+        return "", "", ""
+
+    given = claims.get("given_name") or ""
+    family = claims.get("family_name") or ""
+
+    email = claims.get("upn")
+
+    return given, family, email
 
 
 def make_graph_call(url, pagination=True):
@@ -37,6 +64,7 @@ def make_graph_call(url, pagination=True):
         (collection endpoint).
         Returns an empty list if the request fails or no token is acquired.
     """
+
     token_result = client.acquire_token_silent(SCOPE, account=None)
 
     if token_result:
@@ -57,8 +85,10 @@ def make_graph_call(url, pagination=True):
                     url = graph_result["@odata.nextLink"]
                 else:
                     url = None
-            except Exception as e:
-                raise RuntimeError(f"Error fetching data from Graph API: {e}") from e
+            except Exception as err:
+                raise RuntimeError(
+                    f"Error fetching data from Graph API: {err}"
+                ) from err
         return graph_results
     else:
         error = token_result.get("error")

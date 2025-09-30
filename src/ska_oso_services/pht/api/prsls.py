@@ -15,6 +15,7 @@ from ska_oso_pdm.proposal import (
     ProposalPermissions,
     ProposalRole,
 )
+from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
 from starlette.status import HTTP_400_BAD_REQUEST
@@ -45,7 +46,10 @@ from ska_oso_services.pht.service.s3_bucket import (
     get_aws_client,
 )
 from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
-from ska_oso_services.pht.utils.ms_graph import get_users_by_mail
+from ska_oso_services.pht.utils.ms_graph import (
+    extract_profile_from_access_token,
+    get_users_by_mail,
+)
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
     get_latest_entity_by_id,
@@ -94,7 +98,7 @@ def create_proposal(
         ...,
         example=EXAMPLE_PROPOSAL,
     ),
-) -> str:
+) -> Proposal:
     """
     Creates a new proposal in the ODA.
     """
@@ -102,10 +106,19 @@ def create_proposal(
     logger.debug("POST PROPOSAL create")
 
     try:
-        # TODO: add the principal investigator to the proposal
+        given, family, email = extract_profile_from_access_token(auth)
+        new_investigator = Investigator(
+            user_id=auth.user_id,
+            given_name=given,
+            family_name=family,
+            email=email,
+            status="Accepted",  # This needs to be updated in the datamodel
+            principal_investigator=True,
+        )
         with oda.uow() as uow:
+            proposal.info.investigators.append(new_investigator)
             created_prsl = uow.prsls.add(proposal, auth.user_id)
-            # create a proposal level access when the proposal is created
+            # Create permissions
             create_prslacc = ProposalAccess(
                 access_id=generate_entity_id("prslacc"),
                 prsl_id=created_prsl.prsl_id,
@@ -121,7 +134,7 @@ def create_proposal(
             uow.prslacc.add(create_prslacc, auth.user_id)
             uow.commit()
         logger.info("Proposal successfully created with ID %s", created_prsl.prsl_id)
-        return created_prsl.prsl_id
+        return created_prsl
     except ValueError as err:
         logger.exception("ValueError when adding proposal to the ODA: %s", err)
         raise BadRequestError(
@@ -145,7 +158,7 @@ def get_proposals_by_status() -> list[Proposal]:
 
     Retrieves the Proposals from the
     underlying data store, if available
-        Return proposals, preferring UNDER_REVIEW over SUBMITTED.
+    Return proposals, preferring UNDER_REVIEW over SUBMITTED.
     One latest proposal per prsl_id.
 
     Returns:
@@ -188,10 +201,10 @@ def get_proposals_for_user(
 
     The proposals are determined from the underlying data store by:
     1.) Resolving accessible proposal IDs via, list_accessible_proposal_ids:
-        1.) This queries the proposal_acces table to see if there is a proposal
+        - This queries the proposal_acces table to see if there is a proposal
         associated with the user_id.
         Note: Once a proposal is created, an access is created and once Co-Is are added,
-        access is created as well
+        access is created as well.
     2.) Fetching each proposal by ID and
     3.) Returning the proposals as a list (empty if none are found).
 
@@ -567,7 +580,7 @@ def create_delete_pdf_url(filename: str) -> str:
     ],
 )
 def get_user_by_email(email: str) -> dict:
-    """Returns an MS Entra user by email from MS Graph
+    """Returns an MS Entra user by email from MS Graph.
 
     Returns:
         dict

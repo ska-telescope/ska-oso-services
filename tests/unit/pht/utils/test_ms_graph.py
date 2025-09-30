@@ -1,14 +1,66 @@
+from types import SimpleNamespace
 from unittest import mock
 
+import jwt
 import pytest
 
 from ska_oso_services.pht.utils.constants import MS_GRAPH_URL
-from ska_oso_services.pht.utils.ms_graph import make_graph_call
+from ska_oso_services.pht.utils.ms_graph import (
+    extract_profile_from_access_token,
+    make_graph_call,
+)
+
+MODULE = "ska_oso_services.pht.utils.ms_graph"
+
+
+class TestExtractTokenDetails:
+
+    @mock.patch(f"{MODULE}.jwt.decode")
+    def test_success_prefers_given_family_and_preferred_username(self, mock_decode):
+        mock_decode.return_value = {
+            "given_name": "Jane",
+            "family_name": "Doe",
+            "upn": "jane@example.com",
+        }
+        auth = SimpleNamespace(access_token="a.b.c")
+
+        given, family, email = extract_profile_from_access_token(auth)
+
+        assert (given, family, email) == ("Jane", "Doe", "jane@example.com")
+        mock_decode.assert_called_once_with(
+            "a.b.c", options={"verify_signature": False, "verify_exp": False}
+        )
+
+    @mock.patch(f"{MODULE}.jwt.decode")
+    def test_bearer_prefix_is_stripped(self, mock_decode):
+        mock_decode.return_value = {
+            "given_name": "Bee",
+            "family_name": "Rarer",
+            "upn": "bearer@example.com",
+        }
+        auth = SimpleNamespace(access_token="Bearer aaa.bbb.ccc")
+
+        given, family, email = extract_profile_from_access_token(auth)
+
+        assert (given, family, email) == ("Bee", "Rarer", "bearer@example.com")
+        mock_decode.assert_called_once_with(
+            "aaa.bbb.ccc", options={"verify_signature": False, "verify_exp": False}
+        )
+
+    @mock.patch(f"{MODULE}.jwt.decode")
+    def test_missing_access_token_returns_empty_triplet(self, mock_decode):
+        mock_decode.side_effect = jwt.InvalidTokenError("empty")
+        auth = SimpleNamespace(access_token="")
+
+        given, family, email = extract_profile_from_access_token(auth)
+
+        assert (given, family, email) == ("", "", "")
+        mock_decode.assert_called_once()
 
 
 class TestMakeGraphCall:
-    @mock.patch("ska_oso_services.pht.utils.ms_graph.client.acquire_token_silent")
-    @mock.patch("ska_oso_services.pht.utils.ms_graph.client.acquire_token_for_client")
+    @mock.patch(f"{MODULE}.client.acquire_token_silent")
+    @mock.patch(f"{MODULE}.client.acquire_token_for_client")
     @mock.patch("ska_oso_services.pht.utils.ms_graph.requests.get")
     def test_graph_call(
         self, mock_get, mock_acquire_token_for_client, mock_acquire_token_silent
@@ -25,7 +77,7 @@ class TestMakeGraphCall:
         assert len(results) == 1
         assert results[0]["name"] == "Username"
 
-    @mock.patch("ska_oso_services.pht.utils.ms_graph.client.acquire_token_silent")
+    @mock.patch(f"{MODULE}.client.acquire_token_silent")
     @mock.patch("ska_oso_services.pht.utils.ms_graph.requests.get")
     def test_pagination(self, mock_get, mock_acquire_token_silent):
         mock_acquire_token_silent.return_value = {"access_token": "mock-token"}
@@ -46,7 +98,7 @@ class TestMakeGraphCall:
         ids = [r["id"] for r in results]
         assert ids == ["1", "2"]
 
-    @mock.patch("ska_oso_services.pht.utils.ms_graph.client.acquire_token_silent")
+    @mock.patch(f"{MODULE}.client.acquire_token_silent")
     def test_token_failure(self, mock_acquire_token_silent):
         mock_acquire_token_silent.return_value = {
             "error": "invalid_client",
@@ -58,8 +110,8 @@ class TestMakeGraphCall:
         ):
             make_graph_call(f"{MS_GRAPH_URL}/v1.0/users")
 
-    @mock.patch("ska_oso_services.pht.utils.ms_graph.client.acquire_token_silent")
-    @mock.patch("ska_oso_services.pht.utils.ms_graph.requests.get")
+    @mock.patch(f"{MODULE}.client.acquire_token_silent")
+    @mock.patch(f"{MODULE}.requests.get")
     def test_request_error(self, mock_get, mock_acquire_token_silent):
         mock_acquire_token_silent.return_value = {"access_token": "fake-token"}
         mock_get.side_effect = Exception("Network error")
