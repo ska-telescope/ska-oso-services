@@ -296,7 +296,7 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.OK
         data = response.json()
         assert data["prsl_id"] == proposal_id
-        assert data["info"]["title"] == proposal.info.title
+        assert data["proposal_info"]["title"] == proposal.proposal_info.title
 
     @mock.patch(
         "ska_oso_services.pht.api.prsls.list_accessible_proposal_ids", autospec=True

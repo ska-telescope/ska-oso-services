@@ -195,7 +195,7 @@ class Testpanel_decisionAPI:
         uow_mock.pnlds.__contains__.return_value = True
         uow_mock.prsls.__contains__.return_value = True
         panel_decision_obj = TestDataFactory.panel_decision(
-            status="Decided", recommendation="ACCEPTED"
+            status="Decided", recommendation="Accepted"
         )
         decision_id = panel_decision_obj.decision_id
         uow_mock.pnlds.add.return_value = panel_decision_obj
@@ -223,7 +223,7 @@ class Testpanel_decisionAPI:
         uow_mock.pnlds.__contains__.return_value = True
         uow_mock.prsls.__contains__.return_value = True
         panel_decision_obj = TestDataFactory.panel_decision(
-            status="In Progress", recommendation="ACCEPTED"
+            status="In Progress", recommendation="Accepted"
         )
         decision_id = panel_decision_obj.decision_id
         uow_mock.pnlds.add.return_value = panel_decision_obj

@@ -37,7 +37,9 @@ def generate_project(proposal: Proposal) -> Project:
 
         # Now create a ScienceProgramme for each ObservationSet in the group
         science_programmes = [
-            science_programme_from_observation_set(observation_set, proposal.info)
+            science_programme_from_observation_set(
+                observation_set, proposal.observation_info
+            )
             for observation_set in observation_set_group
         ]
         index = randint(10000, 99999)
@@ -50,7 +52,9 @@ def generate_project(proposal: Proposal) -> Project:
         )
 
     return Project(
-        prsl_ref=proposal.prsl_id, name=proposal.info.title, obs_blocks=observing_blocks
+        prsl_ref=proposal.prsl_id,
+        name=proposal.proposal_info.title,
+        obs_blocks=observing_blocks,
     )
 
 
