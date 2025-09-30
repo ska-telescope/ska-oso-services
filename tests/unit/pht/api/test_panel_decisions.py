@@ -217,7 +217,7 @@ class Testpanel_decisionAPI:
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
     def test_panel_decision_put_success_for_non_decided(self, mock_uow, client):
         """
-        Check the pnlds_put method returns the expected response when status is not decided
+        Check pnlds_put method returns expected response when status is not decided
         """
         uow_mock = mock.MagicMock()
         uow_mock.pnlds.__contains__.return_value = True

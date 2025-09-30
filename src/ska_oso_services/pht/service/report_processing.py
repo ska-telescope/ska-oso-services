@@ -73,7 +73,7 @@ def join_proposals_panels_reviews_decisions(
                         science_category=proposal.proposal_info.science_category,
                         proposal_status=proposal.status,
                         proposal_type=proposal.proposal_info.proposal_type.main_type,
-                        proposal_attributes=proposal.proposal_info.proposal_type.attributes
+                        proposal_attributes=proposal.proposal_info.proposal_type.attributes  # noqa: E501
                         or [],
                         cycle=proposal.cycle,
                         array=_get_array_class(proposal),

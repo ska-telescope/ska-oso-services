@@ -4,7 +4,7 @@ from random import randint
 from ska_oso_pdm import Project, Proposal
 from ska_oso_pdm.project import ObservingBlock, ScienceProgramme
 from ska_oso_pdm.proposal import ObservationSets
-from ska_oso_pdm.proposal.info import ObservationInfo, ProposalInfo
+from ska_oso_pdm.proposal.info import ObservationInfo
 
 
 def generate_project(proposal: Proposal) -> Project:

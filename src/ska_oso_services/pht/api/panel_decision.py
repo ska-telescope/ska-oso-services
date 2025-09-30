@@ -174,7 +174,7 @@ def update_panel_decision(
                 match updated_decision.recommendation:
                     case None:
                         raise ValueError(
-                            "recommendation cannot be None when decision status is DECIDED"
+                            "recommendation cannot be None when decision is DECIDED"
                         )  # moving the validation to pdm?
                     case Recommendation.ACCEPTED:
                         existing_prsl.status = ProposalStatus.ACCEPTED

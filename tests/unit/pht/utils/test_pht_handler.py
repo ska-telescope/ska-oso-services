@@ -24,7 +24,7 @@ def _to_iso_z(value):
 
 
 def _replace_investigators(proposal_info_obj, inv_objs):
-    """Return a copy of `proposal_info_obj` with 'investigators' replaced (Pydantic v2)."""
+    """Return a copy of `proposal_info_obj` with 'investigators' replaced (Pydantic v2)."""  # noqa: E501
     return proposal_info_obj.model_copy(update={"investigators": inv_objs})
 
 
