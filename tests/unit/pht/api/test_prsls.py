@@ -42,6 +42,7 @@ def has_validation_error(detail, field: str) -> bool:
 from ska_oso_services.pht.service import proposal_service as ps
 
 MODULE = "ska_oso_services.pht.service.proposal_service"
+PRSL_MODULE = "ska_oso_services.pht.api.prsls"
 
 
 class TestListAccess:
@@ -83,7 +84,7 @@ class TestListAccess:
 
 
 class TestProposalAPI:
-    @mock.patch("ska_oso_services.pht.api.prsls.get_osd_data")
+    @mock.patch(f"{PRSL_MODULE}.get_osd_data")
     def test_get_osd_data_fail(self, mock_get_osd, client):
         mock_get_osd.return_value = ({"detail": "some error"}, None)
         cycle = "-1"
@@ -93,7 +94,7 @@ class TestProposalAPI:
         res = response.json()
         assert {"detail": "some error"} == res
 
-    @mock.patch("ska_oso_services.pht.api.prsls.get_osd_data")
+    @mock.patch(f"{PRSL_MODULE}.get_osd_data")
     def test_get_osd_data_success(self, mock_get_osd, client):
         expected = {
             "observatory_policy": {
@@ -218,7 +219,7 @@ class TestProposalAPI:
         )
 
         assert response.status_code == HTTPStatus.OK
-        assert response.json() == proposal_obj.prsl_id
+        assert response.json()["prsl_id"] == proposal_obj.prsl_id
 
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_create_proposal_value_error_raises_bad_request(self, mock_oda, client):
@@ -245,7 +246,7 @@ class TestProposalAPI:
         f"{MODULE}.assert_user_has_permission_for_proposal",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposal_not_found(self, mock_oda, mock_acl, client):
         """
         Ensure KeyError during get() raises NotFoundError.
@@ -272,7 +273,7 @@ class TestProposalAPI:
         f"{MODULE}.assert_user_has_permission_for_proposal",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposal_success(self, mock_oda, mock_acl, client):
         """
         Ensure valid proposal ID returns the Proposal object.
@@ -298,10 +299,8 @@ class TestProposalAPI:
         assert data["prsl_id"] == proposal_id
         assert data["info"]["title"] == proposal.info.title
 
-    @mock.patch(
-        "ska_oso_services.pht.api.prsls.list_accessible_proposal_ids", autospec=True
-    )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.list_accessible_proposal_ids", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposal_list_success(self, mock_uow, mock_list_ids, client_get):
         # Arrange
         proposal_objs = [TestDataFactory.proposal(), TestDataFactory.proposal()]
@@ -326,10 +325,8 @@ class TestProposalAPI:
         assert len(data) == len(proposal_objs)
         mock_list_ids.assert_called_once()
 
-    @mock.patch(
-        "ska_oso_services.pht.api.prsls.list_accessible_proposal_ids", autospec=True
-    )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.list_accessible_proposal_ids", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposal_list_empty(self, mock_uow, mock_list_ids, client_get):
         mock_list_ids.return_value = []
 
@@ -342,7 +339,7 @@ class TestProposalAPI:
 
 
 class TestGetProposalReview:
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_reviews_for_proposal_with_wrong_id(self, mock_oda, client):
         """
         Test reviews for a proposal with a wrong ID returns an empty list.
@@ -357,7 +354,7 @@ class TestGetProposalReview:
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
 
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow")
+    @mock.patch(f"{PRSL_MODULE}.oda.uow")
     def test_get_reviews_for_panel_with_valid_id(self, mock_oda, client):
         """
         Test reviews for a proposal with a valid ID returns the expected reviews.
@@ -393,10 +390,10 @@ class TestPutProposalAPI:
         ],
     )
     @mock.patch(
-        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
+        f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_proposal_put_success(
         self, mock_uow, mock_acl, proposal_status, permissions, client
     ):
@@ -441,10 +438,10 @@ class TestPutProposalAPI:
         ],
     )
     @mock.patch(
-        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
+        f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_proposal_put_forbidden(
         self, mock_uow, mock_acl, proposal_status, permissions, client
     ):
@@ -484,7 +481,7 @@ class TestPutProposalAPI:
             ("submitted", ["view", "update"]),
         ],
     )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_proposal_put_forbidden_without_mock_proposal_service(
         self, mock_uow, proposal_status, permissions, client
     ):
@@ -512,10 +509,10 @@ class TestPutProposalAPI:
         assert result.status_code == HTTPStatus.FORBIDDEN
 
     @mock.patch(
-        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
+        f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_update_proposal_not_found(self, mock_uow, mock_acl, client):
         """
         Should return 404 if proposal doesn't exist.
@@ -541,10 +538,10 @@ class TestPutProposalAPI:
         assert "not found" in response.json()["detail"].lower()
 
     @mock.patch(
-        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
+        f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_update_proposal_id_mismatch(self, mock_uow, mock_acl, client):
         """
         Should raise 422 when ID in path != payload.
@@ -566,10 +563,10 @@ class TestPutProposalAPI:
         assert "do not match" in response.json()["detail"].lower()
 
     @mock.patch(
-        "ska_oso_services.pht.api.prsls.assert_user_has_permission_for_proposal",
+        f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_update_proposal_validation_error(self, mock_oda, mock_acl, client):
         """
         Should return 400 if .add() raises ValueError.
@@ -597,7 +594,7 @@ class TestPutProposalAPI:
 
 
 class TestProposalBatch:
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposals_batch_all_found(self, mock_oda, client):
         proposal1 = TestDataFactory.proposal(prsl_id="prsl-ska-00001")
         proposal2 = TestDataFactory.proposal(prsl_id="prsl-ska-00002")
@@ -618,7 +615,7 @@ class TestProposalBatch:
         assert len(data) == 2
         assert {obj["prsl_id"] for obj in data} == {"prsl-ska-00001", "prsl-ska-00002"}
 
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposals_batch_partial_found(self, mock_oda, client):
         proposal1 = TestDataFactory.proposal(prsl_id="prsl-ska-00001")
         prsl_map = {"prsl-ska-00001": proposal1}
@@ -636,7 +633,7 @@ class TestProposalBatch:
         assert len(data) == 1
         assert data[0]["prsl_id"] == "prsl-ska-00001"
 
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposals_batch_none_found(self, mock_oda, client):
         """
         Test when proposal ids are not found
@@ -653,7 +650,7 @@ class TestProposalBatch:
 
 
 class TestProposalEmailAPI:
-    @mock.patch("ska_oso_services.pht.api.prsls.send_email_async", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.send_email_async", autospec=True)
     def test_send_email_success(self, mock_send, client):
         """
         Check that a successful email send returns status 200 and success message.
@@ -727,7 +724,7 @@ class TestProposalEmailAPI:
 
 class TestGetProposalsByStatus:
 
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposals_by_status_success(self, mock_uow):
         # Arrange: UNDER_REVIEW wins over SUBMITTED for the same prsl_id
         p_under_review = TestDataFactory.complete_proposal(
@@ -765,7 +762,7 @@ class TestGetProposalsByStatus:
         assert st1 == "under review"
         assert st2 == "submitted"
 
-    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposals_by_status_empty(self, mock_uow):
         uow_mock = mock.MagicMock()
         uow_mock.prsls.query.side_effect = [[], []]  # under review, submitted

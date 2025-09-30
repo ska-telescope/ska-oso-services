@@ -18,30 +18,30 @@ Outlined below are the endpoints grouped by different functionality of the PHT.
 
 
 
-* Proposal Management:
+.. * Proposal Management:
 
-**Panel Management**:
+.. **Panel Management**:
 
-.. openapi:: ./_static/panels_only_openapi.json
-
-
-**Review Management**:
-
-.. openapi:: ./_static/reviews_only_openapi.json
+.. .. openapi:: ./_static/panels_only_openapi.json
 
 
-**Decision Management**:
+.. **Review Management**:
+
+.. .. openapi:: ./_static/reviews_only_openapi.json
+
+
+.. **Decision Management**:
   
-.. openapi:: ./_static/panel_decision_only_openapi.json
+.. .. openapi:: ./_static/panel_decision_only_openapi.json
 
-**Reviewer Management**:
+.. **Reviewer Management**:
 
-.. openapi:: ./_static/reviewers_only_openapi.json
+.. .. openapi:: ./_static/reviewers_only_openapi.json
 
 
-* PHT Report:
+.. * PHT Report:
 
-**Proposal Management Report**:
+.. **Proposal Management Report**:
 
-.. openapi:: ./_static/report_only_openapi.json
+.. .. openapi:: ./_static/report_only_openapi.json
 
