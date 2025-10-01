@@ -10,7 +10,8 @@ from ska_oso_services.pht.api import panels as panels_api  # for ProposalStatus 
 from ska_oso_services.pht.api.panels import ensure_submitted_proposals_under_review
 from ska_oso_services.pht.service import panel_operations as panel_ops
 from ska_oso_services.pht.service.panel_operations import (
-    group_proposals_by_science_category,assign_to_existing_panel
+    assign_to_existing_panel,
+    group_proposals_by_science_category,
 )
 from tests.unit.util import TestDataFactory
 
@@ -25,7 +26,7 @@ class TestAssignToExistingPanel:
         panel = _ns(
             panel_id="panel-1",
             name="Cosmology",
-            proposals=[existing_assignment], 
+            proposals=[existing_assignment],
             sci_reviewers=["old-sci"],
             tech_reviewers=["old-tech"],
         )
@@ -61,7 +62,7 @@ class TestAssignToExistingPanel:
         assert added_count == 2
         assert set(added_ids) == {"prop-2", "prop-3"}
 
-        # Panel mutation 
+        # Panel mutation
         assert panel.sci_reviewers == ["sci-1"]
         assert panel.tech_reviewers == ["tec-1"]
         # proposals now include the existing + 2 new assignments
@@ -86,15 +87,15 @@ class TestAssignToExistingPanel:
         )
         uow = mock.MagicMock()
         auth = _ns(user_id="user-123")
-        uow.panels.add.return_value = panel 
+        uow.panels.add.return_value = panel
 
         persisted, added_count, added_ids = assign_to_existing_panel(
             uow=uow,
             auth=auth,
             panel=panel,
             proposals=[],  # nothing to add
-            sci_reviewers=None, 
-            tech_reviewers=None, 
+            sci_reviewers=None,
+            tech_reviewers=None,
         )
 
         assert persisted is panel
@@ -120,16 +121,16 @@ class TestAssignToExistingPanel:
             uow=uow,
             auth=auth,
             panel=panel,
-            proposals=[],  
-            sci_reviewers=[],  
-            tech_reviewers=[],  
+            proposals=[],
+            sci_reviewers=[],
+            tech_reviewers=[],
         )
 
         assert persisted is panel
         assert added_count == 0
         assert added_ids == []
-        assert panel.sci_reviewers == []  
-        assert panel.tech_reviewers == []  
+        assert panel.sci_reviewers == []
+        assert panel.tech_reviewers == []
         uow.panels.add.assert_called_once_with(panel, auth.user_id)
 
     def test_skips_already_assigned_ids(self):
@@ -148,7 +149,7 @@ class TestAssignToExistingPanel:
             uow=uow,
             auth=auth,
             panel=panel,
-            proposals=[_ns(prsl_id="p1"), _ns(prsl_id="p2")],  
+            proposals=[_ns(prsl_id="p1"), _ns(prsl_id="p2")],
             sci_reviewers=None,
             tech_reviewers=None,
         )
@@ -165,7 +166,7 @@ class TestAssignToExistingPanel:
         panel = _ns(
             panel_id="panel-5",
             name="Dust",
-            proposals=None,  
+            proposals=None,
             sci_reviewers=[],
             tech_reviewers=[],
         )
@@ -177,7 +178,7 @@ class TestAssignToExistingPanel:
             uow=uow,
             auth=auth,
             panel=panel,
-            proposals=None, 
+            proposals=None,
             sci_reviewers=None,
             tech_reviewers=None,
         )
