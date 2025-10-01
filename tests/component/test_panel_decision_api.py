@@ -103,7 +103,7 @@ def test_panel_decision_put_decided_updates_proposal(authrequests):
         headers={"Content-Type": "application/json"},
     )
 
-    prsl_id = post_prsl_response.json()
+    prsl_id = post_prsl_response.json()["prsl_id"]
 
     # create a new decision with prsl_id
     data_decision = json.loads(VALID_PANEL_DECISION)
@@ -122,6 +122,8 @@ def test_panel_decision_put_decided_updates_proposal(authrequests):
     get_decision_response = authrequests.get(f"{PHT_URL}/panel/decision/{decision_id}")
 
     originaldecision = get_decision_response.json()
+
+    print(originaldecision)
 
     initial_version = originaldecision["metadata"]["version"]
 
@@ -160,7 +162,7 @@ def test_panel_decision_put_not_decided_not_updating_proposal(authrequests):
         headers={"Content-Type": "application/json"},
     )
 
-    prsl_id = post_prsl_response.json()
+    prsl_id = post_prsl_response.json()["prsl_id"]
 
     # create a new decision with prsl_id
     data_decision = json.loads(VALID_PANEL_DECISION)
@@ -175,10 +177,14 @@ def test_panel_decision_put_not_decided_not_updating_proposal(authrequests):
 
     decision_id = post_decision_response.json()
 
+    print(decision_id)
+
     # GET decision to fetch latest state
     get_decision_response = authrequests.get(f"{PHT_URL}/panel/decision/{decision_id}")
 
     originaldecision = get_decision_response.json()
+
+    print(originaldecision)
 
     initial_version = originaldecision["metadata"]["version"]
 
