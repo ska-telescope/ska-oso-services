@@ -265,6 +265,32 @@ class Testpanel_decisionAPI:
         assert "not found" in response.json()["detail"].lower()
 
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
+    def test_update_proposal_not_found(self, mock_uow, client):
+        """
+        Should return 404 if proposal doesn't exist.
+        """
+        panel_decision_obj = TestDataFactory.panel_decision(
+            status="Decided", recommendation="Accepted"
+        )
+
+        decision_id = panel_decision_obj.decision_id
+
+        uow_mock = mock.MagicMock()
+        uow_mock.pnlds.add.return_value = panel_decision_obj
+        uow_mock.pnlds.get.return_value = panel_decision_obj
+        uow_mock.prsls.get.return_value = None  # not found
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        response = client.put(
+            f"{PANEL_DECISION_API_URL}/{decision_id}",
+            data=panel_decision_obj.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert "not found" in response.json()["detail"].lower()
+
+    @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
     def test_update_decision_id_mismatch(self, mock_uow, client):
         """
         Should raise 422 when ID in path != payload.
