@@ -6,8 +6,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* [BREAKING] Update to ODA v11.8.0 which pulls in PDM v23.0.0
 * [BREAKING] Updates `pht/prsl/create` to return the created proposal instead of the proposal id (prsl_id).
 * Adds PI details to the proposal when created.
+* Updates `/panel/decision/{decision_id}` to update proposal status when decision is decided
 
 6.0.0
 ***********
