@@ -8,6 +8,7 @@ Unreleased
 ***********
 * [BREAKING] Updates `pht/prsl/create` to return the created proposal instead of the proposal id (prsl_id).
 * Adds PI details to the proposal when created.
+* [BREAKING] Removes `/panels/auto-create` and Adds `/panels/assignments` and `panels/generate`
 
 6.0.0
 ***********

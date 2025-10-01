@@ -53,46 +53,53 @@ def test_get_list_panels_for_user(authrequests):
         assert panel_id in returned_ids, f"Missing panel {panel_id}"
 
 
-def test_auto_create_category_panels(authrequests):
-    payload = {
-        "name": "Galaxy",
-        "sci_reviewers": [],
-        "tech_reviewers": [],
-        "proposals": [],
-    }
-
-    response = authrequests.post(
-        f"{PANELS_API_URL}/auto-create",
-        json=payload,
-        headers={"Content-Type": "application/json"},
+def test_generate_category_panels_multiple(authrequests):
+    resp = authrequests.post(
+        f"{PANELS_API_URL}/generate",
+        params={"param": "Galaxy"},
     )
+    assert resp.status_code == HTTPStatus.OK, resp.text
 
-    assert response.status_code == HTTPStatus.OK
-    result = response.json()
-    assert isinstance(result, list), "Expected a list of panels"
+    data = resp.json()
+    assert isinstance(data, dict)
+    assert "created_count" in data and "created_names" in data
 
-    # At least one category must be present
-    panel_names = [panel["name"] for panel in result]
-    assert "Cosmology" in panel_names
-    assert all("panel_id" in panel for panel in result)
-    assert all("proposal_count" in panel for panel in result)
+    created_count = data["created_count"]
+    created_names = data["created_names"]
 
+    assert isinstance(created_count, int)
+    assert isinstance(created_names, list)
+    assert all(isinstance(n, str) for n in created_names)
+    assert len(created_names) == created_count
+    assert len(set(created_names)) == len(created_names)
 
-def test_auto_create_science_verification_panel(authrequests):
-    payload = {
-        "name": "Science Verification",
-        "sci_reviewers": [],
-        "tech_reviewers": [],
-        "proposals": [],
-    }
+    assert created_count >= 0
 
-    response = authrequests.post(
-        f"{PANELS_API_URL}/auto-create",
-        json=payload,
-        headers={"Content-Type": "application/json"},
+    # Calling again should create nothing new
+    resp2 = authrequests.post(
+        f"{PANELS_API_URL}/generate",
+        params={"param": "Galaxy"},
     )
+    assert resp2.status_code == HTTPStatus.OK, resp2.text
+    data2 = resp2.json()
+    assert data2["created_count"] == 0
+    assert data2["created_names"] == []
 
-    assert response.status_code == HTTPStatus.OK
-    panel_id = response.json()
+
+def test_generate_science_verification_panel(authrequests):
+    resp = authrequests.post(
+        f"{PANELS_API_URL}/generate",
+        params={"param": "Science Verification"},
+    )
+    assert resp.status_code == HTTPStatus.OK, resp.text
+    panel_id = resp.json()
     assert isinstance(panel_id, str), "Expected a single panel_id string for SV"
     assert panel_id.startswith("panel-")
+
+    # Calling again should return the existing panel_id (no new creation)
+    resp2 = authrequests.post(
+        f"{PANELS_API_URL}/generate",
+        params={"param": "Science Verification"},
+    )
+    assert resp2.status_code == HTTPStatus.OK, resp2.text
+    assert resp2.json() == panel_id

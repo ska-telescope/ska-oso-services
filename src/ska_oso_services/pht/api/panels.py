@@ -12,15 +12,18 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import UnprocessableEntityError
 from ska_oso_services.pht.models.domain import PrslRole
-from ska_oso_services.pht.models.schemas import PanelCreateRequest, PanelCreateResponse
+from ska_oso_services.pht.models.schemas import (
+    PanelAssignResponse,
+    PanelBatchCreateResult,
+)
 from ska_oso_services.pht.service.panel_operations import (
-    build_panel_response,
+    assign_to_existing_panel,
+    build_assignment_response,
     build_sv_panel_proposals,
     ensure_decision_exist_or_create,
     ensure_review_exist_or_create,
     ensure_submitted_proposals_under_review,
     group_proposals_by_science_category,
-    upsert_panel,
 )
 from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
 from ska_oso_services.pht.utils.pht_helper import (
@@ -63,12 +66,12 @@ def create_panel(
 
 
 @router.post(
-    "/auto-create",
-    summary="Create a panel",
-    response_model=Union[str, list[PanelCreateResponse]],
+    "/assignments",
+    summary="Assign proposals to panel",
+    response_model=Union[str, list[PanelAssignResponse]],
 )
-def auto_create_panel(
-    request: PanelCreateRequest,
+def auto_assign_to_panel(
+    param: str,
     auth: Annotated[
         AuthContext,
         Permissions(
@@ -76,11 +79,10 @@ def auto_create_panel(
             scopes={Scope.PHT_READWRITE},
         ),
     ],
-) -> str | list[PanelCreateResponse]:
+) -> Union[str, list[PanelAssignResponse]]:
     """
-    Auto creates panels:
-    - If science verification (SV), create a single panel called
-      'Science Verification' with all submitted proposals assigned.
+    Auto assign proposals to panels:
+    - Check If science verification (SV) exist and assign all submiited proposals.
     - If existing SV panel, update reviewers and add any new proposals.
     - Else: Create panels for PANEL_NAME_POOL, which is the science categories
         (to be pulled in from OSD when available) and assign proposals by
@@ -97,7 +99,7 @@ def auto_create_panel(
         cycle and when we get to multiple cycles as panels
         can span across cycles.
     """
-    # TODO: Make the input just a str as the reviewers and proposals are not needed
+
     with oda.uow() as uow:
         submitted_proposal_refs = (
             get_latest_entity_by_id(
@@ -105,10 +107,7 @@ def auto_create_panel(
             )
             or []
         )
-
-        science_reviewers = request.sci_reviewers or []
-        technical_reviewers = request.tech_reviewers or []
-        name_raw = (request.name or "").strip()
+        name_raw = (param or "").strip()
 
         if SV_NAME.casefold() in name_raw.casefold():
 
@@ -121,12 +120,9 @@ def auto_create_panel(
                 science_reviewers = sv_panel_refs[0].sci_reviewers or []
                 technical_reviewers = sv_panel_refs[0].tech_reviewers or []
 
-                # If no submitted proposals and no reviewer update requested,
-                # do nothing.
-                reviewer_update_requested = bool(science_reviewers) or bool(
-                    technical_reviewers
-                )
-                if not submitted_proposal_refs and not reviewer_update_requested:
+                # If no submitted proposals do nothing.
+
+                if not submitted_proposal_refs:
                     return sv_panel_id
 
                 sv_panel = uow.panels.get(sv_panel_id)
@@ -149,75 +145,171 @@ def auto_create_panel(
                         sv_panel.proposals or []
                     ) + sv_assignments_to_add
 
-                # --------Update reviewers (overwrite with provided lists)---------
                 sv_panel.sci_reviewers = science_reviewers
                 sv_panel.tech_reviewers = technical_reviewers
 
-                uow.panels.add(sv_panel, auth.user_id)
+                persisted = uow.panels.add(sv_panel, auth.user_id)
 
+                uow.commit()
                 # ---------Set UNDER_REVIEW only for newly added proposals------
                 ensure_submitted_proposals_under_review(
                     uow, auth, (a.prsl_id for a in sv_assignments_to_add)
                 )
-
-                uow.commit()
                 logger.info(
                     "Updated existing Science Verification panel %s "
                     "(added %d proposals)",
                     sv_panel_id,
                     len(sv_assignments_to_add),
                 )
-                return sv_panel_id
+                return build_assignment_response(
+                    {SV_NAME: (persisted, len(sv_assignments_to_add))}
+                )
 
-            # ----------No existing SV panel, create with assignments----------------
-
-            sv_assignments = build_sv_panel_proposals(submitted_proposal_refs)
-
-            new_panel = Panel(
-                panel_id=generate_entity_id("panel"),
-                cycle="SKAO_2027_1",
-                name=SV_NAME,
-                sci_reviewers=science_reviewers,
-                tech_reviewers=technical_reviewers,
-                proposals=sv_assignments,
-            )
-            created_panel = uow.panels.add(new_panel, auth.user_id)
-
-            # ---------Update each referenced proposal to UNDER_REVIEW-------
-            ensure_submitted_proposals_under_review(
-                uow, auth, (r.prsl_id for r in submitted_proposal_refs)
-            )
-            uow.commit()
-            logger.info("Science Verification panel created and proposals assigned")
-            return created_panel.panel_id
-
-        # ------------------Science category panels-------------
-        # TODO: In the future, if needed, check for any existing panels with
-        # the same proposals assigned and handle that appropriately.
+        # ------------------Assignment by Science category panels-------------
+        # TODO: In the future, add a check to only allow a proposal to be in one panel
         proposals_by_category = group_proposals_by_science_category(
             submitted_proposal_refs, PANEL_NAME_POOL
         )
 
-        panels_by_name = {
-            panel_name: upsert_panel(
+        existing_by_name: dict[str, Panel] = {}
+        for pname in PANEL_NAME_POOL:
+            refs = get_latest_entity_by_id(
+                uow.panels.query(CustomQuery(name=pname)), "panel_id"
+            )
+            if refs:
+                existing_by_name[pname] = uow.panels.get(refs[0].panel_id)
+
+        updates: dict[str, tuple[Panel, int]] = {}
+        skipped_missing: list[str] = []
+        ids_for_status: set[str] = set()
+
+        for panel_name, proposals_for_name in proposals_by_category.items():
+            panel = existing_by_name.get(panel_name)
+            if not panel:
+                skipped_missing.append(panel_name)
+                continue
+
+            persisted, added_count, added_ids = assign_to_existing_panel(
                 uow=uow,
                 auth=auth,
-                panel_name=panel_name,
-                science_reviewers=science_reviewers,
-                technical_reviewers=technical_reviewers,
-                proposals=proposals_by_category.get(panel_name, []),
+                panel=panel,
+                proposals=proposals_for_name,
+                sci_reviewers=panel.sci_reviewers,
+                tech_reviewers=panel.tech_reviewers,
             )
-            for panel_name in PANEL_NAME_POOL
-        }
-
-        # -------Update statuses for all SUBMITTED to UNDER_REVIEW----------
-        ensure_submitted_proposals_under_review(
-            uow, auth, (r.prsl_id for r in submitted_proposal_refs)
-        )
+            updates[panel_name] = (persisted, added_count)
+            ids_for_status.update(added_ids)
 
         uow.commit()
-        logger.info("Panels successfully updated")
-        return build_panel_response(panels_by_name)
+        if ids_for_status:
+            ensure_submitted_proposals_under_review(uow, auth, ids_for_status)
+        if skipped_missing:
+            logger.warning(
+                "Skipped %d categories with no matching existing panel: %s",
+                len(skipped_missing),
+                ", ".join(skipped_missing),
+            )
+
+        logger.info("Category-based assignments complete (no creation).")
+        return build_assignment_response(updates)
+
+
+@router.post(
+    "/generate",
+    summary="Create a panel",
+    response_model=Union[str, PanelBatchCreateResult],
+)
+def auto_create_panel(
+    param: str,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> Union[str, PanelBatchCreateResult]:
+    """
+    Creates panels based on the request.
+
+    - If the request refers to the Science Verification panel (SV_NAME),
+      return its panel_id.
+      If it doesn't exist, create it and return the new panel_id (str).
+    - Otherwise, ensure all science-category panels in PANEL_NAME_POOL exist.
+      Create any missing ones, and return a summary:
+      {created_count, created_names}.
+
+    Auto creates panels:
+    - If science verification (SV), create a single panel called
+      'Science Verification'.
+    - Else: Create panels for PANEL_NAME_POOL, which is the science categories
+        (to be pulled in from OSD when available) and return a summary:
+        {created_count, created_names}..
+    Note: We will need to use cycle (Match the cycle in the
+        proposal to the panel) here to detrrmine the appropriate panel to
+        assign a proposal to. This will soon be a problem after the first
+        cycle and when we get to multiple cycles as panels
+        can span across cycles.
+    """
+
+    name_raw = (param or "").strip()
+
+    with oda.uow() as uow:
+        # --- Science Verification panel path ---
+        if SV_NAME.casefold() in name_raw.casefold():
+            existing = get_latest_entity_by_id(
+                uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id"
+            )
+            if existing:
+                return existing[0].panel_id  # already exists
+
+            sv_panel = Panel(
+                panel_id=generate_entity_id("panel"),
+                name=SV_NAME,
+                cycle="SKAO_2027_1",  # keep if this is a business rule for SV
+            )
+            created = uow.panels.add(sv_panel, auth.user_id)
+            uow.commit()
+            logger.info(
+                "Science Verification panel created (panel_id=%s)", created.panel_id
+            )
+            return created.panel_id
+
+        # --- Science category panels path ---
+        created_names: list[str] = []
+
+        for panel_name in PANEL_NAME_POOL:
+            existing = get_latest_entity_by_id(
+                uow.panels.query(CustomQuery(name=panel_name)), "panel_id"
+            )
+            panel = existing[0] if existing else None
+            if panel:
+                continue  # already present
+
+            new_panel = Panel(
+                panel_id=generate_entity_id("panel"),
+                name=panel_name,
+                # add cycle here if non-SV panels also require it:
+                # cycle="SKAO_2027_1",
+            )
+            uow.panels.add(new_panel, auth.user_id)
+            created_names.append(panel_name)
+
+        # Commit only if we created something
+        if created_names:
+            uow.commit()
+            logger.info(
+                "Panels created: %d (%s)",
+                len(created_names),
+                ", ".join(created_names),
+            )
+        else:
+            logger.info("No panels created; all already existed.")
+
+        return PanelBatchCreateResult(
+            created_count=len(created_names),
+            created_names=created_names,
+        )
 
 
 @router.get(

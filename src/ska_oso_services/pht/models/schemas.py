@@ -6,6 +6,18 @@ from ska_oso_pdm.proposal import ProposalAccess, ProposalPermissions, ProposalRo
 from ska_oso_services.common.model import AppModel
 
 
+class PanelBatchCreateResult(AppModel):
+    created_count: int
+    created_names: list[str]
+
+
+class PanelAssignResponse(AppModel):
+    panel_id: str
+    name: str
+    proposals_added: int
+    total_proposals_after: int
+
+
 class EmailRequest(AppModel):
     """
     Schema for incoming email request.
@@ -30,16 +42,6 @@ class ProposalAccessByProposalResponse(ProposalAccessResponse):
 
 class ProposalAccessCreate(ProposalAccess):
     access_id: str | None = None
-
-
-class PanelCreateResponse(AppModel):
-    """Schema for response after creating a panel based on
-    science categories and automatically assigning submitted proposals.
-    """
-
-    panel_id: str
-    name: str
-    proposal_count: int
 
 
 class PanelCreateRequest(AppModel):

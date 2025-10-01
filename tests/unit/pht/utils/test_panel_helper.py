@@ -10,162 +10,182 @@ from ska_oso_services.pht.api import panels as panels_api  # for ProposalStatus 
 from ska_oso_services.pht.api.panels import ensure_submitted_proposals_under_review
 from ska_oso_services.pht.service import panel_operations as panel_ops
 from ska_oso_services.pht.service.panel_operations import (
-    group_proposals_by_science_category,
+    group_proposals_by_science_category,assign_to_existing_panel
 )
 from tests.unit.util import TestDataFactory
 
 
-def _prsl_id(item):
-    return item["prsl_id"] if isinstance(item, dict) else getattr(item, "prsl_id")
+def _ns(**kw):
+    return SimpleNamespace(**kw)
 
 
-def _assigned_on(item):
-    return (
-        item["assigned_on"] if isinstance(item, dict) else getattr(item, "assigned_on")
-    )
-
-
-def _with_proposals(panel, assignments):
-    return panel.model_copy(update={"proposals": assignments})
-
-
-def _make_assignment(pid, assigned_on):
-    make = getattr(TestDataFactory, "proposal_assignment", None)
-    if make is not None:
-        return make(prsl_id=pid, assigned_on=assigned_on)
-    return SimpleNamespace(prsl_id=pid, assigned_on=assigned_on)
-
-
-class TestUpsertPanel:
-    @pytest.mark.parametrize(
-        "case",
-        [
-            {
-                "id": "existing_appends_only_new",
-                "existing": True,
-                "existing_ids": ["A"],
-                "incoming_ids": ["A", "B"],
-                "science_reviewers": [],
-                "technical_reviewers": [],
-                "expect_final_ids": ["A", "B"],
-            },
-            {
-                "id": "existing_no_incoming",
-                "existing": True,
-                "existing_ids": ["A", "B"],
-                "incoming_ids": [],
-                "science_reviewers": [],
-                "technical_reviewers": [],
-                "expect_final_ids": ["A", "B"],
-            },
-            {
-                "id": "create_with_two",
-                "existing": False,
-                "existing_ids": [],
-                "incoming_ids": ["A", "B"],
-                "science_reviewers": [],
-                "technical_reviewers": [],
-                "expect_final_ids": ["A", "B"],
-            },
-            {
-                "id": "create_empty",
-                "existing": False,
-                "existing_ids": [],
-                "incoming_ids": [],
-                "science_reviewers": [],
-                "technical_reviewers": [],
-                "expect_final_ids": [],
-            },
-        ],
-        ids=lambda c: c["id"],
-    )
-    def test_upsert_panel_parametrized(self, monkeypatch, case):
-        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-
-        # Freeze time inside module under test
-        monkeypatch.setattr(
-            panel_ops,
-            "datetime",
-            SimpleNamespace(now=lambda tz=None: fixed_now),
-            raising=True,
+class TestAssignToExistingPanel:
+    def test_adds_only_new_proposals_and_overwrites_reviewers(self):
+        existing_assignment = _ns(prsl_id="prop-1")
+        panel = _ns(
+            panel_id="panel-1",
+            name="Cosmology",
+            proposals=[existing_assignment], 
+            sci_reviewers=["old-sci"],
+            tech_reviewers=["old-tech"],
         )
+
+        # incoming proposals: one duplicate, two new, and one invalid
+        p_dup = _ns(prsl_id="prop-1")
+        p_new1 = _ns(prsl_id="prop-2")
+        p_new2 = _ns(prsl_id="prop-3")
+        p_invalid = _ns()  # no prsl_id → ignored
 
         uow = mock.MagicMock()
-        uow.panels.add.side_effect = lambda *args, **kwargs: args[0]
+        auth = _ns(user_id="user-123")
 
-        incoming = [SimpleNamespace(prsl_id=pid) for pid in case["incoming_ids"]]
+        persisted_panel = _ns(
+            panel_id="panel-1",
+            name="Cosmology",
+            proposals=[],
+            sci_reviewers=["sci-1"],
+            tech_reviewers=["tec-1"],
+        )
+        uow.panels.add.return_value = persisted_panel
 
-        existing_panel = None
-        if case["existing"]:
-            existing_panel = TestDataFactory.panel(
-                name="SomePanel", reviewer_id="test_id"
-            )
-            existing_assignments = [
-                _make_assignment(pid, fixed_now - timedelta(minutes=5))
-                for pid in case["existing_ids"]
-            ]
-            existing_panel = _with_proposals(existing_panel, existing_assignments)
-
-            monkeypatch.setattr(
-                panel_ops,
-                "get_latest_entity_by_id",
-                lambda _q, _k: [existing_panel],
-                raising=True,
-            )
-        else:
-            monkeypatch.setattr(
-                panel_ops, "get_latest_entity_by_id", lambda _q, _k: [], raising=True
-            )
-            monkeypatch.setattr(
-                panel_ops,
-                "generate_entity_id",
-                lambda prefix: f"{prefix}-new-123",
-                raising=True,
-            )
-
-        auth = SimpleNamespace(user_id="test_user")
-
-        result = panel_ops.upsert_panel(
+        persisted, added_count, added_ids = assign_to_existing_panel(
             uow=uow,
             auth=auth,
-            panel_name="SomePanel",
-            science_reviewers=case["science_reviewers"],
-            technical_reviewers=case["technical_reviewers"],
-            proposals=incoming,
+            panel=panel,
+            proposals=[p_dup, p_new1, p_new2, p_invalid],
+            sci_reviewers=["sci-1"],
+            tech_reviewers=["tec-1"],
         )
 
-        # Called once; allow extra args
-        assert uow.panels.add.call_count == 1
+        assert persisted is persisted_panel
+        assert added_count == 2
+        assert set(added_ids) == {"prop-2", "prop-3"}
 
-        saved_panel = uow.panels.add.call_args[0][0]
+        # Panel mutation 
+        assert panel.sci_reviewers == ["sci-1"]
+        assert panel.tech_reviewers == ["tec-1"]
+        # proposals now include the existing + 2 new assignments
+        prsl_ids_after = [getattr(x, "prsl_id", None) for x in (panel.proposals or [])]
+        assert prsl_ids_after.count("prop-1") == 1
+        assert "prop-2" in prsl_ids_after
+        assert "prop-3" in prsl_ids_after
 
-        add_args, _ = uow.panels.add.call_args
-        if len(add_args) > 1:
-            assert add_args[1] in (auth.user_id, auth)
+        # Persisted once with correct args
+        uow.panels.add.assert_called_once()
+        args, kwargs = uow.panels.add.call_args
+        assert args[0] is panel
+        assert args[1] == auth.user_id
 
-        assert saved_panel.name == "SomePanel"
-        assert [_prsl_id(p) for p in saved_panel.proposals] == case["expect_final_ids"]
+    def test_none_reviewers_leave_as_is(self):
+        panel = _ns(
+            panel_id="panel-2",
+            name="Stars",
+            proposals=[],
+            sci_reviewers=["keep-sci"],
+            tech_reviewers=["keep-tech"],
+        )
+        uow = mock.MagicMock()
+        auth = _ns(user_id="user-123")
+        uow.panels.add.return_value = panel 
 
-        if case["existing"]:
-            assert getattr(saved_panel, "sci_reviewers") == getattr(
-                existing_panel, "sci_reviewers"
-            )
-            assert getattr(saved_panel, "tech_reviewers") == getattr(
-                existing_panel, "tech_reviewers"
-            )
-        else:
-            assert getattr(saved_panel, "sci_reviewers") == case["science_reviewers"]
-            assert getattr(saved_panel, "tech_reviewers") == case["technical_reviewers"]
+        persisted, added_count, added_ids = assign_to_existing_panel(
+            uow=uow,
+            auth=auth,
+            panel=panel,
+            proposals=[],  # nothing to add
+            sci_reviewers=None, 
+            tech_reviewers=None, 
+        )
 
-        final_ids = [_prsl_id(p) for p in result.proposals]
-        assert final_ids == case["expect_final_ids"]
+        assert persisted is panel
+        assert added_count == 0
+        assert added_ids == []
+        assert panel.sci_reviewers == ["keep-sci"]
+        assert panel.tech_reviewers == ["keep-tech"]
+        uow.panels.add.assert_called_once_with(panel, auth.user_id)
 
-        appended_ids = set(case["incoming_ids"]) - set(case["existing_ids"])
-        if appended_ids:
-            stamped = {
-                _prsl_id(p) for p in result.proposals if _assigned_on(p) == fixed_now
-            }
-            assert appended_ids.issubset(stamped)
+    def test_empty_lists_clear_reviewers(self):
+        panel = _ns(
+            panel_id="panel-3",
+            name="Transients",
+            proposals=[],
+            sci_reviewers=["will-be-cleared"],
+            tech_reviewers=["will-be-cleared"],
+        )
+        uow = mock.MagicMock()
+        auth = _ns(user_id="user-123")
+        uow.panels.add.return_value = panel
+
+        persisted, added_count, added_ids = assign_to_existing_panel(
+            uow=uow,
+            auth=auth,
+            panel=panel,
+            proposals=[],  
+            sci_reviewers=[],  
+            tech_reviewers=[],  
+        )
+
+        assert persisted is panel
+        assert added_count == 0
+        assert added_ids == []
+        assert panel.sci_reviewers == []  
+        assert panel.tech_reviewers == []  
+        uow.panels.add.assert_called_once_with(panel, auth.user_id)
+
+    def test_skips_already_assigned_ids(self):
+        panel = _ns(
+            panel_id="panel-4",
+            name="Galaxy",
+            proposals=[_ns(prsl_id="p1"), _ns(prsl_id="p2")],
+            sci_reviewers=[],
+            tech_reviewers=[],
+        )
+        uow = mock.MagicMock()
+        auth = _ns(user_id="user-123")
+        uow.panels.add.return_value = panel
+
+        persisted, added_count, added_ids = assign_to_existing_panel(
+            uow=uow,
+            auth=auth,
+            panel=panel,
+            proposals=[_ns(prsl_id="p1"), _ns(prsl_id="p2")],  
+            sci_reviewers=None,
+            tech_reviewers=None,
+        )
+
+        assert persisted is panel
+        assert added_count == 0
+        assert added_ids == []
+
+        prsl_ids_after = [getattr(x, "prsl_id", None) for x in (panel.proposals or [])]
+        assert prsl_ids_after == ["p1", "p2"]
+        uow.panels.add.assert_called_once_with(panel, auth.user_id)
+
+    def test_handles_none_proposals_gracefully(self):
+        panel = _ns(
+            panel_id="panel-5",
+            name="Dust",
+            proposals=None,  
+            sci_reviewers=[],
+            tech_reviewers=[],
+        )
+        uow = mock.MagicMock()
+        auth = _ns(user_id="user-123")
+        uow.panels.add.return_value = panel
+
+        persisted, added_count, added_ids = assign_to_existing_panel(
+            uow=uow,
+            auth=auth,
+            panel=panel,
+            proposals=None, 
+            sci_reviewers=None,
+            tech_reviewers=None,
+        )
+
+        assert persisted is panel
+        assert added_count == 0
+        assert added_ids == []
+        uow.panels.add.assert_called_once_with(panel, auth.user_id)
 
 
 class TestGroupProposalsByScienceCategory:
