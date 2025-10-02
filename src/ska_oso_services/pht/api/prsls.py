@@ -147,7 +147,7 @@ def create_proposal(
     summary="Get a list of proposals by status",
     dependencies=[
         Permissions(
-            roles=[Role.SW_ENGINEER, PrslRole.OPS_PROPOSAL_ADMIN],
+            roles=[Role.SW_ENGINEER, PrslRole.OPS_PROPOSAL_ADMIN, PrslRole.OPS_REVIEW_CHAIR, PrslRole.SCIENCE_REVIEWER, PrslRole.TECHNICAL_REVIEWER],
             scopes=[Scope.PHT_READ],
         )
     ],
