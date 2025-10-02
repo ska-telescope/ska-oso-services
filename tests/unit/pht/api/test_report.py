@@ -38,9 +38,8 @@ class TestReportsAPI:
                 panel_id=mock_panels[0].panel_id,
                 reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
             )
-        ]  # a list of dict
+        ]  
 
-        # Setup oda.uow context manager
         uow_mock = mock.MagicMock()
         uow_mock.prsls.query.return_value = "proposal_query"
         uow_mock.panels.query.return_value = "panel_query"

@@ -7,7 +7,6 @@ from types import SimpleNamespace
 from unittest import mock
 
 from ska_db_oda.persistence.domain.errors import UniqueConstraintViolation
-from ska_oso_pdm.proposal_management.panel import Panel
 
 from ska_oso_services.pht.api import panels as panels_api
 from tests.unit.conftest import PHT_BASE_API_URL
@@ -15,10 +14,10 @@ from tests.unit.util import REVIEWERS, TestDataFactory, assert_json_is_equal
 
 PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
-
+MODULE = "ska_oso_services.pht.api.panels"
 
 class TestPanelsUpdateAPI:
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_id_mismatch_returns_422(self, mock_uow, client):
         """
         If body.panel_id != path panel_id -> 422.
@@ -28,7 +27,7 @@ class TestPanelsUpdateAPI:
             name="Cosmology",
         )
 
-        path_id = "panel-XYZ"  # mismatch
+        path_id = "panel-XYZ"  
 
         resp = client.put(
             f"{PANELS_API_URL}/{path_id}",
@@ -40,7 +39,8 @@ class TestPanelsUpdateAPI:
 
         mock_uow().__enter__.assert_not_called()
 
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_success(self, mock_uow, client):
         """
         Returns the panel object when body.path IDs match and reviewer exists.
@@ -68,12 +68,11 @@ class TestPanelsUpdateAPI:
         uow_mock.panels.add.assert_called_once()
         uow_mock.commit.assert_called_once()
 
-    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
-    @mock.patch("ska_oso_services.pht.api.panels.generate_entity_id", autospec=True)
-    @mock.patch(
-        "ska_oso_services.pht.api.panels.get_latest_entity_by_id", autospec=True
+    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
+    @mock.patch(f"{MODULE}.generate_entity_id", autospec=True)
+    @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True
     )
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_creates_technical_review_when_missing(
         self, mock_uow, mock_get_latest, mock_gen_id, mock_validate, client
     ):
@@ -139,8 +138,8 @@ class TestPanelsUpdateAPI:
         "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_skips_creating_tech_review_if_already_exists_v1(
         self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
     ):
@@ -148,7 +147,6 @@ class TestPanelsUpdateAPI:
         mock_uow().__enter__.return_value = uow
         mock_gen_id_ops.return_value = "pnld-123"
 
-        # Ref already indicates version==1 (so helper should skip creation)
         existing_ref = SimpleNamespace(
             review_id="rvw-existing",
             reviewer_id="rev-001",
@@ -182,12 +180,12 @@ class TestPanelsUpdateAPI:
         assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         mock_validate.assert_called_once()
-        # Because version==1 exists, helper should not create a new review:
         uow.rvws.add.assert_not_called()
         uow.pnlds.add.assert_called_once()
-        mock_gen_id_ops.assert_called_once()  # called for decision, not tech review
+        mock_gen_id_ops.assert_called_once() 
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
+
 
     @mock.patch(
         "ska_oso_services.pht.service.panel_operations.generate_entity_id",
@@ -197,15 +195,14 @@ class TestPanelsUpdateAPI:
         "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_skips_creating_decision_if_already_exists(
         self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
 
-        # Ref already indicates version==1 (so helper should skip creation)
         existing_decision_ref = SimpleNamespace(
             panel_id="panel-existing",
             decision_id="pnld-001",
@@ -231,7 +228,6 @@ class TestPanelsUpdateAPI:
         assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         mock_validate.assert_called_once()
-        # Because version==1 exists, helper should not create a new review:
         uow.pnlds.add.assert_not_called()
         uow.rvws.add.assert_not_called()
         mock_gen_id_ops.assert_not_called()
@@ -246,21 +242,18 @@ class TestPanelsUpdateAPI:
         "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_creates_decision_and_science_review_when_missing(
         self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
 
-        # No existing decision for (proposal)
         mock_get_latest_ops.return_value = []
 
-        # Deterministic ID for decision
         mock_gen_id_ops.return_value = "pnld-0001"
 
-        # Repos return passed object (upsert-like)
         uow.pnlds.add.side_effect = lambda r: r
         uow.panels.add.side_effect = lambda p: p
 
@@ -296,7 +289,7 @@ class TestPanelsUpdateAPI:
         assert created.prsl_id == "prsl-001"
         assert (
             mock_gen_id_ops.call_count == 2
-        )  # called once for decision generation & once for science review generation
+        )  
 
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
@@ -309,21 +302,18 @@ class TestPanelsUpdateAPI:
         "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_creates_science_review_when_missing(
         self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
 
-        # No existing science review for (proposal, reviewer, kind)
         mock_get_latest_ops.return_value = []
 
-        # Deterministic ID for science review
         mock_gen_id_ops.return_value = "rvs-sci-0001"
 
-        # Repos return passed object (upsert-like)
         uow.rvws.add.side_effect = lambda r: r
         uow.panels.add.side_effect = lambda p: p
 
@@ -369,8 +359,8 @@ class TestPanelsUpdateAPI:
         "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
         autospec=True,
     )
-    @mock.patch("ska_oso_services.pht.api.panels.validate_duplicates", autospec=True)
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_skips_creating_science_review_if_already_exists_v1(
         self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
     ):
@@ -379,7 +369,6 @@ class TestPanelsUpdateAPI:
         mock_uow().__enter__.return_value = uow
         mock_gen_id_ops.return_value = "pnld-123"
 
-        # Ref already indicates metadata.version == 1 → helper should skip creation
         existing_ref = SimpleNamespace(
             review_id="rvw-existing-sci",
             reviewer_id="rev-sci-001",
@@ -415,14 +404,14 @@ class TestPanelsUpdateAPI:
         mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
         uow.pnlds.add.assert_called_once()
-        mock_gen_id_ops.assert_called_once()  # called for decision, not science review
+        mock_gen_id_ops.assert_called_once() 
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
     def test_update_panel_path_body_mismatch_returns_422(self, mock_uow, client):
         """
-        If panel_id in path != body.panel_id -> UnprocessableEntityError
+        If panel_id in path != body.panel_id --> UnprocessableEntityError
         """
         uow_mock = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow_mock
@@ -441,14 +430,14 @@ class TestPanelsUpdateAPI:
             headers={"Content-type": "application/json"},
         )
 
-        assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY  # 422
+        assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY  
         assert "do not match" in resp.json().get("detail", "").lower()
         uow_mock.panels.add.assert_not_called()
         uow_mock.commit.assert_not_called()
 
 
 class TestPanelsAPI:
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    @mock.patch(f"{MODULE}.oda.uow")
     def test_panels_post_success(self, mock_uow, client):
         panel = TestDataFactory.panel_basic(
             panel_id=f"panel-test-{uuid.uuid4().hex[:8]}", name="Galaxy"
@@ -467,7 +456,7 @@ class TestPanelsAPI:
         result = response.json()
         assert panel.panel_id == result
 
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    @mock.patch(f"{MODULE}.oda.uow")
     def test_panels_post_duplicate_name(self, mock_uow, client):
         panel = TestDataFactory.panel_basic(
             name="dup name", panel_id="panel-dup-name-20250616-00001"
@@ -489,7 +478,7 @@ class TestPanelsAPI:
         expected = {"detail": "You name is duplicated"}
         assert expected == result
 
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_get_panel_success(self, mock_oda, client):
         """
         Ensure valid panel ID returns the Panel object.
@@ -507,7 +496,7 @@ class TestPanelsAPI:
         data = response.json()
         assert data["panel_id"] == panel_id
 
-    @mock.patch("ska_oso_services.pht.api.panels.oda.uow", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_get_panel_list_success(self, mock_oda, client):
         """
         Check if the get_panels_for_user returns panels correctly.
@@ -525,9 +514,9 @@ class TestPanelsAPI:
 
 class TestPanelAutoCreateAPI:
 
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     # SV: No existing SV panel --> create panel (even if no submitted)
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     @mock.patch(
         "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
     )
@@ -578,9 +567,9 @@ class TestPanelAutoCreateAPI:
         mock_ensure_under_review.assert_called_once()
         uow.commit.assert_called_once()
 
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     # Category panels (non-SV): No submitted --> upsert empty groups
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     @mock.patch(
         "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
     )
@@ -652,9 +641,9 @@ class TestPanelAutoCreateAPI:
         mock_ensure_under_review.assert_called_once()
         uow.commit.assert_called_once()
 
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     # SV: Existing panel present & nothing to do --> early return (no writes)
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     @mock.patch(
         "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
     )
@@ -705,9 +694,9 @@ class TestPanelAutoCreateAPI:
         mock_build_panel_response.assert_not_called()
         mock_ensure_under_review.assert_not_called()
 
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     # Create new panel with submitted proposals --> statuses set to UNDER_REVIEW
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     @mock.patch(
         "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
     )
@@ -759,9 +748,9 @@ class TestPanelAutoCreateAPI:
 
         uow.commit.assert_called_once()
 
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     # Category panels: Grouping & passing only matched categories to upsert_panel
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     @mock.patch(
         "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
     )
@@ -789,7 +778,7 @@ class TestPanelAutoCreateAPI:
         uow = mock.MagicMock()
         mock_oda.return_value.__enter__.return_value = uow
 
-        # Arrange proposals with categories (two matched, one unmatched)
+        # Proposals with categories (two matched, one unmatched)
         p_cosmology = TestDataFactory.proposal_by_category("prsl-1", "Cosmology")
         p_stars = TestDataFactory.proposal_by_category("prsl-2", "Stars")
         p_unknown = TestDataFactory.proposal_by_category("prsl-3", "Unknown")
@@ -841,9 +830,9 @@ class TestPanelAutoCreateAPI:
         mock_ensure_under_review.assert_called_once()
         uow.commit.assert_called_once()
 
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     # SV: Existing panel + submitted --> append only NEW assignments and update status
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
 
     @mock.patch(
         "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
@@ -925,9 +914,9 @@ class TestPanelAutoCreateAPI:
 
         uow.commit.assert_called_once()
 
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     # SV: Existing panel, no submitted, reviewer lists provided --> update reviewers
-    # ─────────────────────────────────────────────────────────────────────────
+    # ----------------------------------------------------------------------
     @mock.patch(
         "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
     )

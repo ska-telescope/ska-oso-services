@@ -157,7 +157,7 @@ def get_proposals_by_status(
     Function that requests to GET /prsls/reviewable are mapped to.
 
     Retrieves the Proposals from the
-    underlying data store, if available
+    underlying data store based on the role/group, if available
     Return proposals, preferring UNDER_REVIEW over SUBMITTED.
     One latest proposal per prsl_id.
 
@@ -184,21 +184,21 @@ def get_proposals_by_status(
 
     with oda.uow() as uow:
         if has_role or is_admin:
-            ur_latest = (
+            under_review_latest = (
                 get_latest_entity_by_id(
                     uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
                     "prsl_id",
                 )
                 or []
             )
-            sub_latest = (
+            submitted_latest = (
                 get_latest_entity_by_id(
                     uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)),
                     "prsl_id",
                 )
                 or []
             )
-            proposals = merge_latest_with_preference(ur_latest, sub_latest)
+            proposals = merge_latest_with_preference(under_review_latest, submitted_latest)
 
         elif is_chair:
             proposals = (
