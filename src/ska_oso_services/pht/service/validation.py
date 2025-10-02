@@ -25,15 +25,15 @@ def validate_proposal(proposal: Proposal) -> dict:
     messages = []
     try:
         # check that proposal has at least one observation set
-        if len(proposal.info.observation_sets) == 0:
+        if len(proposal.observation_info.observation_sets) == 0:
             validate_result = False
             messages.append("This proposal has no observation sets")
 
         # each observation target should have a valid sensitivity calculation result
-        for target in proposal.info.targets:
+        for target in proposal.observation_info.targets:
             found = any(
                 target.target_id == result.target_ref
-                for result in proposal.info.result_details
+                for result in proposal.observation_info.result_details
             )
             if not found:
                 validate_result = False
@@ -42,10 +42,10 @@ def validate_proposal(proposal: Proposal) -> dict:
                 )
 
         # check that each observation sets has at least one target (in result)
-        for obs_set in proposal.info.observation_sets:
+        for obs_set in proposal.observation_info.observation_sets:
             found = any(
                 obs_set.observation_set_id == result.observation_set_ref
-                for result in proposal.info.result_details
+                for result in proposal.observation_info.result_details
             )
             if not found:
                 validate_result = False

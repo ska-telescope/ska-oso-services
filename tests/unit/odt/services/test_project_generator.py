@@ -17,8 +17,8 @@ def test_project_from_proposal_without_groups(mock_randint):
     mock_randint.return_value = 12345
 
     proposal = TestDataFactory.complete_proposal()
-    proposal.info.observation_sets[0].group_id = None
-    proposal.info.observation_sets[1].group_id = None
+    proposal.observation_info.observation_sets[0].group_id = None
+    proposal.observation_info.observation_sets[1].group_id = None
 
     project = generate_project(proposal)
     assert proposal.prsl_id == project.prsl_ref
@@ -32,7 +32,7 @@ def test_project_from_proposal_without_groups(mock_randint):
 
     assert len(first_ob_science_programme.observation_sets) == 1
     assert (
-        proposal.info.observation_sets[0]
+        proposal.observation_info.observation_sets[0]
         == first_ob_science_programme.observation_sets[0]
     )
 
@@ -41,7 +41,8 @@ def test_project_from_proposal_without_groups(mock_randint):
     assert len(first_ob_science_programme.targets) == 2
 
     assert (
-        proposal.info.data_product_sdps == first_ob_science_programme.data_product_sdps
+        proposal.observation_info.data_product_sdps
+        == first_ob_science_programme.data_product_sdps
     )
 
     # Check the second observing block contents
@@ -51,7 +52,7 @@ def test_project_from_proposal_without_groups(mock_randint):
 
     assert len(second_ob_science_programme.observation_sets) == 1
     assert (
-        proposal.info.observation_sets[1]
+        proposal.observation_info.observation_sets[1]
         == second_ob_science_programme.observation_sets[0]
     )
 
@@ -60,7 +61,8 @@ def test_project_from_proposal_without_groups(mock_randint):
     assert len(second_ob_science_programme.targets) == 1
 
     assert (
-        proposal.info.data_product_sdps == first_ob_science_programme.data_product_sdps
+        proposal.observation_info.data_product_sdps
+        == first_ob_science_programme.data_product_sdps
     )
 
 
@@ -75,8 +77,8 @@ def test_project_from_proposal_with_groups():
     """
 
     proposal = TestDataFactory.complete_proposal()
-    proposal.info.observation_sets[0].group_id = "1"
-    proposal.info.observation_sets[1].group_id = "1"
+    proposal.observation_info.observation_sets[0].group_id = "1"
+    proposal.observation_info.observation_sets[1].group_id = "1"
 
     project = generate_project(proposal)
     assert proposal.prsl_id == project.prsl_ref
@@ -91,7 +93,7 @@ def test_project_from_proposal_with_groups():
 
     assert len(ob_first_science_programme.observation_sets) == 1
     assert (
-        proposal.info.observation_sets[0]
+        proposal.observation_info.observation_sets[0]
         == ob_first_science_programme.observation_sets[0]
     )
 
@@ -100,7 +102,8 @@ def test_project_from_proposal_with_groups():
     assert len(ob_first_science_programme.targets) == 2
 
     assert (
-        proposal.info.data_product_sdps == ob_first_science_programme.data_product_sdps
+        proposal.observation_info.data_product_sdps
+        == ob_first_science_programme.data_product_sdps
     )
 
     # Check the second science programme
@@ -108,7 +111,7 @@ def test_project_from_proposal_with_groups():
 
     assert len(ob_second_science_programme.observation_sets) == 1
     assert (
-        proposal.info.observation_sets[1]
+        proposal.observation_info.observation_sets[1]
         == ob_second_science_programme.observation_sets[0]
     )
 

@@ -116,7 +116,7 @@ def create_proposal(
             principal_investigator=True,
         )
         with oda.uow() as uow:
-            proposal.info.investigators.append(new_investigator)
+            proposal.proposal_info.investigators.append(new_investigator)
             created_prsl = uow.prsls.add(proposal, auth.user_id)
             # Create permissions
             create_prslacc = ProposalAccess(

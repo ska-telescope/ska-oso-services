@@ -2,11 +2,12 @@
     "prsl_id": "prp-001",
     "status": "draft",
     "cycle": "5000_2023",
-    "info": {
+    "proposal_info": {
       "title": "The Milky Way View",
       "proposal_type": {
         "main_type": "standard_proposal",
         "attributes": ["coordinated_proposal"]
       }
-    }
+    },
+    "observation_info":{}
 }

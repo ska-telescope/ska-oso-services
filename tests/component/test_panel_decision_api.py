@@ -10,7 +10,7 @@ import json
 import uuid
 from http import HTTPStatus
 
-from ..unit.util import VALID_PANEL_DECISION, TestDataFactory
+from ..unit.util import VALID_NEW_PROPOSAL, VALID_PANEL_DECISION, TestDataFactory
 from . import PHT_URL
 
 
@@ -90,6 +90,122 @@ def test_panel_decision_create_then_put(authrequests):
 
     # Confirm version bumped
     assert put_response.json()["metadata"]["version"] == initial_version + 1
+
+
+def test_panel_decision_put_decided_updates_proposal(authrequests):
+    # create a new proposal
+    data = json.loads(VALID_NEW_PROPOSAL)
+    data["prsl_id"] = f"{data.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
+
+    post_prsl_response = authrequests.post(
+        f"{PHT_URL}/prsls/create",
+        data=json.dumps(data),
+        headers={"Content-Type": "application/json"},
+    )
+
+    prsl_id = post_prsl_response.json()["prsl_id"]
+
+    # create a new decision with prsl_id
+    data_decision = json.loads(VALID_PANEL_DECISION)
+    data_decision["prsl_id"] = prsl_id
+    data_decision["decision_id"] = "test-put-decided-updates-proposal"
+
+    post_decision_response = authrequests.post(
+        f"{PHT_URL}/panel/decision/create",
+        data=json.dumps(data_decision),
+        headers={"Content-Type": "application/json"},
+    )
+
+    decision_id = post_decision_response.json()
+
+    # GET decision to fetch latest state
+    get_decision_response = authrequests.get(f"{PHT_URL}/panel/decision/{decision_id}")
+
+    originaldecision = get_decision_response.json()
+
+    print(originaldecision)
+
+    initial_version = originaldecision["metadata"]["version"]
+
+    # Update decision to decided and recommendation accepted
+    originaldecision["status"] = "Decided"
+    originaldecision["recommendation"] = "Accepted"
+    review_to_update = json.dumps(originaldecision)
+
+    # PUT updated proposal
+    put_response = authrequests.put(
+        f"{PHT_URL}/panel/decision/{decision_id}",
+        data=review_to_update,
+        headers={"Content-Type": "application/json"},
+    )
+
+    # Confirm version bumped
+    assert put_response.json()["metadata"]["version"] == initial_version + 1
+
+    # GET proposal to fetch latest state
+    get_proposal_after_updated = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+
+    # Confirm proposal status updated
+    assert get_proposal_after_updated.json()["status"] == "accepted"
+
+
+def test_panel_decision_put_not_decided_not_updating_proposal(authrequests):
+    # create a new proposal
+    data_proposal = json.loads(VALID_NEW_PROPOSAL)
+    data_proposal["prsl_id"] = (
+        f"{data_proposal.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
+    )
+
+    post_prsl_response = authrequests.post(
+        f"{PHT_URL}/prsls/create",
+        data=json.dumps(data_proposal),
+        headers={"Content-Type": "application/json"},
+    )
+
+    prsl_id = post_prsl_response.json()["prsl_id"]
+
+    # create a new decision with prsl_id
+    data_decision = json.loads(VALID_PANEL_DECISION)
+    data_decision["prsl_id"] = prsl_id
+    data_decision["decision_id"] = "test-put-not-decided-not-updating-proposal"
+
+    post_decision_response = authrequests.post(
+        f"{PHT_URL}/panel/decision/create",
+        data=json.dumps(data_decision),
+        headers={"Content-Type": "application/json"},
+    )
+
+    decision_id = post_decision_response.json()
+
+    print(decision_id)
+
+    # GET decision to fetch latest state
+    get_decision_response = authrequests.get(f"{PHT_URL}/panel/decision/{decision_id}")
+
+    originaldecision = get_decision_response.json()
+
+    print(originaldecision)
+
+    initial_version = originaldecision["metadata"]["version"]
+
+    # use default status for panel decision
+    review_to_update = json.dumps(originaldecision)
+
+    # PUT updated proposal
+    put_response = authrequests.put(
+        f"{PHT_URL}/panel/decision/{decision_id}",
+        data=review_to_update,
+        headers={"Content-Type": "application/json"},
+    )
+
+    # Confirm version bumped
+    assert put_response.json()["metadata"]["version"] == initial_version + 1
+
+    # GET proposal to fetch latest state
+    get_proposal_after_updated = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+
+    # Confirm proposal status not updated
+    assert get_proposal_after_updated.json()["status"] == data_proposal["status"]
 
 
 def test_get_list_panel_decision_for_user(authrequests):

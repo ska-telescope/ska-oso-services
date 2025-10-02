@@ -5,7 +5,12 @@ from fastapi import APIRouter
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
 from ska_db_oda.persistence.domain.query import CustomQuery
-from ska_oso_pdm import PanelDecision
+from ska_oso_pdm import PanelDecision, Proposal
+from ska_oso_pdm.proposal.proposal import ProposalStatus
+from ska_oso_pdm.proposal_management.panel_decision import (
+    PanelReviewStatus,
+    Recommendation,
+)
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -146,13 +151,46 @@ def update_panel_decision(
 
     with oda.uow() as uow:
         # Verify Decision exists
-        existing = uow.pnlds.get(decision_id)
-        if not existing:
+        existing_decision = uow.pnlds.get(decision_id)
+
+        if not existing_decision:
             logger.info("Decision not found for update: %s", decision_id)
             raise NotFoundError(detail="Decision not found: {decision_id}")
 
         try:
             updated_decision = uow.pnlds.add(decision, auth.user_id)
+
+            if updated_decision.status == PanelReviewStatus.DECIDED:
+
+                existing_prsl: Proposal = uow.prsls.get(existing_decision.prsl_id)
+                if not existing_prsl:
+                    logger.info(
+                        "Proposal not found for update: %s", existing_decision.prsl_id
+                    )
+                    raise NotFoundError(
+                        detail="Proposal not found: {existing_decision.prsl_id}"
+                    )
+
+                match updated_decision.recommendation:
+                    case None:
+                        raise ValueError(
+                            "recommendation cannot be None when decision is DECIDED"
+                        )  # moving the validation to pdm?
+                    case Recommendation.ACCEPTED:
+                        existing_prsl.status = ProposalStatus.ACCEPTED
+                    case Recommendation.ACCEPTED_WITH_REVISION:
+                        existing_prsl.status = ProposalStatus.ACCEPTED_WITH_REVISION
+                    case Recommendation.REJECTED:
+                        existing_prsl.status = ProposalStatus.REJECTED
+
+                logger.info(
+                    "Attempt to set Proposal %s to %s by Decision update '%s'",
+                    existing_prsl.prsl_id,
+                    existing_prsl.status,
+                    existing_decision.decision_id,
+                )
+                uow.prsls.add(existing_prsl)
+
             uow.commit()
             logger.info("Decision %s updated successfully", decision_id)
             return updated_decision
