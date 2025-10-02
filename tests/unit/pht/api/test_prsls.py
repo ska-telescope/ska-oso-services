@@ -12,14 +12,8 @@ from unittest import mock
 import pytest
 from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRefused
 from fastapi import status
-from pydantic import BaseModel, ValidationError
-from ska_db_oda.persistence.domain.query import CustomQuery
 
-from ska_oso_services.common.error_handling import (
-    BadRequestError,
-    ForbiddenError,
-    NotFoundError,
-)
+from ska_oso_services.pht.api import prsls as prsl_api
 from ska_oso_services.pht.api.prsls import get_proposals_by_status
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
@@ -724,9 +718,9 @@ class TestProposalEmailAPI:
 
 class TestGetProposalsByStatus:
 
+    @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_get_proposals_by_status_success(self, mock_uow):
-        # Arrange: UNDER_REVIEW wins over SUBMITTED for the same prsl_id
+    def test_get_proposals_by_status_success(self, mock_uow, mock_latest):
         p_under_review = TestDataFactory.complete_proposal(
             prsl_id="prsl-ska-00001", status="under review"
         )
@@ -738,38 +732,54 @@ class TestGetProposalsByStatus:
         )
 
         uow_mock = mock.MagicMock()
-        # First call (UNDER_REVIEW) returns latest for prsl-00001,
-        # Second call (SUBMITTED) returns one duplicate id and one new id
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
         uow_mock.prsls.query.side_effect = [
             [p_under_review],
             [p_submitted_other, p_submitted_same],
         ]
-        mock_uow.return_value.__enter__.return_value = uow_mock
 
-        result = get_proposals_by_status()
+        mock_latest.side_effect = lambda rows, key: rows or []
+
+        auth = SimpleNamespace(
+            user_id="user-1",
+            roles={prsl_api.Role.SW_ENGINEER},
+            groups=set(),
+        )
+
+        result = get_proposals_by_status(auth=auth)
 
         assert isinstance(result, list)
         ids = {p.prsl_id for p in result}
         assert ids == {"prsl-ska-00001", "prsl-ska-00002"}
         assert result[0].prsl_id == "prsl-ska-00001"
 
-        # ODA was queried twice, in precedence order
         calls = uow_mock.prsls.query.call_args_list
         assert len(calls) == 2
+
         st1 = getattr(calls[0].args[0], "status", None)
         st2 = getattr(calls[1].args[0], "status", None)
+        assert st1 == prsl_api.ProposalStatus.UNDER_REVIEW
+        assert st2 == prsl_api.ProposalStatus.SUBMITTED
 
-        assert st1 == "under review"
-        assert st2 == "submitted"
+        assert mock_latest.call_count == 2
 
+    @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_get_proposals_by_status_empty(self, mock_uow):
+    def test_get_proposals_by_status_empty(self, mock_uow, mock_latest):
         uow_mock = mock.MagicMock()
-        uow_mock.prsls.query.side_effect = [[], []]  # under review, submitted
+        uow_mock.prsls.query.side_effect = [[], []]
         mock_uow.return_value.__enter__.return_value = uow_mock
 
-        result = get_proposals_by_status()
+        mock_latest.side_effect = lambda rows, key: rows or []
 
+        auth = SimpleNamespace(
+            user_id="user-1",
+            roles={prsl_api.Role.SW_ENGINEER},
+            groups=set(),
+        )
+
+        result = get_proposals_by_status(auth=auth)
         assert result == []
 
         calls = uow_mock.prsls.query.call_args_list
@@ -777,11 +787,10 @@ class TestGetProposalsByStatus:
 
         st1 = getattr(calls[0].args[0], "status", None)
         st2 = getattr(calls[1].args[0], "status", None)
-        st1 = getattr(st1, "value", st1)
-        st2 = getattr(st2, "value", st2)
+        assert st1 == prsl_api.ProposalStatus.UNDER_REVIEW
+        assert st2 == prsl_api.ProposalStatus.SUBMITTED
 
-        assert str(st1).lower() == "under review"
-        assert str(st2).lower() == "submitted"
+        assert mock_latest.call_count == 2
 
 
 EMAIL_TEST_CASES = [

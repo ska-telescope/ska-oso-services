@@ -94,9 +94,7 @@ def get_reviews_for_user(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={
-                Role.ANY
-            },
+            roles={Role.ANY},
             scopes={Scope.PHT_READ},
         ),
     ],
@@ -105,19 +103,17 @@ def get_reviews_for_user(
     Retrieves the Reviews for the given user ID from the
     underlying data store, if available
     """
-    
-    logger.debug("GET Review LIST query for the user: %s", auth.user_id)
-    groups = getattr(auth, "groups", set()) 
 
-    has_role = (
-        Role.SW_ENGINEER in getattr(auth, "roles", set())
-    ) 
+    logger.debug("GET Review LIST query for the user: %s", auth.user_id)
+    groups = getattr(auth, "groups", set())
+
+    has_role = Role.SW_ENGINEER in getattr(auth, "roles", set())
     has_group = (
-        PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups or PrslRole.OPS_REVIEW_CHAIR in groups
+        PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
     )
 
     with oda.uow() as uow:
-        if (has_group or has_role):
+        if has_group or has_role:
             rows = get_latest_entity_by_id(uow.rvws.query(CustomQuery()), "review_id")
         else:
             query_param = CustomQuery(reviewer_id=auth.user_id)

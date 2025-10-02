@@ -1,5 +1,4 @@
 import logging
-from collections import OrderedDict
 from http import HTTPStatus
 from typing import Annotated
 
@@ -144,17 +143,16 @@ def create_proposal(
         ) from err
 
 
-@router.get(
-    "/reviewable",
-    summary="Get a list of proposals by status"
-)
-def get_proposals_by_status(  auth: Annotated[
+@router.get("/reviewable", summary="Get a list of proposals by status")
+def get_proposals_by_status(
+    auth: Annotated[
         AuthContext,
         Permissions(
             roles={Role.ANY},
             scopes={Scope.PHT_READWRITE},
         ),
-    ],) -> list[Proposal]:
+    ],
+) -> list[Proposal]:
     """
     Function that requests to GET /prsls/reviewable are mapped to.
 
@@ -170,63 +168,73 @@ def get_proposals_by_status(  auth: Annotated[
 
     logger.debug("GET PROPOSAL status")
 
-    groups = getattr(auth, "groups", set()) or set()
-    roles  = getattr(auth, "roles", set()) or set()
+    roles = set(getattr(auth, "roles", ()))
+    groups = set(getattr(auth, "groups", ()))
 
-    has_role = (Role.SW_ENGINEER in roles) or set()
-    has_generic_group = (
-        PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
-    )
+    has_role = Role.SW_ENGINEER in roles
+    is_admin = PrslRole.OPS_PROPOSAL_ADMIN in groups
+    is_chair = PrslRole.OPS_REVIEW_CHAIR in groups
     has_review_group = (
         PrslRole.SCIENCE_REVIEWER in groups or PrslRole.TECHNICAL_REVIEWER in groups
     )
 
-    # If neither privileged nor reviewer -->  empty list
-    if not (has_role or has_generic_group or has_review_group):
+    if not (has_role or is_admin or is_chair or has_review_group):
         logger.info("No access roles/groups; returning 0 proposals.")
         return []
 
     with oda.uow() as uow:
-        if has_role or has_generic_group:
-            # Latest UNDER_REVIEW, then latest SUBMITTED; merge in that order
-            main_latest = get_latest_entity_by_id(
-                uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)), "prsl_id"
-            ) or []
-            sub_latest = get_latest_entity_by_id(
-                uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)), "prsl_id"
-            ) or []
-            proposals = merge_latest_with_preference(main_latest, sub_latest)
+        if has_role or is_admin:
+            ur_latest = (
+                get_latest_entity_by_id(
+                    uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
+                    "prsl_id",
+                )
+                or []
+            )
+            sub_latest = (
+                get_latest_entity_by_id(
+                    uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)),
+                    "prsl_id",
+                )
+                or []
+            )
+            proposals = merge_latest_with_preference(ur_latest, sub_latest)
 
-        else:  # reviewer-only path
+        elif is_chair:
+            proposals = (
+                get_latest_entity_by_id(
+                    uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
+                    "prsl_id",
+                )
+                or []
+            )
+
+        else:
             review_ids = get_reviewer_prsl_ids(uow, auth.user_id)
-
-            # If reviewer has no reviews --> empty list
             if not review_ids:
                 logger.info("Reviewer has no reviews; returning 0 proposals.")
                 return []
-
-            # Filter by the reviewer’s proposal IDs
-            main_latest = get_latest_entity_by_id(
-                uow.prsls.query(
-                    CustomQuery(status=ProposalStatus.UNDER_REVIEW, prsl_id__in=list(review_ids))
-                ),
-                "prsl_id",
-            ) or []
-            sub_latest = get_latest_entity_by_id(
-                uow.prsls.query(
-                    CustomQuery(status=ProposalStatus.SUBMITTED, prsl_id__in=list(review_ids))
-                ),
-                "prsl_id",
-            ) or []
-            proposals = merge_latest_with_preference(main_latest, sub_latest)
+            latest_reviews = (
+                get_latest_entity_by_id(
+                    uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
+                    "prsl_id",
+                )
+                or []
+            )
+            proposals = [
+                p for p in latest_reviews if getattr(p, "prsl_id", None) in review_ids
+            ]
 
     logger.info(
-        "Retrieved %d proposals (latest per prsl_id; UNDER_REVIEW preferred over SUBMITTED)",
+        "Retrieved %d proposals for %s)",
         len(proposals),
+        (
+            "admin/sw_engineer"
+            if (has_role or is_admin)
+            else ("review_chair" if is_chair else "reviewer")
+        ),
     )
     return proposals
-
-
 
 
 @router.get("/mine", summary="Get a list of proposals the user can access")
