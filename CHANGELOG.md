@@ -10,6 +10,8 @@ Unreleased
 * [BREAKING] Updates `pht/prsl/create` to return the created proposal instead of the proposal id (prsl_id).
 * Adds PI details to the proposal when created.
 * Updates `/panel/decision/{decision_id}` to update proposal status when decision is decided
+* Updates `/reviewable` endpoint to allow access by admin, reviewers, sw_eng and review_chair but with restrictions based on roles
+* Updates the `/reviews` so review chair can retrieve reviews
 
 6.0.0
 ***********

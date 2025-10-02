@@ -6,9 +6,11 @@ Proposals Endpoints, Roles and Permission Matrix
 ================================================
 
 
-
-Reviews Endpoints, Roles and Permission Matrix 
+Proposal Management, Roles and Permission Matrix 
 ===============================================
+
+* Reviews
+
 
 The diagram below shows the basic workflow for reviews permissions implementation. It highlights which roles have access to specific actions GET/PUT.
 
@@ -17,7 +19,7 @@ The diagram below shows the basic workflow for reviews permissions implementatio
    :alt: Review Permission Workflow
 
 
-
+* Panel Decisions
 
 
 Sequence diagrams for PPT endpoints
