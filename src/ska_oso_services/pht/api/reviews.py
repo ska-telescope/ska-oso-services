@@ -98,7 +98,7 @@ def get_reviews_for_user(
                 Role.SW_ENGINEER,
                 PrslRole.OPS_PROPOSAL_ADMIN,
                 Role.OPS_REVIEWER_SCIENCE,
-                Role.OPS_REVIEWER_TECHNICAL,
+                Role.OPS_REVIEWER_TECHNICAL,  PrslRole.OPS_REVIEW_CHAIR
             },
             scopes={Scope.PHT_READ},
         ),
