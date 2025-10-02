@@ -15,6 +15,7 @@ from fastapi import status
 
 from ska_oso_services.pht.api import prsls as prsl_api
 from ska_oso_services.pht.api.prsls import get_proposals_by_status
+from ska_oso_services.pht.service import proposal_service as ps
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
     PAYLOAD_BAD_TO,
@@ -25,7 +26,6 @@ from tests.unit.util import (
     TestDataFactory,
     assert_json_is_equal,
 )
-from ska_oso_services.pht.service import proposal_service as ps
 
 PROPOSAL_API_URL = f"{PHT_BASE_API_URL}/prsls"
 
@@ -48,15 +48,23 @@ class TestListAccess:
 
         uow = mock.MagicMock()
 
-        # Initial raw rows 
+        # Initial raw rows
         rows_init = [
-            TestDataFactory.proposal_access(access_id="seed", user_id=user_id, prsl_id="seed-prsl")
+            TestDataFactory.proposal_access(
+                access_id="seed", user_id=user_id, prsl_id="seed-prsl"
+            )
         ]
         uow.prslacc.query.return_value = rows_init
         mock_latest.return_value = [
-            TestDataFactory.proposal_access(access_id="a2", user_id=user_id, prsl_id="prsl-b"),
-            TestDataFactory.proposal_access(access_id="a1", user_id=user_id, prsl_id="prsl-a"),
-            TestDataFactory.proposal_access(access_id="a3", user_id=user_id, prsl_id="prsl-a"),
+            TestDataFactory.proposal_access(
+                access_id="a2", user_id=user_id, prsl_id="prsl-b"
+            ),
+            TestDataFactory.proposal_access(
+                access_id="a1", user_id=user_id, prsl_id="prsl-a"
+            ),
+            TestDataFactory.proposal_access(
+                access_id="a3", user_id=user_id, prsl_id="prsl-a"
+            ),
         ]
 
         response = ps.list_accessible_proposal_ids(uow, user_id)
@@ -66,7 +74,6 @@ class TestListAccess:
         mock_cq.assert_called_once_with(user_id=user_id)
         uow.prslacc.query.assert_called_once_with(q)
         mock_latest.assert_called_once_with(rows_init, "access_id")
-        
 
     @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{MODULE}.CustomQuery", autospec=True)
@@ -198,8 +205,8 @@ class TestOSD:
         res = response.json()
         assert expected == res
 
-class TestProposalAPI:
 
+class TestProposalAPI:
 
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_create_proposal(self, mock_oda, client):
@@ -243,7 +250,6 @@ class TestProposalAPI:
         data = response.json()
         assert "Failed when attempting to create a proposal" in data["detail"]
 
-
     @mock.patch(
         f"{MODULE}.assert_user_has_permission_for_proposal",
         autospec=True,
@@ -258,7 +264,10 @@ class TestProposalAPI:
         uow_mock = mock.MagicMock()
         uow_mock.prsls.get.side_effect = KeyError(proposal_id)
         uow_mock.prslacc.query.return_value = [
-            TestDataFactory.proposal_access(access_id="acc-1", user_id="user-123", prsl_id=proposal_id)        ]
+            TestDataFactory.proposal_access(
+                access_id="acc-1", user_id="user-123", prsl_id=proposal_id
+            )
+        ]
 
         mock_oda.return_value.__enter__.return_value = uow_mock
         mock_oda.return_value.__exit__.return_value = None
@@ -285,7 +294,9 @@ class TestProposalAPI:
         uow_mock = mock.MagicMock()
         uow_mock.prsls.get.return_value = proposal
         uow_mock.prslacc.query.return_value = [
-            TestDataFactory.proposal_access(access_id="acc-1", user_id="user-123", prsl_id=proposal_id)   
+            TestDataFactory.proposal_access(
+                access_id="acc-1", user_id="user-123", prsl_id=proposal_id
+            )
         ]
 
         mock_oda.return_value.__enter__.return_value = uow_mock
@@ -299,7 +310,6 @@ class TestProposalAPI:
         data = response.json()
         assert data["prsl_id"] == proposal_id
         assert data["proposal_info"]["title"] == proposal.proposal_info.title
-
 
     @mock.patch(f"{PRSL_MODULE}.list_accessible_proposal_ids", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
@@ -324,7 +334,6 @@ class TestProposalAPI:
         assert isinstance(data, list)
         assert len(data) == len(proposal_objs)
         mock_list_ids.assert_called_once()
-
 
     @mock.patch(f"{PRSL_MODULE}.list_accessible_proposal_ids", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
@@ -354,7 +363,6 @@ class TestGetProposalReview:
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
-        
 
     @mock.patch(f"{PRSL_MODULE}.oda.uow")
     def test_get_reviews_for_panel_with_valid_id(self, mock_oda, client):
@@ -430,7 +438,6 @@ class TestPutProposalAPI:
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, proposal_obj.model_dump_json())
 
-
     @pytest.mark.parametrize(
         "proposal_status,permissions",
         [
@@ -478,7 +485,6 @@ class TestPutProposalAPI:
 
         assert result.status_code == HTTPStatus.FORBIDDEN
 
-
     @pytest.mark.parametrize(
         "proposal_status,permissions",
         [
@@ -511,7 +517,6 @@ class TestPutProposalAPI:
         )
 
         assert result.status_code == HTTPStatus.FORBIDDEN
-
 
     @mock.patch(
         f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
@@ -619,7 +624,6 @@ class TestProposalBatch:
         assert isinstance(data, list)
         assert len(data) == 2
         assert {obj["prsl_id"] for obj in data} == {"prsl-ska-00001", "prsl-ska-00002"}
-
 
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposals_batch_partial_found(self, mock_oda, client):

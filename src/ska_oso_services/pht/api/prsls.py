@@ -198,7 +198,9 @@ def get_proposals_by_status(
                 )
                 or []
             )
-            proposals = merge_latest_with_preference(under_review_latest, submitted_latest)
+            proposals = merge_latest_with_preference(
+                under_review_latest, submitted_latest
+            )
 
         elif is_chair:
             proposals = (

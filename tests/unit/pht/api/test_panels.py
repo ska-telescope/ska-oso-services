@@ -16,6 +16,7 @@ PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
 MODULE = "ska_oso_services.pht.api.panels"
 
+
 class TestPanelsUpdateAPI:
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_id_mismatch_returns_422(self, mock_uow, client):
@@ -27,7 +28,7 @@ class TestPanelsUpdateAPI:
             name="Cosmology",
         )
 
-        path_id = "panel-XYZ"  
+        path_id = "panel-XYZ"
 
         resp = client.put(
             f"{PANELS_API_URL}/{path_id}",
@@ -38,7 +39,6 @@ class TestPanelsUpdateAPI:
         assert "do not match" in resp.text.lower()
 
         mock_uow().__enter__.assert_not_called()
-
 
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_success(self, mock_uow, client):
@@ -70,8 +70,7 @@ class TestPanelsUpdateAPI:
 
     @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.generate_entity_id", autospec=True)
-    @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True
-    )
+    @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_creates_technical_review_when_missing(
         self, mock_uow, mock_get_latest, mock_gen_id, mock_validate, client
@@ -182,10 +181,9 @@ class TestPanelsUpdateAPI:
         mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
         uow.pnlds.add.assert_called_once()
-        mock_gen_id_ops.assert_called_once() 
+        mock_gen_id_ops.assert_called_once()
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
-
 
     @mock.patch(
         "ska_oso_services.pht.service.panel_operations.generate_entity_id",
@@ -287,9 +285,7 @@ class TestPanelsUpdateAPI:
         created = uow.pnlds.add.call_args[0][0]
         assert created.decision_id == "pnld-0001"
         assert created.prsl_id == "prsl-001"
-        assert (
-            mock_gen_id_ops.call_count == 2
-        )  
+        assert mock_gen_id_ops.call_count == 2
 
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
@@ -404,7 +400,7 @@ class TestPanelsUpdateAPI:
         mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
         uow.pnlds.add.assert_called_once()
-        mock_gen_id_ops.assert_called_once() 
+        mock_gen_id_ops.assert_called_once()
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
@@ -430,7 +426,7 @@ class TestPanelsUpdateAPI:
             headers={"Content-type": "application/json"},
         )
 
-        assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY  
+        assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
         assert "do not match" in resp.json().get("detail", "").lower()
         uow_mock.panels.add.assert_not_called()
         uow_mock.commit.assert_not_called()

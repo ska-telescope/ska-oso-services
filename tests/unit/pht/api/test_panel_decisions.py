@@ -23,6 +23,7 @@ SEC_DEP = SEC_OBJ.dependency
 
 MODULE = "ska_oso_services.pht.api.panel_decision"
 
+
 def has_validation_error(detail, field: str) -> bool:
     return any(field in str(e.get("loc", [])) for e in detail)
 
@@ -49,7 +50,6 @@ class Testpanel_decisionAPI:
         assert response.status_code == HTTPStatus.OK
         assert response.json() == panel_decision_obj.decision_id
 
-
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_create_panel_decision_value_error_raises_bad_request(
         self, mock_oda, client
@@ -73,7 +73,6 @@ class Testpanel_decisionAPI:
         data = response.json()
         assert "Failed when attempting to create a Decision" in data["detail"]
 
-
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_get_panel_decision_not_found(self, mock_oda, client):
         """
@@ -89,7 +88,6 @@ class Testpanel_decisionAPI:
 
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert "could not be found" in response.json()["detail"]
-
 
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_get_panel_decision_success(self, mock_oda, client):
@@ -109,7 +107,6 @@ class Testpanel_decisionAPI:
         data = response.json()
         assert data["decision_id"] == decision_id
 
-
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_get_panel_decision_list_success_by_group(self, mock_uow, client_get):
 
@@ -120,7 +117,6 @@ class Testpanel_decisionAPI:
         resp = client_get(f"{PANEL_DECISION_API_URL}/")
         assert resp.status_code == HTTPStatus.OK
         assert resp.json() == []
-
 
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_get_panel_decision_list_forbidden_when_no_allowed_role_or_group(
@@ -147,7 +143,6 @@ class Testpanel_decisionAPI:
         assert resp.status_code == HTTPStatus.FORBIDDEN
         assert "permission" in resp.json()["detail"].lower()
 
-
     @mock.patch(
         "ska_oso_services.pht.api.panel_decision.Permissions.__call__", autospec=True
     )
@@ -168,7 +163,6 @@ class Testpanel_decisionAPI:
         response = client.get(f"{PANEL_DECISION_API_URL}/")
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
-
 
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
     def test_panel_decision_put_success(self, mock_uow, client):
@@ -230,7 +224,6 @@ class Testpanel_decisionAPI:
         assert_json_is_equal(result.text, panel_decision_obj.model_dump_json())
         uow_mock.prsls.add.assert_called_once()
 
-
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_panel_decision_put_success_for_non_decided(self, mock_uow, client):
         """
@@ -281,7 +274,6 @@ class Testpanel_decisionAPI:
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert "not found" in response.json()["detail"].lower()
 
-
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_proposal_not_found(self, mock_uow, client):
         """
@@ -307,7 +299,6 @@ class Testpanel_decisionAPI:
 
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert "not found" in response.json()["detail"].lower()
-
 
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_decision_id_mismatch(self, mock_uow, client):

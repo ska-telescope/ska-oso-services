@@ -38,7 +38,7 @@ class TestReportsAPI:
                 panel_id=mock_panels[0].panel_id,
                 reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
             )
-        ]  
+        ]
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.query.return_value = "proposal_query"

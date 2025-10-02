@@ -111,7 +111,7 @@ def get_reviews_for_user(
     has_group = (
         PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
     )
-    
+
     with oda.uow() as uow:
         if has_group or has_role:
             rows = get_latest_entity_by_id(uow.rvws.query(CustomQuery()), "review_id")
@@ -185,9 +185,7 @@ def update_review(
                 raise BadRequestError(
                     detail="You do not have permission to update this review."
                 )
-            updated_review = uow.rvws.add(
-                review, auth.user_id
-            )  
+            updated_review = uow.rvws.add(review, auth.user_id)
             uow.commit()
             logger.info("Review %s updated successfully", review_id)
             return updated_review
