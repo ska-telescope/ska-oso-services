@@ -3440,14 +3440,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-telmodel"
-version = "1.24.2"
+version = "1.24.3"
 description = "SKA telescope model library"
 optional = false
 python-versions = ">=3.10.0,<4.0.0"
 groups = ["main"]
 files = [
-    {file = "ska_telmodel-1.24.2-py3-none-any.whl", hash = "sha256:4f0f54cdbd679ed82f96816e5302959847e14ff1797c30da4dcd5fca97851616"},
-    {file = "ska_telmodel-1.24.2.tar.gz", hash = "sha256:1f6501696cd8c802cea4ffdccdc7e106bb0e3f1b4ad551e5bf66e817bc7da70d"},
+    {file = "ska_telmodel-1.24.3-py3-none-any.whl", hash = "sha256:1ca97aa3454dbff631e1c46f61c686ea5fcdb2adbd7b44a9ac8d55833f6fef09"},
+    {file = "ska_telmodel-1.24.3.tar.gz", hash = "sha256:f387563b582a1fbbb42cd16f08e02f4f9539374360ae9c62b3c9219daeca1b80"},
 ]
 
 [package.dependencies]
@@ -4288,4 +4288,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "1b2e485f9004e5cb7be1f913d7bf793b9afbe229ea605b84f69110b4fbe8290a"
+content-hash = "3838701b89d9b2548efa9488bf85c903e2d7f900e9092933ec31b663310db446"
