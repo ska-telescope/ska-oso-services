@@ -6,6 +6,7 @@ from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
 
+import pytest
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
 from ska_db_oda.persistence.domain.errors import ODANotFound
@@ -186,8 +187,18 @@ class Testpanel_decisionAPI:
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, panel_decision_obj.model_dump_json())
 
+    @pytest.mark.parametrize(
+        "recommendation",
+        [
+            "Accepted",
+            "Accepted with Revision",
+            "Rejected",
+        ],
+    )
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
-    def test_panel_decision_put_success_for_decided(self, mock_uow, client):
+    def test_panel_decision_put_success_for_decided(
+        self, mock_uow, client, recommendation
+    ):
         """
         Check the pnlds_put method returns the expected response when status is decided
         """
@@ -195,7 +206,7 @@ class Testpanel_decisionAPI:
         uow_mock.pnlds.__contains__.return_value = True
         uow_mock.prsls.__contains__.return_value = True
         panel_decision_obj = TestDataFactory.panel_decision(
-            status="Decided", recommendation="Accepted"
+            status="Decided", recommendation=recommendation
         )
         decision_id = panel_decision_obj.decision_id
         uow_mock.pnlds.add.return_value = panel_decision_obj
