@@ -173,7 +173,6 @@ def get_proposals_by_status(  auth: Annotated[
     groups = getattr(auth, "groups", set()) or set()
     roles  = getattr(auth, "roles", set()) or set()
 
-    # (kept exactly as in your endpoint)
     has_role = (Role.SW_ENGINEER in roles) or set()
     has_generic_group = (
         PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
