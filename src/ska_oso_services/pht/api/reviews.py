@@ -98,7 +98,7 @@ def get_reviews_for_user(
                 Role.SW_ENGINEER,
                 PrslRole.OPS_PROPOSAL_ADMIN,
                 Role.OPS_REVIEWER_SCIENCE,
-                Role.OPS_REVIEWER_TECHNICAL,  PrslRole.OPS_REVIEW_CHAIR
+                Role.OPS_REVIEWER_TECHNICAL, 
             },
             scopes={Scope.PHT_READ},
         ),
@@ -113,6 +113,7 @@ def get_reviews_for_user(
     is_allowed = (Role.SW_ENGINEER in auth.roles) or (
         PrslRole.OPS_PROPOSAL_ADMIN in auth.roles
     )
+    roles = PrslRole.OPS_REVIEW_CHAIR # figure out later
     with oda.uow() as uow:
         if is_allowed:
             rows = get_latest_entity_by_id(uow.rvws.query(CustomQuery()), "review_id")

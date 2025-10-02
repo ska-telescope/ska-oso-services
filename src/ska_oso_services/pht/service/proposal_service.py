@@ -1,8 +1,12 @@
+from collections import OrderedDict
 import logging
 from datetime import datetime, timezone
+from typing import Iterable
 
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal import Proposal, ProposalAccess
+from ska_oso_pdm.proposal.proposal import ProposalStatus
+
 
 from ska_oso_services.common.error_handling import ForbiddenError
 from ska_oso_services.pht.utils.constants import ACCESS_ID
@@ -99,3 +103,22 @@ def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
     rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
     rows = get_latest_entity_by_id(rows_init, ACCESS_ID) or []
     return sorted({row.prsl_id for row in rows})
+
+
+
+def merge_latest_with_preference(*proposal_lists: Iterable[Proposal]) -> list[Proposal]:
+    picked: OrderedDict[str, Proposal] = OrderedDict()
+    for lst in proposal_lists:
+        for p in lst or []:
+            pid = getattr(p, "prsl_id", None)
+            if pid and pid not in picked:
+                picked[pid] = p
+    return list(picked.values())
+
+def get_reviewer_prsl_ids(uow, reviewer_id: str) -> set[str]:
+    rows = uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)) or []
+    return {
+        getattr(r, "prsl_id", None)
+        for r in rows
+        if getattr(r, "prsl_id", None)
+    }

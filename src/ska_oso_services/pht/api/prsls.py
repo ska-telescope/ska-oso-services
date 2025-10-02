@@ -35,7 +35,9 @@ from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
+    get_reviewer_prsl_ids,
     list_accessible_proposal_ids,
+    merge_latest_with_preference,
     transform_update_proposal,
 )
 from ska_oso_services.pht.service.s3_bucket import (
@@ -144,15 +146,15 @@ def create_proposal(
 
 @router.get(
     "/reviewable",
-    summary="Get a list of proposals by status",
-    dependencies=[
-        Permissions(
-            roles=[Role.SW_ENGINEER, PrslRole.OPS_PROPOSAL_ADMIN, PrslRole.OPS_REVIEW_CHAIR, PrslRole.SCIENCE_REVIEWER, PrslRole.TECHNICAL_REVIEWER],
-            scopes=[Scope.PHT_READ],
-        )
-    ],
+    summary="Get a list of proposals by status"
 )
-def get_proposals_by_status() -> list[Proposal]:
+def get_proposals_by_status(  auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],) -> list[Proposal]:
     """
     Function that requests to GET /prsls/reviewable are mapped to.
 
@@ -165,25 +167,67 @@ def get_proposals_by_status() -> list[Proposal]:
         list[Proposal]
 
     """
+
     logger.debug("GET PROPOSAL status")
 
-    preferred_statuses = [ProposalStatus.UNDER_REVIEW, ProposalStatus.SUBMITTED]
-    picked_by_id: OrderedDict[str, Proposal] = OrderedDict()
+    groups = getattr(auth, "groups", set()) or set()
+    roles  = getattr(auth, "roles", set()) or set()
+
+    # (kept exactly as in your endpoint)
+    has_role = (Role.SW_ENGINEER in roles) or set()
+    has_generic_group = (
+        PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
+    )
+    has_review_group = (
+        PrslRole.SCIENCE_REVIEWER in groups or PrslRole.TECHNICAL_REVIEWER in groups
+    )
+
+    # If neither privileged nor reviewer -->  empty list
+    if not (has_role or has_generic_group or has_review_group):
+        logger.info("No access roles/groups; returning 0 proposals.")
+        return []
 
     with oda.uow() as uow:
-        for status in preferred_statuses:
-            rows = uow.prsls.query(CustomQuery(status=status))
-            for proposal in rows:
-                # only take latest status per prsl_id
-                if proposal.prsl_id not in picked_by_id:
-                    picked_by_id[proposal.prsl_id] = proposal
+        if has_role or has_generic_group:
+            # Latest UNDER_REVIEW, then latest SUBMITTED; merge in that order
+            main_latest = get_latest_entity_by_id(
+                uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)), "prsl_id"
+            ) or []
+            sub_latest = get_latest_entity_by_id(
+                uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)), "prsl_id"
+            ) or []
+            proposals = merge_latest_with_preference(main_latest, sub_latest)
 
-    proposals = list(picked_by_id.values())
+        else:  # reviewer-only path
+            review_ids = get_reviewer_prsl_ids(uow, auth.user_id)
+
+            # If reviewer has no reviews --> empty list
+            if not review_ids:
+                logger.info("Reviewer has no reviews; returning 0 proposals.")
+                return []
+
+            # Filter by the reviewer’s proposal IDs
+            main_latest = get_latest_entity_by_id(
+                uow.prsls.query(
+                    CustomQuery(status=ProposalStatus.UNDER_REVIEW, prsl_id__in=list(review_ids))
+                ),
+                "prsl_id",
+            ) or []
+            sub_latest = get_latest_entity_by_id(
+                uow.prsls.query(
+                    CustomQuery(status=ProposalStatus.SUBMITTED, prsl_id__in=list(review_ids))
+                ),
+                "prsl_id",
+            ) or []
+            proposals = merge_latest_with_preference(main_latest, sub_latest)
+
     logger.info(
-        "Retrieved %d proposals with preference of UNDER_REVIEW over SUBMITTED",
+        "Retrieved %d proposals (latest per prsl_id; UNDER_REVIEW preferred over SUBMITTED)",
         len(proposals),
     )
     return proposals
+
+
 
 
 @router.get("/mine", summary="Get a list of proposals the user can access")
