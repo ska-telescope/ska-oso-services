@@ -6,6 +6,7 @@ from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
 
+import pytest
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
 from ska_db_oda.persistence.domain.errors import ODANotFound
@@ -186,6 +187,73 @@ class Testpanel_decisionAPI:
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, panel_decision_obj.model_dump_json())
 
+    @pytest.mark.parametrize(
+        "recommendation",
+        [
+            "Accepted",
+            "Accepted with Revision",
+            "Rejected",
+        ],
+    )
+    @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
+    def test_panel_decision_put_success_for_decided(
+        self, mock_uow, client, recommendation
+    ):
+        """
+        Check the pnlds_put method returns the expected response when status is decided
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.pnlds.__contains__.return_value = True
+        uow_mock.prsls.__contains__.return_value = True
+        panel_decision_obj = TestDataFactory.panel_decision(
+            status="Decided", recommendation=recommendation
+        )
+        decision_id = panel_decision_obj.decision_id
+        uow_mock.pnlds.add.return_value = panel_decision_obj
+        uow_mock.pnlds.get.return_value = panel_decision_obj
+        uow_mock.prsls.get.return_value = TestDataFactory.proposal()
+
+        mock_uow().__enter__.return_value = uow_mock
+
+        result = client.put(
+            f"{PANEL_DECISION_API_URL}/{decision_id}",
+            data=panel_decision_obj.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert result.status_code == HTTPStatus.OK
+        assert_json_is_equal(result.text, panel_decision_obj.model_dump_json())
+        uow_mock.prsls.add.assert_called_once()
+
+    @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
+    def test_panel_decision_put_success_for_non_decided(self, mock_uow, client):
+        """
+        Check pnlds_put method returns expected response when status is not decided
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.pnlds.__contains__.return_value = True
+        uow_mock.prsls.__contains__.return_value = True
+        panel_decision_obj = TestDataFactory.panel_decision(
+            status="In Progress", recommendation="Accepted"
+        )
+        decision_id = panel_decision_obj.decision_id
+        uow_mock.pnlds.add.return_value = panel_decision_obj
+        uow_mock.pnlds.get.return_value = panel_decision_obj
+        uow_mock.prsls.get.return_value = TestDataFactory.proposal()
+
+        mock_uow().__enter__.return_value = uow_mock
+
+        result = client.put(
+            f"{PANEL_DECISION_API_URL}/{decision_id}",
+            data=panel_decision_obj.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert result.status_code == HTTPStatus.OK
+        assert_json_is_equal(result.text, panel_decision_obj.model_dump_json())
+        uow_mock.prsls.get.assert_not_called()
+        uow_mock.prsls.add.assert_not_called()
+
     @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
     def test_update_panel_decision_not_found(self, mock_uow, client):
         """
@@ -196,6 +264,32 @@ class Testpanel_decisionAPI:
 
         uow_mock = mock.MagicMock()
         uow_mock.pnlds.get.return_value = None  # not found
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        response = client.put(
+            f"{PANEL_DECISION_API_URL}/{decision_id}",
+            data=panel_decision_obj.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert "not found" in response.json()["detail"].lower()
+
+    @mock.patch("ska_oso_services.pht.api.panel_decision.oda.uow", autospec=True)
+    def test_update_proposal_not_found(self, mock_uow, client):
+        """
+        Should return 404 if proposal doesn't exist.
+        """
+        panel_decision_obj = TestDataFactory.panel_decision(
+            status="Decided", recommendation="Accepted"
+        )
+
+        decision_id = panel_decision_obj.decision_id
+
+        uow_mock = mock.MagicMock()
+        uow_mock.pnlds.add.return_value = panel_decision_obj
+        uow_mock.pnlds.get.return_value = panel_decision_obj
+        uow_mock.prsls.get.return_value = None  # not found
         mock_uow.return_value.__enter__.return_value = uow_mock
 
         response = client.put(

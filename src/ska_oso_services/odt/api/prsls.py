@@ -148,7 +148,7 @@ def prj_details() -> list[ProposalProjectDetails]:
             ProposalProjectDetails(
                 prsl_id=proposal.prsl_id,
                 prsl_version=proposal.metadata.version,
-                title=proposal.info.title,
+                title=proposal.proposal_info.title,
             )
             for proposal in proposals_without_projects
         ]

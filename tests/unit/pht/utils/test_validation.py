@@ -12,7 +12,7 @@ def test_validate_proposal_no_errors():
 
 def test_validate_proposal_no_observation_sets():
     p = TestDataFactory.complete_proposal()
-    p.info.observation_sets = []
+    p.observation_info.observation_sets = []
 
     res = validate_proposal(p)
 
@@ -26,7 +26,7 @@ def test_validate_proposal_no_observation_sets():
 def test_validate_proposal_target_with_no_sensitivity():
     p = TestDataFactory.complete_proposal()
 
-    p.info.targets[0].target_id = "wrong"
+    p.observation_info.targets[0].target_id = "wrong"
 
     res = validate_proposal(p)
 
@@ -41,7 +41,7 @@ def test_validate_proposal_target_with_no_sensitivity():
 
 def test_validate_proposal_observation_set_no_target():
     p = TestDataFactory.complete_proposal()
-    p.info.observation_sets[0].observation_set_id = "wrong too"
+    p.observation_info.observation_sets[0].observation_set_id = "wrong too"
 
     res = validate_proposal(p)
 

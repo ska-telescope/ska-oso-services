@@ -130,7 +130,7 @@ class TestProposalAndProjectView:
                 prj_id=None,
                 prsl_id=proposal.prsl_id,
                 prsl_version=1,
-                title=proposal.info.title,
+                title=proposal.proposal_info.title,
             ).model_dump_json()
         )
 
@@ -243,7 +243,7 @@ class TestProposalAndProjectView:
                 prj_id=None,
                 prsl_id=proposal_v2.prsl_id,
                 prsl_version=2,
-                title=proposal_v2.info.title,
+                title=proposal_v2.proposal_info.title,
             ).model_dump_json()
         )
 
