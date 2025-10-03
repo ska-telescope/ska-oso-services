@@ -3,7 +3,7 @@ from http import HTTPStatus
 from unittest import mock
 
 from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
-from ska_db_oda.persistence.domain.errors import ODANotFound, UniqueConstraintViolation
+from ska_db_oda.persistence.domain.errors import UniqueConstraintViolation
 
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import REVIEWERS, TestDataFactory

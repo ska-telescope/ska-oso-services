@@ -6,9 +6,7 @@ from http import HTTPStatus
 from unittest import mock
 
 import pytest
-from ska_aaa_authhelpers.roles import Role
 
-from ska_oso_services.pht.api.reviewers import get_reviewers
 from tests.unit.conftest import PHT_BASE_API_URL
 
 REVIEWERS_API_URL = f"{PHT_BASE_API_URL}/reviewers"
