@@ -34,7 +34,6 @@ from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
-    get_reviewer_prsl_ids,
     list_accessible_proposal_ids,
     merge_latest_with_preference,
     transform_update_proposal,
@@ -213,18 +212,29 @@ def get_proposals_by_status(
 
         else:
             query_param = CustomQuery(reviewer_id=auth.user_id)
-            rows = uow.rvws.query(query_param)
-            reviews = get_latest_entity_by_id(rows, "review_id") or []
-            if reviews:
-                prsl_ids = [x.prsl_id for x in reviews]
+            review_rows = uow.rvws.query(query_param)
+            reviews_latest = get_latest_entity_by_id(
+                list(review_rows) if review_rows is not None else [], 
+                "review_id",
+            ) or []
+
+            prsl_ids = {
+                getattr(r, "prsl_id", None)
+                for r in reviews_latest
+                if getattr(r, "prsl_id", None)
+            }
+
             if not prsl_ids:
                 logger.info("Reviewer has no reviews; returning 0 proposals.")
-                return ["I cannot find myself"]
-            latest_reviews = get_latest_entity_by_id(
-                uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
+                return [] 
+
+            ur_rows = uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW))
+            latest_under_review = get_latest_entity_by_id(
+                list(ur_rows) if ur_rows is not None else [],
                 "prsl_id",
-            )
-            proposals = [p for p in latest_reviews if p.prsl_id in prsl_ids]
+            ) or []
+
+            proposals = [p for p in latest_under_review if getattr(p, "prsl_id", None) in prsl_ids]
 
     logger.info(
         "Retrieved %d proposals for %s)",

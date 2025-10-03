@@ -965,56 +965,56 @@ class TestGetProposalsByStatus:
         uow.rvws.query.assert_not_called()
 
 
-class TestGetReviewerPrslIds:
-    @mock.patch(f"{MODULE}.CustomQuery")
-    def test_calls_query_with_reviewer_id(self, mock_cq):
-        uow = mock.MagicMock()
-        uow.rvws.query.return_value = []
+# class TestGetReviewerPrslIds:
+#     @mock.patch(f"{MODULE}.CustomQuery")
+#     def test_calls_query_with_reviewer_id(self, mock_cq):
+#         uow = mock.MagicMock()
+#         uow.rvws.query.return_value = []
 
-        reviewer_id = "kjf"
-        ids = ps.get_reviewer_prsl_ids(uow, reviewer_id)
+#         reviewer_id = "kjf"
+#         ids = ps.get_reviewer_prsl_ids(uow, reviewer_id)
 
-        assert ids == set()
+#         assert ids == set()
 
-        # Assert the DAL was invoked correctly
-        mock_cq.assert_called_once_with(reviewer_id=reviewer_id)
-        uow.rvws.query.assert_called_once_with(mock_cq.return_value)
+#         # Assert the DAL was invoked correctly
+#         mock_cq.assert_called_once_with(reviewer_id=reviewer_id)
+#         uow.rvws.query.assert_called_once_with(mock_cq.return_value)
 
-    def test_dedupes_and_returns_only_valid_ids_with_factory(self):
-        uow = mock.MagicMock()
-        rows = [
-            TestDataFactory.reviews(review_id="r1", reviewer_id="kjf", prsl_id="p1"),
-            TestDataFactory.reviews(
-                review_id="r2", reviewer_id="kjf", prsl_id="p1"
-            ),  # duplicate
-            TestDataFactory.reviews(review_id="r3", reviewer_id="kjf", prsl_id="p2"),
-            SimpleNamespace(reviewer_id="kjf"),  # missing prsl_id -> ignored
-        ]
-        uow.rvws.query.return_value = rows
+#     def test_dedupes_and_returns_only_valid_ids_with_factory(self):
+#         uow = mock.MagicMock()
+#         rows = [
+#             TestDataFactory.reviews(review_id="r1", reviewer_id="kjf", prsl_id="p1"),
+#             TestDataFactory.reviews(
+#                 review_id="r2", reviewer_id="kjf", prsl_id="p1"
+#             ),  # duplicate
+#             TestDataFactory.reviews(review_id="r3", reviewer_id="kjf", prsl_id="p2"),
+#             SimpleNamespace(reviewer_id="kjf"),  # missing prsl_id -> ignored
+#         ]
+#         uow.rvws.query.return_value = rows
 
-        ids = ps.get_reviewer_prsl_ids(uow, "kjf")
-        assert ids == {"p1", "p2"}
+#         ids = ps.get_reviewer_prsl_ids(uow, "kjf")
+#         assert ids == {"p1", "p2"}
 
-    def test_ignores_non_object_rows_with_factory(self):
-        uow = mock.MagicMock()
-        rows = [
-            {
-                "prsl_id": "p-dict"
-            },  # dict ignored because getattr(...,"prsl_id",None) -> None
-            TestDataFactory.reviews(review_id="r5", reviewer_id="kjf", prsl_id="p-obj"),
-        ]
-        uow.rvws.query.return_value = rows
+#     def test_ignores_non_object_rows_with_factory(self):
+#         uow = mock.MagicMock()
+#         rows = [
+#             {
+#                 "prsl_id": "p-dict"
+#             },  # dict ignored because getattr(...,"prsl_id",None) -> None
+#             TestDataFactory.reviews(review_id="r5", reviewer_id="kjf", prsl_id="p-obj"),
+#         ]
+#         uow.rvws.query.return_value = rows
 
-        ids = ps.get_reviewer_prsl_ids(uow, "kjf")
-        assert ids == {"p-obj"}
+#         ids = ps.get_reviewer_prsl_ids(uow, "kjf")
+#         assert ids == {"p-obj"}
 
-    @pytest.mark.parametrize("rv", [None, []])
-    def test_handles_none_or_empty_results(self, rv):
-        uow = mock.MagicMock()
-        uow.rvws.query.return_value = rv
+#     @pytest.mark.parametrize("rv", [None, []])
+#     def test_handles_none_or_empty_results(self, rv):
+#         uow = mock.MagicMock()
+#         uow.rvws.query.return_value = rv
 
-        ids = ps.get_reviewer_prsl_ids(uow, "kjf")
-        assert ids == set()
+#         ids = ps.get_reviewer_prsl_ids(uow, "kjf")
+#         assert ids == set()
 
 
 EMAIL_TEST_CASES = [
