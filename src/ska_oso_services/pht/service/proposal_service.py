@@ -119,11 +119,11 @@ def merge_latest_with_preference(
     return list(picked.values())
 
 
-def get_reviewer_prsl_ids(uow, reviewer_id: str) -> set[str]:
-    """
-    Get all proposals a reviewer can access
-    """
-    rows= get_latest_entity_by_id(
-                uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)), "review_id"
-            )
-    return {getattr(r, "prsl_id", None) for r in rows if getattr(r, "prsl_id", None)}
+# def get_reviewer_prsl_ids(uow, reviewer_id: str) -> set[str]:
+#     """
+#     Get all proposals a reviewer can access
+#     """
+#     rows= get_latest_entity_by_id(
+#                 uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)), "review_id"
+#             )
+#     return {getattr(r, "prsl_id", None) for r in rows if getattr(r, "prsl_id", None)}

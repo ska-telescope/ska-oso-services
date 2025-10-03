@@ -212,19 +212,19 @@ def get_proposals_by_status(
             )
 
         else:
-            review_ids = get_reviewer_prsl_ids(uow, auth.user_id)
-            if not review_ids:
+            query_param = CustomQuery(reviewer_id=auth.user_id)
+            rows = uow.rvws.query(query_param)
+            reviews = get_latest_entity_by_id(rows, "review_id") or []
+            if reviews:
+                prsl_ids = [x.prsl_id for x in reviews]
+            if not prsl_ids:
                 logger.info("Reviewer has no reviews; returning 0 proposals.")
-                return []
-            latest_reviews = (
-                get_latest_entity_by_id(
-                    uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
-                    "prsl_id",
-                )
+                return ["I cannot find myself"]
+            latest_reviews = get_latest_entity_by_id(
+                uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
+                "prsl_id",
             )
-            proposals = [
-                p for p in latest_reviews if getattr(p, "prsl_id", None) in review_ids
-            ]
+            proposals = [p for p in latest_reviews if p.prsl_id in prsl_ids]
 
     logger.info(
         "Retrieved %d proposals for %s)",
