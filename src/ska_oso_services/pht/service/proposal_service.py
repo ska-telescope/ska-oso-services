@@ -123,5 +123,7 @@ def get_reviewer_prsl_ids(uow, reviewer_id: str) -> set[str]:
     """
     Get all proposals a reviewer can access
     """
-    rows = uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)) or []
+    rows= get_latest_entity_by_id(
+                uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)), "review_id"
+            )
     return {getattr(r, "prsl_id", None) for r in rows if getattr(r, "prsl_id", None)}
