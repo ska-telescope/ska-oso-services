@@ -242,14 +242,18 @@ def get_panel_by_id(panel_id: str) -> Panel:
 @router.put(
     "/{panel_id}",
     summary="Update a panel",
-    dependencies=[
-        Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READWRITE],
-        )
-    ],
 )
-def update_panel(panel_id: str, param: Panel) -> Panel:
+def update_panel(
+    panel_id: str,
+    param: Panel,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            scopes={Scope.PHT_READWRITE},
+        ),
+    ],
+) -> Panel:
     """
     Takes the incoming panel payload and creates the technical review.
 
@@ -315,7 +319,7 @@ def update_panel(panel_id: str, param: Panel) -> Panel:
                         proposal_id=prsl_id,
                     )
                     updated_review_ids.append(rvw_ids)
-        # TODO: Check if proposals are already assigned to other panels in next MR
+        # TODO: check if proposal is added to another panel
         # for prsl_id in proposal_ids:
         #     query_param = CustomQuery(prsl_id=prsl_id)
         #     assigned_proposal =
@@ -330,6 +334,9 @@ def update_panel(panel_id: str, param: Panel) -> Panel:
 
         # Persist the panel
         panel = uow.panels.add(param)
+        # update proposal status to under review
+        ensure_submitted_proposals_under_review(uow, auth, (r for r in proposal_ids))
+
         uow.commit()
     logger.info(
         "Panel %s updated; reviews updated=%d", panel.panel_id, len(updated_review_ids)
