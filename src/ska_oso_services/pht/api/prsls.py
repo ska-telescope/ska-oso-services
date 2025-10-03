@@ -221,7 +221,6 @@ def get_proposals_by_status(
                     uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
                     "prsl_id",
                 )
-                or []
             )
             proposals = [
                 p for p in latest_reviews if getattr(p, "prsl_id", None) in review_ids
