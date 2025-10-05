@@ -34,6 +34,7 @@ from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
+    get_panel_prsl_ids,
     get_reviewer_prsl_ids,
     list_accessible_proposal_ids,
     merge_latest_with_preference,
@@ -46,7 +47,7 @@ from ska_oso_services.pht.service.s3_bucket import (
     create_presigned_url_upload_pdf,
     get_aws_client,
 )
-from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
+from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL, SV_NAME
 from ska_oso_services.pht.utils.ms_graph import (
     extract_profile_from_access_token,
     get_users_by_mail,
@@ -165,7 +166,7 @@ def get_proposals_by_status(
         list[Proposal]
 
     """
-
+    # TODO: clean up the repetitions of proposal query
     logger.debug("GET PROPOSAL status")
 
     roles = set(getattr(auth, "roles", ()))
@@ -182,53 +183,46 @@ def get_proposals_by_status(
         logger.info("No access roles/groups; returning 0 proposals.")
         return []
 
+    def _latest_by_status(uow, status) -> list["Proposal"]:
+
+        return (
+            get_latest_entity_by_id(
+                uow.prsls.query(CustomQuery(status=status)), "prsl_id"
+            )
+            or []
+        )
+
+    def _filter_by_prsl_ids(
+        proposals: list["Proposal"], ids: set[str]
+    ) -> list["Proposal"]:
+        if not ids:
+            return []
+        return [p for p in proposals if getattr(p, "prsl_id", None) in ids]
+
     with oda.uow() as uow:
         if has_role or is_admin:
-            under_review_latest = (
-                get_latest_entity_by_id(
-                    uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
-                    "prsl_id",
-                )
-                or []
-            )
-            submitted_latest = (
-                get_latest_entity_by_id(
-                    uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)),
-                    "prsl_id",
-                )
-                or []
-            )
+            latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
+            latest_submitted = _latest_by_status(uow, ProposalStatus.SUBMITTED)
+            # TODO: filter by panel_prsl_ids intersection
             proposals = merge_latest_with_preference(
-                under_review_latest, submitted_latest
+                latest_under_review, latest_submitted
             )
 
         elif is_chair:
-            proposals = (
-                get_latest_entity_by_id(
-                    uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
-                    "prsl_id",
-                )
-                or []
-            )
+            latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
+            panel_prsl_ids = get_panel_prsl_ids(uow, SV_NAME)
+            proposals = _filter_by_prsl_ids(latest_under_review, panel_prsl_ids)
 
         else:
-            review_ids = get_reviewer_prsl_ids(uow, auth.user_id)
-            if not review_ids:
+            review_prsl_ids = get_reviewer_prsl_ids(uow, auth.user_id)
+            if not review_prsl_ids:
                 logger.info("Reviewer has no reviews; returning 0 proposals.")
                 return []
-            latest_reviews = (
-                get_latest_entity_by_id(
-                    uow.prsls.query(CustomQuery(status=ProposalStatus.UNDER_REVIEW)),
-                    "prsl_id",
-                )
-                or []
-            )
-            proposals = [
-                p for p in latest_reviews if getattr(p, "prsl_id", None) in review_ids
-            ]
+            latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
+            proposals = _filter_by_prsl_ids(latest_under_review, review_prsl_ids)
 
     logger.info(
-        "Retrieved %d proposals for %s)",
+        "Retrieved %d proposals for %s",
         len(proposals),
         (
             "admin/sw_engineer"

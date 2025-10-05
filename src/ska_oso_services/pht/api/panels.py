@@ -320,6 +320,7 @@ def update_panel(
                     )
                     updated_review_ids.append(rvw_ids)
         # TODO: check if proposal is added to another panel
+        # A proposal should only be in one panel
         # for prsl_id in proposal_ids:
         #     query_param = CustomQuery(prsl_id=prsl_id)
         #     assigned_proposal =
