@@ -12,6 +12,7 @@ Unreleased
 * Updates `/panel/decision/{decision_id}` to update proposal status when decision is decided
 * Updates `/reviewable` endpoint to allow access by admin, reviewers, sw_eng and review_chair but with restrictions based on roles
 * Updates the `/reviews` so review chair can retrieve reviews
+* Updates proposal status to `under review` when the panel is updated
 
 6.0.0
 ***********
