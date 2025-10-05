@@ -16,6 +16,7 @@ from fastapi import status
 from ska_oso_services.pht.api import prsls as prsl_api
 from ska_oso_services.pht.api.prsls import get_proposals_by_status
 from ska_oso_services.pht.service import proposal_service as ps
+from ska_oso_services.pht.service.proposal_service import get_panel_prsl_ids
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
     PAYLOAD_BAD_TO,
@@ -1046,6 +1047,81 @@ class TestGetReviewerPrslIds:
 
         ids = ps.get_reviewer_prsl_ids(uow, "kjf")
         assert ids == set()
+
+
+class TestGetPanelPrslIds:
+    def test_returns_ids_from_panel(self):
+        uow = mock.MagicMock()
+        panel_name = "Science Verification"
+
+        uow.panels.query.return_value = [
+            TestDataFactory.panel_basic(panel_id="panel-1", name=panel_name)
+        ]
+
+        uow.panels.get.return_value = TestDataFactory.panel_with_assignment(
+            panel_id="panel-1",
+            name=panel_name,
+            proposals=[
+                TestDataFactory.proposal_assignment(prsl_id="p1"),
+                TestDataFactory.proposal_assignment(prsl_id="p2"),
+                TestDataFactory.proposal_assignment(prsl_id="p2"),
+            ],
+        )
+        got = get_panel_prsl_ids(uow, panel_name)
+        assert got == {"p1", "p2"}
+
+        uow.panels.query.assert_called_once()
+        uow.panels.get.assert_called_once_with("panel-1")
+
+    def test_no_panel_refs_returns_empty(self):
+        uow = mock.MagicMock()
+        uow.panels.query.return_value = []
+
+        got = get_panel_prsl_ids(uow, "Nonexistent")
+        assert got == set()
+        uow.panels.get.assert_not_called()
+
+    def test_panel_not_found_returns_empty(self):
+        uow = mock.MagicMock()
+        uow.panels.query.return_value = [
+            TestDataFactory.panel_basic(panel_id="missing", name="Anything")
+        ]
+        uow.panels.get.return_value = None
+
+        got = get_panel_prsl_ids(uow, "Any")
+        assert got == set()
+
+    def test_no_proposals_returns_empty(self):
+        uow = mock.MagicMock()
+
+        uow.panels.query.return_value = [
+            TestDataFactory.panel_basic(panel_id="panel-1", name="SCience Verification")
+        ]
+
+        uow.panels.get.return_value = TestDataFactory.panel_with_assignment(
+            panel_id="panel-1", name="SCience Verification", proposals=None
+        )
+
+        got = get_panel_prsl_ids(uow, "Any")
+        assert got == set()
+
+    def test_ignores_invalid_entries(self):
+        uow = mock.MagicMock()
+        uow.panels.query.return_value = [
+            TestDataFactory.panel_basic(panel_id="panel-1", name="SCience Verification")
+        ]
+
+        uow.panels.get.return_value = SimpleNamespace(
+            panel_id="panel-1",
+            proposals=[
+                SimpleNamespace(),
+                SimpleNamespace(prsl_id=None),
+                SimpleNamespace(prsl_id="p-ok"),
+            ],
+        )
+
+        got = get_panel_prsl_ids(uow, "Any")
+        assert got == {"p-ok"}
 
 
 EMAIL_TEST_CASES = [
