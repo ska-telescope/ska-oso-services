@@ -33,13 +33,14 @@ EXAMPLE_PROPOSAL = {
     "prsl_id": "prp-ska01-202204-02",
     "status": "draft",
     "cycle": "5000_2023",
-    "info": {
+    "proposal_info": {
         "title": "The Milky Way View",
         "proposal_type": {
             "main_type": "standard_proposal",
             "attributes": ["coordinated_proposal"],
         },
     },
+    "observation_info": {},
 }
 
 ACCESS_ID = "access_id"

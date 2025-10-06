@@ -16,6 +16,7 @@ from fastapi import status
 from ska_oso_services.pht.api import prsls as prsl_api
 from ska_oso_services.pht.api.prsls import get_proposals_by_status
 from ska_oso_services.pht.service import proposal_service as ps
+from ska_oso_services.pht.service.proposal_service import get_panel_prsl_ids
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
     PAYLOAD_BAD_TO,
@@ -809,27 +810,24 @@ class TestGetProposalsByStatus:
     # -----------------------------------------------------------
     # Reviewer: ONLY UNDER_REVIEW and ONLY prsl_ids they review
     # -----------------------------------------------------------
+    @mock.patch(f"{PRSL_MODULE}.get_reviewer_prsl_ids", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_reviewer_only_under_review_and_filtered_by_reviews(
-        self, mock_uow, mock_latest
+        self, mock_uow, mock_latest, mock_get_review_ids
     ):
-        r1 = TestDataFactory.reviews(
-            review_id="r1", reviewer_id="rev-1", prsl_id="prsl-2"
-        )
+        mock_get_review_ids.return_value = {"prsl-2"}
+
         p_1 = TestDataFactory.complete_proposal(prsl_id="prsl-1", status="under review")
         p_2 = TestDataFactory.complete_proposal(prsl_id="prsl-2", status="under review")
 
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
-        # Reviewer’s reviews
-        uow.rvws.query.return_value = [r1]
-
-        # Reviewer path fetches only UR latest for all, then filters by prsl_id
         uow.prsls.query.side_effect = [
-            [p_1, p_2],  # UNDER_REVIEW (all)
+            [p_1, p_2],
         ]
+
         mock_latest.side_effect = lambda rows, key: rows or []
 
         auth = SimpleNamespace(
@@ -839,6 +837,7 @@ class TestGetProposalsByStatus:
         )
 
         result = get_proposals_by_status(auth=auth)
+
         assert [p.prsl_id for p in result] == ["prsl-2"]
 
         calls = uow.prsls.query.call_args_list
@@ -846,8 +845,10 @@ class TestGetProposalsByStatus:
         assert (
             getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
         )
+        mock_get_review_ids.assert_called_once_with(
+            mock_uow.return_value.__enter__.return_value, "rev-1"
+        )
         assert mock_latest.call_count == 1
-        uow.rvws.query.assert_called_once()
 
     # -----------------------------------------------------------
     # Reviewer with no reviews : []
@@ -874,9 +875,12 @@ class TestGetProposalsByStatus:
     # -----------------------------------------------------------
     # Review Chair: ONLY UNDER_REVIEW (latest), no SUBMITTED query
     # -----------------------------------------------------------
+    @mock.patch(f"{PRSL_MODULE}.get_panel_prsl_ids", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_review_chair_only_under_review(self, mock_uow, mock_latest):
+    def test_review_chair_only_under_review(
+        self, mock_uow, mock_latest, mock_panel_ids
+    ):
         p_ur_a = TestDataFactory.complete_proposal(
             prsl_id="prsl-a", status="under review"
         )
@@ -887,10 +891,13 @@ class TestGetProposalsByStatus:
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
-        uow.prsls.query.side_effect = [
-            [p_ur_a, p_ur_b],
-        ]
+        # Chair path queries only UNDER_REVIEW
+        uow.prsls.query.side_effect = [[p_ur_a, p_ur_b]]
+
         mock_latest.side_effect = lambda rows, key: rows or []
+
+        # Panel contains both proposals
+        mock_panel_ids.return_value = {"prsl-a", "prsl-b"}
 
         auth = SimpleNamespace(
             user_id="chair-1",
@@ -899,6 +906,7 @@ class TestGetProposalsByStatus:
         )
 
         result = get_proposals_by_status(auth=auth)
+
         assert [p.prsl_id for p in result] == ["prsl-a", "prsl-b"]
 
         calls = uow.prsls.query.call_args_list
@@ -906,6 +914,9 @@ class TestGetProposalsByStatus:
         assert (
             getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
         )
+
+        # where panel prsl_ids intercept
+        mock_panel_ids.assert_called_once_with(uow, prsl_api.SV_NAME)
         assert mock_latest.call_count == 1
 
     # -----------------------------------------------------------
@@ -976,37 +987,58 @@ class TestGetReviewerPrslIds:
 
         assert ids == set()
 
-        # Assert the DAL was invoked correctly
         mock_cq.assert_called_once_with(reviewer_id=reviewer_id)
         uow.rvws.query.assert_called_once_with(mock_cq.return_value)
 
-    def test_dedupes_and_returns_only_valid_ids_with_factory(self):
+    @mock.patch(f"{MODULE}.get_panel_prsl_ids", autospec=True)
+    @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
+    def test_dedupes_and_returns_only_valid_ids_with_factory(
+        self, mock_latest, mock_panel_ids
+    ):
         uow = mock.MagicMock()
         rows = [
             TestDataFactory.reviews(review_id="r1", reviewer_id="kjf", prsl_id="p1"),
-            TestDataFactory.reviews(
-                review_id="r2", reviewer_id="kjf", prsl_id="p1"
-            ),  # duplicate
+            TestDataFactory.reviews(review_id="r2", reviewer_id="kjf", prsl_id="p1"),
             TestDataFactory.reviews(review_id="r3", reviewer_id="kjf", prsl_id="p2"),
-            SimpleNamespace(reviewer_id="kjf"),  # missing prsl_id -> ignored
+            SimpleNamespace(reviewer_id="kjf"),
         ]
         uow.rvws.query.return_value = rows
 
+        mock_latest.side_effect = lambda r, key: r or []
+        mock_panel_ids.return_value = {"p1", "p2"}
+
         ids = ps.get_reviewer_prsl_ids(uow, "kjf")
+
         assert ids == {"p1", "p2"}
 
-    def test_ignores_non_object_rows_with_factory(self):
+        uow.rvws.query.assert_called_once()
+        mock_latest.assert_called_once()
+        assert mock_latest.call_args.args[1] == "review_id"
+        mock_panel_ids.assert_called_once_with(uow, ps.SV_NAME)
+
+    @mock.patch(f"{MODULE}.get_panel_prsl_ids", autospec=True)
+    @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
+    def test_ignores_non_object_rows_with_factory(self, mock_latest, mock_panel_ids):
         uow = mock.MagicMock()
         rows = [
-            {
-                "prsl_id": "p-dict"
-            },  # dict ignored because getattr(...,"prsl_id",None) -> None
+            {"prsl_id": "p-dict"},
             TestDataFactory.reviews(review_id="r5", reviewer_id="kjf", prsl_id="p-obj"),
         ]
         uow.rvws.query.return_value = rows
 
+        mock_latest.side_effect = lambda r, key: r or []
+
+        mock_panel_ids.return_value = {"p-obj"}
+
         ids = ps.get_reviewer_prsl_ids(uow, "kjf")
+
         assert ids == {"p-obj"}
+
+        uow.rvws.query.assert_called_once()
+        mock_latest.assert_called_once()
+        assert mock_latest.call_args.args[1] == "review_id"
+
+        mock_panel_ids.assert_called_once_with(uow, ps.SV_NAME)
 
     @pytest.mark.parametrize("rv", [None, []])
     def test_handles_none_or_empty_results(self, rv):
@@ -1015,6 +1047,81 @@ class TestGetReviewerPrslIds:
 
         ids = ps.get_reviewer_prsl_ids(uow, "kjf")
         assert ids == set()
+
+
+class TestGetPanelPrslIds:
+    def test_returns_ids_from_panel(self):
+        uow = mock.MagicMock()
+        panel_name = "Science Verification"
+
+        uow.panels.query.return_value = [
+            TestDataFactory.panel_basic(panel_id="panel-1", name=panel_name)
+        ]
+
+        uow.panels.get.return_value = TestDataFactory.panel_with_assignment(
+            panel_id="panel-1",
+            name=panel_name,
+            proposals=[
+                TestDataFactory.proposal_assignment(prsl_id="p1"),
+                TestDataFactory.proposal_assignment(prsl_id="p2"),
+                TestDataFactory.proposal_assignment(prsl_id="p2"),
+            ],
+        )
+        got = get_panel_prsl_ids(uow, panel_name)
+        assert got == {"p1", "p2"}
+
+        uow.panels.query.assert_called_once()
+        uow.panels.get.assert_called_once_with("panel-1")
+
+    def test_no_panel_refs_returns_empty(self):
+        uow = mock.MagicMock()
+        uow.panels.query.return_value = []
+
+        got = get_panel_prsl_ids(uow, "Nonexistent")
+        assert got == set()
+        uow.panels.get.assert_not_called()
+
+    def test_panel_not_found_returns_empty(self):
+        uow = mock.MagicMock()
+        uow.panels.query.return_value = [
+            TestDataFactory.panel_basic(panel_id="missing", name="Anything")
+        ]
+        uow.panels.get.return_value = None
+
+        got = get_panel_prsl_ids(uow, "Any")
+        assert got == set()
+
+    def test_no_proposals_returns_empty(self):
+        uow = mock.MagicMock()
+
+        uow.panels.query.return_value = [
+            TestDataFactory.panel_basic(panel_id="panel-1", name="SCience Verification")
+        ]
+
+        uow.panels.get.return_value = TestDataFactory.panel_with_assignment(
+            panel_id="panel-1", name="SCience Verification", proposals=None
+        )
+
+        got = get_panel_prsl_ids(uow, "Any")
+        assert got == set()
+
+    def test_ignores_invalid_entries(self):
+        uow = mock.MagicMock()
+        uow.panels.query.return_value = [
+            TestDataFactory.panel_basic(panel_id="panel-1", name="SCience Verification")
+        ]
+
+        uow.panels.get.return_value = SimpleNamespace(
+            panel_id="panel-1",
+            proposals=[
+                SimpleNamespace(),
+                SimpleNamespace(prsl_id=None),
+                SimpleNamespace(prsl_id="p-ok"),
+            ],
+        )
+
+        got = get_panel_prsl_ids(uow, "Any")
+        assert got == {"p-ok"}
 
 
 EMAIL_TEST_CASES = [
