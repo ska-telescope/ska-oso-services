@@ -75,7 +75,7 @@ def get_script_params(name: str, version: str) -> dict:
                 f"Script '{name}' with version '{version}' not found or missing schema."
             )
 
-        return tmdata[f"ska-sdp/scripts/{script["schema"]}"].get_dict()
+        return tmdata[f"ska-sdp/scripts/{script['schema']}"].get_dict()
     except KeyError as error:
         raise OSDError(f"Missing expected key in script parameters: {error}")
     except ValueError as error:
