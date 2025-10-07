@@ -6,6 +6,7 @@ required information.
 
 import os
 
+from fastapi import HTTPException
 from ska_telmodel.data import TMData
 
 from ska_oso_services.common.error_handling import OSDError
@@ -13,11 +14,11 @@ from ska_oso_services.common.error_handling import OSDError
 local_source = "file://tmdata"
 
 
-def get_scriptVersions() -> dict:
+def get_script_versions() -> list[dict]:
     """
     Fetches the SDP scripts versions from the TMData.
 
-    :return: An instance of ScriptVersions containing the SDP scripts version details.
+    :return: A list of Script versions containing the SDP scripts version details.
     """
     try:
         scripts_url = os.getenv("SDP_SCRIPT_TMDATA", local_source)
@@ -36,11 +37,19 @@ def get_scriptVersions() -> dict:
         ]
 
         return script_versions
+    except KeyError as error:
+        raise OSDError(f"Missing expected key in script versions: {error}")
+    except ValueError as error:
+        if "Base path does not exist" in str(error):
+            raise OSDError(f"TMData base path error: {error}")
+        raise
     except Exception as error:
-        raise OSDError(f"Failed to fetch SDP script versions: {error}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to fetch SDP script versions: {error}"
+        )
 
 
-def get_scriptParams(name: str, version: str) -> dict:
+def get_script_params(name: str, version: str) -> dict:
     """
     Fetches the SDP script parameters from the TMData.
 
@@ -62,5 +71,13 @@ def get_scriptParams(name: str, version: str) -> dict:
         }
 
         return defaults
+    except KeyError as error:
+        raise OSDError(f"Missing expected key in script parameters: {error}")
+    except ValueError as error:
+        if "Base path does not exist" in str(error):
+            raise OSDError(f"TMData base path error: {error}")
+        raise
     except Exception as error:
-        raise OSDError(f"Failed to fetch SDP script parameters: {error}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to fetch SDP script parameters: {error}"
+        )

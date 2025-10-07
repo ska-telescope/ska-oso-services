@@ -4,11 +4,11 @@ from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
 
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.common.sdpmapper import get_scriptParams, get_scriptVersions
+from ska_oso_services.common.sdpmapper import get_script_params, get_script_versions
 
 LOGGER = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(prefix="/sdp")
 
 
 @router.get(
@@ -16,11 +16,11 @@ router = APIRouter()
     summary="Retrieving SDP script versions from TMData",
     dependencies=[Permissions(roles={Role.ANY}, scopes=Scope)],
 )
-def get_versions() -> dict:
+def get_versions() -> list[dict]:
     """
     Returns a dictionary list of available SDP scripts with their version details.
     """
-    return get_scriptVersions()
+    return get_script_versions()
 
 
 @router.get(
@@ -35,4 +35,4 @@ def get_params(
     """
     Returns the default parameters for the selected SDP script and version.
     """
-    return get_scriptParams(name, version)
+    return get_script_params(name, version)

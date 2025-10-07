@@ -4,6 +4,9 @@ import pytest
 
 from ska_oso_services.common.error_handling import OSDError
 from ska_oso_services.odt.api.sdp import get_params, get_versions
+from tests.unit.conftest import ODT_BASE_API_URL
+
+SDP_API_URL = f"{ODT_BASE_API_URL}/sdp"
 
 
 class TestGetSdpScriptsAPI:
@@ -15,6 +18,17 @@ class TestGetSdpScriptsAPI:
                 "version": "5.1.0",
                 "params": "vis-receive/vis-receive-params-2.json",
             } in versions
+
+    def test_get_script_versions_api(self, client):
+        response = client.get(f"{SDP_API_URL}/scriptVersions")
+        print(response.json())
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+        assert {
+            "name": "vis-receive",
+            "version": "5.1.0",
+            "params": "vis-receive/vis-receive-params-2.json",
+        } in response.json()
 
     def test_get_script_versions_with_bad_helm(self):
         with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "junk"}):
@@ -32,7 +46,7 @@ class TestGetSdpScriptsAPI:
 
     def test_get_script_versions_exception(self):
         with mock.patch(
-            "ska_oso_services.odt.api.sdp.get_scriptVersions",
+            "ska_oso_services.odt.api.sdp.get_script_versions",
             side_effect=Exception("Failed"),
         ):
             with pytest.raises(Exception) as excinfo:
@@ -54,7 +68,7 @@ class TestGetSdpScriptsAPI:
             "processors": {"mswriter": {}},
         }
         with mock.patch(
-            "ska_oso_services.odt.api.sdp.get_scriptParams", return_value=expected
+            "ska_oso_services.odt.api.sdp.get_script_params", return_value=expected
         ):
             result = get_params(name="vis-receive", version="2")
             assert isinstance(result, dict)
@@ -75,4 +89,4 @@ class TestGetSdpScriptsAPI:
     def test_get_params_exception(self):
         with pytest.raises(OSDError) as excinfo:
             get_params("bad", "input")
-        assert "Failed to fetch SDP script parameters" in str(excinfo.value)
+        assert "Missing expected key in script parameters" in str(excinfo.value)
