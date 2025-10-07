@@ -16,6 +16,11 @@ class TestGetSdpScriptsAPI:
             assert "5.1.0" in versions
             assert len(versions) == 17
 
+    def test_get_script_with_missing_script(self):
+        with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tmdata"}):
+            versions = get_versions("junk")
+            assert len(versions) == 0
+
     def test_get_script_versions_api(self, client):
         with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tmdata"}):
             response = client.get(f"{SDP_API_URL}/scriptVersions/vis-receive")

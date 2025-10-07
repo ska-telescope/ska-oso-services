@@ -11,7 +11,7 @@ from ska_telmodel.data import TMData
 
 from ska_oso_services.common.error_handling import OSDError
 
-local_source = "file://tmdata"
+default_source = "gitlab://gitlab.com/ska-telescope/sdp/ska-sdp-script#tmdata"
 
 
 def get_script_versions(name: str) -> list[str]:
@@ -19,14 +19,14 @@ def get_script_versions(name: str) -> list[str]:
     Fetches the SDP scripts versions from the TMData.
 
     :param name: Name of the script.
-    :return: A list of Script versions containing the SDP scripts version details.
+    :return: A list of Script versions for the supplied script name.
     """
     try:
-        scripts_url = os.getenv("SDP_SCRIPT_TMDATA", local_source)
+        scripts_url = os.getenv("SDP_SCRIPT_TMDATA", default_source)
         tmdata = TMData([scripts_url])
         scripts = tmdata["ska-sdp/scripts/scripts.yaml"].get_dict()
 
-        # Extract the name, version, and assosiated param schema for each script
+        # Extract the name, and versions for the supplied script
         script_versions = [
             script["version"]
             for script in scripts.get("scripts", [])
@@ -55,7 +55,7 @@ def get_script_params(name: str, version: str) -> dict:
     :return: The SDP script parameter settings.
     """
     try:
-        scripts_url = os.getenv("SDP_SCRIPT_TMDATA", local_source)
+        scripts_url = os.getenv("SDP_SCRIPT_TMDATA", default_source)
         tmdata = TMData([scripts_url])
         scripts = tmdata["ska-sdp/scripts/scripts.yaml"].get_dict()
 
