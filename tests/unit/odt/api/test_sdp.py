@@ -12,37 +12,22 @@ SDP_API_URL = f"{ODT_BASE_API_URL}/sdp"
 class TestGetSdpScriptsAPI:
     def test_get_script_versions_with_helm(self):
         with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tmdata"}):
-            versions = get_versions()
-            assert {
-                "name": "vis-receive",
-                "version": "5.1.0",
-                "params": "vis-receive/vis-receive-params-2.json",
-            } in versions
+            versions = get_versions("vis-receive")
+            assert "5.1.0" in versions
+            assert len(versions) == 17
 
     def test_get_script_versions_api(self, client):
-        response = client.get(f"{SDP_API_URL}/scriptVersions")
-        print(response.json())
-        assert response.status_code == 200
-        assert isinstance(response.json(), list)
-        assert {
-            "name": "vis-receive",
-            "version": "5.1.0",
-            "params": "vis-receive/vis-receive-params-2.json",
-        } in response.json()
+        with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tmdata"}):
+            response = client.get(f"{SDP_API_URL}/scriptVersions/vis-receive")
+            assert response.status_code == 200
+            assert isinstance(response.json(), list)
+            assert "5.1.0" in response.json()
 
     def test_get_script_versions_with_bad_helm(self):
         with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "junk"}):
             with pytest.raises(OSDError) as excinfo:
-                get_versions()
+                get_versions("vis-receive")
                 assert " Failed to fetch SDP script versions" in str(excinfo.value)
-
-    def test_get_script_versions_with_default(self):
-        versions = get_versions()
-        assert {
-            "name": "vis-receive",
-            "version": "5.1.0",
-            "params": "vis-receive/vis-receive-params-2.json",
-        } in versions
 
     def test_get_script_versions_exception(self):
         with mock.patch(
@@ -50,43 +35,36 @@ class TestGetSdpScriptsAPI:
             side_effect=Exception("Failed"),
         ):
             with pytest.raises(Exception) as excinfo:
-                get_versions()
+                get_versions("vis-receive")
             assert "Failed" in str(excinfo.value)
 
     def test_get_params_expected_output(self):
-        expected = {
-            "channels_per_port": 1,
-            "processes_per_node": 1,
-            "max_ports_per_node": None,
-            "num_nodes": None,
-            "port_start": 21000,
-            "transport_protocol": "udp",
-            "use_network_definition": None,
-            "reception_network": "auto",
-            "dry_run": False,
-            "telstate": None,
-            "processors": {"mswriter": {}},
-        }
-        with mock.patch(
-            "ska_oso_services.odt.api.sdp.get_script_params", return_value=expected
-        ):
-            result = get_params(name="vis-receive", version="2")
+        with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tmdata"}):
+            result = get_params(name="vis-receive", version="5.1.0")
             assert isinstance(result, dict)
-            assert result["channels_per_port"] == 1
-            assert result["processes_per_node"] == 1
-            assert result["max_ports_per_node"] is None
-            assert result["num_nodes"] is None
-            assert result["port_start"] == 21000
-            assert result["transport_protocol"] == "udp"
-            assert result["use_network_definition"] is None
-            assert result["reception_network"] == "auto"
-            assert result["dry_run"] is False
-            assert result["telstate"] is None
-            assert isinstance(result["processors"], dict)
-            assert "mswriter" in result["processors"]
-            assert result["processors"]["mswriter"] == {}
+            # Check top-level keys
+            assert "$defs" in result
+            assert "properties" in result
+            assert "title" in result
+            # Check nested definitions
+            assert "NetworkMapping" in result["$defs"]
+            assert "PodSettings" in result["$defs"]
+            assert "ReceptionNetwork" in result["$defs"]
+            assert "SignalDisplay" in result["$defs"]
 
-    def test_get_params_exception(self):
-        with pytest.raises(OSDError) as excinfo:
-            get_params("bad", "input")
-        assert "Missing expected key in script parameters" in str(excinfo.value)
+    def test_get_script_params_api(self, client):
+        with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tmdata"}):
+            response = client.get(f"{SDP_API_URL}/scriptParams/vis-receive/5.1.0")
+            assert response.status_code == 200
+            print(response.json())
+            assert isinstance(response.json(), dict)
+            data = response.json()
+            # Check top-level keys
+            assert "$defs" in data
+            assert "properties" in data
+            assert "title" in data
+            # Check nested definitions
+            assert "NetworkMapping" in data["$defs"]
+            assert "PodSettings" in data["$defs"]
+            assert "ReceptionNetwork" in data["$defs"]
+            assert "SignalDisplay" in data["$defs"]

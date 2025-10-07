@@ -30,7 +30,7 @@ global:
         secret: ~ # This is the resource name of a k8s Secret
         key: ~ # This is the key the password is stored under within that Secret
   sdp:
-    tmdata: "car://gitlab.com/ska-telescope/ska-telmodel?master#tmdata" # The TMData resource name containing the SDP tmdata url
+    tmdata: "gitlab://gitlab.com/ska-telescope/sdp/ska-sdp-script#tmdata" # The TMData resource name containing the SDP tmdata url
 
 rest:
   component: rest

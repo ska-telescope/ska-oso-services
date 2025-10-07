@@ -14,10 +14,11 @@ from ska_oso_services.common.error_handling import OSDError
 local_source = "file://tmdata"
 
 
-def get_script_versions() -> list[dict]:
+def get_script_versions(name: str) -> list[str]:
     """
     Fetches the SDP scripts versions from the TMData.
 
+    :param name: Name of the script.
     :return: A list of Script versions containing the SDP scripts version details.
     """
     try:
@@ -27,13 +28,9 @@ def get_script_versions() -> list[dict]:
 
         # Extract the name, version, and assosiated param schema for each script
         script_versions = [
-            {
-                "name": script["name"],
-                "version": script["version"],
-                "params": script["schema"],
-            }
+            script["version"]
             for script in scripts.get("scripts", [])
-            if "name" in script and "version" in script and "schema" in script
+            if "name" in script and "version" in script and script["name"] == name
         ]
 
         return script_versions
@@ -55,22 +52,30 @@ def get_script_params(name: str, version: str) -> dict:
 
     :param name: Name of the script.
     :param version: Version of the script.
-    :return: The SDP script parameter default settings.
+    :return: The SDP script parameter settings.
     """
     try:
         scripts_url = os.getenv("SDP_SCRIPT_TMDATA", local_source)
         tmdata = TMData([scripts_url])
-        params = tmdata[
-            f"ska-sdp/scripts/{name}/{name}-params-{version}.json"
-        ].get_dict()
-        properties = params.get("properties", {})
-        defaults = {
-            key: value.get("default")
-            for key, value in properties.items()
-            if "default" in value
-        }
+        scripts = tmdata["ska-sdp/scripts/scripts.yaml"].get_dict()
 
-        return defaults
+        # Find the script matching name and version, and get its schema
+        script = next(
+            (
+                s
+                for s in scripts.get("scripts", [])
+                if s.get("name") == name
+                and s.get("version") == version
+                and "schema" in s
+            ),
+            None,
+        )
+        if not script:
+            raise OSDError(
+                f"Script '{name}' with version '{version}' not found or missing schema."
+            )
+
+        return tmdata[f"ska-sdp/scripts/{script["schema"]}"].get_dict()
     except KeyError as error:
         raise OSDError(f"Missing expected key in script parameters: {error}")
     except ValueError as error:

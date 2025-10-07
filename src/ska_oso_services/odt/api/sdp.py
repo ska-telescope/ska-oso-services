@@ -12,15 +12,16 @@ router = APIRouter(prefix="/sdp")
 
 
 @router.get(
-    "/scriptVersions",
+    "/scriptVersions/{name}",
     summary="Retrieving SDP script versions from TMData",
     dependencies=[Permissions(roles={Role.ANY}, scopes=Scope)],
 )
-def get_versions() -> list[dict]:
+def get_versions(name: str) -> list[str]:
     """
-    Returns a dictionary list of available SDP scripts with their version details.
+    Returns a dictionary list of available SDP script versions with their
+    version details for the given script.
     """
-    return get_script_versions()
+    return get_script_versions(name)
 
 
 @router.get(
