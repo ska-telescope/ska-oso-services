@@ -5,6 +5,7 @@ required information.
 """
 
 import os
+from typing import Any
 
 from fastapi import HTTPException
 from ska_telmodel.data import TMData
@@ -46,7 +47,7 @@ def get_script_versions(name: str) -> list[str]:
         )
 
 
-def get_script_params(name: str, version: str) -> dict:
+def get_script_params(name: str, version: str) -> dict[str, Any]:
     """
     Fetches the SDP script parameters from the TMData.
 

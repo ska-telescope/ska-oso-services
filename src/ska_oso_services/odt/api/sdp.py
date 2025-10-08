@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
@@ -32,7 +33,7 @@ def get_versions(name: str) -> list[str]:
 def get_params(
     name: str,
     version: str,
-) -> dict:
+) -> dict[str, Any]:
     """
     Returns the default parameters for the selected SDP script and version.
     """
