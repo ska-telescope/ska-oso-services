@@ -2,7 +2,6 @@ from unittest import mock
 
 import pytest
 
-from ska_oso_services.common.error_handling import OSDError
 from ska_oso_services.odt.api.sdp import get_params, get_versions
 from tests.unit.conftest import ODT_BASE_API_URL
 
@@ -30,18 +29,11 @@ class TestGetSdpScriptsAPI:
 
     def test_get_script_versions_with_bad_helm(self):
         with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "junk"}):
-            with pytest.raises(OSDError) as excinfo:
+            with pytest.raises(ValueError) as excinfo:
                 get_versions("vis-receive")
-                assert " Failed to fetch SDP script versions" in str(excinfo.value)
-
-    def test_get_script_versions_exception(self):
-        with mock.patch(
-            "ska_oso_services.odt.api.sdp.get_script_versions",
-            side_effect=Exception("Failed"),
-        ):
-            with pytest.raises(Exception) as excinfo:
-                get_versions("vis-receive")
-            assert "Failed" in str(excinfo.value)
+                assert "TMData base path error: Base path does not exist" in str(
+                    excinfo.value
+                )
 
     def test_get_params_expected_output(self):
         with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tmdata"}):

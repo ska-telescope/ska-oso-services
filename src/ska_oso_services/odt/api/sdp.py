@@ -27,7 +27,7 @@ def get_versions(name: str) -> list[str]:
 
 @router.get(
     "/scriptParams/{name}/{version}",
-    summary="Retrieving SDP script parameters selected script",
+    summary="Retrieving SDP script parameters as a JSON schema.",
     dependencies=[Permissions(roles={Role.ANY}, scopes=Scope)],
 )
 def get_params(
@@ -35,6 +35,7 @@ def get_params(
     version: str,
 ) -> dict[str, Any]:
     """
-    Returns the default parameters for the selected SDP script and version.
+    Returns the default parameters for the selected SDP script and version
+    as a JSON schema.
     """
     return get_script_params(name, version)

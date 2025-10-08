@@ -7,12 +7,13 @@ required information.
 import os
 from typing import Any
 
-from fastapi import HTTPException
 from ska_telmodel.data import TMData
 
-from ska_oso_services.common.error_handling import OSDError
+DEFAULT_SOURCE = "gitlab://gitlab.com/ska-telescope/sdp/ska-sdp-script#tmdata"
 
-default_source = "gitlab://gitlab.com/ska-telescope/sdp/ska-sdp-script#tmdata"
+
+def get_tmdata() -> TMData:
+    return TMData([os.getenv("SDP_SCRIPT_TMDATA", DEFAULT_SOURCE)])
 
 
 def get_script_versions(name: str) -> list[str]:
@@ -23,9 +24,7 @@ def get_script_versions(name: str) -> list[str]:
     :return: A list of Script versions for the supplied script name.
     """
     try:
-        scripts_url = os.getenv("SDP_SCRIPT_TMDATA", default_source)
-        tmdata = TMData([scripts_url])
-        scripts = tmdata["ska-sdp/scripts/scripts.yaml"].get_dict()
+        scripts = get_tmdata()["ska-sdp/scripts/scripts.yaml"].get_dict()
 
         # Extract the name, and versions for the supplied script
         script_versions = [
@@ -36,15 +35,11 @@ def get_script_versions(name: str) -> list[str]:
 
         return script_versions
     except KeyError as error:
-        raise OSDError(f"Missing expected key in script versions: {error}")
+        raise KeyError(f"Missing expected key in script versions: {error}")
     except ValueError as error:
         if "Base path does not exist" in str(error):
-            raise OSDError(f"TMData base path error: {error}")
+            raise ValueError(f"TMData base path error: {error}")
         raise
-    except Exception as error:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to fetch SDP script versions: {error}"
-        )
 
 
 def get_script_params(name: str, version: str) -> dict[str, Any]:
@@ -53,11 +48,10 @@ def get_script_params(name: str, version: str) -> dict[str, Any]:
 
     :param name: Name of the script.
     :param version: Version of the script.
-    :return: The SDP script parameter settings.
+    :return: The SDP script parameter settings as a JSON schema.
     """
     try:
-        scripts_url = os.getenv("SDP_SCRIPT_TMDATA", default_source)
-        tmdata = TMData([scripts_url])
+        tmdata = get_tmdata()
         scripts = tmdata["ska-sdp/scripts/scripts.yaml"].get_dict()
 
         # Find the script matching name and version, and get its schema
@@ -72,18 +66,14 @@ def get_script_params(name: str, version: str) -> dict[str, Any]:
             None,
         )
         if not script:
-            raise OSDError(
+            raise ValueError(
                 f"Script '{name}' with version '{version}' not found or missing schema."
             )
 
         return tmdata[f"ska-sdp/scripts/{script['schema']}"].get_dict()
     except KeyError as error:
-        raise OSDError(f"Missing expected key in script parameters: {error}")
+        raise KeyError(f"Missing expected key in script parameters: {error}")
     except ValueError as error:
         if "Base path does not exist" in str(error):
-            raise OSDError(f"TMData base path error: {error}")
+            raise ValueError(f"TMData base path error: {error}")
         raise
-    except Exception as error:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to fetch SDP script parameters: {error}"
-        )
