@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Adds API for retrieving SDP script versions and script parameters 
 
 7.0.0
 ***********
