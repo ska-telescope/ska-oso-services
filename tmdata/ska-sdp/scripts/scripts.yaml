@@ -1,0 +1,199 @@
+# SDP Scripts
+scripts:
+- kind: realtime
+  name: test-realtime
+  version: 1.0.0
+  image: artefact.skao.int/ska-sdp-script-test-realtime:1.0.0
+  sdp_version: ">=0.24.1"
+  schema: test-realtime/test-realtime-params-2.json
+- kind: realtime
+  name: test-realtime
+  version: 2.0.0
+  image: artefact.skao.int/ska-sdp-script-test-realtime:2.0.0
+  sdp_version: ">=0.24.1"
+  schema: test-realtime/test-realtime-params-3.json
+  resources:
+  - kind: capacity-buffer-storage
+    name: visibility-storage
+    phases: [ processing ]
+    quantity: " 12 * eb.max_length / eb.dump_time_out * max([ sum([ spw.count for spw in chs.spectral_windows ]) for chs in eb.channels ]) * max([ len(pol.corr_type) for pol in eb.polarisations ]) * len(resources.receptors) * (len(resources.receptors) - 1) // 2 "
+- kind: realtime
+  name: test-receive-addresses
+  version: 0.10.0
+  image: artefact.skao.int/ska-sdp-script-test-receive-addresses:0.10.0
+  sdp_version: ">=0.22.0"
+  schema: test-receive-addresses/test-receive-addresses-params-2.json
+- kind: realtime
+  name: test-receive-addresses
+  version: 1.0.0
+  image: artefact.skao.int/ska-sdp-script-test-receive-addresses:1.0.0
+  sdp_version: ">=0.24.1"
+  schema: test-receive-addresses/test-receive-addresses-params-2.json
+- kind: realtime
+  name: test-receive-addresses
+  version: 1.0.1
+  image: artefact.skao.int/ska-sdp-script-test-receive-addresses:1.0.1
+  sdp_version: ">=0.24.1"
+  schema: test-receive-addresses/test-receive-addresses-params-2.json
+- kind: realtime
+  name: vis-receive
+  version: 5.0.0
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.0.0
+  sdp_version: ">=1.0.0, <1.2.0"
+  schema: vis-receive/vis-receive-params-1.json
+- kind: realtime
+  name: vis-receive
+  version: 5.1.0
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.1.0
+  sdp_version: ">=1.0.0, <1.2.0"
+  schema: vis-receive/vis-receive-params-2.json
+- kind: realtime
+  name: vis-receive
+  version: 5.1.1
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.1.1
+  sdp_version: ">=1.0.0, <1.2.0"
+  schema: vis-receive/vis-receive-params-2.json
+- kind: realtime
+  name: vis-receive
+  version: 5.2.0
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.2.0
+  sdp_version: ">=1.0.0, <1.2.0"
+  schema: vis-receive/vis-receive-params-3.json
+- kind: realtime
+  name: vis-receive
+  version: 5.2.1
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.2.1
+  sdp_version: ">=1.0.0, <1.2.0"
+  schema: vis-receive/vis-receive-params-3.json
+- kind: realtime
+  name: vis-receive
+  version: 5.3.0
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.3.0
+  sdp_version: ">=1.0.0, <1.2.0"
+  schema: vis-receive/vis-receive-params-4.json
+- kind: realtime
+  name: vis-receive
+  version: 5.3.1
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.3.1
+  sdp_version: ">=1.0.0, <1.2.0"
+  schema: vis-receive/vis-receive-params-4.json
+- kind: realtime
+  name: vis-receive
+  version: 5.3.2
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.3.2
+  sdp_version: ">=1.0.0, <1.2.0"
+  schema: vis-receive/vis-receive-params-4.json
+- kind: realtime
+  name: vis-receive
+  version: 5.4.0
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.4.0
+  sdp_version: ">=1.2.0, <1.2.3"
+  schema: vis-receive/vis-receive-params-4.json
+- kind: realtime
+  name: vis-receive
+  version: 5.4.1
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.4.1
+  sdp_version: ">=1.2.0, <1.2.3"
+  schema: vis-receive/vis-receive-params-4.json
+- kind: realtime
+  name: vis-receive
+  version: 5.4.2
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.4.2
+  sdp_version: ">=1.2.3, <2.1.0"
+  schema: vis-receive/vis-receive-params-5.json
+- kind: realtime
+  name: vis-receive
+  version: 5.4.3
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.4.3
+  sdp_version: ">=1.2.3, <2.1.0"
+  schema: vis-receive/vis-receive-params-6.json
+- kind: realtime
+  name: vis-receive
+  version: 5.4.4
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.4.4
+  sdp_version: ">=1.2.3, <2.1.0"
+  schema: vis-receive/vis-receive-params-6.json
+- kind: realtime
+  name: vis-receive
+  version: 5.5.0
+  image: artefact.skao.int/ska-sdp-script-vis-receive:5.5.0
+  sdp_version: ">=1.2.3, <2.1.0"
+  schema: vis-receive/vis-receive-params-6.json
+- kind: realtime
+  name: vis-receive
+  version: 6.0.0
+  image: artefact.skao.int/ska-sdp-script-vis-receive:6.0.0
+  sdp_version: ">=1.2.3, <2.1.0"
+  schema: vis-receive/vis-receive-params-7.json
+- kind: realtime
+  name: vis-receive
+  version: 6.1.0
+  image: artefact.skao.int/ska-sdp-script-vis-receive:6.1.0
+  sdp_version: ">2.0.0"
+  schema: vis-receive/vis-receive-params-8.json
+- kind: realtime
+  name: vis-receive
+  version: 6.1.1
+  image: artefact.skao.int/ska-sdp-script-vis-receive:6.1.1
+  sdp_version: ">2.0.0"
+  schema: vis-receive/vis-receive-params-8.json
+- kind: realtime
+  name: pointing-offset
+  version: 1.0.0
+  image: artefact.skao.int/ska-sdp-script-pointing-offset:1.0.0
+  sdp_version: ">=1.0.0"
+  schema: pointing-offset/pointing-offset-params-2.json
+- kind: realtime
+  name: pointing-offset
+  version: 1.0.1
+  image: artefact.skao.int/ska-sdp-script-pointing-offset:1.0.1
+  sdp_version: ">=1.0.0"
+  schema: pointing-offset/pointing-offset-params-2.json
+- kind: realtime
+  name: test-mock-data
+  version: 1.0.0
+  image: artefact.skao.int/ska-sdp-script-test-mock-data:1.0.0
+  sdp_version: ">=1.0.0"
+  schema: test-mock-data/test-mock-data-params-1.json
+- kind: batch
+  name: test-batch
+  version: 0.8.0
+  image: artefact.skao.int/ska-sdp-script-test-batch:0.8.0
+  sdp_version: ">=0.21.0"
+  schema: test-batch/test-batch-params-1.json
+- kind: batch
+  name: test-batch
+  version: 1.0.0
+  image: artefact.skao.int/ska-sdp-script-test-batch:1.0.0
+  sdp_version: ">=0.24.1"
+  schema: test-batch/test-batch-params-1.json
+- kind: batch
+  name: test-dask
+  version: 0.8.0
+  image: artefact.skao.int/ska-sdp-script-test-dask:0.8.0
+  sdp_version: ">=0.21.0"
+  schema: test-dask/test-dask-params-1.json
+- kind: batch
+  name: test-dask
+  version: 1.0.0
+  image: artefact.skao.int/ska-sdp-script-test-dask:1.0.0
+  sdp_version: ">=0.24.1"
+  schema: test-dask/test-dask-params-1.json
+- kind: batch
+  name: spectral-line-imaging
+  version: 0.2.0
+  image: artefact.skao.int/ska-sdp-script-spectral-line-imaging:0.2.0
+  sdp_version: ">=0.22.0"
+  schema: spectral-line-imaging/spectral-line-imaging-params-2.json
+- kind: batch
+  name: test-slurm
+  version: 0.1.0
+  image: artefact.skao.int/ska-sdp-script-test-slurm:0.1.0
+  sdp_version: ">=1.1.0"
+  schema: test-slurm/test-slurm-params-1.json
+- kind: batch
+  name: test-slurm
+  version: 0.2.1
+  image: artefact.skao.int/ska-sdp-script-test-slurm:0.2.1
+  sdp_version: ">=1.1.2"
+  schema: test-slurm/test-slurm-params-2.json

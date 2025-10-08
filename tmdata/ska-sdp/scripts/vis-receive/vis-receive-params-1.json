@@ -1,0 +1,283 @@
+{
+  "$defs": {
+    "NetworkMapping": {
+      "description": "Network Mapping.",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "namespace": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Namespace"
+        },
+        "deviceID": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deviceid"
+        },
+        "ip": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ip"
+        }
+      },
+      "title": "NetworkMapping",
+      "type": "object"
+    },
+    "PodSettings": {
+      "description": "Pod Settings.",
+      "properties": {
+        "networkMapping": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NetworkMapping"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extraMetadata": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extrametadata"
+        },
+        "nodeSelector": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nodeselector"
+        },
+        "receiverResources": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Receiverresources"
+        },
+        "securityContext": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Securitycontext"
+        }
+      },
+      "title": "PodSettings",
+      "type": "object"
+    },
+    "SignalDisplay": {
+      "description": "Configuration for the Signal Display Metrics processor.",
+      "properties": {
+        "metrics": {
+          "default": [
+            "stats"
+          ],
+          "description": "List of metrics to generate, or 'all'",
+          "items": {
+            "$ref": "#/$defs/SignalDisplayMetrics"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "version": {
+          "default": null,
+          "description": "The version of the processor to use",
+          "title": "Version",
+          "type": "string"
+        },
+        "image": {
+          "default": null,
+          "description": "The image of the processor to use",
+          "title": "Image",
+          "type": "string"
+        },
+        "nchan_avg": {
+          "default": 5,
+          "description": "The number of channels to average together in the data",
+          "gte": 1,
+          "title": "Nchan Avg",
+          "type": "integer"
+        },
+        "window_count": {
+          "default": 5,
+          "description": "The number of additional windows for the configured metrics",
+          "gte": 0,
+          "lte": 10,
+          "title": "Window Count",
+          "type": "integer"
+        },
+        "rounding_sensitivity": {
+          "default": 5,
+          "description": "The amount of significant digits to round the metrics to",
+          "exclusiveMinimum": 0,
+          "title": "Rounding Sensitivity",
+          "type": "integer"
+        }
+      },
+      "title": "SignalDisplay",
+      "type": "object"
+    },
+    "SignalDisplayMetrics": {
+      "description": "List of metrics that can be requested.",
+      "enum": [
+        "all",
+        "stats",
+        "spectrum",
+        "lagplot",
+        "amplitude",
+        "phase",
+        "bandaveragedxcorr",
+        "uvcoverage"
+      ],
+      "title": "SignalDisplayMetrics",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Processing block parameters read by vis-receive script.\n\nThese are provided by the processing block definition by assign_resources.",
+  "properties": {
+    "channels_per_port": {
+      "default": 1,
+      "title": "Channels Per Port",
+      "type": "integer"
+    },
+    "processes_per_node": {
+      "default": 1,
+      "title": "Processes Per Node",
+      "type": "integer"
+    },
+    "max_ports_per_node": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Ports Per Node"
+    },
+    "num_nodes": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Num Nodes"
+    },
+    "port_start": {
+      "default": 21000,
+      "title": "Port Start",
+      "type": "integer"
+    },
+    "transport_protocol": {
+      "default": "udp",
+      "title": "Transport Protocol",
+      "type": "string"
+    },
+    "use_network_definition": {
+      "default": true,
+      "title": "Use Network Definition",
+      "type": "boolean"
+    },
+    "telstate": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Telstate"
+    },
+    "extra_helm_values": {
+      "title": "Extra Helm Values",
+      "type": "object"
+    },
+    "pod_settings": {
+      "items": {
+        "$ref": "#/$defs/PodSettings"
+      },
+      "title": "Pod Settings",
+      "type": "array"
+    },
+    "processors": {
+      "default": {
+        "mswriter": {}
+      },
+      "title": "Processors",
+      "type": "object"
+    },
+    "signal_display": {
+      "$ref": "#/$defs/SignalDisplay"
+    }
+  },
+  "title": "VisReceiveParams",
+  "type": "object"
+}
