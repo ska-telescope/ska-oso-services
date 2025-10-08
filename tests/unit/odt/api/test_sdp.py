@@ -10,7 +10,9 @@ SDP_API_URL = f"{ODT_BASE_API_URL}/sdp"
 
 class TestGetSdpScriptsAPI:
     def test_get_script_versions_with_helm(self):
-        with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tests/tmdata"}):
+        with mock.patch.dict(
+            "os.environ", {"SDP_SCRIPT_TMDATA": "file://tests/tmdata"}
+        ):
             versions = get_versions("vis-receive")
             assert "5.1.0" in versions
             assert len(versions) == 17
@@ -20,12 +22,16 @@ class TestGetSdpScriptsAPI:
         assert "5.1.0" in versions
 
     def test_get_script_with_missing_script(self):
-        with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tests/tmdata"}):
+        with mock.patch.dict(
+            "os.environ", {"SDP_SCRIPT_TMDATA": "file://tests/tmdata"}
+        ):
             versions = get_versions("junk")
             assert len(versions) == 0
 
     def test_get_script_versions_api(self, client):
-        with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tests/tmdata"}):
+        with mock.patch.dict(
+            "os.environ", {"SDP_SCRIPT_TMDATA": "file://tests/tmdata"}
+        ):
             response = client.get(f"{SDP_API_URL}/scriptVersions/vis-receive")
             assert response.status_code == 200
             assert isinstance(response.json(), list)
@@ -40,7 +46,9 @@ class TestGetSdpScriptsAPI:
                 )
 
     def test_get_params_expected_output(self):
-        with mock.patch.dict("os.environ", {"SDP_SCRIPT_TMDATA": "file://tests/tmdata"}):
+        with mock.patch.dict(
+            "os.environ", {"SDP_SCRIPT_TMDATA": "file://tests/tmdata"}
+        ):
             result = get_params(name="vis-receive", version="5.1.0")
             assert isinstance(result, dict)
             # Check top-level keys
