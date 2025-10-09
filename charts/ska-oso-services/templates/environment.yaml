@@ -27,8 +27,8 @@ data:
   {{ if .Values.global.oda.postgres.user }}
   ADMIN_POSTGRES_USER: {{ .Values.global.oda.postgres.user }}
   {{ end }}
-  {{ if .Values.global.sdp.tmdata }}
-  SDP_SCRIPT_TMDATA: {{ .Values.global.sdp.tmdata }}
+  {{ if .Values.rest.sdp.tmdata }}
+  SDP_SCRIPT_TMDATA: {{ .Values.rest.sdp.tmdata }}
   {{ end }}
   {{ if .Values.rest.skuid.url }}
   SKUID_URL: {{ .Values.rest.skuid.url }}
