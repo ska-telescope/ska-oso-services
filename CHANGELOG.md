@@ -8,6 +8,7 @@ Unreleased
 ***********
 * Update to ODA v12.0.0 which deploys Postgres via the operators
 * Adds API for retrieving SDP script versions and script parameters 
+* Update error handlers to all return same format details
 
 7.0.0
 ***********

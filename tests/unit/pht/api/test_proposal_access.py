@@ -54,8 +54,8 @@ class TestProposalAccessAPI:
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
         result = response.json()
-        expected = {"detail": "Your prsl_id, user_id pair is duplicated"}
-        assert expected == result
+        expected_detail = "Your prsl_id, user_id pair is duplicated"
+        assert expected_detail == result["detail"]
 
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow")
     def test_proposal_access_put_success(self, mock_uow, client):

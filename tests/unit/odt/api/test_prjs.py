@@ -41,9 +41,10 @@ class TestProjectGet:
         mock_uow().__enter__.return_value = uow_mock
 
         result = client.get(f"{PRJS_API_URL}/prj-1234")
-        assert result.json() == {
-            "detail": "The requested identifier prj-1234 could not be found."
-        }
+        assert (
+            result.json()["detail"]
+            == "The requested identifier prj-1234 could not be found."
+        )
         assert result.status_code == HTTPStatus.NOT_FOUND
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")

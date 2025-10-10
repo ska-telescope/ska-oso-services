@@ -1,4 +1,5 @@
-from typing import Optional
+from http import HTTPStatus
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -22,8 +23,12 @@ class ErrorResponseTraceback(AppModel):
     full_traceback: str
 
 
-class ErrorDetails(AppModel):
-    status: int
-    title: str
+class ErrorResponse(AppModel):
+    status: HTTPStatus
+    title: str | None = None
     detail: str
-    traceback: Optional[ErrorResponseTraceback] = None
+    traceback: ErrorResponseTraceback | None = None
+
+    def model_post_init(self, context: Any, /) -> None:
+        if self.title is None:
+            self.title = self.status.phrase
