@@ -16,19 +16,31 @@ global:
   minikube: true
   cluster_domain: techops.internal.skao.int
   oda:
+    # These global values are used by the ska-db-oda rest server deployment to connect to the postgres instance
+    # See RtD for more details.
     postgres:
-      # The below values are used to set environment variables that are used in the ODA Repository. If they are not set then
-      # default are set in the environment.yaml that point at an ODA postgres instance in the same namespace.
+      cluster: pgstfc # The name of the SGCluster
+      clusterNamespace: ska-tango-archiver-db # The namespace the SGCluster is deployed to
+      # If this is not set, PGHOST will default to the address of the Postgres instance deployed by the Stackgres operator,
+      # using the .Values.global.oda.postgres.cluster and .Values.global.oda.postgres.clusterNamespace values
       host: ~
-      port: ~
-      database: ~
-      user: ~
-      # The password should be pulled from Vault via a k8s Secret. If these values are left as null, a new
-      # secret will be created by this chart. These values are exposed so a different secret can be defined,
-      # for example if the Secrets are managed elsewhere.
-      password:
-        secret: ~ # This is the resource name of a k8s Secret
-        key: ~ # This is the key the password is stored under within that Secret
+      port: "5432"
+      database: ~ # For pipeline deployments, this is dynamic so is set in the Makefile
+      user: ~ # For pipeline deployments, this is set in the makefile to <database>_admin
+      secret:
+        existingSecret:
+          # This is the resource name of a k8s Secret and that has a PGPASSWORD key
+          # If it is left as null a new secret will be created, pulling the value from Vault
+          # Note: if this Secret also contains the other PG_ environment variables then they will override the values
+          # in the ConfigMap. This is useful is the Postgres deployment is managed elsewhere and there is already
+          # a Secret in the cluster with all the connection details.
+          name: ~
+        vault:
+          enabled: true
+          mount: dev
+          secretPath: "team-buttons/ska-db-oda/credentials"
+          secretKeys:
+            - "PGPASSWORD"
 
 rest:
   component: rest
@@ -75,7 +87,7 @@ rest:
   ingress:
     enabled: true
 
-# The following values are used by the pht_secrets.yaml and oda_secret.yaml templates
+# The following values are used by the pht_secrets.yaml template
 vault:
   enabled: true
   mount: dev
@@ -86,9 +98,6 @@ vault:
   - "SMTP_PASSWORD"
   - "AWS_PHT_BUCKET_NAME"
   - "OSO_CLIENT_SECRET"
-  odaSecretPath: "team-buttons/ska-db-oda/credentials"
-  odaSecretKeys:
-  - "ADMIN_POSTGRES_PASSWORD"
 
 nodeSelector: {}
 

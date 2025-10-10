@@ -8,16 +8,25 @@ ODA Secret
 
 ``ska-oso-services`` requires secret values to connect to the ODA PostgreSQL instance.
 
-The application uses the ``ADMIN_POSTGRES_PASSWORD`` environment variable which is injected in the chart from a Kubernetes
+The application uses the ``PGPASSWORD`` environment variable which is injected in the chart from a Kubernetes
 Secret. The Secret resource should pull the value from Vault on creation, using the standard VaultStaticSecret.
 
 By default, the ``ska-oso-services`` chart will create a Secret that contains the ODA password for use by the application, without
 the need for any user configuration.
 
-To use a different Secret, the ``.Values.global.oda.postgres.password.secret`` value can be overwritten with the Kubernetes Secret
-resource name and the ``.Values.global.oda.postgres.password.key`` with the key within that Secret.
+To use a different Secret, the ``.Values.global.oda.postgres.secret.existingSecret`` value can be overwritten with the Kubernetes Secret
+resource name.
 
 See :doc:`configuration` for more details on the ODA connection.
+
+Using a Secret for the full Postgres connection
+................................................
+
+The chart is configured in such a way that it pulls the ``PG_`` environment variables from a ConfigMap and the ``PGPASSWORD`` from a Secret (as the host, etc
+are dynamic and can't be pulled from Vault).
+
+However if your the of ``ska-oso-services`` is connecting to an externally managed Postgres and a Secret is available in the namespace with the full ``PG_``
+varibales, these will be taken over the ConfigMap if they are passed as via the ``.Values.global.oda.postgres.secret.existingSecret``.
 
 PHT secrets
 ------------
