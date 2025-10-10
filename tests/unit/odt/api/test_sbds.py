@@ -89,7 +89,7 @@ class TestSBDefinitionAPI:
 
             assert detail["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
             assert detail["title"] == "Internal Server Error"
-            assert detail["message"] == "ValueError('test', 'error')"
+            assert detail["detail"] == "ValueError('test', 'error')"
             assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")

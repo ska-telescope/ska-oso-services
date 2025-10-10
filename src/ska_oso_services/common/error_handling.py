@@ -4,6 +4,7 @@ from traceback import format_exc
 from typing import List, Optional
 
 from fastapi import HTTPException, Request
+from pydantic import ValidationError
 from ska_db_oda.persistence.domain.errors import (
     ODAError,
     ODANotFound,
@@ -96,6 +97,23 @@ async def oda_error_handler(_: Request, err: ODAError) -> JSONResponse:
     return _make_json_response(
         ErrorResponse(
             status=HTTPStatus.INTERNAL_SERVER_ERROR, title="ODA Error", detail=str(err)
+        )
+    )
+
+
+async def pydantic_validation_error_handler(
+    _: Request, err: ValidationError
+) -> JSONResponse:
+    """
+    A custom handler function to deal with a Pydantic Validation error
+    """
+    LOGGER.error("Pydantic ValidationError with message %s", str(err))
+    return _make_json_response(
+        ErrorResponse(
+            status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            title="Internal Validation Error",
+            detail=f"Validation failed when reading from the ODA. "
+            f"Possible outdated data in the database:\n{str(err)}",
         )
     )
 

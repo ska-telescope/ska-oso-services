@@ -125,9 +125,9 @@ def test_sbd_get_not_found(authrequests):
     response = authrequests.get(f"{ODT_URL}/sbds/123")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {
-        "detail": "The requested identifier 123 could not be found.",
-    }
+    assert (
+        response.json()["detail"] == "The requested identifier 123 could not be found."
+    )
 
 
 def test_sbd_put_not_found(authrequests):
@@ -139,9 +139,9 @@ def test_sbd_put_not_found(authrequests):
     response = authrequests.get(f"{ODT_URL}/sbds/123")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {
-        "detail": "The requested identifier 123 could not be found.",
-    }
+    assert (
+        response.json()["detail"] == "The requested identifier 123 could not be found."
+    )
 
 
 def test_sbd_put_validation_error(authrequests):

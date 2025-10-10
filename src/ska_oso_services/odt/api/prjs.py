@@ -100,20 +100,14 @@ def prjs_post(
             ),
         )
 
-    try:
-        with oda.uow() as uow:
-            updated_prj = uow.prjs.add(prj, user=auth.user_id)
+    with oda.uow() as uow:
+        updated_prj = uow.prjs.add(prj, user=auth.user_id)
 
-            prj_status = _create_prj_status_entity(updated_prj)
-            uow.prjs_status_history.add(prj_status, user=auth.user_id)
+        prj_status = _create_prj_status_entity(updated_prj)
+        uow.prjs_status_history.add(prj_status, user=auth.user_id)
 
-            uow.commit()
-        return updated_prj
-    except ValueError as err:
-        LOGGER.exception("ValueError when adding Project to the ODA")
-        raise BadRequestError(
-            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
-        ) from err
+        uow.commit()
+    return updated_prj
 
 
 @router.put("/{identifier}", summary="Update a Project by identifier")
@@ -138,23 +132,19 @@ def prjs_put(
                 "the endpoint and in the JSON payload"
             ),
         )
-    try:
-        with oda.uow() as uow:
-            # This get will check if the identifier already exists
-            # and throw an error if it doesn't
-            uow.prjs.get(identifier)
-            updated_prj = uow.prjs.add(prj, user=auth.user_id)
 
-            prj_status = _create_prj_status_entity(updated_prj)
-            uow.prjs_status_history.add(prj_status, user=auth.user_id)
+    with oda.uow() as uow:
+        # This get will check if the identifier already exists
+        # and throw an error if it doesn't
+        uow.prjs.get(identifier)
+        updated_prj = uow.prjs.add(prj, user=auth.user_id)
 
-            uow.commit()
+        prj_status = _create_prj_status_entity(updated_prj)
+        uow.prjs_status_history.add(prj_status, user=auth.user_id)
 
-        return updated_prj
-    except ValueError as err:
-        raise BadRequestError(
-            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
-        ) from err
+        uow.commit()
+
+    return updated_prj
 
 
 class PrjSBDLinkResponse(BaseModel):

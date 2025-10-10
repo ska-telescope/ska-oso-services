@@ -6,9 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
-* Update to ODA v12.0.0 which deploys Postgres via the operators
+* [BREAKING] Update to ODA v12.0.0 which deploys Postgres via the operators. This involves some updates to the global Helm values used by the chart. 
 * Adds API for retrieving SDP script versions and script parameters 
-* Update error handlers to all return same format details
+* [BREAKING] Update error handlers to all return same format details
 
 7.0.0
 ***********
