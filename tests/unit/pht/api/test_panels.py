@@ -471,8 +471,8 @@ class TestPanelsAPI:
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
         result = response.json()
-        expected = {"detail": "You name is duplicated"}
-        assert expected == result
+        expected_detail = "You name is duplicated"
+        assert expected_detail == result["detail"]
 
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_get_panel_success(self, mock_oda, client):

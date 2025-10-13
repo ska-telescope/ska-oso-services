@@ -61,15 +61,13 @@ def test_post_duplicate_proposal_access(authrequests):
     assert duplicate_response.status_code == HTTPStatus.BAD_REQUEST
 
     result = duplicate_response.json()
-    expected = {
-        "detail": (
-            "duplicate key value violates unique constraint "
-            '"tab_oda_prsl_access_prsl_id_user_id_version_key"\n'
-            "DETAIL:  Key (prsl_id, user_id, version)="
-            "(prsl_id_test_post_duplicate, TEST_USER, 1) already exists."
-        )
-    }
-    assert expected == result
+    expected = (
+        "duplicate key value violates unique constraint "
+        '"tab_oda_prsl_access_prsl_id_user_id_version_key"\n'
+        "DETAIL:  Key (prsl_id, user_id, version)="
+        "(prsl_id_test_post_duplicate, TEST_USER, 1) already exists."
+    )
+    assert expected == result["detail"]
 
 
 def test_get_list_proposal_access_for_user(authrequests):

@@ -51,6 +51,8 @@ make k8s-chart-test
 
 ### Deploy to Kubernetes
 
+**There are prerequisites to deploy the ODA to Kubernetes - see the [ODA docs](https://gitlab.com/ska-telescope/db/ska-db-oda/-/blob/main/README.md?ref_type=heads#postgres-operators>) for more info.**
+
 Install the Helm umbrella chart into a Kubernetes cluster with ingress enabled:
 
 Short version for local runs:

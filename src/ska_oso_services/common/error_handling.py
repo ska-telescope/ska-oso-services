@@ -4,28 +4,18 @@ from traceback import format_exc
 from typing import List, Optional
 
 from fastapi import HTTPException, Request
-from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 from ska_db_oda.persistence.domain.errors import (
     ODAError,
     ODANotFound,
     UniqueConstraintViolation,
 )
 from ska_ost_osd.common.error_handling import generic_exception_handler
+from starlette.responses import JSONResponse
 
-from ska_oso_services.common.model import ErrorDetails, ErrorResponseTraceback
+from ska_oso_services.common.model import ErrorResponse, ErrorResponseTraceback
 
 LOGGER = logging.getLogger(__name__)
-
-
-def error_details(
-    status: HTTPStatus,
-    title: str,
-    detail: str,
-    traceback: Optional[ErrorResponseTraceback],
-):
-    return ErrorDetails(
-        status=status, title=title, detail=detail, traceback=traceback
-    ).model_dump(mode="json", exclude_none=True)
 
 
 class OSDError(Exception):
@@ -77,18 +67,13 @@ class NotFoundError(BadRequestError):
         super().__init__(detail=detail)
 
 
-def _make_response(
-    status: HTTPStatus, detail: str, traceback: Optional[ErrorResponseTraceback] = None
-) -> JSONResponse:
+def _make_json_response(error_response: ErrorResponse) -> JSONResponse:
     """
     Utility helper to generate a JSONResponse to be returned by custom error handlers.
     """
-    details = error_details(
-        status, title=status.phrase, detail=detail, traceback=traceback
-    )
     return JSONResponse(
-        status_code=status,
-        content={"detail": details},
+        status_code=error_response.status,
+        content=error_response.model_dump(mode="json", exclude_none=True),
     )
 
 
@@ -98,7 +83,9 @@ async def oda_not_found_handler(request: Request, err: ODANotFound) -> JSONRespo
     return the correct HTTP 404 response.
     """
     LOGGER.debug("NotFoundInODA for path parameters %s", request.path_params)
-    return JSONResponse(status_code=HTTPStatus.NOT_FOUND, content={"detail": str(err)})
+    return _make_json_response(
+        ErrorResponse(status=HTTPStatus.NOT_FOUND, detail=str(err))
+    )
 
 
 async def oda_error_handler(_: Request, err: ODAError) -> JSONResponse:
@@ -107,8 +94,27 @@ async def oda_error_handler(_: Request, err: ODAError) -> JSONResponse:
     return the correct 500 response.
     """
     LOGGER.error("ODAError with message %s", str(err))
-    return JSONResponse(
-        status_code=HTTPStatus.INTERNAL_SERVER_ERROR, content={"detail": str(err)}
+    return _make_json_response(
+        ErrorResponse(
+            status=HTTPStatus.INTERNAL_SERVER_ERROR, title="ODA Error", detail=str(err)
+        )
+    )
+
+
+async def pydantic_validation_error_handler(
+    _: Request, err: ValidationError
+) -> JSONResponse:
+    """
+    A custom handler function to deal with a Pydantic Validation error
+    """
+    LOGGER.error("Pydantic ValidationError with message %s", str(err))
+    return _make_json_response(
+        ErrorResponse(
+            status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            title="Internal Validation Error",
+            detail=f"Validation failed when reading from the ODA. "
+            f"Possible outdated data in the database:\n{str(err)}",
+        )
     )
 
 
@@ -122,8 +128,8 @@ async def oda_unique_constraint_handler(
     LOGGER.debug(
         "UniqueConstraintViolation for path parameters %s", request.path_params
     )
-    return JSONResponse(
-        status_code=HTTPStatus.BAD_REQUEST, content={"detail": err.args[0]}
+    return _make_json_response(
+        ErrorResponse(status=HTTPStatus.BAD_REQUEST, detail=err.args[0])
     )
 
 
@@ -135,14 +141,17 @@ async def dangerous_internal_server_handler(_: Request, err: Exception) -> JSONR
     This is a 'DANGEROUS' handler because it exposes internal implementation details to
     clients. Do not use in production systems!
     """
-    return _make_response(
-        HTTPStatus.INTERNAL_SERVER_ERROR,
-        detail=repr(err),
-        traceback=ErrorResponseTraceback(
-            key=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
-            type=str(type(err)),
-            full_traceback=format_exc(),
-        ),
+    return _make_json_response(
+        ErrorResponse(
+            status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            title=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
+            detail=repr(err),
+            traceback=ErrorResponseTraceback(
+                key=HTTPStatus.INTERNAL_SERVER_ERROR.phrase,
+                type=str(type(err)),
+                full_traceback=format_exc(),
+            ),
+        )
     )
 
 

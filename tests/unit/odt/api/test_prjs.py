@@ -6,6 +6,7 @@ from http import HTTPStatus
 from unittest import mock
 
 import pytest
+from pydantic import ValidationError
 from ska_db_oda.persistence.domain.errors import ODANotFound
 from ska_oso_pdm.project import ObservingBlock
 
@@ -41,9 +42,10 @@ class TestProjectGet:
         mock_uow().__enter__.return_value = uow_mock
 
         result = client.get(f"{PRJS_API_URL}/prj-1234")
-        assert result.json() == {
-            "detail": "The requested identifier prj-1234 could not be found."
-        }
+        assert (
+            result.json()["detail"]
+            == "The requested identifier prj-1234 could not be found."
+        )
         assert result.status_code == HTTPStatus.NOT_FOUND
 
     @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
@@ -198,8 +200,36 @@ class TestProjectPost:
 
             assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
             assert result["title"] == "Internal Server Error"
-            assert result["message"] == "OSError('test error')"
+            assert result["detail"] == "OSError('test error')"
             assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+
+    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
+    def test_prjs_oda_pydantic_error(self, mock_uow, client):
+        """
+        Check the prjs_post method returns the expected error response
+        if pydantic fails to deserialise the ODA json
+        """
+        uow_mock = mock.MagicMock()
+        uow_mock.prjs.add.side_effect = ValidationError.from_exception_data(
+            "Invalid data", line_errors=[]
+        )
+        mock_uow().__enter__.return_value = uow_mock
+
+        response = client.post(
+            f"{PRJS_API_URL}",
+            data=TestDataFactory.project(prj_id=None).model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+        result = response.json()
+
+        assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert result["title"] == "Internal Validation Error"
+        assert (
+            result["detail"] == "Validation failed when reading from the ODA. "
+            "Possible outdated data in the database:\n0 validation "
+            "errors for Invalid data\n"
+        )
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 class TestProjectPut:
@@ -334,7 +364,7 @@ class TestProjectPut:
 
             assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
             assert result["title"] == "Internal Server Error"
-            assert result["message"] == "OSError('test error')"
+            assert result["detail"] == "OSError('test error')"
             assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 

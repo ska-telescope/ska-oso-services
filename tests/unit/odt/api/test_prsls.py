@@ -101,7 +101,7 @@ class TestProjectCreationFromProposal:
 
             assert result["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
             assert result["title"] == "Internal Server Error"
-            assert result["message"] == "OSError('test error')"
+            assert result["detail"] == "OSError('test error')"
 
 
 class TestProposalAndProjectView:

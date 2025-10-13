@@ -67,9 +67,10 @@ class TestSBDefinitionAPI:
 
         response = client.get(f"{SBDS_API_URL}/sbd-1234")
 
-        assert response.json() == {
-            "detail": "The requested identifier sbd-1234 could not be found."
-        }
+        assert (
+            response.json()["detail"]
+            == "The requested identifier sbd-1234 could not be found."
+        )
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
@@ -88,7 +89,7 @@ class TestSBDefinitionAPI:
 
             assert detail["status"] == HTTPStatus.INTERNAL_SERVER_ERROR
             assert detail["title"] == "Internal Server Error"
-            assert detail["message"] == "ValueError('test', 'error')"
+            assert detail["detail"] == "ValueError('test', 'error')"
             assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
@@ -354,10 +355,10 @@ class TestSBDefinitionAPI:
         )
 
         assert response.status_code == HTTPStatus.NOT_FOUND
-        assert response.json() == {
-            "detail": "The requested identifier sbd-mvp01-20200325-00001 "
-            "could not be found."
-        }
+        assert (
+            response.json()["detail"]
+            == "The requested identifier sbd-mvp01-20200325-00001 could not be found."
+        )
 
     @mock.patch("ska_oso_services.odt.api.sbds.oda.uow")
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")

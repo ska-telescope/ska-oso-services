@@ -75,17 +75,18 @@ spec:
         image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{$.Values.rest.image.tag | default $.Chart.AppVersion}}"
         imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
         # Command set in the Docker image
+        envFrom:
+          - configMapRef:
+              name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
+          - configMapRef:
+              name: {{ template "ska-oso-services.name" . }}-postgres-environment-{{ .Release.Name }}
+          - secretRef: # This is after the configMapRef so if a user wants to get the PG_ environment variables all from a Secret they overwrite those from the ConfigMap
+              {{ if $.Values.global.oda.postgres.secret.existingSecret.name }}
+              name: {{ $.Values.global.oda.postgres.secret.existingSecret.name }}
+              {{ else }}
+              name: {{ template "ska-oso-services.oda-secret-name" $ }}
+              {{- end }}
         env:
-          - name: ADMIN_POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                {{ if .Values.global.oda.postgres.password.secret }}
-                name: {{ .Values.global.oda.postgres.password.secret }}
-                key: {{ .Values.global.oda.postgres.password.key }}
-                {{ else }}
-                name: {{ template "ska-oso-services.oda-secret-name" $ }}
-                key: ADMIN_POSTGRES_PASSWORD
-                {{ end }}
           - name: AWS_SERVER_PUBLIC_KEY
             valueFrom:
               secretKeyRef:
@@ -136,9 +137,6 @@ spec:
                 name: ska-oso-services-allsecrets-{{ $.Release.Name }}
                 key: OSO_CLIENT_SECRET
                 {{ end }}
-        envFrom:
-          - configMapRef:
-              name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
         ports:
           - containerPort: 5000
         resources:
