@@ -6,9 +6,23 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* [BREAKING] Removes `/panels/auto-create` and Adds `/panels/assignments` and `panels/generate`
+
+8.0.0
+***********
+* [BREAKING] Update to ODA v12.0.0 which deploys Postgres via the operators. This involves some updates to the global Helm values used by the chart. 
+* Adds API for retrieving SDP script versions and script parameters 
+* [BREAKING] Update error handlers to all return same format details
+
+7.0.0
+***********
+* [BREAKING] Update to ODA v11.8.0 which pulls in PDM v23.0.0
 * [BREAKING] Updates `pht/prsl/create` to return the created proposal instead of the proposal id (prsl_id).
 * Adds PI details to the proposal when created.
-* [BREAKING] Removes `/panels/auto-create` and Adds `/panels/assignments` and `panels/generate`
+* Updates `/panel/decision/{decision_id}` to update proposal status when decision is decided
+* Updates `/reviewable` endpoint to allow access by admin, reviewers, sw_eng and review_chair but with restrictions based on roles
+* Updates the `/reviews` so review chair can retrieve reviews
+* Updates proposal status to `under review` when the panel is updated
 
 6.0.0
 ***********

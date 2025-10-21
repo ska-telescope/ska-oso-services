@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "ska-oso-services.name" . }}-postgres-environment-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-oso-services.labels" . | indent 4 }}
+    component:  {{ template "ska-oso-services.name" . }}
+    domain: environment
+    function: ska-oso-services-postgres-environment
+    intent: production
+data:
+  {{ if .Values.global.oda.postgres.host }}
+  PGHOST: {{ .Values.global.oda.postgres.host }}
+  {{ else }}
+  PGHOST: {{ template "ska-oso-services.postgres-host" . }}
+  {{ end }}
+  PGPORT: {{ .Values.global.oda.postgres.port | quote }}
+  PGDATABASE: {{ .Values.global.oda.postgres.database }}
+  PGUSER: {{ .Values.global.oda.postgres.user }}
+  # PGPASSWORD is pulled from Vault into a separate Secret

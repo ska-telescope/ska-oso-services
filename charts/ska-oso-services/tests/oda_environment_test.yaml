@@ -1,0 +1,83 @@
+---
+suite: ska-oso-services-oda-environment
+templates:
+  - oda-environment.yaml
+tests:
+  - it: should contain only one document.
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should be of type ConfigMap and have the correct apiVersion, v1.
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - isAPIVersion:
+          of: v1
+
+  - it: should default PGHOST to the SGCluster address if not defined in values.yaml
+    documentIndex: 0
+    set:
+      global:
+        oda:
+          postgres:
+            cluster: test-oda
+            clusterNamespace: test-oda-ns
+    asserts:
+      - equal:
+          path: data.PGHOST
+          value:
+            test-oda.test-oda-ns.svc.techops.internal.skao.int
+
+  - it: should configure PGHOST from values.yaml if present
+    documentIndex: 0
+    set:
+      global:
+        oda:
+          postgres:
+            host: fake-postgres-host
+    asserts:
+      - equal:
+          path: data.PGHOST
+          value:
+            fake-postgres-host
+
+  - it: should set PGPORT from values.yaml
+    documentIndex: 0
+    set:
+      global:
+        oda:
+          postgres:
+            port: 12345
+    asserts:
+      - equal:
+          path: data.PGPORT
+          value:
+            "12345"
+
+  - it: should set PGDATABASE from values.yaml
+    documentIndex: 0
+    set:
+      global:
+        oda:
+          postgres:
+            database: fake-db-name
+    asserts:
+      - equal:
+          path: data.PGDATABASE
+          value:
+            fake-db-name
+
+  - it: should set PGUSER from values.yaml
+    documentIndex: 0
+    set:
+      global:
+        oda:
+          postgres:
+            user: fake-user
+    asserts:
+      - equal:
+          path: data.PGUSER
+          value:
+            fake-user

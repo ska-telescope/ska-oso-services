@@ -120,21 +120,14 @@ def sbds_post(
                 " this request."
             ),
         )
+    with oda.uow() as uow:
+        updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
 
-    try:
-        with oda.uow() as uow:
-            updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
+        sbd_status = _create_sbd_status_entity(updated_sbd)
+        uow.sbds_status_history.add(sbd_status, user=auth.user_id)
 
-            sbd_status = _create_sbd_status_entity(updated_sbd)
-            uow.sbds_status_history.add(sbd_status, user=auth.user_id)
-
-            uow.commit()
-        return updated_sbd
-    except ValueError as err:
-        LOGGER.exception("ValueError when adding SBDefinition to the ODA")
-        raise BadRequestError(
-            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
-        ) from err
+        uow.commit()
+    return updated_sbd
 
 
 @router.put(
@@ -169,25 +162,19 @@ def sbds_put(
             ),
         )
 
-    try:
-        with oda.uow() as uow:
-            # This get will check if the identifier already exists
-            # and throw an error if it doesn't
-            uow.sbds.get(identifier)
-            updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
+    with oda.uow() as uow:
+        # This get will check if the identifier already exists
+        # and throw an error if it doesn't
+        uow.sbds.get(identifier)
+        updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
 
-            # In this PUT should we be updating the existing status
-            # and changing the version in it?
-            sbd_status = _create_sbd_status_entity(updated_sbd)
-            uow.sbds_status_history.add(sbd_status, user=auth.user_id)
+        # In this PUT should we be updating the existing status
+        # and changing the version in it?
+        sbd_status = _create_sbd_status_entity(updated_sbd)
+        uow.sbds_status_history.add(sbd_status, user=auth.user_id)
 
-            uow.commit()
-        return updated_sbd
-    except ValueError as err:
-        LOGGER.exception("ValueError when adding SBDefinition to the ODA")
-        raise BadRequestError(
-            detail=f"Validation failed when uploading to the ODA: '{err.args[0]}'",
-        ) from err
+        uow.commit()
+    return updated_sbd
 
 
 def validate(sbd: SBDefinition) -> ValidationResponse:

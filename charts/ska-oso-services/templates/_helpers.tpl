@@ -59,3 +59,10 @@ Get the major version of the chart release
 {{- define "ska-oso-services.major-version" }}
 {{- with $x := printf "%s" .Chart.Version | split "."}}{{index $x "_0"}}{{end}}
 {{- end -}}
+
+{{/*
+Gets the Service address for the postgres instance deployed by the Stackgres Operator
+*/}}
+{{- define "ska-oso-services.postgres-host" -}}
+{{- printf "%s.%s.svc.%s" .Values.global.oda.postgres.cluster .Values.global.oda.postgres.clusterNamespace .Values.global.cluster_domain -}}
+{{- end -}}

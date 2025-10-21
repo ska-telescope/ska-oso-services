@@ -3,7 +3,7 @@ from http import HTTPStatus
 from unittest import mock
 
 from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
-from ska_db_oda.persistence.domain.errors import ODANotFound, UniqueConstraintViolation
+from ska_db_oda.persistence.domain.errors import UniqueConstraintViolation
 
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import REVIEWERS, TestDataFactory
@@ -54,8 +54,8 @@ class TestProposalAccessAPI:
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
         result = response.json()
-        expected = {"detail": "Your prsl_id, user_id pair is duplicated"}
-        assert expected == result
+        expected_detail = "Your prsl_id, user_id pair is duplicated"
+        assert expected_detail == result["detail"]
 
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow")
     def test_proposal_access_put_success(self, mock_uow, client):

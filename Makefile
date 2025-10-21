@@ -26,20 +26,30 @@ DOCS_SPHINXOPTS ?= -W --keep-going
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 K8S_CHART = ska-oso-services-umbrella
 
-POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 K8S_CHART_PARAMS += \
-  --set ska-db-oda-umbrella.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST) \
   --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
 
 # CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline, so these variables are set for a local deployment
 # Set cluster_domain to minikube default (cluster.local) in local development
 ifeq ($(CI_ENVIRONMENT_SLUG),)
 OSO_SERVICES_URL=http://`minikube ip`/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
+SGCLUSTER = oda
+SGCLUSTER_NAMESPACE = oda
+
 K8S_CHART_PARAMS += \
   --set global.cluster_domain="cluster.local" \
+  --set ska-oso-services.rest.image.tag=$(VERSION) \
   --set ska-db-oda-umbrella.vault.enabled=false \
-  --set ska-oso-services.vault.enabled=false
+  --set ska-oso-services.vault.enabled=false \
+  --set global.oda.postgres.secret.vault.enabled=false \
+  --set global.oda.postgres.cluster=$(SGCLUSTER) \
+  --set global.oda.postgres.clusterNamespace=$(SGCLUSTER_NAMESPACE)
 endif
+
+PGDATABASE ?= $(subst -,_,$(KUBE_NAMESPACE))
+PGUSER = $(PGDATABASE)_admin
+K8S_CHART_PARAMS += --set global.oda.postgres.database=$(PGDATABASE) \
+	--set global.oda.postgres.user=$(PGUSER)
 
 # For the test, dev and integration environment, use the freshly built image in the GitLab registry
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')

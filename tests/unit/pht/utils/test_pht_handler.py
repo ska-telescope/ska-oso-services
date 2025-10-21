@@ -23,9 +23,9 @@ def _to_iso_z(value):
     raise TypeError(f"Unexpected submitted_on type: {type(value)}")
 
 
-def _replace_investigators(info_obj, inv_objs):
-    """Return a copy of `info_obj` with 'investigators' replaced (Pydantic v2)."""
-    return info_obj.model_copy(update={"investigators": inv_objs})
+def _replace_investigators(proposal_info_obj, inv_objs):
+    """Return a copy of `proposal_info_obj` with 'investigators' replaced (Pydantic v2)."""  # noqa: E501
+    return proposal_info_obj.model_copy(update={"investigators": inv_objs})
 
 
 def _parse_iso_z(s: str) -> datetime:
@@ -66,21 +66,19 @@ class TestTransformUpdateProposal:
             else [SimpleNamespace(user_id=i) for i in case["investigator_ids"]]
         )
 
-        new_info = _replace_investigators(base.info, inv_objs)
+        new_info = _replace_investigators(base.proposal_info, inv_objs)
 
         incoming = base.model_copy(
             update={
                 "submitted_by": case["submitted_by"],
                 "submitted_on": case["existing_submitted_on"],
-                "info": new_info,
+                "proposal_info": new_info,
             }
         )
 
         t0 = datetime.now(timezone.utc)
         out = svc.transform_update_proposal(incoming)
         t1 = datetime.now(timezone.utc)
-
-        assert out.investigator_refs == case["investigator_ids"]
 
         # submitted_on logic
         if case["expected_submitted_on"] == "NOW":
@@ -95,7 +93,8 @@ class TestTransformUpdateProposal:
 
         assert out.prsl_id == incoming.prsl_id
         assert out.cycle == incoming.cycle
-        assert out.info is incoming.info
+        assert out.proposal_info is incoming.proposal_info
+        assert out.observation_info is incoming.observation_info
 
 
 def test_join_proposals_panels_reviews_decisions():
@@ -160,7 +159,7 @@ class TestGetArrayClass:
     def test_low_only(self):
         """Test when only Low array is present"""
         proposal = SimpleNamespace(
-            info=SimpleNamespace(
+            observation_info=SimpleNamespace(
                 observation_sets=[
                     SimpleNamespace(array_details=SimpleNamespace(array="Low")),
                     SimpleNamespace(array_details=SimpleNamespace(array="LOW-EXTRA")),
@@ -172,7 +171,7 @@ class TestGetArrayClass:
     def test_mid_only(self):
         """Test when only Mid array is present"""
         proposal = SimpleNamespace(
-            info=SimpleNamespace(
+            observation_info=SimpleNamespace(
                 observation_sets=[
                     SimpleNamespace(array_details=SimpleNamespace(array="Mid")),
                     SimpleNamespace(array_details=SimpleNamespace(array="MID-OTHER")),
@@ -184,7 +183,7 @@ class TestGetArrayClass:
     def test_both_arrays(self):
         """Test when both Low and Mid arrays are present"""
         proposal = SimpleNamespace(
-            info=SimpleNamespace(
+            observation_info=SimpleNamespace(
                 observation_sets=[
                     SimpleNamespace(array_details=SimpleNamespace(array="Low")),
                     SimpleNamespace(array_details=SimpleNamespace(array="Mid")),
@@ -195,13 +194,15 @@ class TestGetArrayClass:
 
     def test_unknown_empty_obs(self):
         """Test when no observation sets are present"""
-        proposal = SimpleNamespace(info=SimpleNamespace(observation_sets=[]))
+        proposal = SimpleNamespace(
+            observation_info=SimpleNamespace(observation_sets=[])
+        )
         assert _get_array_class(proposal) == "UNKNOWN"
 
     def test_unknown_none_array(self):
         """Test when array is None in observation set"""
         proposal = SimpleNamespace(
-            info=SimpleNamespace(
+            observation_info=SimpleNamespace(
                 observation_sets=[
                     SimpleNamespace(array_details=None),
                     SimpleNamespace(array_details=SimpleNamespace(array=None)),
@@ -212,5 +213,5 @@ class TestGetArrayClass:
 
     def test_unknown_no_info(self):
         """Test with no info attribute in proposal"""
-        proposal = SimpleNamespace(info=None)
+        proposal = SimpleNamespace(proposal_info=None, observation_info=None)
         assert _get_array_class(proposal) == "UNKNOWN"

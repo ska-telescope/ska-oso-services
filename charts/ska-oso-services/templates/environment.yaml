@@ -13,19 +13,8 @@ data:
   LOG_LEVEL: {{ .Values.rest.logLevel }}
   PIPELINE_TESTS_DEPLOYMENT: {{ .Values.pipeline_test_deployment | quote }}
   KUBE_NAMESPACE: {{ .Release.Namespace }}
-  {{ if .Values.global.oda.postgres.host }}
-  POSTGRES_HOST: {{ .Values.global.oda.postgres.host }}
-  {{ else }}
-  POSTGRES_HOST: {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.{{ .Values.global.cluster_domain }}
-  {{ end }}
-  {{ if .Values.global.oda.postgres.port }}
-  POSTGRES_PORT: {{ .Values.global.oda.postgres.port | quote }}
-  {{ end }}
-  {{ if .Values.global.oda.postgres.database }}
-  POSTGRES_DB_NAME: {{ .Values.global.oda.postgres.database }}
-  {{ end }}
-  {{ if .Values.global.oda.postgres.user }}
-  ADMIN_POSTGRES_USER: {{ .Values.global.oda.postgres.user }}
+  {{ if .Values.rest.sdp.tmdata }}
+  SDP_SCRIPT_TMDATA: {{ .Values.rest.sdp.tmdata }}
   {{ end }}
   {{ if .Values.rest.skuid.url }}
   SKUID_URL: {{ .Values.rest.skuid.url }}

@@ -6,7 +6,7 @@ from ska_oso_services.pht.models.schemas import ProposalReportResponse
 def _get_array_class(proposal) -> str:
     arrays = set()
 
-    for obs in getattr(proposal.info, "observation_sets", []) or []:
+    for obs in getattr(proposal.observation_info, "observation_sets", []) or []:
         array_detail = getattr(obs, "array_details", None)
         if array_detail and getattr(array_detail, "array", None):
             array = array_detail.array.lower()
@@ -69,11 +69,11 @@ def join_proposals_panels_reviews_decisions(
                 rows.append(
                     ProposalReportResponse(
                         prsl_id=proposal.prsl_id,
-                        title=proposal.info.title,
-                        science_category=proposal.info.science_category,
+                        title=proposal.proposal_info.title,
+                        science_category=proposal.proposal_info.science_category,
                         proposal_status=proposal.status,
-                        proposal_type=proposal.info.proposal_type.main_type,
-                        proposal_attributes=proposal.info.proposal_type.attributes
+                        proposal_type=proposal.proposal_info.proposal_type.main_type,
+                        proposal_attributes=proposal.proposal_info.proposal_type.attributes  # noqa: E501
                         or [],
                         cycle=proposal.cycle,
                         array=_get_array_class(proposal),
@@ -103,11 +103,6 @@ def join_proposals_panels_reviews_decisions(
                             else None
                         ),
                         comments=review.comments if review else None,
-                        review_submitted_on=(
-                            review.submitted_on.isoformat()
-                            if review and review.submitted_on
-                            else None
-                        ),
                         decision_id=decision.prsl_id if decision else None,
                         recommendation=decision.recommendation if decision else None,
                         decision_status=decision.status if decision else None,
@@ -120,11 +115,12 @@ def join_proposals_panels_reviews_decisions(
             rows.append(
                 ProposalReportResponse(
                     prsl_id=proposal.prsl_id,
-                    title=proposal.info.title,
-                    science_category=proposal.info.science_category,
+                    title=proposal.proposal_info.title,
+                    science_category=proposal.proposal_info.science_category,
                     proposal_status=proposal.status,
-                    proposal_type=proposal.info.proposal_type.main_type,
-                    proposal_attributes=proposal.info.proposal_type.attributes or [],
+                    proposal_type=proposal.proposal_info.proposal_type.main_type,
+                    proposal_attributes=proposal.proposal_info.proposal_type.attributes
+                    or [],
                     cycle=proposal.cycle,
                     array=_get_array_class(proposal),
                     panel_id=panel.panel_id if panel else None,

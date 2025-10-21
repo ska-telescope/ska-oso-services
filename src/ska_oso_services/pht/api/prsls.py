@@ -1,5 +1,4 @@
 import logging
-from collections import OrderedDict
 from http import HTTPStatus
 from typing import Annotated
 
@@ -35,7 +34,10 @@ from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
+    get_panel_prsl_ids,
+    get_reviewer_prsl_ids,
     list_accessible_proposal_ids,
+    merge_latest_with_preference,
     transform_update_proposal,
 )
 from ska_oso_services.pht.service.s3_bucket import (
@@ -45,7 +47,7 @@ from ska_oso_services.pht.service.s3_bucket import (
     create_presigned_url_upload_pdf,
     get_aws_client,
 )
-from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
+from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL, SV_NAME
 from ska_oso_services.pht.utils.ms_graph import (
     extract_profile_from_access_token,
     get_users_by_mail,
@@ -116,7 +118,7 @@ def create_proposal(
             principal_investigator=True,
         )
         with oda.uow() as uow:
-            proposal.info.investigators.append(new_investigator)
+            proposal.proposal_info.investigators.append(new_investigator)
             created_prsl = uow.prsls.add(proposal, auth.user_id)
             # Create permissions
             create_prslacc = ProposalAccess(
@@ -142,22 +144,21 @@ def create_proposal(
         ) from err
 
 
-@router.get(
-    "/reviewable",
-    summary="Get a list of proposals by status",
-    dependencies=[
+@router.get("/reviewable", summary="Get a list of proposals by status")
+def get_proposals_by_status(
+    auth: Annotated[
+        AuthContext,
         Permissions(
-            roles=[Role.SW_ENGINEER, PrslRole.OPS_PROPOSAL_ADMIN],
-            scopes=[Scope.PHT_READ],
-        )
+            roles={Role.ANY},
+            scopes={Scope.PHT_READWRITE},
+        ),
     ],
-)
-def get_proposals_by_status() -> list[Proposal]:
+) -> list[Proposal]:
     """
     Function that requests to GET /prsls/reviewable are mapped to.
 
     Retrieves the Proposals from the
-    underlying data store, if available
+    underlying data store based on the role/group, if available
     Return proposals, preferring UNDER_REVIEW over SUBMITTED.
     One latest proposal per prsl_id.
 
@@ -165,23 +166,69 @@ def get_proposals_by_status() -> list[Proposal]:
         list[Proposal]
 
     """
+    # TODO: clean up the repetitions of proposal query
     logger.debug("GET PROPOSAL status")
 
-    preferred_statuses = [ProposalStatus.UNDER_REVIEW, ProposalStatus.SUBMITTED]
-    picked_by_id: OrderedDict[str, Proposal] = OrderedDict()
+    roles = set(getattr(auth, "roles", ()))
+    groups = set(getattr(auth, "groups", ()))
+
+    has_role = Role.SW_ENGINEER in roles
+    is_admin = PrslRole.OPS_PROPOSAL_ADMIN in groups
+    is_chair = PrslRole.OPS_REVIEW_CHAIR in groups
+    has_review_group = (
+        PrslRole.SCIENCE_REVIEWER in groups or PrslRole.TECHNICAL_REVIEWER in groups
+    )
+
+    if not (has_role or is_admin or is_chair or has_review_group):
+        logger.info("No access roles/groups; returning 0 proposals.")
+        return []
+
+    def _latest_by_status(uow, status) -> list["Proposal"]:
+
+        return (
+            get_latest_entity_by_id(
+                uow.prsls.query(CustomQuery(status=status)), "prsl_id"
+            )
+            or []
+        )
+
+    def _filter_by_prsl_ids(
+        proposals: list["Proposal"], ids: set[str]
+    ) -> list["Proposal"]:
+        if not ids:
+            return []
+        return [p for p in proposals if getattr(p, "prsl_id", None) in ids]
 
     with oda.uow() as uow:
-        for status in preferred_statuses:
-            rows = uow.prsls.query(CustomQuery(status=status))
-            for proposal in rows:
-                # only take latest status per prsl_id
-                if proposal.prsl_id not in picked_by_id:
-                    picked_by_id[proposal.prsl_id] = proposal
+        if has_role or is_admin:
+            latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
+            latest_submitted = _latest_by_status(uow, ProposalStatus.SUBMITTED)
+            # TODO: filter by panel_prsl_ids intersection
+            proposals = merge_latest_with_preference(
+                latest_under_review, latest_submitted
+            )
 
-    proposals = list(picked_by_id.values())
+        elif is_chair:
+            latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
+            panel_prsl_ids = get_panel_prsl_ids(uow, SV_NAME)
+            proposals = _filter_by_prsl_ids(latest_under_review, panel_prsl_ids)
+
+        else:
+            review_prsl_ids = get_reviewer_prsl_ids(uow, auth.user_id)
+            if not review_prsl_ids:
+                logger.info("Reviewer has no reviews; returning 0 proposals.")
+                return []
+            latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
+            proposals = _filter_by_prsl_ids(latest_under_review, review_prsl_ids)
+
     logger.info(
-        "Retrieved %d proposals with preference of UNDER_REVIEW over SUBMITTED",
+        "Retrieved %d proposals for %s",
         len(proposals),
+        (
+            "admin/sw_engineer"
+            if (has_role or is_admin)
+            else ("review_chair" if is_chair else "reviewer")
+        ),
     )
     return proposals
 

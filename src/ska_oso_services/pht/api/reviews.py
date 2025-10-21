@@ -94,12 +94,7 @@ def get_reviews_for_user(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={
-                Role.SW_ENGINEER,
-                PrslRole.OPS_PROPOSAL_ADMIN,
-                Role.OPS_REVIEWER_SCIENCE,
-                Role.OPS_REVIEWER_TECHNICAL,
-            },
+            roles={Role.ANY},
             scopes={Scope.PHT_READ},
         ),
     ],
@@ -110,11 +105,15 @@ def get_reviews_for_user(
     """
 
     logger.debug("GET Review LIST query for the user: %s", auth.user_id)
-    is_allowed = (Role.SW_ENGINEER in auth.roles) or (
-        PrslRole.OPS_PROPOSAL_ADMIN in auth.roles
+    groups = getattr(auth, "groups", set())
+
+    has_role = Role.SW_ENGINEER in getattr(auth, "roles", set())
+    has_group = (
+        PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
     )
+
     with oda.uow() as uow:
-        if is_allowed:
+        if has_group or has_role:
             rows = get_latest_entity_by_id(uow.rvws.query(CustomQuery()), "review_id")
         else:
             query_param = CustomQuery(reviewer_id=auth.user_id)
@@ -186,9 +185,7 @@ def update_review(
                 raise BadRequestError(
                     detail="You do not have permission to update this review."
                 )
-            updated_review = uow.rvws.add(
-                review, auth.user_id
-            )  # Add is used for update
+            updated_review = uow.rvws.add(review, auth.user_id)
             uow.commit()
             logger.info("Review %s updated successfully", review_id)
             return updated_review

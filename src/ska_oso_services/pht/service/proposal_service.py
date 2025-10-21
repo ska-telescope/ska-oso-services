@@ -1,11 +1,13 @@
 import logging
+from collections import OrderedDict
 from datetime import datetime, timezone
+from typing import Iterable
 
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm.proposal import Proposal, ProposalAccess
 
 from ska_oso_services.common.error_handling import ForbiddenError
-from ska_oso_services.pht.utils.constants import ACCESS_ID
+from ska_oso_services.pht.utils.constants import ACCESS_ID, SV_NAME
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,6 @@ def transform_update_proposal(data: Proposal) -> Proposal:
     - If prsl_id is "new", sets it to "12345".
     - Sets submitted_on to now if submitted_by is provided.
     - Sets status based on presence of submitted_on.
-    - Extracts investigator_refs from info.investigators.
     """
 
     # TODO : rethink the logic here - may need to move to UI
@@ -29,16 +30,14 @@ def transform_update_proposal(data: Proposal) -> Proposal:
         submitted_on = data.submitted_on
         status = "submitted" if submitted_on else "draft"
 
-    investigator_refs = [inv.user_id for inv in data.info.investigators]
-
     return Proposal(
         prsl_id=data.prsl_id,
         cycle=data.cycle,
         submitted_by=data.submitted_by,
         submitted_on=submitted_on,
         status=status,
-        info=data.info,
-        investigator_refs=investigator_refs,
+        proposal_info=data.proposal_info,
+        observation_info=data.observation_info,
     )
 
 
@@ -99,3 +98,80 @@ def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
     rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
     rows = get_latest_entity_by_id(rows_init, ACCESS_ID) or []
     return sorted({row.prsl_id for row in rows})
+
+
+def merge_latest_with_preference(
+    *proposal_lists: Iterable["Proposal"],
+) -> list["Proposal"]:
+    """
+    Combine proposal list and select a preference of "under review" to "submitted"
+    """
+    picked: OrderedDict[str, "Proposal"] = OrderedDict()
+    for proposals in proposal_lists:
+        for proposal in proposals or []:
+            prsl_id = getattr(proposal, "prsl_id", None)
+            if prsl_id and prsl_id not in picked:
+                picked[prsl_id] = proposal
+    return list(picked.values())
+
+
+# def get_reviewer_prsl_ids(uow, reviewer_id: str) -> set[str]:
+#     """
+#     Get all proposals a reviewer can access
+#     """
+#     rows = uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)) or []
+#     # TODO: extend the below to account for multiple panels.
+#     # It will not be needed once we implement delete option in ODA
+#     # such that once a reviewer is removed from a panel, the review created is deleted
+#     panel_prsl_id = uow.panels.query(CustomQuery(name="Science verification"))[
+#         0
+#     ].proposals
+#     return {getattr(r, "prsl_id", None) for r in rows if getattr(r, "prsl_id", None)}
+
+
+def get_panel_prsl_ids(uow, panel_name: str) -> set[str]:
+    """
+    Return the set of prsl_id values assigned to the *latest* panel
+    matching `panel_name`. Empty set if not found.
+    """
+    refs = (
+        get_latest_entity_by_id(
+            uow.panels.query(CustomQuery(name=panel_name)),
+            "panel_id",
+        )
+        or []
+    )
+    if not refs:
+        return set()
+
+    panel = uow.panels.get(refs[0].panel_id)
+    if not panel:
+        return set()
+
+    return {p.prsl_id for p in (panel.proposals or []) if getattr(p, "prsl_id", None)}
+
+
+def get_reviewer_prsl_ids(uow, reviewer_id: str, panel_name: str = SV_NAME) -> set[str]:
+    """
+    Return proposal IDs that are BOTH:
+      • reviewed by `reviewer_id` (latest per review_id), AND
+      • present on the given panel (latest by panel_id).
+    """
+    # Reviews → latest per review_id (avoid boolean coercion on query object)
+    latest_reviews = (
+        get_latest_entity_by_id(
+            uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)),
+            "review_id",
+        )
+        or []
+    )
+
+    review_ids = {r.prsl_id for r in latest_reviews if getattr(r, "prsl_id", None)}
+    if not review_ids:
+        return set()
+
+    panel_ids = get_panel_prsl_ids(uow, panel_name)
+    if not panel_ids:
+        return set()
+
+    return review_ids & panel_ids
