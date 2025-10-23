@@ -184,8 +184,8 @@
 		],
 		"data_product_sdps": [
 			{
-				"data_products_sdp_id": "SDP-1",
-				"options": [
+				"data_product_id": "SDP-1",
+				"products": [
 					"1",
 					"2",
 					"5"
@@ -198,7 +198,7 @@
 					"value": 0.0,
 					"unit": "deg"
 				},
-				"pixel_size": {
+				"image_cellsize": {
 					"value": 0.0,
 					"unit": "deg"
 				},

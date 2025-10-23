@@ -15,7 +15,7 @@ from ska_oso_pdm.proposal_management.review import (
 )
 
 from ska_oso_services.common.error_handling import BadRequestError
-from ska_oso_services.pht.models.schemas import PanelCreateResponse
+from ska_oso_services.pht.models.schemas import PanelAssignResponse
 from ska_oso_services.pht.utils.pht_helper import (
     generate_entity_id,
     get_latest_entity_by_id,
@@ -24,18 +24,18 @@ from ska_oso_services.pht.utils.pht_helper import (
 logger = logging.getLogger(__name__)
 
 
-def build_panel_response(panels_by_name: dict[str, Panel]) -> list[PanelCreateResponse]:
-    """
-    Build a summary for each panel: id, name, proposal_count.
-    This is used when a panels are created based on science categories.
-    """
+def build_assignment_response(
+    updates: dict[str, tuple[Panel, int]]
+) -> list[PanelAssignResponse]:
+    """Convert name -> (panel, added_count) to response list."""
     return [
-        PanelCreateResponse(
+        PanelAssignResponse(
             panel_id=panel.panel_id,
             name=name,
-            proposal_count=len(panel.proposals or []),
+            proposals_added=added,
+            total_proposals_after=len(panel.proposals or []),
         )
-        for name, panel in panels_by_name.items()
+        for name, (panel, added) in updates.items()
     ]
 
 
@@ -87,123 +87,51 @@ def group_proposals_by_science_category(
     return grouped_by_category
 
 
-def upsert_panel(
+def assign_to_existing_panel(
     *,
     uow,
     auth,
-    panel_name: str,
-    science_reviewers: list | None,
-    technical_reviewers: list | None,
+    panel: Panel,
     proposals: Iterable,
-) -> Panel:
+    sci_reviewers: list | None,
+    tech_reviewers: list | None,
+) -> tuple[Panel, int, list[str]]:
     """
-    Existing panel:
-      • For proposals already on the panel:
-          - If status != UNDER_REVIEW, set UNDER_REVIEW and persist
-          --- just for extra caution.
-      • For new proposals (by prsl_id comparison against existing assignments):
-          - Append a ProposalAssignment first, then set status to
-          UNDER_REVIEW and persist.
+    Assign only to an existing panel; never create.
+    Returns (persisted_panel, added_count, added_prsl_ids).
 
-    No existing panel:
-      • Create it; for every incoming proposal:
-          - Append ProposalAssignment first, then set status to
-          UNDER_REVIEW and persist.
-
-    NOTE: No dedup of incoming proposals; the data model (PDM) handles this.
-        The assumption here is that only Science Verification or Proposals
-        and not both. We also need to update it here such that even when
-        SV panel exist, it should use the OSD to determine the panel to use
-        and also handle the overlap situations.
-
-    Args:
-        uow: The unit of work.
-        panel_name (str): The name of the panel to create or update.
-        science_reviewers (list): List of science reviewers.
-        technical_reviewers (list): List of technical reviewers.
-        proposal_list (list): List of proposal objects to assign to the panel.
-
+    IMPORTANT: Does NOT change proposal statuses. Caller must update statuses
+    AFTER committing this panel change.
     """
-    assigned_at_utc = datetime.now(timezone.utc)
+    # Overwrite reviewers only if provided (send [] explicitly if you want to clear)
+    if sci_reviewers is not None:
+        panel.sci_reviewers = sci_reviewers
+    if tech_reviewers is not None:
+        panel.tech_reviewers = tech_reviewers
 
-    # Load existing panel, if any
-    existing_panels = get_latest_entity_by_id(
-        uow.panels.query(CustomQuery(name=panel_name)), "panel_id"
-    )
-    panel: Panel | None = existing_panels[0] if existing_panels else None
+    existing_ids = {
+        (e["prsl_id"] if isinstance(e, dict) else getattr(e, "prsl_id", None))
+        for e in (panel.proposals or [])
+    }
 
-    science = science_reviewers or []
-    technical = technical_reviewers or []
+    assigned_at = datetime.now(timezone.utc)
+    to_add_assignments: list[ProposalAssignment] = []
+    to_add_ids: list[str] = []
 
-    def _get_assignment_prsl_id(entry):
-        return (
-            entry["prsl_id"]
-            if isinstance(entry, dict)
-            else getattr(entry, "prsl_id", None)
-        )
-
-    if panel:
-        # prsl_ids currently assigned to this panel
-        existing_ids = {
-            prsl_id
-            for e in (panel.proposals or [])
-            if (prsl_id := _get_assignment_prsl_id(e))
-        }
-
-        for incoming in proposals or []:
-            prsl_id = getattr(incoming, "prsl_id", None)
-            if not prsl_id:
-                continue
-
-            if prsl_id in existing_ids:
-                # Already on panel → ensure UNDER_REVIEW
-                existing_prsl: Proposal = uow.prsls.get(prsl_id)  # assumed to exist
-                if existing_prsl.status != ProposalStatus.UNDER_REVIEW:
-                    existing_prsl.status = ProposalStatus.UNDER_REVIEW
-                    uow.prsls.add(existing_prsl, auth.user_id)
-                    logger.info(
-                        "Proposal %s set to UNDER_REVIEW (already in panel '%s')",
-                        prsl_id,
-                        panel_name,
-                    )
-            else:
-                # New to this panel → assign first, then set status & persist
-                panel.proposals.append(
-                    ProposalAssignment(prsl_id=prsl_id, assigned_on=assigned_at_utc)
-                )
-                # assumed to exist else willnot be in panel -risky in a way
-                existing_prsl: Proposal = uow.prsls.get(prsl_id)
-                if existing_prsl.status != ProposalStatus.UNDER_REVIEW:
-                    existing_prsl.status = ProposalStatus.UNDER_REVIEW
-                    uow.prsls.add(existing_prsl)
-                    logger.info(
-                        "Proposal %s set to UNDER_REVIEW and added to panel '%s'",
-                        prsl_id,
-                        panel_name,
-                    )
-
-        return uow.panels.add(panel, auth.user_id)
-
-    # No existing panel → create it; assign proposals, then set status for each
-    # This part of the code may not be needed - discuss logic with SciOps
-    assignments: list[ProposalAssignment] = []
-    for incoming in proposals or []:
-        prsl_id = getattr(incoming, "prsl_id", None)
-        if not prsl_id:
+    for inc in proposals or []:
+        prsl_id = getattr(inc, "prsl_id", None)
+        if not prsl_id or prsl_id in existing_ids:
             continue
-        assignments.append(
-            ProposalAssignment(prsl_id=prsl_id, assigned_on=assigned_at_utc)
+        to_add_assignments.append(
+            ProposalAssignment(prsl_id=prsl_id, assigned_on=assigned_at)
         )
+        to_add_ids.append(prsl_id)
 
-    new_panel = Panel(
-        panel_id=generate_entity_id("panel"),
-        name=panel_name,
-        sci_reviewers=science,
-        tech_reviewers=technical,
-        proposals=assignments,
-    )
-    logger.info("Creating panel '%s' with %d proposal(s)", panel_name, len(assignments))
-    return uow.panels.add(new_panel, auth.user_id)
+    if to_add_assignments:
+        panel.proposals = (panel.proposals or []) + to_add_assignments
+
+    persisted: Panel = uow.panels.add(panel, auth.user_id)
+    return persisted, len(to_add_assignments), to_add_ids
 
 
 def ensure_submitted_proposals_under_review(uow, auth, prsl_ids: Iterable[str]) -> None:

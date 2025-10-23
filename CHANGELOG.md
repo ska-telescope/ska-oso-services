@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* [BREAKING] Removes `/panels/auto-create` and Adds `/panels/assignments` and `panels/generate`
+* Updates ODA to v12.1.0
 
 8.0.0
 ***********

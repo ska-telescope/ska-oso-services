@@ -103,11 +103,6 @@ def join_proposals_panels_reviews_decisions(
                             else None
                         ),
                         comments=review.comments if review else None,
-                        review_submitted_on=(
-                            review.submitted_on.isoformat()
-                            if review and review.submitted_on
-                            else None
-                        ),
                         decision_id=decision.prsl_id if decision else None,
                         recommendation=decision.recommendation if decision else None,
                         decision_status=decision.status if decision else None,

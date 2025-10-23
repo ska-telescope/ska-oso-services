@@ -80,8 +80,6 @@ class TestTransformUpdateProposal:
         out = svc.transform_update_proposal(incoming)
         t1 = datetime.now(timezone.utc)
 
-        assert out.investigator_refs == case["investigator_ids"]
-
         # submitted_on logic
         if case["expected_submitted_on"] == "NOW":
             ts = _parse_iso_z(_to_iso_z(out.submitted_on))

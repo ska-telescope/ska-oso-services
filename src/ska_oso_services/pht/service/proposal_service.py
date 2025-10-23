@@ -20,7 +20,6 @@ def transform_update_proposal(data: Proposal) -> Proposal:
     - If prsl_id is "new", sets it to "12345".
     - Sets submitted_on to now if submitted_by is provided.
     - Sets status based on presence of submitted_on.
-    - Extracts investigator_refs from proposal_info.investigators.
     """
 
     # TODO : rethink the logic here - may need to move to UI
@@ -31,8 +30,6 @@ def transform_update_proposal(data: Proposal) -> Proposal:
         submitted_on = data.submitted_on
         status = "submitted" if submitted_on else "draft"
 
-    investigator_refs = [inv.user_id for inv in data.proposal_info.investigators]
-
     return Proposal(
         prsl_id=data.prsl_id,
         cycle=data.cycle,
@@ -41,7 +38,6 @@ def transform_update_proposal(data: Proposal) -> Proposal:
         status=status,
         proposal_info=data.proposal_info,
         observation_info=data.observation_info,
-        investigator_refs=investigator_refs,
     )
 
 
