@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Add calibration strategy module with default observatory strategy and lookup
 * [BREAKING] Removes `/panels/auto-create` and Adds `/panels/assignments` and `panels/generate`
 * Updates ODA to v12.1.1
 * Removes review_submitted_on from report
