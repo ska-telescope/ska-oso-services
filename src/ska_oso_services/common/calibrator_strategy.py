@@ -13,6 +13,7 @@ class CalibrationWhen(str, Enum):
 
 class CalibratorChoice(str, Enum):
     CLOSEST = "closest"
+    HIGHEST_ELEVATION = "highest_elevation"
 
 
 class CalibrationStrategy(AppModel):
@@ -42,7 +43,13 @@ OBSERVATORY_CALIBRATION_STRATEGIES: list[CalibrationStrategy] = [
         when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
         calibrator_choice=CalibratorChoice.CLOSEST,
         duration_ms=timedelta(minutes=10),
-    )
+    ),
+    CalibrationStrategy(
+        calibration_strategy_id="highest_elevation",
+        when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
+        calibrator_choice=CalibratorChoice.HIGHEST_ELEVATION,
+        duration_ms=timedelta(minutes=10),
+    ),
 ]
 
 
