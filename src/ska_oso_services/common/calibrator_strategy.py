@@ -37,20 +37,21 @@ class CalibrationStrategy(AppModel):
     calibrator_choice: CalibratorChoice
 
 
-OBSERVATORY_CALIBRATION_STRATEGIES: dict[str, CalibrationStrategy] = {strat.calibration_strategy_id: strat
+OBSERVATORY_CALIBRATION_STRATEGIES: dict[str, CalibrationStrategy] = {
+    strat.calibration_strategy_id: strat
     for strat in (
-    CalibrationStrategy(
-        calibration_strategy_id="default",
-        when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
-        calibrator_choice=CalibratorChoice.CLOSEST,
-        duration_ms=timedelta(minutes=10),
-    ),
-    CalibrationStrategy(
-        calibration_strategy_id="highest_elevation",
-        when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
-        calibrator_choice=CalibratorChoice.HIGHEST_ELEVATION,
-        duration_ms=timedelta(minutes=10),
-    ),
+        CalibrationStrategy(
+            calibration_strategy_id="default",
+            when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
+            calibrator_choice=CalibratorChoice.CLOSEST,
+            duration_ms=timedelta(minutes=10),
+        ),
+        CalibrationStrategy(
+            calibration_strategy_id="highest_elevation",
+            when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
+            calibrator_choice=CalibratorChoice.HIGHEST_ELEVATION,
+            duration_ms=timedelta(minutes=10),
+        ),
     )
 }
 
@@ -66,4 +67,10 @@ def lookup_observatory_calibration_strategy(
     :returns: the CalibrationStrategy with the given identifier
     :raises: KeyError is the calibration_strategy_id does not exist
     """
-   return OBSERVATORY_CALIBRATION_STRATEGIES[calibration_strategy_id]
+    try:
+        return OBSERVATORY_CALIBRATION_STRATEGIES[calibration_strategy_id]
+    except KeyError as err:
+        raise ValueError(
+            f"Observatory Calibration Strategy with calibration_strategy_id "
+            f"{err} not found."
+        )
