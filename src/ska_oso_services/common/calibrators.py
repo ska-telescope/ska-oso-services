@@ -5,13 +5,13 @@ Module that returns the calibrators
 from pathlib import Path
 from typing import List
 
-from astropy.io import ascii
+from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from ska_oso_pdm import ICRSCoordinates, RadialVelocity, Target
 
 CALIBRATOR_TABLE_PATH = Path(__file__).parents[0] / "static" / "calibrator_table.ecsv"
 
-calibrator_table = ascii.read(CALIBRATOR_TABLE_PATH)
+calibrator_table = astropy_ascii.read(CALIBRATOR_TABLE_PATH)
 
 
 def to_pdm_target(table: QTable) -> List[Target]:

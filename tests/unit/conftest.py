@@ -7,7 +7,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 import pytest
-from astropy.io import ascii
+from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -32,7 +32,7 @@ def dummy_calibrator_table() -> QTable:
     path_to_test_table = (
         Path(__file__).parents[0] / "files" / "dummy_calibrator_table.ecsv"
     )
-    return ascii.read(path_to_test_table)
+    return astropy_ascii.read(path_to_test_table)
 
 
 @pytest.fixture(scope="module", name="test_app")
