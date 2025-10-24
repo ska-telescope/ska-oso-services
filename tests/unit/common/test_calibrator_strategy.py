@@ -24,10 +24,6 @@ def test_observatory_calibrator_strategy_lookup_highest_elevation():
 
 def test_observatory_calibrator_strategy_lookup_not_found():
 
-    with pytest.raises(KeyError) as excinfo:
+    with pytest.raises(KeyError, matches="Observatory Calibration Strategy with calibration_strategy_id 'fake_id' not found."):
         lookup_observatory_calibration_strategy("fake_id")
-    assert (
-        str(excinfo.value)
-        == "'Observatory Calibration Strategy with calibration_strategy_id "
-        "fake_id not found.'"
     )

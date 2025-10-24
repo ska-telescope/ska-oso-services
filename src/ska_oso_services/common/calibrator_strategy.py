@@ -37,7 +37,8 @@ class CalibrationStrategy(AppModel):
     calibrator_choice: CalibratorChoice
 
 
-OBSERVATORY_CALIBRATION_STRATEGIES: list[CalibrationStrategy] = [
+OBSERVATORY_CALIBRATION_STRATEGIES: dict[str, CalibrationStrategy] = {strat.calibration_strategy_id: strat
+    for strat in (
     CalibrationStrategy(
         calibration_strategy_id="default",
         when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
@@ -50,7 +51,8 @@ OBSERVATORY_CALIBRATION_STRATEGIES: list[CalibrationStrategy] = [
         calibrator_choice=CalibratorChoice.HIGHEST_ELEVATION,
         duration_ms=timedelta(minutes=10),
     ),
-]
+    )
+}
 
 
 def lookup_observatory_calibration_strategy(
@@ -64,14 +66,4 @@ def lookup_observatory_calibration_strategy(
     :returns: the CalibrationStrategy with the given identifier
     :raises: KeyError is the calibration_strategy_id does not exist
     """
-    try:
-        return [
-            strategy
-            for strategy in OBSERVATORY_CALIBRATION_STRATEGIES
-            if strategy.calibration_strategy_id == calibration_strategy_id
-        ][0]
-    except IndexError:
-        raise KeyError(
-            f"Observatory Calibration Strategy with calibration_strategy_id "
-            f"{calibration_strategy_id} not found."
-        )
+   return OBSERVATORY_CALIBRATION_STRATEGIES[calibration_strategy_id]
