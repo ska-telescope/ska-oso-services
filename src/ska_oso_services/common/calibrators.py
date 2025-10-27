@@ -14,7 +14,7 @@ CALIBRATOR_TABLE_PATH = Path(__file__).parents[0] / "static" / "calibrator_table
 calibrator_table = astropy_ascii.read(CALIBRATOR_TABLE_PATH)
 
 
-def to_pdm_target(table: QTable) -> List[Target]:
+def to_pdm_targets(table: QTable) -> List[Target]:
     """
     function to return a list of PDM Target from an AstroPy QTable
     """
