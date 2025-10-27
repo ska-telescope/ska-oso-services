@@ -68,6 +68,10 @@ deploy-dev-environment:
   needs:
     - oci-image-build
 
+deploy-integration-environment:
+  variables:
+    K8S_CHART_PARAMS: "-f charts/ska-oso-services-umbrella/values-integration.yaml"  # Use integration values file while appending to any other params
+
 test-dev-environment:
   <<: *dev_env
 
