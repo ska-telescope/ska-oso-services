@@ -6,8 +6,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Adds a `/calibrators` endpoint that returns a list of approved LOW Calibrator targets
+
+9.0.0
+***********
+* Add calibration strategy module with default observatory strategy and lookup
 * [BREAKING] Removes `/panels/auto-create` and Adds `/panels/assignments` and `panels/generate`
-* Updates ODA to v12.1.0
+* Updates ODA to v12.1.1
+* Removes review_submitted_on from report
 
 8.0.0
 ***********
