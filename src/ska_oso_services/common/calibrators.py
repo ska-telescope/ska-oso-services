@@ -8,6 +8,7 @@ from typing import List
 from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from ska_oso_pdm import ICRSCoordinates, RadialVelocity, Target
+from ska_oso_services.common.calibrator_strategy import CalibratorChoice
 
 CALIBRATOR_TABLE_PATH = Path(__file__).parents[0] / "static" / "calibrator_table.ecsv"
 
@@ -36,3 +37,10 @@ def to_pdm_targets(table: QTable) -> List[Target]:
         for row in table
     ]
     return targets
+
+
+def find_appropriate_calibrator(target: Target, calibrators: list[Target], discriminator: CalibratorChoice) -> Target:
+    """
+    function to find the appropriate calibrator
+    """
+    pass
