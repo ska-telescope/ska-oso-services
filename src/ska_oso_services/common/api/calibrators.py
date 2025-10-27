@@ -1,5 +1,4 @@
 import logging
-from typing import Any
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
@@ -19,7 +18,7 @@ router = APIRouter()
     response_model=list[Target],
     dependencies=[Permissions(roles={Role.ANY}, scopes=Scope)],
 )
-def get_calibrators() -> Any:
+def get_calibrators() -> list[Target]:
     """
     function to return a list of PDM Target objects derived from an AstroPy QTable
     of suitable calibrators
