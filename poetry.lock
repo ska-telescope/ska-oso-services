@@ -104,6 +104,29 @@ files = [
 typing-extensions = {version = ">=4", markers = "python_version < \"3.11\""}
 
 [[package]]
+name = "astroplan"
+version = "0.10.1"
+description = "Observation planning package for astronomers"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "astroplan-0.10.1.tar.gz", hash = "sha256:39d97c3377e1630abff3a94d8c956980f77a3e809e27a0376dd7d30abe3b6959"},
+]
+
+[package.dependencies]
+astropy = ">=4"
+numpy = ">=1.17"
+pytz = "*"
+six = "*"
+
+[package.extras]
+all = ["astroquery", "matplotlib (>=1.4)"]
+docs = ["astroquery", "matplotlib (>=1.4)", "sphinx-astropy[confv2]", "sphinx-rtd-theme"]
+plotting = ["astroquery", "matplotlib (>=1.4)"]
+test = ["pytest-astropy", "pytest-mpl"]
+
+[[package]]
 name = "astropy"
 version = "6.1.7"
 description = "Astronomy and astrophysics core library"
@@ -2696,6 +2719,18 @@ files = [
 ]
 
 [[package]]
+name = "pytz"
+version = "2025.2"
+description = "World timezone definitions, modern and historical"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pytz-2025.2-py2.py3-none-any.whl", hash = "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00"},
+    {file = "pytz-2025.2.tar.gz", hash = "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3"},
+]
+
+[[package]]
 name = "pyvo"
 version = "1.7.1"
 description = "Astropy affiliated package for accessing Virtual Observatory data and services"
@@ -4374,4 +4409,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "5be32702eaa17e888239de4471e7f23a6ec54786cdd04dfd6b218f2527e123cf"
+content-hash = "de5163ec8b8133b1b29fa8aa1af4abda393440b99804d7b6edc2bb4a22bb34c5"
