@@ -89,3 +89,4 @@ class ProposalReportResponse(AppModel):
     decision_on: str | None = None
     decision_status: str | None = None
     review_type: str | None = None
+    location: str|None = None

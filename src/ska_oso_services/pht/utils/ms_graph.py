@@ -43,7 +43,7 @@ def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
 
     email = claims.get("upn")
 
-    return given, family, email
+    return given, family, email,
 
 
 def make_graph_call(url, pagination=True):

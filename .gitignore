@@ -18,6 +18,7 @@ coverage.xml
 docs/_build
 docs/apidocs
 
+charts/ska-oso-services/templates/pht-secrets.yaml
 venv
 
 # ide
