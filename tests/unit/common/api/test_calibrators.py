@@ -91,7 +91,7 @@ api_response = [
 
 
 class TestCalibrators:
-    @mock.patch("ska_oso_services.common.api.calibrators.to_pdm_target")
+    @mock.patch("ska_oso_services.common.api.calibrators.to_pdm_targets")
     def test_success(
         self,
         mock_to_pdm_target,
