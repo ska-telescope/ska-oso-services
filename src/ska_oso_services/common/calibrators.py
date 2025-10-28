@@ -11,7 +11,6 @@ from astropy.coordinates import AltAz, Angle, EarthLocation
 from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from astropy.time import Time
-from pydantic import BaseModel
 from ska_oso_pdm import ICRSCoordinates, RadialVelocity, Target, TelescopeType
 
 from ska_oso_services.common.calibrator_strategy import (
@@ -23,8 +22,6 @@ from ska_oso_services.common.calibrator_strategy import (
 CALIBRATOR_TABLE_PATH = Path(__file__).parents[0] / "static" / "calibrator_table.ecsv"
 
 calibrator_table = astropy_ascii.read(CALIBRATOR_TABLE_PATH)
-
-## creating a
 
 
 def to_pdm_targets(table: QTable) -> List[Target]:
@@ -70,7 +67,9 @@ def find_appropriate_calibrator(
             )
         case _:
             raise NotImplementedError(
-                f"this calibration strategy is not implemented for {strategy.calibration_strategy_id}"
+                f"this calibration strategy is not implemented for {
+                    strategy.calibration_strategy_id
+                }"
             )
 
     return calibrator
@@ -106,14 +105,15 @@ def find_highest_elevation_calibrator(
     telescope: TelescopeType,
 ) -> list[tuple[Angle, Target, CalibrationWhen]]:
     """
-    function to find the calibrator with the highest elevation when the target is observed
+    function to find the calibrator with the highest elevation when
+    the target is observed
 
     This assumes that the target is observed as it crosses the meridian
     """
 
     coords = target.reference_coordinate.to_sky_coord()
 
-    ## first setting the location
+    # first setting the location
     match telescope:
         case TelescopeType.SKA_LOW:
             location = EarthLocation.of_site("SKA Low")
@@ -124,13 +124,13 @@ def find_highest_elevation_calibrator(
 
     observer = Observer(location=location)
 
-    ## then calculate the transit time
+    # then calculate the transit time
     target_transit_time = observer.target_meridian_transit_time(
         time=Time.now(), target=coords, which="next"
     )
 
     highest_elevation_calibrators = []
-    ## then finding the calibrators with the highest elevation at this transit time
+    # then finding the calibrators with the highest elevation at this transit time
     for when in strategy.when:
         offset_time = (scan_duration - strategy.duration_ms) / 2.0
         match when:
@@ -140,7 +140,9 @@ def find_highest_elevation_calibrator(
                 calibrator_obs_time = target_transit_time + offset_time
             case _:
                 raise NotImplementedError(
-                    f"this calibration strategy is not implemented for {strategy.calibration_strategy_id}"
+                    f"this calibration strategy is not implemented for {
+                        strategy.calibration_strategy_id
+                    }"
                 )
 
         elevation = [
