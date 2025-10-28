@@ -83,17 +83,12 @@ def auto_assign_to_panel(
     """
     Auto assign proposals to panels:
     - Check If science verification (SV) exist and assign all submiited proposals.
-    - If existing SV panel, update reviewers and add any new proposals.
-    - Else: Create panels for PANEL_NAME_POOL, which is the science categories
-        (to be pulled in from OSD when available) and assign proposals by
-        science_category using the field science category in the proposal.
-    - If existing panel for a science category, update reviewers and add
-        any new proposals.
-    - If no proposals for a category, still create the panel with no assignments.
-    Note: This endpoint may be split into two in the future for clarity
-        1. Auto-create-panel
-        2. Auto-assign-proposals-to-panels
-        Additionally, we will need to use cycle (Match the cycle in the
+    - Else: Assign proposals to panels based on the science categories
+        (to be pulled in from OSD when available) using the field science category in the proposal.
+    - Also check that reviews are created for the proposal assigned on this level.
+        We need to harmonize some functions here liek the reviews and decison creation to a common place,
+        given that it is also used the PUT endpoint.
+    Note: This endpoint will need to use cycle (Match the cycle in the
         proposal to the panel) here to detrrmine the appropriate panel to
         assign a proposal to. This will soon be a problem after the first
         cycle and when we get to multiple cycles as panels
@@ -107,6 +102,12 @@ def auto_assign_to_panel(
             )
             or []
         )
+        proposal_ids = [
+            proposal if isinstance(proposal, str) else getattr(proposal, "prsl_id")
+            for proposal in (submitted_proposal_refs or [])
+        ]
+        updated_review_ids: list[str] = []
+        updated_decison_ids: list[str] = []
         name_raw = (param or "").strip()
 
         if SV_NAME.casefold() in name_raw.casefold():
@@ -117,8 +118,8 @@ def auto_assign_to_panel(
 
             if sv_panel_refs:
                 sv_panel_id = sv_panel_refs[0].panel_id
-                science_reviewers = sv_panel_refs[0].sci_reviewers or []
-                technical_reviewers = sv_panel_refs[0].tech_reviewers or []
+                # science_reviewers = sv_panel_refs[0].sci_reviewers or []
+                # technical_reviewers = sv_panel_refs[0].tech_reviewers or []
 
                 # If no submitted proposals do nothing.
 
@@ -145,8 +146,44 @@ def auto_assign_to_panel(
                         sv_panel.proposals or []
                     ) + sv_assignments_to_add
 
-                sv_panel.sci_reviewers = science_reviewers
-                sv_panel.tech_reviewers = technical_reviewers
+                # sv_panel.sci_reviewers = science_reviewers
+                # sv_panel.tech_reviewers = technical_reviewers
+
+                # TODO: move the reviews and decison creation to a common function
+                # to be used here and the PUT endpoint.
+                
+                # Panel Decision for every proposal in the panel
+                for prsl_id in proposal_ids:
+                    pnld_id = ensure_decision_exist_or_create(uow, sv_panel, prsl_id)
+                    updated_decison_ids.append(pnld_id)
+
+                # Technical Review for every (technical reviewer × proposal) pair
+                if sv_panel.tech_reviewers:
+                    for tech in sv_panel.tech_reviewers:
+                        tech_reviewer_id = tech.reviewer_id
+                        for prsl_id in proposal_ids:
+                            rvw_ids = ensure_review_exist_or_create(
+                                uow,
+                                sv_panel,
+                                kind="Technical Review",
+                                reviewer_id=tech_reviewer_id,
+                                proposal_id=prsl_id,
+                            )
+                            updated_review_ids.append(rvw_ids)
+
+                # Science Reviews for every (science reviewer × proposal) pair
+                if sv_panel.sci_reviewers:
+                    for sci in sv_panel.sci_reviewers:
+                        sci_reviewer_id = sci.reviewer_id
+                        for prsl_id in proposal_ids:
+                            rvw_ids = ensure_review_exist_or_create(
+                                uow,
+                                sv_panel,
+                                kind="Science Review",
+                                reviewer_id=sci_reviewer_id,
+                                proposal_id=prsl_id,
+                            )
+                            updated_review_ids.append(rvw_ids)
 
                 persisted = uow.panels.add(sv_panel, auth.user_id)
 
