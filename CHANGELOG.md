@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+
+9.1.0
+***********
 * Adds a `/calibrators` endpoint that returns a list of approved LOW Calibrator targets
 
 9.0.0
