@@ -1,3 +1,4 @@
+from collections import defaultdict
 from itertools import chain
 from typing import Optional
 from urllib.parse import quote
@@ -31,39 +32,57 @@ def _get_array_class(proposal) -> str:
 
 _GRAPH_SELECT_OFFICE = "officeLocation"
 
-def _extract_pi_user_id(proposal: dict) -> Optional[str]:
+def _extract_pi_user_id(proposal) -> Optional[str]:
     """
-    Return the user_id (string) of the first principal investigator in proposal['investigators'].
-    Assumes investigators are ordered with your desired precedence.
-    Returns None if not found.
+    Return the user_id (string) of the first principal investigator.
+    Works for proposal objects with attributes or dict-like structure.
     """
 
-    for inv in proposal["investigators"]:
-        if isinstance(inv, dict) and inv.get("principal_investigator") is True:
-            uid = inv.get("user_id")
+    # Try attribute-style first: proposal.proposal_info.investigators or proposal.investigators
+    investigators = (
+        getattr(getattr(proposal, "proposal_info", None), "investigators", None)
+        or getattr(proposal, "investigators", None)
+        or []
+    )
+
+    for inv in investigators:
+        # handle dict OR object
+        principal_flag = (
+            inv.get("principal_investigator")
+            if isinstance(inv, dict)
+            else getattr(inv, "principal_investigator", None)
+        )
+
+        if principal_flag:
+            uid = (
+                inv.get("user_id")
+                if isinstance(inv, dict)
+                else getattr(inv, "user_id", None)
+            )
             if uid:
                 s = str(uid).strip()
                 if s:
                     return s
+
     return None
 
 
+def get_pi_office_location(proposal) -> Optional[str]:
+    """
+    Fetch the Microsoft Graph 'officeLocation' for the PI user.
+    """
 
-def get_pi_office_location(proposal: dict) -> Optional[str]:
-    """
-    Fetch the Microsoft Graph 'officeLocation' for the principal investigator only.
-    Returns the officeLocation string or None if not found/unset.
-    """
     uid = _extract_pi_user_id(proposal)
     if not uid:
         return None
 
     url = f"{MS_GRAPH_URL}/users/{quote(uid, safe='')}?$select={_GRAPH_SELECT_OFFICE}"
-    user = make_graph_call(url, pagination=False)  # expected to return dict or None
+    user = make_graph_call(url, pagination=False)  # dict or None expected
+
     if isinstance(user, dict):
         return user.get("officeLocation")
-    return None
 
+    return None
 
 
 
