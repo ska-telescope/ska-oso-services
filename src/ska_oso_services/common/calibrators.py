@@ -2,6 +2,7 @@
 Module that returns the calibrators
 """
 
+from abc import ABC
 from datetime import timedelta
 from pathlib import Path
 from typing import List
@@ -11,6 +12,7 @@ from astropy.coordinates import AltAz, Angle, EarthLocation
 from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from astropy.time import Time
+from pydantic import BaseModel, ConfigDict
 from ska_oso_pdm import ICRSCoordinates, RadialVelocity, Target, TelescopeType
 
 from ska_oso_services.common.calibrator_strategy import (
@@ -22,6 +24,33 @@ from ska_oso_services.common.calibrator_strategy import (
 CALIBRATOR_TABLE_PATH = Path(__file__).parents[0] / "static" / "calibrator_table.ecsv"
 
 calibrator_table = astropy_ascii.read(CALIBRATOR_TABLE_PATH)
+
+
+class BestCalibrator(BaseModel, ABC):
+    """
+    BaseClass to hold the calibrators chosen
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    calibrator: Target
+    when: CalibrationWhen
+
+
+class ClosestCalibrator(BestCalibrator):
+    """
+    class to hold the closest calibrators
+    """
+
+    separation: Angle
+
+
+class HighestCalibrator(BestCalibrator):
+    """
+    class to hold the highest calibrators
+    """
+
+    elevation: Angle
 
 
 def to_pdm_targets(table: QTable) -> List[Target]:
@@ -54,13 +83,13 @@ def find_appropriate_calibrator(
     strategy: CalibrationStrategy,
     scan_duration: timedelta | None = None,
     telescope: TelescopeType | None = None,
-) -> tuple[Angle, Target] | list[tuple[Angle, Target, CalibrationWhen]]:
+) -> list[ClosestCalibrator | HighestCalibrator]:
     """
     function to find the appropriate calibrator
     """
     match strategy.calibrator_choice:
         case CalibratorChoice.CLOSEST:
-            calibrator = find_closest_calibrator(target, calibrators)
+            calibrator = find_closest_calibrator(target, calibrators, strategy)
         case CalibratorChoice.HIGHEST_ELEVATION:
             calibrator = find_highest_elevation_calibrator(
                 target, calibrators, strategy, scan_duration, telescope
@@ -76,25 +105,36 @@ def find_appropriate_calibrator(
 
 
 def find_closest_calibrator(
-    target: Target, calibrators: list[Target]
-) -> tuple[Angle, Target]:
+    target: Target, calibrators: list[Target], strategy: CalibrationStrategy
+) -> list[ClosestCalibrator]:
     """ "
     function to find the closest calibrator to the science target
     """
     science_sky_coord = target.reference_coordinate.to_sky_coord()
 
-    separation = [
-        (
-            science_sky_coord.separation(
-                calibrator.reference_coordinate.to_sky_coord()
-            ),
-            calibrator,
-        )
-        for calibrator in calibrators
-    ]
-    separation.sort()
+    closest_calibrators = []
+    for when in strategy.when:
+        separation = [
+            (
+                science_sky_coord.separation(
+                    calibrator.reference_coordinate.to_sky_coord()
+                ),
+                calibrator,
+            )
+            for calibrator in calibrators
+        ]
 
-    return separation[0]
+        separation.sort()
+
+        closest_calibrators.append(
+            ClosestCalibrator(
+                when=when,
+                calibrator=separation[0][1],
+                separation=separation[0][0],
+            )
+        )
+
+    return closest_calibrators
 
 
 def find_highest_elevation_calibrator(
@@ -103,7 +143,7 @@ def find_highest_elevation_calibrator(
     strategy: CalibrationStrategy,
     scan_duration: timedelta,
     telescope: TelescopeType,
-) -> list[tuple[Angle, Target, CalibrationWhen]]:
+) -> list[HighestCalibrator]:
     """
     function to find the calibrator with the highest elevation when
     the target is observed
@@ -153,13 +193,18 @@ def find_highest_elevation_calibrator(
                 )
                 .alt,
                 calibrator,
-                when,
             )
             for calibrator in calibrators
         ]
 
         elevation.sort()
 
-        highest_elevation_calibrators.append(elevation[-1])
+        highest_elevation_calibrators.append(
+            HighestCalibrator(
+                when=when,
+                calibrators=elevation[-1][1],
+                elevation=elevation[-1][0],
+            )
+        )
 
     return highest_elevation_calibrators
