@@ -127,7 +127,7 @@ def find_appropriate_calibrator(
                 )
             case CalibratorChoice.HIGHEST_ELEVATION:
                 calibrator = _find_highest_elevation_calibrator(
-                    target_coords, calibrators, calibrator_obs_time, when
+                    calibrators, calibrator_obs_time, observer, when
                 )
             case _:
                 raise NotImplementedError(
@@ -169,7 +169,7 @@ def _find_closest_calibrator(
 
     closest_calibrator = ClosestCalibrator(
         when=when,
-        calibrator=separation[0][2],
+        calibrator=separation[0][1],
         separation=separation[0][0],
     )
 
@@ -177,12 +177,11 @@ def _find_closest_calibrator(
 
 
 def _find_highest_elevation_calibrator(
-    target: Target,
     calibrators: list[Target],
-    strategy: CalibrationStrategy,
-    scan_duration: timedelta,
-    telescope: TelescopeType,
-) -> list[HighestCalibrator]:
+    obs_time: Time,
+    observer: Observer,
+    when: CalibrationWhen,
+) -> HighestCalibrator:
     """
     function to find the calibrator with the highest elevation when
     the target is observed
@@ -190,60 +189,24 @@ def _find_highest_elevation_calibrator(
     This assumes that the target is observed as it crosses the meridian
     """
 
-    coords = target.reference_coordinate.to_sky_coord()
+    elevation = [
+        (
+            calibrator.reference_coordinate.to_sky_coord()
+            .transform_to(
+                AltAz(obstime=obs_time, location=observer.location),
+            )
+            .alt,
+            calibrator,
+        )
+        for calibrator in calibrators
+    ]
 
-    # first setting the location
-    match telescope:
-        case TelescopeType.SKA_LOW:
-            location = EarthLocation.of_site("SKA Low")
-        case TelescopeType.SKA_MID:
-            location = EarthLocation.of_site("SKA Mid")
-        case _:
-            raise ValueError(f"Telescope {telescope} not supported")
+    elevation.sort()
 
-    observer = Observer(location=location)
-
-    # then calculate the transit time
-    target_transit_time = observer.target_meridian_transit_time(
-        time=Time.now(), target=coords, which="next"
+    highest_elevation = HighestCalibrator(
+        when=when,
+        calibrator=elevation[-1][1],
+        elevation=elevation[-1][0],
     )
 
-    highest_elevation_calibrators = []
-    # then finding the calibrators with the highest elevation at this transit time
-    for when in strategy.when:
-        offset_time = (scan_duration - strategy.duration_ms) / 2.0
-        match when:
-            case CalibrationWhen.BEFORE_EACH_SCAN:
-                calibrator_obs_time = target_transit_time - offset_time
-            case CalibrationWhen.AFTER_EACH_SCAN:
-                calibrator_obs_time = target_transit_time + offset_time
-            case _:
-                raise NotImplementedError(
-                    f"this calibration strategy is not implemented for {
-                        strategy.calibration_strategy_id
-                    }"
-                )
-
-        elevation = [
-            (
-                calibrator.reference_coordinate.to_sky_coord()
-                .transform_to(
-                    AltAz(obstime=calibrator_obs_time, location=location),
-                )
-                .alt,
-                calibrator,
-            )
-            for calibrator in calibrators
-        ]
-
-        elevation.sort()
-
-        highest_elevation_calibrators.append(
-            HighestCalibrator(
-                when=when,
-                calibrators=elevation[-1][1],
-                elevation=elevation[-1][0],
-            )
-        )
-
-    return highest_elevation_calibrators
+    return highest_elevation
