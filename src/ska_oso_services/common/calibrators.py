@@ -7,8 +7,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import List
 
-from astroplan import Observer
-from astropy.coordinates import AltAz, Angle, EarthLocation
+from astroplan import AltitudeConstraint, Observer, is_observable
+from astropy.coordinates import AltAz, Angle, EarthLocation, SkyCoord
 from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from astropy.time import Time
@@ -81,63 +81,102 @@ def find_appropriate_calibrator(
     target: Target,
     calibrators: list[Target],
     strategy: CalibrationStrategy,
-    scan_duration: timedelta | None = None,
-    telescope: TelescopeType | None = None,
+    scan_duration: timedelta,
+    telescope: TelescopeType,
 ) -> list[ClosestCalibrator | HighestCalibrator]:
     """
     function to find the appropriate calibrator
     """
-    match strategy.calibrator_choice:
-        case CalibratorChoice.CLOSEST:
-            calibrator = find_closest_calibrator(target, calibrators, strategy)
-        case CalibratorChoice.HIGHEST_ELEVATION:
-            calibrator = find_highest_elevation_calibrator(
-                target, calibrators, strategy, scan_duration, telescope
-            )
+    target_coords = target.reference_coordinate.to_sky_coord()
+
+    # first setting the location
+    match telescope:
+        case TelescopeType.SKA_LOW:
+            location = EarthLocation.of_site("SKA Low")
+        case TelescopeType.SKA_MID:
+            location = EarthLocation.of_site("SKA Mid")
         case _:
-            raise NotImplementedError(
-                f"this calibration strategy is not implemented for {
-                    strategy.calibration_strategy_id
-                }"
-            )
+            raise ValueError(f"Telescope {telescope} not supported")
 
-    return calibrator
+    time = Time("2023-01-01", location=location)
+    observer = Observer(location=location)
+
+    # then calculate the transit time
+    target_transit_time = observer.target_meridian_transit_time(
+        time=time, target=target_coords, which="next"
+    )
+
+    chosen_calibrators = []
+
+    # then finding the observing time of the calibrators
+    for when in strategy.when:
+        offset_time = (scan_duration - strategy.duration_ms) / 2.0
+        match when:
+            case CalibrationWhen.BEFORE_EACH_SCAN:
+                calibrator_obs_time = target_transit_time - offset_time
+            case CalibrationWhen.AFTER_EACH_SCAN:
+                calibrator_obs_time = target_transit_time + offset_time
+            case _:
+                raise NotImplementedError()
+
+        # passing this to the functions
+        match strategy.calibrator_choice:
+            case CalibratorChoice.CLOSEST:
+                calibrator = _find_closest_calibrator(
+                    target_coords, calibrators, calibrator_obs_time, observer, when
+                )
+            case CalibratorChoice.HIGHEST_ELEVATION:
+                calibrator = _find_highest_elevation_calibrator(
+                    target_coords, calibrators, calibrator_obs_time, when
+                )
+            case _:
+                raise NotImplementedError(
+                    f"this calibration strategy is not implemented for {
+                        strategy.calibration_strategy_id
+                    }"
+                )
+
+        chosen_calibrators.append(calibrator)
+
+    return chosen_calibrators
 
 
-def find_closest_calibrator(
-    target: Target, calibrators: list[Target], strategy: CalibrationStrategy
-) -> list[ClosestCalibrator]:
+def _find_closest_calibrator(
+    target_coords: SkyCoord,
+    calibrators: list[Target],
+    obs_time: Time,
+    observer: Observer,
+    when: CalibrationWhen,
+) -> ClosestCalibrator:
     """ "
     function to find the closest calibrator to the science target
     """
-    science_sky_coord = target.reference_coordinate.to_sky_coord()
-
-    closest_calibrators = []
-    for when in strategy.when:
-        separation = [
-            (
-                science_sky_coord.separation(
-                    calibrator.reference_coordinate.to_sky_coord()
-                ),
-                calibrator,
-            )
-            for calibrator in calibrators
-        ]
-
-        separation.sort()
-
-        closest_calibrators.append(
-            ClosestCalibrator(
-                when=when,
-                calibrator=separation[0][1],
-                separation=separation[0][0],
-            )
+    separation = [
+        (
+            target_coords.separation(calibrator.reference_coordinate.to_sky_coord()),
+            calibrator,
         )
+        for calibrator in calibrators
+        if is_observable(
+            AltitudeConstraint(min=Angle(15.0, unit="degree")),
+            observer=observer,
+            targets=calibrator.reference_coordinate.to_sky_coord(),
+            times=obs_time,
+        )[0]
+    ]
 
-    return closest_calibrators
+    separation.sort()
+
+    closest_calibrator = ClosestCalibrator(
+        when=when,
+        calibrator=separation[0][2],
+        separation=separation[0][0],
+    )
+
+    return closest_calibrator
 
 
-def find_highest_elevation_calibrator(
+def _find_highest_elevation_calibrator(
     target: Target,
     calibrators: list[Target],
     strategy: CalibrationStrategy,
