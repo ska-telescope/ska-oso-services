@@ -98,7 +98,7 @@ def find_appropriate_calibrator(
         case _:
             raise ValueError(f"Telescope {telescope} not supported")
 
-    time = Time("2023-01-01", location=location)
+    time = Time.now()
     observer = Observer(location=location)
 
     # then calculate the transit time
