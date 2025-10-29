@@ -131,9 +131,8 @@ def find_appropriate_calibrator(
                 )
             case _:
                 raise NotImplementedError(
-                    f"this calibration strategy is not implemented for {
-                        strategy.calibration_strategy_id
-                    }"
+                    f"calibration strategy {strategy.calibration_strategy_id}"
+                    "is not implemented"
                 )
 
         chosen_calibrators.append(calibrator)
