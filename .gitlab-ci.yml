@@ -72,6 +72,10 @@ deploy-integration:
   variables:
     K8S_CHART_PARAMS: "-f charts/ska-oso-services-umbrella/values-integration.yaml"  # Use integration values file while appending to any other params
 
+deploy-staging:
+  variables:
+    K8S_CHART_PARAMS: "-f charts/ska-oso-services-umbrella/values-staging.yaml"  # Use staging values file while appending to any other params
+
 test-dev-environment:
   <<: *dev_env
 
