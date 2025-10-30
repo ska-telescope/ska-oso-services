@@ -86,6 +86,12 @@ def find_appropriate_calibrator(
 ) -> list[ClosestCalibrator | HighestCalibrator]:
     """
     function to find the appropriate calibrator
+
+    :param target: the science target
+    :param calibrators: a list of calibrators, filtered by any e.g. flux requirements
+    :param strategy: calibration strategy to use
+    :param scan_duration: the duration of the science scan
+    :param telescope: SKA MID or SKA LOW
     """
     target_coords = target.reference_coordinate.to_sky_coord()
 
@@ -147,8 +153,13 @@ def _find_closest_calibrator(
     observer: Observer,
     when: CalibrationWhen,
 ) -> ClosestCalibrator:
-    """ "
-    function to find the closest calibrator to the science target
+    """
+    function to find the closest visible calibrator to the science target
+    :param target_coords: science target coordinates
+    :param calibrators: a list of calibrators
+    :param obs_time: the observation time of the calibrator
+    :param observer: the observer (i.e. the telescope)
+    :param when: when the calibration observation is occurring, relative to the science scan
     """
     separation = [
         (
@@ -157,6 +168,8 @@ def _find_closest_calibrator(
         )
         for calibrator in calibrators
         if is_observable(
+            # This altitude constraint is taken from the LOW sensitivity calculator and could become an input
+            # parameter at a later date
             AltitudeConstraint(min=Angle(15.0, unit="degree")),
             observer=observer,
             targets=calibrator.reference_coordinate.to_sky_coord(),
@@ -186,6 +199,11 @@ def _find_highest_elevation_calibrator(
     the target is observed
 
     This assumes that the target is observed as it crosses the meridian
+
+    :param calibrators: a list of calibrators
+    :param obs_time: the observation time of the calibrator
+    :param observer: the observer (i.e. the telescope)
+    :param when: when the calibration observation is occurring, relative to the science scan
     """
 
     elevation = [
