@@ -7,7 +7,7 @@ from ska_oso_services.common.calibrator_strategy import (
 
 
 def test_observatory_calibrator_strategy_lookup_default():
-    default_calibration_strategy_id = "default"
+    default_calibration_strategy_id = "closest"
     result = lookup_observatory_calibration_strategy(default_calibration_strategy_id)
 
     assert result.calibration_strategy_id == default_calibration_strategy_id

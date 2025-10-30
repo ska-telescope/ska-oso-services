@@ -24,11 +24,11 @@ from ska_oso_pdm.sb_definition.mccs.mccs_allocation import (
 )
 from ska_oso_pdm.sb_definition.procedures import GitScript
 
-from ska_oso_services.common.constants import (
+from ska_oso_services.common.osdmapper import get_osd_data
+from ska_oso_services.common.static.constants import (
     LOW_STATION_CHANNEL_WIDTH_MHZ,
     MID_CHANNEL_WIDTH_KHZ,
 )
-from ska_oso_services.common.osdmapper import get_osd_data
 
 
 def generate_sbds(obs_block: ObservingBlock) -> list[SBDefinition]:
