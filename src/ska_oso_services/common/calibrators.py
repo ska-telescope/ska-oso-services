@@ -159,7 +159,8 @@ def _find_closest_calibrator(
     :param calibrators: a list of calibrators
     :param obs_time: the observation time of the calibrator
     :param observer: the observer (i.e. the telescope)
-    :param when: when the calibration observation is occurring, relative to the science scan
+    :param when: when the calibration observation is occurring, relative to
+    the science scan
     """
     separation = [
         (
@@ -168,8 +169,8 @@ def _find_closest_calibrator(
         )
         for calibrator in calibrators
         if is_observable(
-            # This altitude constraint is taken from the LOW sensitivity calculator and could become an input
-            # parameter at a later date
+            # This altitude constraint is taken from the LOW sensitivity calculator
+            # and could become an input parameter at a later date
             AltitudeConstraint(min=Angle(15.0, unit="degree")),
             observer=observer,
             targets=calibrator.reference_coordinate.to_sky_coord(),
@@ -203,7 +204,8 @@ def _find_highest_elevation_calibrator(
     :param calibrators: a list of calibrators
     :param obs_time: the observation time of the calibrator
     :param observer: the observer (i.e. the telescope)
-    :param when: when the calibration observation is occurring, relative to the science scan
+    :param when: when the calibration observation is occurring,
+    relative to the science scan
     """
 
     elevation = [
