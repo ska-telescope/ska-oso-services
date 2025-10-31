@@ -57,12 +57,11 @@ def test_to_pdm_target_can_handle_empty_table(dummy_calibrator_table):
         to_pdm_targets(filtered_table)
 
 
-def test_find_closest_calibrator_works_as_expected(dummy_calibrator_table):
-    calibrators = to_pdm_targets(dummy_calibrator_table)
+def test_find_closest_calibrator_works_as_expected():
     strategy = OBSERVATORY_CALIBRATION_STRATEGIES["closest"]
 
     appropriate_calibrators = find_appropriate_calibrator(
-        TEST_TARGET, calibrators, strategy, timedelta(hours=8.0), TelescopeType.SKA_LOW
+        TEST_TARGET, strategy, timedelta(hours=8.0), TelescopeType.SKA_LOW
     )
 
     assert len(appropriate_calibrators) == 2
@@ -74,12 +73,11 @@ def test_find_closest_calibrator_works_as_expected(dummy_calibrator_table):
     assert appropriate_calibrators[1].calibrator.name == "Pictor A"
 
 
-def test_find_highest_calibrator_works_as_expected(dummy_calibrator_table):
-    calibrators = to_pdm_targets(dummy_calibrator_table)
+def test_find_highest_calibrator_works_as_expected():
     strategy = OBSERVATORY_CALIBRATION_STRATEGIES["highest_elevation"]
 
     appropriate_calibrators = find_appropriate_calibrator(
-        TEST_TARGET, calibrators, strategy, timedelta(hours=0.5), TelescopeType.SKA_LOW
+        TEST_TARGET, strategy, timedelta(hours=0.5), TelescopeType.SKA_LOW
     )
 
     assert len(appropriate_calibrators) == 2

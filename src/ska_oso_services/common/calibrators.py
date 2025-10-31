@@ -79,7 +79,6 @@ def to_pdm_targets(table: QTable) -> List[Target]:
 
 def find_appropriate_calibrator(
     target: Target,
-    calibrators: list[Target],
     strategy: CalibrationStrategy,
     scan_duration: timedelta,
     telescope: TelescopeType,
@@ -88,7 +87,6 @@ def find_appropriate_calibrator(
     function to find the appropriate calibrator
 
     :param target: the science target
-    :param calibrators: a list of calibrators, filtered by any e.g. flux requirements
     :param strategy: calibration strategy to use
     :param scan_duration: the duration of the science scan
     :param telescope: SKA MID or SKA LOW
@@ -111,6 +109,14 @@ def find_appropriate_calibrator(
     target_transit_time = observer.target_meridian_transit_time(
         time=time, target=target_coords, which="next"
     )
+
+    # now generating the list of calibrators from the QTable, this is
+    # the point, in future, where we should apply any filtering to the
+    # QTable e.g. filtering on the Flux or Largest Angular Scale (LAS),
+    # based on the observing strategy. This filtered table can be
+    # passed to the to_pdm_targets() functions
+
+    calibrators = to_pdm_targets(calibrator_table)
 
     chosen_calibrators = []
 
