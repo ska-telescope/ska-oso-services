@@ -13,7 +13,7 @@ from ska_ost_osd.osd.routers.api import get_osd
 from ska_oso_services.common.error_handling import OSDError
 from ska_oso_services.common.model import AppModel
 
-SUPPORTED_ARRAY_ASSEMBLIES = ["AA0.5", "AA1"]
+SUPPORTED_ARRAY_ASSEMBLIES = ["AA0.5", "AA1", "AA2"]
 
 OSD_VERSION = version("ska-ost-osd")
 OSD_SOURCE = "car"
