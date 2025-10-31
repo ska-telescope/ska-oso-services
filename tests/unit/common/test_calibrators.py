@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest import mock
 
 import pytest
 from astropy import units as u
@@ -57,8 +58,13 @@ def test_to_pdm_target_can_handle_empty_table(dummy_calibrator_table):
         to_pdm_targets(filtered_table)
 
 
-def test_find_closest_calibrator_works_as_expected():
+@mock.patch("ska_oso_services.common.calibrators.to_pdm_targets")
+def test_find_closest_calibrator_works_as_expected(
+    mock_to_pdm_targets, dummy_calibrator_table
+):
     strategy = OBSERVATORY_CALIBRATION_STRATEGIES["closest"]
+
+    mock_to_pdm_targets.return_value = to_pdm_targets(dummy_calibrator_table)
 
     appropriate_calibrators = find_appropriate_calibrator(
         TEST_TARGET, strategy, timedelta(hours=8.0), TelescopeType.SKA_LOW
@@ -73,8 +79,13 @@ def test_find_closest_calibrator_works_as_expected():
     assert appropriate_calibrators[1].calibrator.name == "Pictor A"
 
 
-def test_find_highest_calibrator_works_as_expected():
+@mock.patch("ska_oso_services.common.calibrators.to_pdm_targets")
+def test_find_highest_calibrator_works_as_expected(
+    mock_to_pdm_targets, dummy_calibrator_table
+):
     strategy = OBSERVATORY_CALIBRATION_STRATEGIES["highest_elevation"]
+
+    mock_to_pdm_targets.return_value = to_pdm_targets(dummy_calibrator_table)
 
     appropriate_calibrators = find_appropriate_calibrator(
         TEST_TARGET, strategy, timedelta(hours=0.5), TelescopeType.SKA_LOW
