@@ -1,5 +1,6 @@
 {
   "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
+  "description": "I prefer Hydra A",
   "telescope": "ska_low",
   "activities": {
     "observe": {
@@ -10,6 +11,38 @@
     }
   },
   "targets": [
+    {
+      "target_id": "calibrator-00005",
+      "name": "Hercules A",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0,
+            "offset_y_arcsec": 0
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "16:51:07.9887",
+        "dec_str": "04:59:35.547",
+        "pm_ra": 0,
+        "pm_dec": 0,
+        "parallax": 0,
+        "epoch": 2000
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0.1549
+      }
+    },
     {
       "target_id": "47 tuc",
       "name": "47 tuc",
@@ -25,8 +58,12 @@
       },
       "reference_coordinate": {
         "kind": "icrs",
-        "ra": "16:40:00.0",
-        "dec": "30:00:00.0"
+        "ra_str": "16:40:00.0",
+        "dec_str": "30:00:00.0",
+        "pm_ra": 0,
+        "pm_dec": 0,
+        "parallax": 0,
+        "epoch": 2000
       },
       "radial_velocity": {
         "quantity": {
@@ -53,8 +90,12 @@
       },
       "reference_coordinate": {
         "kind": "icrs",
-        "ra": "16:40:00.0",
-        "dec": "30:00:00.0"
+        "ra_str": "16:40:00.0",
+        "dec_str": "30:00:00.0",
+        "pm_ra": 0,
+        "pm_dec": 0,
+        "parallax": 0,
+        "epoch": 2000
       },
       "radial_velocity": {
         "quantity": {
@@ -87,7 +128,7 @@
     }
   ],
   "mccs_allocation": {
-    "mccs_allocation_id": "mccs-allocation-12345",
+    "mccs_allocation_id": "mccs-allocation-74039",
     "selected_subarray_definition": "AA1",
     "subarray_beams": [
       {
@@ -176,16 +217,44 @@
         "subarray_beam_id": 1,
         "scan_sequence": [
           {
+            "scan_definition_id": "scan-definition-67890",
+            "scan_duration_ms": 600000,
+            "target_ref": "calibrator-00005",
+            "csp_configuration_ref": "csp-configuration-12345",
+            "pointing_correction": "MAINTAIN"
+          },
+          {
             "scan_definition_id": "scan-definition-12345",
-            "scan_duration_ms": 3.6e+6,
+            "scan_duration_ms": 3600000,
             "target_ref": "47 tuc",
             "csp_configuration_ref": "csp-configuration-12345",
             "pointing_correction": "MAINTAIN"
           },
           {
-            "scan_definition_id": "scan-definition-67890",
-            "scan_duration_ms": 3.6e+6,
+            "scan_definition_id": "scan-definition-12345",
+            "scan_duration_ms": 600000,
+            "target_ref": "calibrator-00005",
+            "csp_configuration_ref": "csp-configuration-12345",
+            "pointing_correction": "MAINTAIN"
+          },
+          {
+            "scan_definition_id": "scan-definition-28364",
+            "scan_duration_ms": 600000,
+            "target_ref": "calibrator-00005",
+            "csp_configuration_ref": "csp-configuration-12345",
+            "pointing_correction": "MAINTAIN"
+          },
+          {
+            "scan_definition_id": "scan-definition-56789",
+            "scan_duration_ms": 3600000,
             "target_ref": "target42",
+            "csp_configuration_ref": "csp-configuration-12345",
+            "pointing_correction": "MAINTAIN"
+          },
+          {
+            "scan_definition_id": "scan-definition-39474",
+            "scan_duration_ms": 600000,
+            "target_ref": "calibrator-00005",
             "csp_configuration_ref": "csp-configuration-12345",
             "pointing_correction": "MAINTAIN"
           }
