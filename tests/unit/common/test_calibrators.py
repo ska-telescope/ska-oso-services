@@ -94,6 +94,5 @@ def test_find_highest_calibrator_works_as_expected(
     assert len(appropriate_calibrators) == 2
     assert isinstance(appropriate_calibrators[0], HighestCalibrator)
     assert (
-        appropriate_calibrators[0].calibrator.name
-        == appropriate_calibrators[1].calibrator.name
+        appropriate_calibrators[0].calibrator == appropriate_calibrators[1].calibrator
     )
