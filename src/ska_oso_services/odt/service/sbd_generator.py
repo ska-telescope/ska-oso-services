@@ -126,6 +126,8 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
     target_names = [target.name for target in targets]
     indices_of_unique_target = [target_names.index(i) for i in set(target_names)]
     unique_targets = [targets[idx] for idx in indices_of_unique_target]
+    # this next bit is to make testing easier
+    unique_targets.sort(key=lambda x: x.name)
 
     mccs_allocation, dish_allocations = _receptor_field_from_science_programme(
         science_programme, scan_sequence
