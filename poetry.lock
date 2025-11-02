@@ -3400,14 +3400,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-oso-pdm"
-version = "24.0.0"
+version = "24.0.0+dev.c7418683a"
 description = "SKA Project Data Model serialisation library"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_oso_pdm-24.0.0-py3-none-any.whl", hash = "sha256:94ec3da199b25f7b4a9fe26fb46c562d01a3ef4aa824bfab3b08ca86a9cb5f31"},
-    {file = "ska_oso_pdm-24.0.0.tar.gz", hash = "sha256:d8369628c5c99c1336ccd2bbaa13b8852063b9c82b526d22c21ae5635935f78a"},
+    {file = "ska_oso_pdm-24.0.0+dev.c7418683a-py3-none-any.whl", hash = "sha256:9949fcfce685bd42d4eefd48352a831718306be19509af98714893af94396bcb"},
+    {file = "ska_oso_pdm-24.0.0+dev.c7418683a.tar.gz", hash = "sha256:b663148eb4deb0f1181b023544e64532212e6c37794022005adab83ecbd13eb5"},
 ]
 
 [package.dependencies]
@@ -3417,8 +3417,8 @@ pydantic = {version = ">=2.9,<3.0", extras = ["email"]}
 
 [package.source]
 type = "legacy"
-url = "https://artefact.skao.int/repository/pypi-internal/simple"
-reference = "ska-nexus"
+url = "https://gitlab.com/api/v4/projects/17509042/packages/pypi/simple"
+reference = "gitlab-ska-oso-pdm"
 
 [[package]]
 name = "ska-ost-osd"
@@ -4409,4 +4409,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "de5163ec8b8133b1b29fa8aa1af4abda393440b99804d7b6edc2bb4a22bb34c5"
+content-hash = "83d8b5ea61b0fc960dc5c7608ed006afbac4000a5e2ca0b8cff25a5a57530f7c"
