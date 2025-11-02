@@ -205,9 +205,8 @@ def _scan_time_ms_from_science_programme(
     ):
         return (
             science_programme.observation_sets[0]
-            .observation_type_details.supplied.quantity.to(u.s)
+            .observation_type_details.supplied.quantity.to(u.ms)
             .value
-            * 1e3
         )
     else:
         # The ScienceProgramme contains all the result_details that are
@@ -218,7 +217,7 @@ def _scan_time_ms_from_science_programme(
             for result_detail in science_programme.result_details
             if result_detail.target_ref == target_id
         )
-        return result_for_target.result.continuum.to(u.s).value * 1e3
+        return result_for_target.result.continuum.to(u.ms).value
 
 
 def _dish_allocation(
