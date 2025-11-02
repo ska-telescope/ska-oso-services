@@ -3,7 +3,6 @@ Module that returns the calibrators
 """
 
 from abc import ABC
-from datetime import timedelta
 from pathlib import Path
 from typing import List
 
@@ -14,6 +13,7 @@ from astropy.table import QTable
 from astropy.time import Time
 from pydantic import BaseModel, ConfigDict
 from ska_oso_pdm import ICRSCoordinates, RadialVelocity, Target, TelescopeType
+from ska_oso_pdm._shared import TimedeltaMs
 
 from ska_oso_services.common.calibrator_strategy import (
     CalibrationStrategy,
@@ -80,7 +80,7 @@ def to_pdm_targets(table: QTable) -> List[Target]:
 def find_appropriate_calibrator(
     target: Target,
     strategy: CalibrationStrategy,
-    scan_duration: timedelta,
+    scan_duration: TimedeltaMs,
     telescope: TelescopeType,
 ) -> list[ClosestCalibrator | HighestCalibrator]:
     """
