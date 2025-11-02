@@ -121,7 +121,7 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
     # we've added every calibrator to the target list, but there's
     # a good chance we've got some multiples so getting only the
     # unique targets. Sadly Targets are unhashable so this is
-    # my monstrous solution
+    # my monstrous solution - this can surely be improved
 
     target_names = [target.name for target in targets]
     indices_of_unique_target = [target_names.index(i) for i in set(target_names)]
