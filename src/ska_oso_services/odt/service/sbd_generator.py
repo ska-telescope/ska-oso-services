@@ -4,6 +4,7 @@ from typing import List, Optional
 
 import astropy.units as u
 from ska_oso_pdm import SBDefinition, SubArrayLOW, SubArrayMID, Target, TelescopeType
+from ska_oso_pdm._shared import TimedeltaMs
 from ska_oso_pdm.project import ObservingBlock, ScienceProgramme
 from ska_oso_pdm.sb_definition import (
     CSPConfiguration,
@@ -24,11 +25,18 @@ from ska_oso_pdm.sb_definition.mccs.mccs_allocation import (
 )
 from ska_oso_pdm.sb_definition.procedures import GitScript
 
+from ska_oso_services.common.calibrator_strategy import (
+    CalibrationWhen,
+    lookup_observatory_calibration_strategy,
+)
+from ska_oso_services.common.calibrators import find_appropriate_calibrators
 from ska_oso_services.common.osdmapper import get_osd_data
 from ska_oso_services.common.static.constants import (
     LOW_STATION_CHANNEL_WIDTH_MHZ,
     MID_CHANNEL_WIDTH_KHZ,
 )
+
+DEFAULT_CALIBRATION_STRATEGY = "highest_elevation"
 
 
 def generate_sbds(obs_block: ObservingBlock) -> list[SBDefinition]:
@@ -56,29 +64,83 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
     csp_configurations = [_csp_configuration_from_science_programme(science_programme)]
 
     scan_sequence = []
+    # Keep track of the calibrators so we don't end up duplicating them in the SBD
+    calibrators_in_use: dict[str, Target] = {}
+
+    # Loop over the targets, creating a scan for each plus any required calibrators
     for target in science_programme.targets:
-        scan_definition = ScanDefinition(
-            scan_definition_id=_sbd_internal_id(ScanDefinition),
-            scan_duration_ms=_scan_time_ms_from_science_programme(
-                science_programme, target.target_id
-            ),
-            target_ref=target.target_id,
-            csp_configuration_ref=csp_configurations[0].config_id,
+        target_scan_duration_ms = _scan_time_ms_from_science_programme(
+            science_programme, target.target_id
         )
-        scan_sequence.append(scan_definition)
+
+        # Currently there is only one CSP config to be used by all scans
+        target_csp_configuration_ref = csp_configurations[0].config_id
+        # Define the scan sequence for this target, which can then be
+        # updated with calibrators
+        target_scan_sequence = [
+            ScanDefinition(
+                scan_definition_id=_sbd_internal_id(ScanDefinition),
+                scan_duration_ms=target_scan_duration_ms,
+                target_ref=target.target_id,
+                csp_configuration_ref=target_csp_configuration_ref,
+            )
+        ]
+
+        # Calibration only currently applies for Low SBD generation
+        if telescope == TelescopeType.SKA_LOW:
+            # Eventually we expect the strategy to come from the science programme
+            # (that has been copied from the proposal) but for now we just hard
+            # code the default
+            calibration_strategy = lookup_observatory_calibration_strategy(
+                DEFAULT_CALIBRATION_STRATEGY
+            )
+
+            calibrators = find_appropriate_calibrators(
+                target, calibration_strategy, target_scan_duration_ms, telescope
+            )
+
+            for calibrator in calibrators:
+                calibrators_in_use[calibrator.calibrator.target_id] = (
+                    calibrator.calibrator
+                )
+
+                calibrator_scan_definition = ScanDefinition(
+                    scan_definition_id=_sbd_internal_id(ScanDefinition),
+                    scan_duration_ms=calibration_strategy.duration_ms,
+                    target_ref=calibrator.calibrator.target_id,
+                    csp_configuration_ref=target_csp_configuration_ref,
+                )
+
+                match calibrator.when:
+                    case CalibrationWhen.BEFORE_EACH_SCAN:
+                        target_scan_sequence.insert(0, calibrator_scan_definition)
+                    case CalibrationWhen.AFTER_EACH_SCAN:
+                        target_scan_sequence.append(calibrator_scan_definition)
+
+        # adding the target scan sequence to the full scan_sequence
+        scan_sequence += target_scan_sequence
+
+    targets = science_programme.targets + list(calibrators_in_use.values())
 
     mccs_allocation, dish_allocations = _receptor_field_from_science_programme(
         science_programme, scan_sequence
     )
 
-    return SBDefinition(
+    sbd = SBDefinition(
         telescope=telescope,
         activities=_default_activities(),
         dish_allocations=dish_allocations,
         mccs_allocation=mccs_allocation,
         csp_configurations=csp_configurations,
-        targets=science_programme.targets,
+        targets=targets,
     )
+
+    if telescope == TelescopeType.SKA_LOW:
+        # Currently there will only be one calibration strategy and any
+        # notes will apply to the full SBD.
+        sbd.description = science_programme.calibration_strategies[0].notes
+
+    return sbd
 
 
 def _default_activities() -> dict[str, GitScript]:
@@ -191,7 +253,7 @@ def _csp_configuration_from_science_programme(
 
 def _scan_time_ms_from_science_programme(
     science_programme: ScienceProgramme, target_id: str
-) -> float:
+) -> TimedeltaMs:
     """
     The Proposal contains an integration time per ObservationSet. Either the user has
     input a time then we can just use that for each target, or they input a sensitivity
@@ -203,11 +265,10 @@ def _scan_time_ms_from_science_programme(
         ].observation_type_details.supplied.supplied_type
         == "integration_time"
     ):
-        return (
-            science_programme.observation_sets[0]
-            .observation_type_details.supplied.quantity.to(u.s)
+        return TimedeltaMs(
+            milliseconds=science_programme.observation_sets[0]
+            .observation_type_details.supplied.quantity.to(u.ms)
             .value
-            * 1e3
         )
     else:
         # The ScienceProgramme contains all the result_details that are
@@ -218,7 +279,9 @@ def _scan_time_ms_from_science_programme(
             for result_detail in science_programme.result_details
             if result_detail.target_ref == target_id
         )
-        return result_for_target.result.continuum.to(u.s).value * 1e3
+        return TimedeltaMs(
+            milliseconds=result_for_target.result.continuum.to(u.ms).value
+        )
 
 
 def _dish_allocation(

@@ -8,6 +8,8 @@ Unreleased
 ***********
 * Adds the AA2 to the list of array assemblies that are retrieved from the OSD
 * Adds function to find the appropriate calibrator given Target and an Observing Strategy
+* Adds applying calibration strategy to LOW Scheduling Blocks generated from Proposals
+* Updates ODA to v13.1.0
 
 9.1.0
 ***********

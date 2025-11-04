@@ -26,7 +26,7 @@ def test_sbds_generated_from_observing_block_with_two_mid_observation_groups(
 def test_sbds_generated_from_observing_block_with_two_low_targets(mock_randint):
     # The different types can all reuse the same id, but the second scan
     # should have a different one so the test checks the linking is done correctly
-    mock_randint.side_effect = [12345, 12345, 67890, 12345]
+    mock_randint.side_effect = [12345, 12345, 67890, 12345, 56789, 28364, 39474, 74039]
     project = TestDataFactory.project_with_two_low_targets()
     ob = project.obs_blocks[0]
     data = load_string_from_file("expected_low_sbd.json")
