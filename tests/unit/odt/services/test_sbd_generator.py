@@ -32,10 +32,6 @@ def test_sbds_generated_from_observing_block_with_two_low_targets(mock_randint):
     data = load_string_from_file("expected_low_sbd.json")
     expected_sbd = SBDefinition.model_validate_json(data)
 
-    # sorting the targets in both the test and generated SBD so the test
-    # doesn't fail due to the ordering.
-    expected_sbd.targets.sort(key=lambda x: x.name)
-
     sbds = generate_sbds(ob)
 
     assert len(sbds) == 1

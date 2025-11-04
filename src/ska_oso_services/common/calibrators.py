@@ -77,7 +77,7 @@ def to_pdm_targets(table: QTable) -> List[Target]:
     return targets
 
 
-def find_appropriate_calibrator(
+def find_appropriate_calibrators(
     target: Target,
     strategy: CalibrationStrategy,
     scan_duration: TimedeltaMs,

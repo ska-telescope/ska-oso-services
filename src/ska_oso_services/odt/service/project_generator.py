@@ -103,13 +103,11 @@ def science_programme_from_observation_set(
         target for target in observation_info.targets if target.target_id in target_ids
     ]
 
-    # I'm not really sure how the proposals handle calibration. The Object
-    # in the PDM has observation_set_refs but looking at the proposal
-    # serialisation test cases just has a single calibration strategy?
+    # As of PI28 we expect the PHT to only create a single CalibrationStrategy, if any.
+    # So we just copy it over into each science programme
     calibration_strategies_for_observation_set = [
         calibration_strategy
         for calibration_strategy in observation_info.calibration_strategy
-        # if observation_set_id in calibration_strategy.observation_set_refs
     ]
 
     sdp_data_products_for_observation_set = [

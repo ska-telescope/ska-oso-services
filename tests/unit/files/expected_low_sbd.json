@@ -12,38 +12,6 @@
   },
   "targets": [
     {
-      "target_id": "calibrator-00005",
-      "name": "Hercules A",
-      "pointing_pattern": {
-        "active": "SinglePointParameters",
-        "parameters": [
-          {
-            "kind": "SinglePointParameters",
-            "offset_x_arcsec": 0,
-            "offset_y_arcsec": 0
-          }
-        ]
-      },
-      "reference_coordinate": {
-        "kind": "icrs",
-        "ra_str": "16:51:07.9887",
-        "dec_str": "04:59:35.547",
-        "pm_ra": 0,
-        "pm_dec": 0,
-        "parallax": 0,
-        "epoch": 2000
-      },
-      "radial_velocity": {
-        "quantity": {
-          "value": 0,
-          "unit": "km / s"
-        },
-        "definition": "RADIO",
-        "reference_frame": "LSRK",
-        "redshift": 0.1549
-      }
-    },
-    {
       "target_id": "47 tuc",
       "name": "47 tuc",
       "pointing_pattern": {
@@ -105,6 +73,38 @@
         "definition": "RADIO",
         "reference_frame": "LSRK",
         "redshift": 0
+      }
+    },
+    {
+      "target_id": "calibrator-00005",
+      "name": "Hercules A",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0,
+            "offset_y_arcsec": 0
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "16:51:07.9887",
+        "dec_str": "04:59:35.547",
+        "pm_ra": 0,
+        "pm_dec": 0,
+        "parallax": 0,
+        "epoch": 2000
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0.1549
       }
     }
   ],

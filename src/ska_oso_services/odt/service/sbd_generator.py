@@ -26,15 +26,17 @@ from ska_oso_pdm.sb_definition.mccs.mccs_allocation import (
 from ska_oso_pdm.sb_definition.procedures import GitScript
 
 from ska_oso_services.common.calibrator_strategy import (
-    OBSERVATORY_CALIBRATION_STRATEGIES,
     CalibrationWhen,
+    lookup_observatory_calibration_strategy,
 )
-from ska_oso_services.common.calibrators import find_appropriate_calibrator
+from ska_oso_services.common.calibrators import find_appropriate_calibrators
 from ska_oso_services.common.osdmapper import get_osd_data
 from ska_oso_services.common.static.constants import (
     LOW_STATION_CHANNEL_WIDTH_MHZ,
     MID_CHANNEL_WIDTH_KHZ,
 )
+
+DEFAULT_CALIBRATION_STRATEGY = "highest_elevation"
 
 
 def generate_sbds(obs_block: ObservingBlock) -> list[SBDefinition]:
@@ -59,31 +61,22 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
 
     telescope = observation_set.array_details.array
 
-    if telescope == TelescopeType.SKA_LOW:
-        # In future we'll get this from the calibration_id but hard coding for now
-        calibration_strategy = OBSERVATORY_CALIBRATION_STRATEGIES["highest_elevation"]
-
     csp_configurations = [_csp_configuration_from_science_programme(science_programme)]
 
     scan_sequence = []
-    targets = []
+    # Keep track of the calibrators so we don't end up duplicating them in the SBD
+    calibrators_in_use: dict[str, Target] = {}
 
+    # Loop over the targets, creating a scan for each plus any required calibrators
     for target in science_programme.targets:
-        # first adding the science target to the target list and
-        # creating the scan_definition for the target
-
-        targets.append(target)
         target_scan_duration_ms = _scan_time_ms_from_science_programme(
             science_programme, target.target_id
         )
 
+        # Currently there is only one CSP config to be used by all scans
         target_csp_configuration_ref = csp_configurations[0].config_id
-
-        # creating the scan sequence for each target, this should
-        # allow for easier insertion of the calibrators when we
-        # support multiple targets, we can concatenate these list
-        # to make the final scan_sequence and target list
-
+        # Define the scan sequence for this target, which can then be
+        # updated with calibrators
         target_scan_sequence = [
             ScanDefinition(
                 scan_definition_id=_sbd_internal_id(ScanDefinition),
@@ -93,15 +86,24 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
             )
         ]
 
+        # Calibration only currently applies for Low SBD generation
         if telescope == TelescopeType.SKA_LOW:
-            # now finding the appropriate calibrators and adding
-            # to the target list
-            calibrators = find_appropriate_calibrator(
+            # Eventually we expect the strategy to come from the science programme
+            # (that has been copied from the proposal) but for now we just hard
+            # code the default
+            calibration_strategy = lookup_observatory_calibration_strategy(
+                DEFAULT_CALIBRATION_STRATEGY
+            )
+
+            calibrators = find_appropriate_calibrators(
                 target, calibration_strategy, target_scan_duration_ms, telescope
             )
 
             for calibrator in calibrators:
-                targets.append(calibrator.calibrator)
+                calibrators_in_use[calibrator.calibrator.target_id] = (
+                    calibrator.calibrator
+                )
+
                 calibrator_scan_definition = ScanDefinition(
                     scan_definition_id=_sbd_internal_id(ScanDefinition),
                     scan_duration_ms=calibration_strategy.duration_ms,
@@ -118,37 +120,27 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
         # adding the target scan sequence to the full scan_sequence
         scan_sequence += target_scan_sequence
 
-    # we've added every calibrator to the target list, but there's
-    # a good chance we've got some multiples so getting only the
-    # unique targets. Sadly Targets are unhashable so this is
-    # my monstrous solution - this can surely be improved
-
-    target_names = [target.name for target in targets]
-    indices_of_unique_target = [target_names.index(i) for i in set(target_names)]
-    unique_targets = [targets[idx] for idx in indices_of_unique_target]
-    # this next bit is to make testing easier
-    unique_targets.sort(key=lambda x: x.name)
+    targets = science_programme.targets + list(calibrators_in_use.values())
 
     mccs_allocation, dish_allocations = _receptor_field_from_science_programme(
         science_programme, scan_sequence
     )
 
-    schedulingblock = SBDefinition(
+    sbd = SBDefinition(
         telescope=telescope,
         activities=_default_activities(),
         dish_allocations=dish_allocations,
         mccs_allocation=mccs_allocation,
         csp_configurations=csp_configurations,
-        targets=unique_targets,
+        targets=targets,
     )
 
     if telescope == TelescopeType.SKA_LOW:
-        # I'm assuming, based on what I can see from the test data that there
-        # will be only one calibration_strategy for now
-        description = science_programme.calibration_strategies[0].notes
-        schedulingblock.description = description
+        # Currently there will only be one calibration strategy and any
+        # notes will apply to the full SBD.
+        sbd.description = science_programme.calibration_strategies[0].notes
 
-    return schedulingblock
+    return sbd
 
 
 def _default_activities() -> dict[str, GitScript]:
