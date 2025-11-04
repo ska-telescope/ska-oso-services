@@ -36,3 +36,17 @@ def test_sbds_generated_from_observing_block_with_two_low_targets(mock_randint):
 
     assert len(sbds) == 1
     assert sbds[0] == expected_sbd
+
+
+@mock.patch("ska_oso_services.odt.service.sbd_generator.randint")
+def test_sbds_generated_from_observing_block_without_calibration_strategy(mock_randint):
+    mock_randint.return_value = 12345
+    project = TestDataFactory.project_with_two_low_targets()
+    ob = project.obs_blocks[0]
+
+    ob.science_programmes[0].calibration_strategies = []
+
+    sbds = generate_sbds(ob)
+
+    assert len(sbds) == 1
+    assert sbds[0].description is None

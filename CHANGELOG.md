@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* [BUGFIX] Fix index error when generating SBDs from Observation Info without calibration strategy notes
 
 9.2.0
 ***********
