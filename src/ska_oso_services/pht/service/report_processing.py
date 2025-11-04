@@ -41,7 +41,6 @@ def _extract_pi_user_id(proposal) -> Optional[str]:
     # Try attribute-style first: proposal.proposal_info.investigators or proposal.investigators
     investigators = (
         getattr(getattr(proposal, "proposal_info", None), "investigators", None)
-        or getattr(proposal, "investigators", None)
         or []
     )
 
@@ -69,7 +68,7 @@ def _extract_pi_user_id(proposal) -> Optional[str]:
 
 def get_pi_office_location(proposal) -> Optional[str]:
     """
-    Fetch the Microsoft Graph 'officeLocation' for the PI user.
+    Fetch the Microsoft Graph 'officeLocation' for the PI.
     """
 
     uid = _extract_pi_user_id(proposal)
@@ -77,7 +76,7 @@ def get_pi_office_location(proposal) -> Optional[str]:
         return None
 
     url = f"{MS_GRAPH_URL}/users/{quote(uid, safe='')}?$select={_GRAPH_SELECT_OFFICE}"
-    user = make_graph_call(url, pagination=False)  # dict or None expected
+    user = make_graph_call(url, pagination=False) 
 
     if isinstance(user, dict):
         return user.get("officeLocation")
