@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+
+9.2.0
+***********
+* Adds the AA2 to the list of array assemblies that are retrieved from the OSD
+* Adds function to find the appropriate calibrator given Target and an Observing Strategy
+* Adds applying calibration strategy to LOW Scheduling Blocks generated from Proposals
+* Updates ODA to v13.1.0
+
+9.1.0
+***********
 * Adds a `/calibrators` endpoint that returns a list of approved LOW Calibrator targets
 
 9.0.0
