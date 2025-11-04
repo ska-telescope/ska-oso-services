@@ -106,6 +106,36 @@
               }
             }
           ],
+          "data_product_sdps": [
+            {
+              "data_product_id": "SDP-1",
+              "products": [
+                "1",
+                "2",
+                "5"
+              ],
+              "observation_set_refs": [
+                "obs-vYzsub"
+              ],
+              "script_parameters": {
+                "image_size": {
+                  "value": 1024.0,
+                  "unit": "pix"
+                },
+                "image_cellsize": {
+                  "value": 0.5,
+                  "unit": "arcsec"
+                },
+                "weight": {
+                  "weighting": "briggs",
+                  "robust": "-2"
+                },
+                "polarisations": "I",
+                "channels_out": 12,
+                "fit_spectral_pol": 3
+              }
+            }
+          ],
           "result_details": [
             {
               "observation_set_ref": "obs-vYzsub",

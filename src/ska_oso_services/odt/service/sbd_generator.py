@@ -1,15 +1,18 @@
 # pylint: disable=no-member
 from random import randint
-from typing import List, Optional
+from typing import Optional
 
 import astropy.units as u
 from ska_oso_pdm import SBDefinition, SubArrayLOW, SubArrayMID, Target, TelescopeType
 from ska_oso_pdm.project import ObservingBlock, ScienceProgramme
+from ska_oso_pdm.proposal.data_product_sdp import DataProductSDP, Weighting
 from ska_oso_pdm.sb_definition import (
     CSPConfiguration,
     DishAllocation,
     MCCSAllocation,
     ScanDefinition,
+    SDPConfiguration,
+    SDPScript,
 )
 from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration, MidCBFConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
@@ -71,6 +74,20 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
         science_programme, scan_sequence
     )
 
+    sdp_configurations = [
+        SDPConfiguration(
+            sdp_script=SDPScript.VIS_RECEIVE,
+            script_version="latest",
+            script_parameters={},
+        )
+    ]
+    if science_programme.data_product_sdps:
+        sdp_configurations.append(
+            _sdp_configuration_from_data_product_sdp(
+                science_programme.data_product_sdps[0]
+            )
+        )
+
     return SBDefinition(
         telescope=telescope,
         activities=_default_activities(),
@@ -78,6 +95,7 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
         mccs_allocation=mccs_allocation,
         csp_configurations=csp_configurations,
         targets=science_programme.targets,
+        sdp_configurations=sdp_configurations,
     )
 
 
@@ -93,7 +111,7 @@ def _default_activities() -> dict[str, GitScript]:
 
 
 def _receptor_field_from_science_programme(
-    science_programme: ScienceProgramme, scan_sequence: List[ScanDefinition]
+    science_programme: ScienceProgramme, scan_sequence: list[ScanDefinition]
 ) -> tuple[Optional[MCCSAllocation], Optional[DishAllocation]]:
     observation_set = science_programme.observation_sets[0]
 
@@ -189,6 +207,37 @@ def _csp_configuration_from_science_programme(
     )
 
 
+def _sdp_configuration_from_data_product_sdp(
+    dp_sdp: DataProductSDP,
+) -> SDPConfiguration:
+    parameter_conversion_map = {
+        u.quantity.Quantity: lambda astr_value: astr_value.value,
+        Weighting: lambda weight: (
+            weight.weighting + " " + str(weight.robust)
+            if weight.robust is not None
+            else weight.weighting
+        ),
+    }
+    astropy_unit_mapper = {  # Units expected by the continuum-imaging SDP script
+        "image_size": "pix",
+        "image_cellsize": "arcsec",
+    }
+    parameters = {}
+    for key, value in vars(dp_sdp.script_parameters).items():
+        if isinstance(value, u.quantity.Quantity):
+            value = value.to(astropy_unit_mapper[key])
+        parameters[key] = (
+            parameter_conversion_map[type(value)](value)
+            if type(value) in parameter_conversion_map.keys()
+            else value
+        )
+    return SDPConfiguration(
+        sdp_script=SDPScript.CONTINUUM_IMAGING,
+        script_version="latest",
+        script_parameters=parameters,
+    )
+
+
 def _scan_time_ms_from_science_programme(
     science_programme: ScienceProgramme, target_id: str
 ) -> float:
@@ -222,7 +271,7 @@ def _scan_time_ms_from_science_programme(
 
 
 def _dish_allocation(
-    subarray: SubArrayMID, scan_sequence: List[ScanDefinition]
+    subarray: SubArrayMID, scan_sequence: list[ScanDefinition]
 ) -> DishAllocation:
     osd_data = get_osd_data(
         array_assembly=subarray.value, capabilities="mid", source="car"
@@ -238,7 +287,7 @@ def _dish_allocation(
 
 
 def _mccs_allocation(
-    subarray: SubArrayLOW, scan_sequence: List[ScanDefinition]
+    subarray: SubArrayLOW, scan_sequence: list[ScanDefinition]
 ) -> MCCSAllocation:
     osd_data = get_osd_data(
         array_assembly=subarray.value, capabilities="low", source="car"
