@@ -10,11 +10,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
 from ska_aaa_authhelpers import AuthContext, Role
+from ska_db_oda.persistence.fastapicontext import UnitOfWork
 from ska_oso_pdm import SBDStatusHistory
 from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
 
-from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
@@ -74,13 +74,16 @@ def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
         Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})
     ],
 )
-def sbds_get(identifier: str) -> SBDefinition:
+def sbds_get(
+    identifier: str,
+    oda: UnitOfWork,
+) -> SBDefinition:
     """
     Retrieves the SchedulingBlockDefinition with the given identifier
     from the underlying data store, if available.
     """
     LOGGER.debug("GET SBD sbd_id: %s", identifier)
-    with oda.uow() as uow:
+    with oda as uow:
         sbd = uow.sbds.get(identifier)
     return sbd
 
@@ -94,6 +97,7 @@ def sbds_post(
         AuthContext,
         Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
     ],
+    oda: UnitOfWork,
     sbd: SBDefinition,
 ) -> SBDefinition:
     """
@@ -120,7 +124,7 @@ def sbds_post(
                 " this request."
             ),
         )
-    with oda.uow() as uow:
+    with oda as uow:
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
 
         sbd_status = _create_sbd_status_entity(updated_sbd)
@@ -139,6 +143,7 @@ def sbds_put(
         AuthContext,
         Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
     ],
+    oda: UnitOfWork,
     sbd: SBDefinition,
     identifier: str,
 ) -> SBDefinition:
@@ -162,7 +167,7 @@ def sbds_put(
             ),
         )
 
-    with oda.uow() as uow:
+    with oda as uow:
         # This get will check if the identifier already exists
         # and throw an error if it doesn't
         uow.sbds.get(identifier)

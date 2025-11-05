@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* [BUGFIX] Fix index error when generating SBDs from Observation Info without calibration strategy notes
+* [BUGFIX] Update to ODA 13.1.1 with better error handling of postgres connections
+* [BUGFIX] Set `PGUSER` to `<.Values.global.oda.postgres.database>_admin` if `.Values.global.oda.postgres.user` isn't set
 
 9.2.0
 ***********

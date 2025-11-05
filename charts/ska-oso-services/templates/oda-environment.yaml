@@ -17,5 +17,9 @@ data:
   {{ end }}
   PGPORT: {{ .Values.global.oda.postgres.port | quote }}
   PGDATABASE: {{ .Values.global.oda.postgres.database }}
+  {{ if .Values.global.oda.postgres.user }}
   PGUSER: {{ .Values.global.oda.postgres.user }}
+  {{ else -}}
+  PGUSER: {{ .Values.global.oda.postgres.database }}_admin
+  {{ end -}}
   # PGPASSWORD is pulled from Vault into a separate Secret

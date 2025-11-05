@@ -154,9 +154,10 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
         targets=targets,
     )
 
-    if telescope == TelescopeType.SKA_LOW:
-        # Currently there will only be one calibration strategy and any
-        # notes will apply to the full SBD.
+    if (
+        science_programme.calibration_strategies
+        and science_programme.calibration_strategies[0].notes
+    ):
         sbd.description = science_programme.calibration_strategies[0].notes
 
     return sbd

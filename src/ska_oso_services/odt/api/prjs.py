@@ -8,12 +8,12 @@ from typing import Annotated, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 from ska_aaa_authhelpers import AuthContext, Role
+from ska_db_oda.persistence.fastapicontext import UnitOfWork
 from ska_oso_pdm import ProjectStatusHistory, TelescopeType
 from ska_oso_pdm.entity_status_history import ProjectStatus
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
-from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
@@ -58,13 +58,13 @@ router = APIRouter(prefix="/prjs")
         Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})
     ],
 )
-def prjs_get(identifier: str) -> Project:
+def prjs_get(identifier: str, oda: UnitOfWork) -> Project:
     """
     Retrieves the Project with the given identifier from the underlying
     data store, if available
     """
     LOGGER.debug("GET PRJS prj_id: %s", identifier)
-    with oda.uow() as uow:
+    with oda as uow:
         return uow.prjs.get(identifier)
 
 
@@ -74,6 +74,7 @@ def prjs_post(
         AuthContext,
         Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
     ],
+    oda: UnitOfWork,
     prj: Optional[Project] = None,
 ) -> Project:
     """
@@ -100,7 +101,7 @@ def prjs_post(
             ),
         )
 
-    with oda.uow() as uow:
+    with oda as uow:
         updated_prj = uow.prjs.add(prj, user=auth.user_id)
 
         prj_status = _create_prj_status_entity(updated_prj)
@@ -118,6 +119,7 @@ def prjs_put(
     ],
     prj: Project,
     identifier: str,
+    oda: UnitOfWork,
 ) -> Project:
     """
     Updates the Project with the given identifier in the underlying
@@ -133,7 +135,7 @@ def prjs_put(
             ),
         )
 
-    with oda.uow() as uow:
+    with oda as uow:
         # This get will check if the identifier already exists
         # and throw an error if it doesn't
         uow.prjs.get(identifier)
@@ -161,6 +163,7 @@ def prjs_sbds_post(
         AuthContext,
         Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
     ],
+    oda: UnitOfWork,
     identifier: str,
     obs_block_id: str,
     sbd: Optional[SBDefinition] = None,
@@ -172,7 +175,7 @@ def prjs_sbds_post(
 
     If no request body is passed, a default 'empty' SBDefinition will be created.
     """
-    with oda.uow() as uow:
+    with oda as uow:
         prj = uow.prjs.get(identifier)
         try:
             obs_block = next(
@@ -218,6 +221,7 @@ def prjs_ob_generate_sbds(
         AuthContext,
         Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
     ],
+    oda: UnitOfWork,
     identifier: str,
     obs_block_id: str,
 ) -> Project:
@@ -226,7 +230,7 @@ def prjs_ob_generate_sbds(
         identifier,
         obs_block_id,
     )
-    with oda.uow() as uow:
+    with oda as uow:
         prj = uow.prjs.get(identifier)
         try:
             obs_block = next(
@@ -272,10 +276,11 @@ def prjs_generate_sbds(
         AuthContext,
         Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
     ],
+    oda: UnitOfWork,
     identifier: str,
 ) -> Project:
     LOGGER.debug("POST PRJS generate SBDefinitions for prj_id: %s", identifier)
-    with oda.uow() as uow:
+    with oda as uow:
         prj = uow.prjs.get(identifier)
         for obs_block in prj.obs_blocks:
             # Overwrite any existing SBDefinitions that were

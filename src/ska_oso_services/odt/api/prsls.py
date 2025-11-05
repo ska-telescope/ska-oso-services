@@ -10,10 +10,10 @@ from fastapi import APIRouter
 from pydantic import AwareDatetime
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.persistence.domain.query import DateQuery
+from ska_db_oda.persistence.fastapicontext import UnitOfWork
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 
-from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.model import AppModel
 from ska_oso_services.odt.api.prjs import _create_prj_status_entity
@@ -59,10 +59,11 @@ def prjs_prsl_post(
         AuthContext,
         Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
     ],
+    oda: UnitOfWork,
     prsl_id: str,
 ) -> Project:
     LOGGER.debug("POST PRSLS generateProject from prsl_id: %s", prsl_id)
-    with oda.uow() as uow:
+    with oda as uow:
         proposal = uow.prsls.get(prsl_id)
         project = generate_project(proposal)
 
@@ -84,13 +85,15 @@ def prjs_prsl_post(
     "been created without a Proposal.",
     dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READ})],
 )
-def prj_details() -> list[ProposalProjectDetails]:
+def prj_details(
+    oda: UnitOfWork,
+) -> list[ProposalProjectDetails]:
     LOGGER.debug("GET PRSLS Project View from prsl_id")
 
     # This is a temporary, inefficient implementation that does an outer join in the
     # Python for all the Projects and Proposals.
     # BTN-2812 has been created to provide this functionality in the ODA SQL.
-    with oda.uow() as uow:
+    with oda as uow:
         # The easiest way to get all the entities from the ODA interface currently
         # is to just query by a date
         date_query = DateQuery(
