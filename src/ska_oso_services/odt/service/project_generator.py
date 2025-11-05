@@ -79,7 +79,8 @@ def _group_observation_sets(proposal: Proposal) -> list[list[ObservationSets]]:
 
 
 def science_programme_from_observation_set(
-    observation_set: ObservationSets, observation_info: ObservationInfo
+    observation_set: ObservationSets,
+    observation_info: ObservationInfo,
 ) -> ScienceProgramme:
     """
     Create a ScienceProgramme by copying the ObservationSet over and the other
@@ -102,6 +103,13 @@ def science_programme_from_observation_set(
         target for target in observation_info.targets if target.target_id in target_ids
     ]
 
+    # As of PI28 we expect the PHT to only create a single CalibrationStrategy, if any.
+    # So we just copy it over into each science programme
+    calibration_strategies_for_observation_set = [
+        calibration_strategy
+        for calibration_strategy in observation_info.calibration_strategy
+    ]
+
     sdp_data_products_for_observation_set = [
         data_product
         for data_product in observation_info.data_product_sdps
@@ -112,5 +120,6 @@ def science_programme_from_observation_set(
         observation_sets=[observation_set.model_copy(deep=True)],
         result_details=results_for_observation_set,
         targets=targets_for_observation_set,
+        calibration_strategies=calibration_strategies_for_observation_set,
         data_product_sdps=sdp_data_products_for_observation_set,
     )

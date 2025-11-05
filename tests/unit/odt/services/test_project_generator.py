@@ -1,5 +1,7 @@
 from unittest import mock
 
+from ska_oso_pdm import CalibrationStrategy
+
 from ska_oso_services.odt.service.project_generator import generate_project
 from tests.unit.util import TestDataFactory
 
@@ -17,6 +19,15 @@ def test_project_from_proposal_without_groups(mock_randint):
     mock_randint.return_value = 12345
 
     proposal = TestDataFactory.complete_proposal()
+
+    # this might need to be removed if/when Stargazer add calibration_strategy to the
+    # test proposal
+    proposal.observation_info.calibration_strategy = [
+        CalibrationStrategy(
+            observatory_defined=True, notes="I prefer Pictor A if possible"
+        )
+    ]
+
     proposal.observation_info.observation_sets[0].group_id = None
     proposal.observation_info.observation_sets[1].group_id = None
 

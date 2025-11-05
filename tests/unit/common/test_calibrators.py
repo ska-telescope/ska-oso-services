@@ -13,7 +13,7 @@ from ska_oso_services.common.calibrators import (
     ClosestCalibrator,
     HighestCalibrator,
     calibrator_table,
-    find_appropriate_calibrator,
+    find_appropriate_calibrators,
     to_pdm_targets,
 )
 
@@ -66,7 +66,7 @@ def test_find_closest_calibrator_works_as_expected(
 
     mock_to_pdm_targets.return_value = to_pdm_targets(dummy_calibrator_table)
 
-    appropriate_calibrators = find_appropriate_calibrator(
+    appropriate_calibrators = find_appropriate_calibrators(
         TEST_TARGET, strategy, timedelta(hours=8.0), TelescopeType.SKA_LOW
     )
 
@@ -87,13 +87,12 @@ def test_find_highest_calibrator_works_as_expected(
 
     mock_to_pdm_targets.return_value = to_pdm_targets(dummy_calibrator_table)
 
-    appropriate_calibrators = find_appropriate_calibrator(
+    appropriate_calibrators = find_appropriate_calibrators(
         TEST_TARGET, strategy, timedelta(hours=0.5), TelescopeType.SKA_LOW
     )
 
     assert len(appropriate_calibrators) == 2
     assert isinstance(appropriate_calibrators[0], HighestCalibrator)
     assert (
-        appropriate_calibrators[0].calibrator.name
-        == appropriate_calibrators[1].calibrator.name
+        appropriate_calibrators[0].calibrator == appropriate_calibrators[1].calibrator
     )

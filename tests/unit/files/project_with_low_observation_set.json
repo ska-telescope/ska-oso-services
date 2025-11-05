@@ -64,8 +64,8 @@
               },
               "reference_coordinate": {
                 "kind": "icrs",
-                "ra": "16:40:00.0",
-                "dec": "30:00:00.0"
+                "ra_str": "16:40:00.0",
+                "dec_str": "30:00:00.0"
               },
               "radial_velocity": {
                 "quantity": {
@@ -92,8 +92,8 @@
               },
               "reference_coordinate": {
                 "kind": "icrs",
-                "ra": "16:40:00.0",
-                "dec": "30:00:00.0"
+                "ra_str": "16:40:00.0",
+                "dec_str": "30:00:00.0"
               },
               "radial_velocity": {
                 "quantity": {
@@ -134,6 +134,12 @@
                 "channels_out": 12,
                 "fit_spectral_pol": 3
               }
+            }
+          ],
+          "calibration_strategies": [
+            {
+              "observatory_defined": true,
+              "notes": "I prefer Hydra A"
             }
           ],
           "result_details": [
