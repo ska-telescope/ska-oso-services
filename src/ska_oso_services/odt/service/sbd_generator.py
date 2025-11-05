@@ -1,6 +1,7 @@
 # pylint: disable=no-member
+from functools import singledispatch
 from random import randint
-from typing import Optional
+from typing import Any, Optional
 
 import astropy.units as u
 from ska_oso_pdm import SBDefinition, SubArrayLOW, SubArrayMID, Target, TelescopeType
@@ -272,27 +273,31 @@ def _csp_configuration_from_science_programme(
 def _sdp_configuration_from_data_product_sdp(
     dp_sdp: DataProductSDP,
 ) -> SDPConfiguration:
-    parameter_conversion_map = {
-        u.quantity.Quantity: lambda astr_value: astr_value.value,
-        Weighting: lambda weight: (
-            weight.weighting + " " + str(weight.robust)
-            if weight.robust is not None
-            else weight.weighting
-        ),
-    }
+    @singledispatch
+    def convert_parameter(value: Any) -> Any:
+        return value
+
+    @convert_parameter.register
+    def _(value: u.quantity.Quantity) -> float:
+        return value.value
+
+    @convert_parameter.register
+    def _(value: Weighting) -> str:
+        return (
+            f"{value.weighting} {value.robust}"
+            if value.robust is not None
+            else value.weighting
+        )
+
     astropy_unit_mapper = {  # Units expected by the continuum-imaging SDP script
         "image_size": "pix",
         "image_cellsize": "arcsec",
     }
     parameters = {}
-    for key, value in vars(dp_sdp.script_parameters).items():
-        if isinstance(value, u.quantity.Quantity):
-            value = value.to(astropy_unit_mapper[key])
-        parameters[key] = (
-            parameter_conversion_map[type(value)](value)
-            if type(value) in parameter_conversion_map.keys()
-            else value
-        )
+    for param_key, param_value in vars(dp_sdp.script_parameters).items():
+        if isinstance(param_value, u.quantity.Quantity):
+            param_value = param_value.to(astropy_unit_mapper[param_key])
+        parameters[param_key] = convert_parameter(param_value)
     return SDPConfiguration(
         sdp_script=SDPScript.CONTINUUM_IMAGING,
         script_version="latest",
