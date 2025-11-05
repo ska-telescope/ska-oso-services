@@ -195,11 +195,15 @@
 					"low-001"
 				],
                 "script_parameters": {
-                  "image_size": {"value": 0.0, "unit": "deg"},
-                  "image_cellsize": {"value": 0.0, "unit": "deg"},
-                  "weight": {
-                    "weighting": "natural"
+                  "image_size": {
+                      "value": 1024.0,
+                      "unit": "pix"
                   },
+                  "image_cellsize": {
+                      "value": 0.5,
+                      "unit": "arcsec"
+                  },
+                  "weight": {"weighting": "natural"},
                   "polarisations": "I",
                   "channels_out": 12,
                   "fit_spectral_pol": 3
