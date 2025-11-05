@@ -17,29 +17,26 @@ PRJS_API_URL = f"{ODT_BASE_API_URL}/prjs"
 
 
 class TestProjectGet:
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_get_existing_prj(self, mock_uow, client):
+
+    def test_prjs_get_existing_prj(self, client_with_uow_mock):
         """
         Check the prjs_get method returns the expected Project and status code
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         uow_mock.prjs.get.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         result = client.get(f"{PRJS_API_URL}/prj-1234")
 
         assert_json_is_equal(result.text, project.model_dump_json())
         assert result.status_code == HTTPStatus.OK
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_get_not_found_prj(self, mock_uow, client):
+    def test_prjs_get_not_found_prj(self, client_with_uow_mock):
         """
         Check the prjs_get method returns the Not Found error when identifier not in ODA
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.get.side_effect = ODANotFound(identifier="prj-1234")
-        mock_uow().__enter__.return_value = uow_mock
 
         result = client.get(f"{PRJS_API_URL}/prj-1234")
         assert (
@@ -48,15 +45,13 @@ class TestProjectGet:
         )
         assert result.status_code == HTTPStatus.NOT_FOUND
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_get_error(self, mock_uow, client):
+    def test_prjs_get_error(self, client_with_uow_mock):
         """
         Check the prjs_get method returns a formatted error
         when ODA responds with an error
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.get.side_effect = ValueError("Something bad!")
-        mock_uow().__enter__.return_value = uow_mock
 
         # Middleware re-raises exceptions to make visible to tests and servers:
         # https://github.com/encode/starlette/blob/master/starlette/middleware/errors.py#L186
@@ -71,16 +66,15 @@ class TestProjectGet:
 
 
 class TestProjectPost:
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_success(self, mock_uow, client):
+
+    def test_prjs_post_success(self, client_with_uow_mock):
         """
         Check the prjs_post method returns the expected response
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         created_project = TestDataFactory.project()
         uow_mock.prjs.add.return_value = created_project
         uow_mock.prjs.get.return_value = created_project
-        mock_uow().__enter__.return_value = uow_mock
 
         result = client.post(
             f"{PRJS_API_URL}",
@@ -91,16 +85,14 @@ class TestProjectPost:
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, created_project.model_dump_json())
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_adds_status_entity(self, mock_uow, client):
+    def test_prjs_post_adds_status_entity(self, client_with_uow_mock):
         """
         Check the prjs_post also adds a status entity
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         created_project = TestDataFactory.project()
         uow_mock.prjs.add.return_value = created_project
         uow_mock.prjs.get.return_value = created_project
-        mock_uow().__enter__.return_value = uow_mock
 
         add_status_mock = mock.MagicMock()
         uow_mock.prjs_status_history.add = add_status_mock
@@ -114,17 +106,15 @@ class TestProjectPost:
         assert result.status_code == HTTPStatus.OK
         add_status_mock.assert_called()
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_with_minimum_body(self, mock_uow, client):
+    def test_prjs_post_with_minimum_body(self, client_with_uow_mock):
         """
         Check the prjs_post method returns an 'empty' project with a
         single observing block if a request body with only the valid fields is sent
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         created_project = TestDataFactory.project()
         uow_mock.prjs.add.return_value = created_project
         uow_mock.prjs.get.return_value = created_project
-        mock_uow().__enter__.return_value = uow_mock
 
         result = client.post(f"{PRJS_API_URL}")
 
@@ -139,7 +129,6 @@ class TestProjectPost:
         Check the prjs_post method returns a validation error if the user
         gives a prj_id in the body, as we don't want to just silently overwrite this
         """
-
         result = client.post(
             f"{PRJS_API_URL}",
             data=TestDataFactory.project().model_dump_json(),
@@ -159,7 +148,7 @@ class TestProjectPost:
     # TODO validate sbd_ids exist?
     # TODO extract to service layer
     # @mock.patch("ska_oso_services.odt.api.prjs.validate_prj")
-    # def test_sbds_post_value_error(self, mock_validate, client):
+    # def test_sbds_post_value_error(self, mock_validate, client_with_uow_mock):
     #     """
     #     Check the sbds_post method returns the validation error in a response
     #     """
@@ -178,15 +167,13 @@ class TestProjectPost:
     #     }
     #     assert result.status_code == HTTPStatus.BAD_REQUEST
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_oda_error(self, mock_uow, client):
+    def test_prjs_post_oda_error(self, client_with_uow_mock):
         """
         Check the prjs_post method returns the expected error response
         from an error in the ODA
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.add.side_effect = IOError("test error")
-        mock_uow().__enter__.return_value = uow_mock
 
         # Middleware re-raises exceptions to make visible to tests and servers:
         # https://github.com/encode/starlette/blob/master/starlette/middleware/errors.py#L186
@@ -203,17 +190,15 @@ class TestProjectPost:
             assert result["detail"] == "OSError('test error')"
             assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_oda_pydantic_error(self, mock_uow, client):
+    def test_prjs_oda_pydantic_error(self, client_with_uow_mock):
         """
         Check the prjs_post method returns the expected error response
         if pydantic fails to deserialise the ODA json
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.add.side_effect = ValidationError.from_exception_data(
             "Invalid data", line_errors=[]
         )
-        mock_uow().__enter__.return_value = uow_mock
 
         response = client.post(
             f"{PRJS_API_URL}",
@@ -233,17 +218,16 @@ class TestProjectPost:
 
 
 class TestProjectPut:
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_put_success(self, mock_uow, client):
+
+    def test_prjs_put_success(self, client_with_uow_mock):
         """
         Check the prjs_put method returns the expected response
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.__contains__.return_value = True
         project = TestDataFactory.project()
         uow_mock.prjs.add.return_value = project
         uow_mock.prjs.get.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         result = client.put(
             f"{PRJS_API_URL}/{project.prj_id}",
@@ -254,17 +238,15 @@ class TestProjectPut:
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, project.model_dump_json())
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_put_adds_status(self, mock_uow, client):
+    def test_prjs_put_adds_status(self, client_with_uow_mock):
         """
         Check the prjs_put also adds a status entity
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.__contains__.return_value = True
         project = TestDataFactory.project()
         uow_mock.prjs.add.return_value = project
         uow_mock.prjs.get.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         add_status_mock = mock.MagicMock()
         uow_mock.prjs_status_history.add = add_status_mock
@@ -299,7 +281,7 @@ class TestProjectPut:
 
     # TODO currently no prj validation
     # @mock.patch("ska_oso_services.odt.api.prjs.validate_prj")
-    # def test_sbds_put_value_error(self, mock_validate, client):
+    # def test_sbds_put_value_error(self, mock_validate, client_with_uow_mock):
     #     """
     #     Check the sbds_put method returns the validation error in a response
     #     """
@@ -318,15 +300,13 @@ class TestProjectPut:
     #         "messages": {"validation_errors": "some validation error"},
     #     }}
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_put_not_found(self, mock_uow, client):
+    def test_prjs_put_not_found(self, client_with_uow_mock):
         """
         Check the prjs_put method returns the expected error response
         when the identifier is not found in the ODA.
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.get.side_effect = ODANotFound(identifier="prj-999")
-        mock_uow().__enter__.return_value = uow_mock
 
         project = TestDataFactory.project(prj_id="prj-999")
         resp = client.put(
@@ -341,16 +321,14 @@ class TestProjectPut:
             == "The requested identifier prj-999 could not be found."
         )
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_put_oda_error(self, mock_uow, client):
+    def test_prjs_put_oda_error(self, client_with_uow_mock):
         """
         Check the prjs_put method returns the expected error response
         from an error in the ODA
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.__contains__.return_value = True
         uow_mock.prjs.add.side_effect = IOError("test error")
-        mock_uow().__enter__.return_value = uow_mock
 
         project = TestDataFactory.project()
 
@@ -369,12 +347,11 @@ class TestProjectPut:
 
 
 class TestProjectAddSBDefinition:
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_sbd_prj_id_not_found(self, mock_uow, client):
+
+    def test_prjs_post_sbd_prj_id_not_found(self, client_with_uow_mock):
         """ """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.get.side_effect = ODANotFound(identifier="prj-999")
-        mock_uow().__enter__.return_value = uow_mock
 
         resp = client.post(
             f"{PRJS_API_URL}/prj-999/ob-1/sbds",
@@ -386,13 +363,11 @@ class TestProjectAddSBDefinition:
             == "The requested identifier prj-999 could not be found."
         )
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_sbd_obs_block_id_not_found(self, mock_uow, client):
-        uow_mock = mock.MagicMock()
+    def test_prjs_post_sbd_obs_block_id_not_found(self, client_with_uow_mock):
+        client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         project.obs_blocks = []
         uow_mock.prjs.get.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/ob-1/sbds",
@@ -401,12 +376,10 @@ class TestProjectAddSBDefinition:
         assert resp.status_code == HTTPStatus.NOT_FOUND
         assert resp.json()["detail"] == "Observing Block 'ob-1' not found in Project"
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_sbd_oda_error(self, mock_uow, client):
+    def test_prjs_post_sbd_oda_error(self, client_with_uow_mock):
         """ """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.get.side_effect = IOError("test error")
-        mock_uow().__enter__.return_value = uow_mock
 
         with pytest.raises(IOError):
             resp = client.post(
@@ -416,9 +389,8 @@ class TestProjectAddSBDefinition:
             assert resp.json()["detail"] == "OSError('test error')"
             assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_sbd_success(self, mock_uow, client):
-        uow_mock = mock.MagicMock()
+    def test_prjs_post_sbd_success(self, client_with_uow_mock):
+        client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         obs_block_id = "ob-1"
         project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
@@ -426,7 +398,6 @@ class TestProjectAddSBDefinition:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         uow_mock.prjs.add.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/sbds",
@@ -443,9 +414,8 @@ class TestProjectAddSBDefinition:
         args, _ = uow_mock.prjs.add.call_args
         assert sbd.sbd_id in args[0].obs_blocks[0].sbd_ids
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_sbd_adds_status_entities(self, mock_uow, client):
-        uow_mock = mock.MagicMock()
+    def test_prjs_post_sbd_adds_status_entities(self, client_with_uow_mock):
+        client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         obs_block_id = "ob-1"
         project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
@@ -453,7 +423,6 @@ class TestProjectAddSBDefinition:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         uow_mock.prjs.add.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         add_sbd_status_mock = mock.MagicMock()
         uow_mock.sbds_status_history.add = add_sbd_status_mock
@@ -471,10 +440,11 @@ class TestProjectAddSBDefinition:
 
 class TestProjectGenerateSBDefinitions:
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
     @mock.patch("ska_oso_services.odt.api.prjs.generate_sbds")
-    def test_prjs_post_generate_sbd_success(self, mock_generate_sbds, mock_uow, client):
-        uow_mock = mock.MagicMock()
+    def test_prjs_post_generate_sbd_success(
+        self, mock_generate_sbds, client_with_uow_mock
+    ):
+        client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         obs_block_id = "ob-1"
         project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
@@ -482,7 +452,6 @@ class TestProjectGenerateSBDefinitions:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         uow_mock.prjs.add.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         mock_generate_sbds.return_value = [sbd]
 
@@ -496,13 +465,11 @@ class TestProjectGenerateSBDefinitions:
         uow_mock.sbds.add.assert_called_once()
         assert_json_is_equal(response.text, project.model_dump_json())
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_generate_sbd_prj_id_not_found(self, mock_uow, client):
+    def test_prjs_post_generate_sbd_prj_id_not_found(self, client_with_uow_mock):
         """ """
         prj_id = "prj-999"
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.get.side_effect = ODANotFound(identifier=prj_id)
-        mock_uow().__enter__.return_value = uow_mock
 
         resp = client.post(
             f"{PRJS_API_URL}/{prj_id}/generateSBDefinitions",
@@ -514,12 +481,10 @@ class TestProjectGenerateSBDefinitions:
             == f"The requested identifier {prj_id} could not be found."
         )
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_generate_sbd_oda_error(self, mock_uow, client):
+    def test_prjs_post_generate_sbd_oda_error(self, client_with_uow_mock):
         """ """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.get.side_effect = IOError("test error")
-        mock_uow().__enter__.return_value = uow_mock
 
         with pytest.raises(IOError):
             resp = client.post(
@@ -529,15 +494,14 @@ class TestProjectGenerateSBDefinitions:
             assert resp.json()["detail"] == "OSError('test error')"
             assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
     @mock.patch("ska_oso_services.odt.api.prjs.generate_sbds")
     def test_prjs_post_generate_sbd_adds_sbd_status_entity(
-        self, mock_generate_sbds, mock_uow, client
+        self, mock_generate_sbds, client_with_uow_mock
     ):
         """
         Check the prjs_post also adds a status entity
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         obs_block_id = "ob-1"
         project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
@@ -545,7 +509,6 @@ class TestProjectGenerateSBDefinitions:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         uow_mock.prjs.add.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         mock_generate_sbds.return_value = [sbd]
 
@@ -562,12 +525,11 @@ class TestProjectGenerateSBDefinitions:
 
 class TestProjectObsBlockGenerateSBDefinitions:
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
     @mock.patch("ska_oso_services.odt.api.prjs.generate_sbds")
     def test_prjs_post_ob_generate_sbd_success(
-        self, mock_generate_sbds, mock_uow, client
+        self, mock_generate_sbds, client_with_uow_mock
     ):
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         obs_block_id = "ob-1"
         project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
@@ -575,7 +537,6 @@ class TestProjectObsBlockGenerateSBDefinitions:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         uow_mock.prjs.add.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         mock_generate_sbds.return_value = [sbd]
 
@@ -586,13 +547,11 @@ class TestProjectObsBlockGenerateSBDefinitions:
         assert resp.status_code == HTTPStatus.OK
         assert project.obs_blocks[0].sbd_ids == [sbd.sbd_id]
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_ob_generate_sbd_prj_id_not_found(self, mock_uow, client):
+    def test_prjs_post_ob_generate_sbd_prj_id_not_found(self, client_with_uow_mock):
         """ """
         prj_id = "prj-999"
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.get.side_effect = ODANotFound(identifier=prj_id)
-        mock_uow().__enter__.return_value = uow_mock
 
         resp = client.post(
             f"{PRJS_API_URL}/{prj_id}/obs-block-00001/generateSBDefinitions",
@@ -604,13 +563,13 @@ class TestProjectObsBlockGenerateSBDefinitions:
             == f"The requested identifier {prj_id} could not be found."
         )
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_ob_generate_sbd_obs_block_id_not_found(self, mock_uow, client):
-        uow_mock = mock.MagicMock()
+    def test_prjs_post_ob_generate_sbd_obs_block_id_not_found(
+        self, client_with_uow_mock
+    ):
+        client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         project.obs_blocks = []
         uow_mock.prjs.get.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateSBDefinitions",
@@ -622,12 +581,10 @@ class TestProjectObsBlockGenerateSBDefinitions:
             == "Observing Block 'obs-block-00001' not found in Project"
         )
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
-    def test_prjs_post_ob_generate_sbd_oda_error(self, mock_uow, client):
+    def test_prjs_post_ob_generate_sbd_oda_error(self, client_with_uow_mock):
         """ """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         uow_mock.prjs.get.side_effect = IOError("test error")
-        mock_uow().__enter__.return_value = uow_mock
 
         with pytest.raises(IOError):
             resp = client.post(
@@ -637,15 +594,14 @@ class TestProjectObsBlockGenerateSBDefinitions:
             assert resp.json()["detail"] == "OSError('test error')"
             assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
-    @mock.patch("ska_oso_services.odt.api.prjs.oda.uow")
     @mock.patch("ska_oso_services.odt.api.prjs.generate_sbds")
     def test_prjs_post_generate_sbd_adds_sbd_status_entity(
-        self, mock_generate_sbds, mock_uow, client
+        self, mock_generate_sbds, client_with_uow_mock
     ):
         """
         Check the prjs_post also adds a status entity
         """
-        uow_mock = mock.MagicMock()
+        client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         obs_block_id = "obs-block-00001"
         project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
@@ -653,7 +609,6 @@ class TestProjectObsBlockGenerateSBDefinitions:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         uow_mock.prjs.add.return_value = project
-        mock_uow().__enter__.return_value = uow_mock
 
         mock_generate_sbds.return_value = [sbd]
 
