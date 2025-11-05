@@ -4,6 +4,7 @@ ska_oso_services app.py
 
 import logging
 import os
+from contextlib import asynccontextmanager
 from importlib.metadata import version
 
 from fastapi import FastAPI
@@ -15,6 +16,7 @@ from ska_db_oda.persistence.domain.errors import (
     ODANotFound,
     UniqueConstraintViolation,
 )
+from ska_db_oda.persistence.fastapicontext import oda_lifespan
 from ska_ser_logging import configure_logging
 
 from ska_oso_services import odt, pht
@@ -41,6 +43,15 @@ PRODUCTION = os.getenv("PRODUCTION", "false").lower() == "true"
 LOGGER = logging.getLogger(__name__)
 
 
+@asynccontextmanager
+async def combined_lifespan(app: FastAPI):
+    async with watchdog(allow_unsecured=["get_systemcoordinates", "get_osd_by_cycle"])(
+        app
+    ):
+        async with oda_lifespan(app):
+            yield
+
+
 def create_app(production=PRODUCTION) -> FastAPI:
     """
     Create the Connexion application with required config
@@ -51,9 +62,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
     app = FastAPI(
         openapi_url=f"{API_PREFIX}/openapi.json",
         docs_url=f"{API_PREFIX}/ui",
-        lifespan=watchdog(
-            allow_unsecured=["get_systemcoordinates", "get_osd_by_cycle"]
-        ),
+        lifespan=combined_lifespan,
         # Need this param for code generation - see
         # https://fastapi.tiangolo.com/how-to/separate-openapi-schemas
         separate_input_output_schemas=False,
