@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 * [BUGFIX] Fix index error when generating SBDs from Observation Info without calibration strategy notes
+* [BUGFIX] Update to ODA 13.1.1 with better error handling of postgres connections
 
 9.2.0
 ***********
