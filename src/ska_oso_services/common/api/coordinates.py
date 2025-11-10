@@ -10,13 +10,12 @@ from fastapi import APIRouter
 from ska_oso_services.common.coordinateslookup import (
     Equatorial,
     Galactic,
-    convert_to_galactic,
+    convert_icrs_to_galactic,
     get_coordinates,
-    round_coord,
 )
 from ska_oso_services.common.model import AppModel
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/coordinates")
 
@@ -63,18 +62,27 @@ def get_systemcoordinates(
              In case of an error, an error response is returned.
     :rtype: GalacticResponse | EquatorialResponse
     """
-    logger.debug("GET coordinates: %s", identifier)
-    response = get_coordinates(identifier)
+    LOGGER.debug("GET coordinates: %s", identifier)
+    lookup_result_target = get_coordinates(identifier)
 
     if reference_frame.lower() == "galactic":
+        galactic_coordinates = convert_icrs_to_galactic(
+            lookup_result_target.reference_coordinate
+        )
         return GalacticResponse(
-            galactic=convert_to_galactic(
-                response.ra, response.dec, response.velocity, response.redshift
+            galactic=Galactic(
+                lon=round(galactic_coordinates.l, 2),
+                lat=round(galactic_coordinates.b, 4),
+                velocity=lookup_result_target.radial_velocity.quantity.value,
+                redshift=lookup_result_target.radial_velocity.redshift,
             )
         )
     else:
         return EquatorialResponse(
-            equatorial=round_coord(
-                response.ra, response.dec, response.velocity, response.redshift
+            equatorial=Equatorial(
+                ra=lookup_result_target.reference_coordinate.ra_str,
+                dec=lookup_result_target.reference_coordinate.dec_str,
+                velocity=lookup_result_target.radial_velocity.quantity.value,
+                redshift=lookup_result_target.radial_velocity.redshift,
             )
         )

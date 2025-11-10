@@ -2,167 +2,57 @@ import json
 from http import HTTPStatus
 from unittest import mock
 
-import pytest
+from astropy.units import Quantity
+from ska_oso_pdm import ICRSCoordinates, RadialVelocity, Target
 
-from ska_oso_services.common.coordinateslookup import Equatorial
 from ska_oso_services.common.error_handling import NotFoundError
 from tests.unit.conftest import APP_BASE_API_URL
 from tests.unit.util import assert_json_is_equal
 
 COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
 
-# Define test cases
-COORDINATE_TEST_CASES = [
-    (
-        "M31",
-        "equatorial",
-        Equatorial(
-            ra="00:42:44.3300",
-            dec="+41:16:07.500",
-            velocity=-300.0,
-            redshift=0.0,
-        ),
-        {
+TEST_TARGET_WITH_VELOCITY = Target(
+    reference_coordinate=ICRSCoordinates(
+        ra_str="00:42:44.3300", dec_str="+41:16:07.500"
+    ),
+    radial_velocity=RadialVelocity(quantity=Quantity(value=519.1, unit="km/s")),
+)
+
+
+class TestCoordinates:
+
+    @mock.patch("ska_oso_services.common.api.coordinates.get_coordinates")
+    def test_success_equatorial(self, mock_get_coordinates, client):
+        mock_get_coordinates.return_value = TEST_TARGET_WITH_VELOCITY
+
+        expected_response = {
             "equatorial": {
                 "ra": "00:42:44.3300",
                 "dec": "+41:16:07.500",
                 "redshift": 0.0,
-                "velocity": -300.0,
+                "velocity": 519.1,
             }
-        },
-    ),
-    (
-        "N10",
-        "galactic",
-        Equatorial(
-            ra="00:08:34.5389",
-            dec="-33:51:30.197",
-            velocity=6800.0,
-            redshift=0.0,
-        ),
-        {
-            "galactic": {
-                "lat": -78.5856,
-                "lon": 354.21,
-                "redshift": 0.0,
-                "velocity": 6800.0,
-            }
-        },
-    ),
-    (
-        "N10",
-        "equatorial",
-        Equatorial(
-            ra="00:08:34.5389",
-            dec="-33:51:30.197",
-            velocity=6800.0,
-            redshift=0.0,
-        ),
-        {
-            "equatorial": {
-                "ra": "00:08:34.5389",
-                "dec": "-33:51:30.197",
-                "redshift": 0.0,
-                "velocity": 6800.0,
-            }
-        },
-    ),
-    (
-        "47 Tuc",
-        "equatorial",
-        Equatorial(
-            ra="00:24:05.3590",
-            dec="-72:04:53.200",
-            velocity=-17.2,
-            redshift=0.0,
-        ),
-        {
-            "equatorial": {
-                "ra": "00:24:05.3590",
-                "dec": "-72:04:53.200",
-                "redshift": 0.0,
-                "velocity": -17.2,
-            }
-        },
-    ),
-    (
-        "HL Tau",
-        "equatorial",
-        Equatorial(
-            ra="04:31:38.5108",
-            dec="+18:13:57.860",
-            velocity=0.0,
-            redshift=0.0,
-        ),
-        {
-            "equatorial": {
-                "ra": "04:31:38.5108",
-                "dec": "+18:13:57.860",
-                "redshift": 0.0,
-                "velocity": 0.0,
-            }
-        },
-    ),
-    (
-        "WISEA J035950.64+670741.5",
-        "equatorial",
-        Equatorial(
-            ra="03:59:50.6448",
-            dec="+67:07:41.592",
-            velocity=0.0,
-            redshift=0.0,
-        ),
-        {
-            "equatorial": {
-                "ra": "03:59:50.6448",
-                "dec": "+67:07:41.592",
-                "redshift": 0.0,
-                "velocity": 0.0,
-            }
-        },
-    ),
-    (
-        "CR7",
-        "equatorial",
-        Equatorial(
-            ra="10:00:58.0008",
-            dec="+01:48:15.156",
-            velocity=0.0,
-            redshift=6.541,
-        ),
-        {
-            "equatorial": {
-                "ra": "10:00:58.0008",
-                "dec": "+01:48:15.156",
-                "redshift": 6.541,
-                "velocity": 0.0,
-            }
-        },
-    ),
-]
+        }
 
+        response = client.get(f"{COORDINATES_API_URL}/M83/equatorial")
 
-class TestCoordinates:
-    @pytest.mark.parametrize(
-        "identifier, reference_frame, mock_return, expected_response",
-        COORDINATE_TEST_CASES,
-    )
+        assert response.status_code == HTTPStatus.OK
+        assert_json_is_equal(response.text, json.dumps(expected_response))
+
     @mock.patch("ska_oso_services.common.api.coordinates.get_coordinates")
-    def test_success(
-        self,
-        mock_get_coordinates,
-        identifier,
-        reference_frame,
-        mock_return,
-        expected_response,
-        client,
-    ):
-        """
-        Test successful coordinate lookups
-        """
-        mock_get_coordinates.return_value = mock_return
+    def test_success_galactic(self, mock_get_coordinates, client):
+        mock_get_coordinates.return_value = TEST_TARGET_WITH_VELOCITY
 
-        response = client.get(f"{COORDINATES_API_URL}/{identifier}/{reference_frame}")
+        expected_response = {
+            "galactic": {
+                "lat": -21.5733,
+                "lon": 121.17,
+                "redshift": 0.0,
+                "velocity": 519.1,
+            }
+        }
+
+        response = client.get(f"{COORDINATES_API_URL}/M83/galactic")
 
         assert response.status_code == HTTPStatus.OK
         assert_json_is_equal(response.text, json.dumps(expected_response))
