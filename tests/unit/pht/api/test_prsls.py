@@ -152,6 +152,9 @@ class TestOSD:
                         ],
                     },
                     "AA2": {
+                        "allowed_channel_count_range_max": [1],
+                        "allowed_channel_count_range_min": [2],
+                        "allowed_channel_width_values": [3],
                         "available_receivers": [
                             "Band_1",
                             "Band_2",

@@ -120,13 +120,16 @@ class BasicCapabilitiesMid(BaseModel):
 
 
 class AA2_MID(BaseModel):
+    allowed_channel_count_range_max: list[int]
+    allowed_channel_count_range_min: list[int]
+    allowed_channel_width_values: list[int]
     available_receivers: list[str]
     number_ska_dishes: int
     number_meerkat_dishes: int
     number_meerkatplus_dishes: int
     max_baseline_km: int
     available_bandwidth_hz: int
-    number_channels: int
+    number_channels: int | None = None
     cbf_modes: list[str]
     number_zoom_windows: int
     number_zoom_channels: int
@@ -152,7 +155,7 @@ class AA2_LOW(BaseModel):
     number_beams: int
     max_baseline_km: int
     available_bandwidth_hz: int
-    channel_width_hz: int
+    channel_width_hz: float
     cbf_modes: list[str]
     number_zoom_windows: int
     number_zoom_channels: int
