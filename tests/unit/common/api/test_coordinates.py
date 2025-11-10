@@ -27,15 +27,41 @@ class TestCoordinates:
 
         expected_response = {
             "equatorial": {
-                "ra": "00:42:44.3300",
                 "dec": "+41:16:07.500",
+                "ra": "00:42:44.3300",
                 "redshift": 0.0,
                 "velocity": 519.1,
-            }
+            },
+            "name": "",
+            "pointing_pattern": {
+                "active": "SinglePointParameters",
+                "parameters": [
+                    {
+                        "kind": "SinglePointParameters",
+                        "offset_x_arcsec": 0.0,
+                        "offset_y_arcsec": 0.0,
+                    }
+                ],
+            },
+            "radial_velocity": {
+                "definition": "RADIO",
+                "quantity": {"unit": "km / s", "value": 519.1},
+                "redshift": 0.0,
+                "reference_frame": "LSRK",
+            },
+            "reference_coordinate": {
+                "dec_str": "+41:16:07.500",
+                "epoch": 2000.0,
+                "kind": "icrs",
+                "parallax": 0.0,
+                "pm_dec": 0.0,
+                "pm_ra": 0.0,
+                "ra_str": "00:42:44.3300",
+            },
+            "target_id": "",
         }
 
         response = client.get(f"{COORDINATES_API_URL}/M83/equatorial")
-
         assert response.status_code == HTTPStatus.OK
         assert_json_is_equal(response.text, json.dumps(expected_response))
 
@@ -49,7 +75,34 @@ class TestCoordinates:
                 "lon": 121.17,
                 "redshift": 0.0,
                 "velocity": 519.1,
-            }
+            },
+            "name": "",
+            "pointing_pattern": {
+                "active": "SinglePointParameters",
+                "parameters": [
+                    {
+                        "kind": "SinglePointParameters",
+                        "offset_x_arcsec": 0.0,
+                        "offset_y_arcsec": 0.0,
+                    }
+                ],
+            },
+            "radial_velocity": {
+                "definition": "RADIO",
+                "quantity": {"unit": "km / s", "value": 519.1},
+                "redshift": 0.0,
+                "reference_frame": "LSRK",
+            },
+            "reference_coordinate": {
+                "dec_str": "+41:16:07.500",
+                "epoch": 2000.0,
+                "kind": "icrs",
+                "parallax": 0.0,
+                "pm_dec": 0.0,
+                "pm_ra": 0.0,
+                "ra_str": "00:42:44.3300",
+            },
+            "target_id": "",
         }
 
         response = client.get(f"{COORDINATES_API_URL}/M83/galactic")

@@ -76,4 +76,4 @@ def test_coordinates_get(authrequests, identifier, reference_frame, expected_res
     )
 
     assert response.status_code == HTTPStatus.OK, response.json()
-    assert response.json() == expected_response
+    assert response.json()[reference_frame] == expected_response[reference_frame]

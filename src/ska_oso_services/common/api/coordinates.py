@@ -6,10 +6,9 @@ import logging
 from enum import Enum
 
 from fastapi import APIRouter
+from ska_oso_pdm import Target
 
 from ska_oso_services.common.coordinateslookup import (
-    Equatorial,
-    Galactic,
     convert_icrs_to_galactic,
     get_coordinates,
 )
@@ -25,11 +24,47 @@ class ReferenceFrame(str, Enum):
     galactic = "galactic"
 
 
-class EquatorialResponse(AppModel):
+class Equatorial(AppModel):
+    """
+    This class is deprecated as the PDM Target can be used
+    instead - see GalacticResponse below.
+    """
+
+    ra: str
+    dec: str
+    velocity: float
+    redshift: float
+
+
+class Galactic(AppModel):
+    """
+    This class is deprecated as the PDM Target can be used
+    instead - see EquatorialResponse below.
+    """
+
+    lon: float
+    lat: float
+    velocity: float
+    redshift: float
+
+
+class EquatorialResponse(Target):
+    """
+    Extension of the Target with the deprecated equatorial field.
+    Once use of the equatorial field is removed,
+    this class can be deleted and Target used.
+    """
+
     equatorial: Equatorial
 
 
-class GalacticResponse(AppModel):
+class GalacticResponse(Target):
+    """
+    Extension of the Target with the deprecated galactic field.
+    Once use of the galactic field is removed,
+    this class can be deleted and Target used.
+    """
+
     galactic: Galactic
 
 
@@ -65,24 +100,26 @@ def get_systemcoordinates(
     LOGGER.debug("GET coordinates: %s", identifier)
     lookup_result_target = get_coordinates(identifier)
 
-    if reference_frame.lower() == "galactic":
+    if reference_frame == ReferenceFrame.galactic:
         galactic_coordinates = convert_icrs_to_galactic(
             lookup_result_target.reference_coordinate
         )
         return GalacticResponse(
+            **lookup_result_target.model_dump(),
             galactic=Galactic(
                 lon=round(galactic_coordinates.l, 2),
                 lat=round(galactic_coordinates.b, 4),
                 velocity=lookup_result_target.radial_velocity.quantity.value,
                 redshift=lookup_result_target.radial_velocity.redshift,
-            )
+            ),
         )
     else:
         return EquatorialResponse(
+            **lookup_result_target.model_dump(),
             equatorial=Equatorial(
                 ra=lookup_result_target.reference_coordinate.ra_str,
                 dec=lookup_result_target.reference_coordinate.dec_str,
                 velocity=lookup_result_target.radial_velocity.quantity.value,
                 redshift=lookup_result_target.radial_velocity.redshift,
-            )
+            ),
         )

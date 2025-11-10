@@ -17,24 +17,8 @@ from ska_oso_pdm import (
 )
 
 from ska_oso_services.common.error_handling import CatalogLookupError, NotFoundError
-from ska_oso_services.common.model import AppModel
 
 LOGGER = logging.getLogger(__name__)
-
-
-# TODO should be able to use the PDM coordinates here instead
-class Equatorial(AppModel):
-    ra: str
-    dec: str
-    velocity: float
-    redshift: float
-
-
-class Galactic(AppModel):
-    lon: float
-    lat: float
-    velocity: float
-    redshift: float
 
 
 AstroqueryExceptions = (TimeoutError, TableParseError, RemoteServiceError)
@@ -114,7 +98,11 @@ def lookup_in_simbad(object_name: str) -> Target | None:
             # The other rvz_type that might be stored in simbad are not supported
             radial_velocity = RadialVelocity()
 
-    return Target(reference_coordinate=pdm_coordinate, radial_velocity=radial_velocity)
+    return Target(
+        name=object_name,
+        reference_coordinate=pdm_coordinate,
+        radial_velocity=radial_velocity,
+    )
 
 
 def lookup_in_ned(object_name: str) -> Target | None:
@@ -125,9 +113,7 @@ def lookup_in_ned(object_name: str) -> Target | None:
 
     ra = result_table_ned["RA"][0]
     dec = result_table_ned["DEC"][0]
-    coordinates = SkyCoord(
-        ra, dec, unit=(u.degree, u.degree), frame="icrs"
-    )  # u.hourangle, u.deg
+    coordinates = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs")
     pdm_coordinate = _sky_coord_to_pdm_icrs(coordinates)
 
     # For NED we only take the redshift
@@ -139,7 +125,11 @@ def lookup_in_ned(object_name: str) -> Target | None:
     else:
         radial_velocity = RadialVelocity(redshift=result_table_ned["Redshift"][0])
 
-    return Target(reference_coordinate=pdm_coordinate, radial_velocity=radial_velocity)
+    return Target(
+        name=object_name,
+        reference_coordinate=pdm_coordinate,
+        radial_velocity=radial_velocity,
+    )
 
 
 def convert_icrs_to_galactic(icrs_coordinates: ICRSCoordinates) -> GalacticCoordinates:
