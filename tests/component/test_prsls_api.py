@@ -28,7 +28,7 @@ def test_get_osd_data_success(authrequests):
     response = authrequests.get(f"{PHT_URL}/prsls/osd/{cycle}")
 
     res = response.json()
-    assert res["observatory_policy"]["cycle_number"] == cycle
+    assert res["observatory_policy"]["cycle_number"] == 1
     assert res["observatory_policy"]["cycle_information"]["cycle_id"] == "SKAO_2027_1"
 
 
