@@ -111,7 +111,7 @@ def join_proposals_panels_reviews_decisions(
     for r in (reviews or []):
         reviews_by_prsl[r.prsl_id].append(r)
 
-    # ---- Build reviewer status lookup, kind-aware (Science vs Technical) ----
+    # ---- Build reviewer status lookup, kind (Science vs Technical) ----
     # key: (panel_id, reviewer_id, kind) -> status
     reviewer_status_lookup: dict[tuple[str, str, str], str] = {}
     for p in (panels or []):
