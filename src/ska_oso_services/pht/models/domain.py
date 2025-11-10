@@ -112,6 +112,7 @@ class ReceiverInformation(BaseModel):
     rx_id: str
     min_frequency_hz: int
     max_frequency_hz: int
+    sub_bands: list[dict] | None = None
 
 
 class BasicCapabilitiesMid(BaseModel):
