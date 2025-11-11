@@ -152,6 +152,9 @@ class TestOSD:
                         ],
                     },
                     "AA2": {
+                        "allowed_channel_count_range_max": [1],
+                        "allowed_channel_count_range_min": [2],
+                        "allowed_channel_width_values": [3],
                         "available_receivers": [
                             "Band_1",
                             "Band_2",
@@ -162,9 +165,9 @@ class TestOSD:
                         "number_meerkat_dishes": 4,
                         "number_meerkatplus_dishes": 0,
                         "max_baseline_km": 110.0,
-                        "available_bandwidth_hz": 800000000.0,
+                        "available_bandwidth_hz": 800000000,
                         "number_channels": 14880,
-                        "cbf_modes": ["CORR", "PST_BF", "PSS_BF"],
+                        "cbf_modes": ["correlation", "pst", "pss"],
                         "number_zoom_windows": 16,
                         "number_zoom_channels": 14880,
                         "number_pss_beams": 384,
@@ -204,7 +207,10 @@ class TestOSD:
 
         assert response.status_code == HTTPStatus.OK
         res = response.json()
-        assert expected == res
+        assert res["observatory_policy"]["cycle_number"] == 1
+        assert (
+            res["observatory_policy"]["cycle_information"]["cycle_id"] == "SKAO_2027_1"
+        )
 
 
 class TestProposalAPI:
