@@ -4,8 +4,10 @@
 # which makes no sense
 import logging
 from enum import Enum
+from typing import Annotated
 
 from fastapi import APIRouter
+from pydantic import Field
 from ska_oso_pdm import Target
 
 from ska_oso_services.common.coordinateslookup import (
@@ -55,7 +57,13 @@ class EquatorialResponse(Target):
     this class can be deleted and Target used.
     """
 
-    equatorial: Equatorial
+    equatorial: Annotated[
+        Equatorial,
+        Field(
+            deprecated="Use the PDM Target object fields instead - they contain the "
+            "same data that can be put straight into an SBD or Proposal"
+        ),
+    ]
 
 
 class GalacticResponse(Target):
@@ -65,7 +73,13 @@ class GalacticResponse(Target):
     this class can be deleted and Target used.
     """
 
-    galactic: Galactic
+    galactic: Annotated[
+        Galactic,
+        Field(
+            deprecated="Use the PDM Target object fields instead - they contain the "
+            "same data that can be put straight into an SBD or Proposal"
+        ),
+    ]
 
 
 @router.get(
