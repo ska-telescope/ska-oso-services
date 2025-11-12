@@ -13,9 +13,7 @@ data:
   LOG_LEVEL: {{ .Values.rest.logLevel }}
   PIPELINE_TESTS_DEPLOYMENT: {{ .Values.pipeline_test_deployment | quote }}
   KUBE_NAMESPACE: {{ .Release.Namespace }}
-  {{ if .Values.rest.sdp.tmdata }}
-  SDP_SCRIPT_TMDATA: {{ .Values.rest.sdp.tmdata }}
-  {{ end }}
+  SDP_SCRIPT_TMDATA: {{ .Values.global.oso.sdp_tmdata }}
   {{ if .Values.rest.skuid.url }}
   SKUID_URL: {{ .Values.rest.skuid.url }}
   {{ else }}
