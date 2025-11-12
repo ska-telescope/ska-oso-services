@@ -261,5 +261,24 @@
         ]
       }
     ]
-  }
+  },
+  "sdp_configurations": [
+    {
+      "sdp_script": "vis-receive",
+      "script_version": "latest",
+      "script_parameters": {}
+    },
+    {
+      "sdp_script": "continuum-imaging",
+      "script_version": "latest",
+      "script_parameters": {
+        "image_size": 1024.0,
+        "image_cellsize": 0.5,
+        "weight": "briggs -2",
+        "polarisations": "I",
+        "channels_out": 12,
+        "fit_spectral_pol": 3
+      }
+    }
+  ]
 }

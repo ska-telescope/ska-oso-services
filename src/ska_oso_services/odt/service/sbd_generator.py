@@ -1,16 +1,20 @@
 # pylint: disable=no-member
+from functools import singledispatch
 from random import randint
-from typing import List, Optional
+from typing import Any, Optional
 
 import astropy.units as u
 from ska_oso_pdm import SBDefinition, SubArrayLOW, SubArrayMID, Target, TelescopeType
 from ska_oso_pdm._shared import TimedeltaMs
 from ska_oso_pdm.project import ObservingBlock, ScienceProgramme
+from ska_oso_pdm.proposal.data_product_sdp import DataProductSDP, Weighting
 from ska_oso_pdm.sb_definition import (
     CSPConfiguration,
     DishAllocation,
     MCCSAllocation,
     ScanDefinition,
+    SDPConfiguration,
+    SDPScript,
 )
 from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration, MidCBFConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
@@ -126,18 +130,34 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
         science_programme, scan_sequence
     )
 
+    sdp_configurations = [
+        SDPConfiguration(
+            sdp_script=SDPScript.VIS_RECEIVE,
+            script_version="latest",
+            script_parameters={},
+        )
+    ]
+    if science_programme.data_product_sdps:
+        sdp_configurations.append(
+            _sdp_configuration_from_data_product_sdp(
+                science_programme.data_product_sdps[0]
+            )
+        )
+
     sbd = SBDefinition(
         telescope=telescope,
         activities=_default_activities(),
         dish_allocations=dish_allocations,
         mccs_allocation=mccs_allocation,
         csp_configurations=csp_configurations,
+        sdp_configurations=sdp_configurations,
         targets=targets,
     )
 
-    if telescope == TelescopeType.SKA_LOW:
-        # Currently there will only be one calibration strategy and any
-        # notes will apply to the full SBD.
+    if (
+        science_programme.calibration_strategies
+        and science_programme.calibration_strategies[0].notes
+    ):
         sbd.description = science_programme.calibration_strategies[0].notes
 
     return sbd
@@ -155,7 +175,7 @@ def _default_activities() -> dict[str, GitScript]:
 
 
 def _receptor_field_from_science_programme(
-    science_programme: ScienceProgramme, scan_sequence: List[ScanDefinition]
+    science_programme: ScienceProgramme, scan_sequence: list[ScanDefinition]
 ) -> tuple[Optional[MCCSAllocation], Optional[DishAllocation]]:
     observation_set = science_programme.observation_sets[0]
 
@@ -251,6 +271,41 @@ def _csp_configuration_from_science_programme(
     )
 
 
+def _sdp_configuration_from_data_product_sdp(
+    dp_sdp: DataProductSDP,
+) -> SDPConfiguration:
+    @singledispatch
+    def convert_parameter(value: Any) -> Any:
+        return value
+
+    @convert_parameter.register
+    def _(value: u.quantity.Quantity) -> float:
+        return value.value
+
+    @convert_parameter.register
+    def _(value: Weighting) -> str:
+        return (
+            f"{value.weighting} {value.robust}"
+            if value.robust is not None
+            else value.weighting
+        )
+
+    astropy_unit_mapper = {  # Units expected by the continuum-imaging SDP script
+        "image_size": "pix",
+        "image_cellsize": "arcsec",
+    }
+    parameters = {}
+    for param_key, param_value in vars(dp_sdp.script_parameters).items():
+        if isinstance(param_value, u.quantity.Quantity):
+            param_value = param_value.to(astropy_unit_mapper[param_key])
+        parameters[param_key] = convert_parameter(param_value)
+    return SDPConfiguration(
+        sdp_script=SDPScript.CONTINUUM_IMAGING,
+        script_version="latest",
+        script_parameters=parameters,
+    )
+
+
 def _scan_time_ms_from_science_programme(
     science_programme: ScienceProgramme, target_id: str
 ) -> TimedeltaMs:
@@ -285,7 +340,7 @@ def _scan_time_ms_from_science_programme(
 
 
 def _dish_allocation(
-    subarray: SubArrayMID, scan_sequence: List[ScanDefinition]
+    subarray: SubArrayMID, scan_sequence: list[ScanDefinition]
 ) -> DishAllocation:
     osd_data = get_osd_data(
         array_assembly=subarray.value, capabilities="mid", source="car"
@@ -301,7 +356,7 @@ def _dish_allocation(
 
 
 def _mccs_allocation(
-    subarray: SubArrayLOW, scan_sequence: List[ScanDefinition]
+    subarray: SubArrayLOW, scan_sequence: list[ScanDefinition]
 ) -> MCCSAllocation:
     osd_data = get_osd_data(
         array_assembly=subarray.value, capabilities="low", source="car"

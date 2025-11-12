@@ -83,6 +83,35 @@
               }
             }
           ],
+          "data_product_sdps": [
+            {
+              "data_product_id": "SDP-1",
+              "products": [
+                "1",
+                "2",
+                "5"
+              ],
+              "observation_set_refs": [
+                "obs-02o2ac"
+              ],
+              "script_parameters": {
+                "image_size": {
+                  "value": 1024.0,
+                  "unit": "pix"
+                },
+                "image_cellsize": {
+                  "value": 0.0005,
+                  "unit": "deg"
+                },
+                "weight": {
+                  "weighting": "natural"
+                },
+                "polarisations": "I",
+                "channels_out": 12,
+                "fit_spectral_pol": 3
+              }
+            }
+          ],
           "result_details": [
             {
               "observation_set_ref": "obs-02o2ac",

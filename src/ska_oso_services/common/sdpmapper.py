@@ -9,11 +9,17 @@ from typing import Any
 
 from ska_telmodel.data import TMData
 
-DEFAULT_SOURCE = "gitlab://gitlab.com/ska-telescope/sdp/ska-sdp-script#tmdata"
-
 
 def get_tmdata() -> TMData:
-    return TMData([os.getenv("SDP_SCRIPT_TMDATA", DEFAULT_SOURCE)])
+    tmdata_path = os.environ.get("SDP_SCRIPT_TMDATA")
+    if not tmdata_path:
+        raise RuntimeError(
+            "SDP_SCRIPT_TMDATA environment variable not set. This should "
+            "be set to a TMData source value that OSO Services can use "
+            "retrieve SDP script information, "
+            "e.g. car://gitlab.com/ska-telescope/sdp/ska-sdp-script?master#tmdata"
+        )
+    return TMData([tmdata_path])
 
 
 def get_script_versions(name: str) -> list[str]:

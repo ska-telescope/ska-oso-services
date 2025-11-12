@@ -15,6 +15,10 @@ pipeline_test_deployment: false
 global:
   minikube: true
   cluster_domain: techops.internal.skao.int
+  oso:
+    # The TMData source URL for SDP Script data used by oso-services and oso-scripting to
+    # retrieve compatible script version and script parameter information
+    sdp_tmdata: "car://gitlab.com/ska-telescope/sdp/ska-sdp-script?master#tmdata"
   oda:
     # These global values are used by the ska-db-oda rest server deployment to connect to the postgres instance
     # See RtD for more details.
@@ -79,8 +83,6 @@ rest:
       # If left as null the default secret deployed by the PHT umbrella will be used.
       secret: ~
       key: ~
-  sdp:
-    tmdata: "gitlab://gitlab.com/ska-telescope/sdp/ska-sdp-script#tmdata" # The TMData resource name containing the SDP tmdata url
 
   skuid:
     url: # Standard SKUID svc address is used if this is not set
