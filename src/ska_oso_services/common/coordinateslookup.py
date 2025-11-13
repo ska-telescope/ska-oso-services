@@ -1,109 +1,30 @@
 # https://stackoverflow.com/a/50099819
 # pylint: disable=no-member,no-name-in-module
+import logging
+
 import astropy.units as u
-from astropy.coordinates import Angle, SkyCoord
-from astroquery.exceptions import RemoteServiceError
+from astropy.coordinates import SkyCoord
+from astroquery.exceptions import TimeoutError  # pylint: disable=redefined-builtin
+from astroquery.exceptions import RemoteServiceError, TableParseError
 from astroquery.ipac.ned import Ned
 from astroquery.simbad import Simbad
+from ska_oso_pdm import (
+    GalacticCoordinates,
+    ICRSCoordinates,
+    RadialVelocity,
+    RadialVelocityUnits,
+    Target,
+)
 
-from ska_oso_services.common.error_handling import NotFoundError
-from ska_oso_services.common.model import AppModel
+from ska_oso_services.common.error_handling import CatalogLookupError, NotFoundError
 
-
-# TODO should be able to use the PDM coordinates here instead
-class Equatorial(AppModel):
-    ra: str
-    dec: str
-    velocity: float
-    redshift: float
-
-
-class Galactic(AppModel):
-    lon: float
-    lat: float
-    velocity: float
-    redshift: float
+LOGGER = logging.getLogger(__name__)
 
 
-def round_coord(ra: str, dec: str, velocity: float, redshift: float) -> Equatorial:
-    """
-    Rounds the seconds component of RA to 4 decimal places
-    and the arcseconds component of DEC to 3.
-
-    Parameters:
-    - ra (str): Right Ascension in "HH:MM:SS.sssssssss"
-    - dec (str): Declination in "DD:MM:SS.sssssssss"
-
-    Returns:
-    - dict: A dictionary with one key "equatorial",
-            containing a nested dictionary with keys "right_ascension"
-            and "declination", each containing a string value
-            with the rounded RA and DEC coordinates.
-    """
-
-    ra_formatted = ":".join(
-        f"{round(float(x), 4):07.4f}" if i == 2 else x
-        for i, x in enumerate(ra.split(":"))
-    )
-    dec_formatted = ":".join(
-        f"{round(float(x), 3):06.3f}" if i == 2 else x
-        for i, x in enumerate(dec.split(":"))
-    )
-
-    return Equatorial(
-        ra=ra_formatted,
-        dec=dec_formatted,
-        velocity=velocity,
-        redshift=redshift,
-    )
+AstroqueryExceptions = (TimeoutError, TableParseError, RemoteServiceError)
 
 
-def convert_ra_dec_deg(ra_str: str, dec_str: str):
-    """
-    Convert RA and Dec from sexagesimal (string format) to decimal degrees.
-
-    Parameters:
-    ra_str (str): RA in the format "HH:MM:SS" (e.g., "5:35:17.3")
-    dec_str (str): Dec in the format "DD:MM:SS" (e.g., "-1:2:37")
-
-    Returns:
-    tuple: RA and Dec in decimal degrees
-    """
-    ra = Angle(ra_str, unit=u.hour)
-    dec = Angle(dec_str, unit=u.degree)
-
-    return {"ra": round(ra.degree, 3), "dec": round(dec.degree, 3)}
-
-
-def convert_to_galactic(
-    ra: str, dec: str, velocity: float, redshift: float
-) -> Galactic:
-    """
-    Converts RA and DEC coordinates to Galactic coordinates.
-
-    Parameters:
-    - ra (str): The Right Ascension in the format "HH:MM:SS.sss"
-    - dec (str): The Declination in the format "+DD:MM:SS.sss"
-
-    Returns:
-    - dict: A dictionary with one key "galactic",
-            containing a nested dictionary with keys lon
-            and lat, representing the Galactic coordinates as floats in degrees.
-    """
-    # Creating a SkyCoord object with the given RA and DEC
-    coord = SkyCoord(ra, dec, frame="icrs", unit=(u.hourangle, u.degree))
-    # Converting to Galactic frame
-    galactic_coord = coord.galactic
-
-    return Galactic(
-        lon=float(galactic_coord.l.to_string(decimal=True, unit=u.degree)),
-        lat=float(galactic_coord.b.to_string(decimal=True, unit=u.degree)),
-        velocity=velocity,
-        redshift=redshift,
-    )
-
-
-def get_coordinates(object_name: str) -> Equatorial:
+def get_coordinates(object_name: str) -> Target:
     """
     Query celestial coordinates for a given object name in either the
     SIMBAD or the NED databases of astronomical sources. We search SIMBAD
@@ -119,50 +40,108 @@ def get_coordinates(object_name: str) -> Equatorial:
     NED - only the redshift is stored as the velocity has limited precision.
     Velocity is set to zero.
     """
+    try:
+        simbad_result = lookup_in_simbad(object_name)
+        if simbad_result is not None:
+            return simbad_result
 
-    # Initialise outputs
-    ra = "00:00:0000"
-    dec = "00:00:000"
-    redshift = 0.0
-    velocity = 0.0
+    except AstroqueryExceptions:
+        LOGGER.exception("Error occurred while searching SIMBAD")
+        # Continue to lookup in NED
 
-    # First look in SIMBAD
+    try:
+        ned_result = lookup_in_ned(object_name)
+        if ned_result is not None:
+            return ned_result
+    except AstroqueryExceptions as err:
+        LOGGER.exception("Error occurred while searching NED")
+        raise CatalogLookupError(
+            "Error while looking up target in SIMBAD/NED. "
+            "Please try again or manually input target details."
+        ) from err
+
+    not_found_msg = f"Object {object_name} not found in SIMBAD or NED"
+    LOGGER.debug(not_found_msg)
+    raise NotFoundError(detail=not_found_msg)
+
+
+def lookup_in_simbad(object_name: str) -> Target | None:
+    LOGGER.debug("Looking up %s in SIMBAD", object_name)
     Simbad.add_votable_fields("velocity")
     result_table_simbad = Simbad.query_object(object_name)
 
-    if len(result_table_simbad) != 0:
-        ra = result_table_simbad["ra"][0]
-        dec = result_table_simbad["dec"][0]
+    if len(result_table_simbad) == 0:
+        return None
 
-        # Determine if stored information is redshift or velocity
-        rvz_type = result_table_simbad["rvz_type"]
-        if rvz_type == "z":
-            redshift = result_table_simbad["rvz_redshift"]
-        elif rvz_type == "v":
-            velocity = result_table_simbad["rvz_radvel"]
-    else:
-        try:
-            # If not found in SIMBAD, search in NED
-            result_table_ned = Ned.query_object(object_name)
-            ra = result_table_ned["RA"][0]
-            dec = result_table_ned["DEC"][0]
+    ra = result_table_simbad["ra"][0]
+    dec = result_table_simbad["dec"][0]
+    coordinates = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs")
+    pdm_coordinate = _sky_coord_to_pdm_icrs(coordinates)
 
-            # For NED we only take the redshift
-            mask = result_table_ned["Redshift"].mask[0]
-            if mask:
-                redshift = 0.0
-            else:
-                redshift = result_table_ned["Redshift"][0]
-        except RemoteServiceError as err:
-            raise NotFoundError(detail="Object not found in SIMBAD or NED") from err
+    # Determine if stored information is redshift or velocity
+    rvz_type = result_table_simbad["rvz_type"]
+    match rvz_type:
+        case "z":
+            radial_velocity = RadialVelocity(
+                redshift=result_table_simbad["rvz_redshift"]
+            )
+        case "v":
+            radial_velocity = RadialVelocity(
+                quantity=(
+                    u.Quantity(
+                        value=result_table_simbad["rvz_radvel"],
+                        unit=RadialVelocityUnits.KM_PER_SEC,
+                    )
+                )
+            )
+        case _:
+            # The other rvz_type that might be stored in simbad are not supported
+            radial_velocity = RadialVelocity()
 
-    coordinates = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs").to_string(
-        "hmsdms", pad=True, sep=":"
+    return Target(
+        name=object_name,
+        reference_coordinate=pdm_coordinate,
+        radial_velocity=radial_velocity,
     )
 
-    return Equatorial(
-        ra=coordinates.split(" ")[0],
-        dec=coordinates.split(" ")[1],
-        velocity=velocity,
-        redshift=redshift,
+
+def lookup_in_ned(object_name: str) -> Target | None:
+    LOGGER.debug("Looking up %s in NED", object_name)
+    result_table_ned = Ned.query_object(object_name)
+    if len(result_table_ned) == 0:
+        return None
+
+    ra = result_table_ned["RA"][0]
+    dec = result_table_ned["DEC"][0]
+    coordinates = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs")
+    pdm_coordinate = _sky_coord_to_pdm_icrs(coordinates)
+
+    # For NED we only take the redshift
+    if (
+        hasattr(result_table_ned["Redshift"], "mask")
+        and result_table_ned["Redshift"].mask[0]
+    ):
+        radial_velocity = RadialVelocity(redshift=0)
+    else:
+        radial_velocity = RadialVelocity(redshift=result_table_ned["Redshift"][0])
+
+    return Target(
+        name=object_name,
+        reference_coordinate=pdm_coordinate,
+        radial_velocity=radial_velocity,
+    )
+
+
+def convert_icrs_to_galactic(icrs_coordinates: ICRSCoordinates) -> GalacticCoordinates:
+    sky_coord = icrs_coordinates.to_sky_coord()
+
+    return GalacticCoordinates(
+        l=sky_coord.galactic.l.value, b=sky_coord.galactic.b.value
+    )
+
+
+def _sky_coord_to_pdm_icrs(sky_coord: SkyCoord) -> ICRSCoordinates:
+    return ICRSCoordinates(
+        ra_str=sky_coord.icrs.ra.to_string(u.hourangle, sep=":", pad=True, precision=4),
+        dec_str=sky_coord.icrs.dec.to_string(u.degree, sep=":", pad=True, precision=3),
     )

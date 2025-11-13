@@ -11,6 +11,9 @@ Unreleased
 * [BUGFIX] Set `PGUSER` to `<.Values.global.oda.postgres.database>_admin` if `.Values.global.oda.postgres.user` isn't set
 * Adds SDP configurations to Scheduling Blocks generated from Proposals
 * Changes the SDP TMData source Helm configuration key from `ska-oso-services.rest.sdp.tmdata` to `global.oso.sdp_tmdata`
+* Improvements to target catalog error handling and logging
+* Update the target catalog lookup response to return a PDM object with an extra `equatorial`/`galactic` deprecated field from the old response. 
+  This means the change is backwards compatible, giving chance for users to update to migrate to use the Target object.
 
 9.2.0
 ***********
