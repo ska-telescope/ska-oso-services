@@ -2244,6 +2244,21 @@ files = [
 ]
 
 [[package]]
+name = "py-machineid"
+version = "0.6.0"
+description = "Get the unique machine ID of any host (without admin privileges)"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "py-machineid-0.6.0.tar.gz", hash = "sha256:00c38d8521d429a4539bdd92967234db28a1a2b4b263062b351ca002332e633f"},
+    {file = "py_machineid-0.6.0-py3-none-any.whl", hash = "sha256:63214f8a98737311716b29d279716dc121a6495f16486caf5c032433f81cdfd6"},
+]
+
+[package.dependencies]
+winregistry = {version = "*", markers = "sys_platform == \"win32\""}
+
+[[package]]
 name = "pycodestyle"
 version = "2.14.0"
 description = "Python style guide checker"
@@ -3381,14 +3396,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-db-oda"
-version = "13.1.1"
+version = "13.1.1+dev.cab55814f"
 description = "SKA Database OSO Data Archive"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_db_oda-13.1.1-py3-none-any.whl", hash = "sha256:9aa6699554ad4afbbd72b2f4fa55d9d585f2b191373054722492999ae0e4f232"},
-    {file = "ska_db_oda-13.1.1.tar.gz", hash = "sha256:99e43176e3e44c2db8753d4d9014b14cf40da9343755070b7194311868305d61"},
+    {file = "ska_db_oda-13.1.1+dev.cab55814f-py3-none-any.whl", hash = "sha256:537f60cc1c311b6245b1997abd7f5ed0f55b55dbea4ee55756bd48787bcd1e24"},
+    {file = "ska_db_oda-13.1.1+dev.cab55814f.tar.gz", hash = "sha256:d00b3f84ea7fd640ec5175f48917982ad2d46b087d078e15e69f5c217a9fea5a"},
 ]
 
 [package.dependencies]
@@ -3399,25 +3414,25 @@ psycopg-pool = ">=3.2.7,<4.0.0"
 pydantic = ">=2.9,<3.0"
 python-dateutil = ">=2.8.2,<3.0.0"
 requests = ">=2.27.1,<3.0.0"
-ska-oso-pdm = ">=25.0.0,<26.0.0"
+ska-oso-pdm = ">=26.0.0,<27.0.0"
 ska-ser-logging = ">=0.4.1,<0.5.0"
-ska-ser-skuid = ">=3.3.3,<4.0.0"
+ska-ser-skuid = ">=4.0.0,<5.0.0"
 
 [package.source]
 type = "legacy"
-url = "https://artefact.skao.int/repository/pypi-internal/simple"
-reference = "ska-nexus"
+url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
+reference = "gitlab-ska-db-oda"
 
 [[package]]
 name = "ska-oso-pdm"
-version = "25.0.0"
+version = "26.0.0"
 description = "SKA Project Data Model serialisation library"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_oso_pdm-25.0.0-py3-none-any.whl", hash = "sha256:a682d8e192296e0c6e33a825a109adeca164705f8980a3f434258c18dad11cfd"},
-    {file = "ska_oso_pdm-25.0.0.tar.gz", hash = "sha256:3400be7135bc7e84dda845432caae6b8531a80ae8ff649dda4dff568979421f9"},
+    {file = "ska_oso_pdm-26.0.0-py3-none-any.whl", hash = "sha256:b458ccce657aad5acab96f2b2325762516b1eb924e44cd3ecc8569c5577e9191"},
+    {file = "ska_oso_pdm-26.0.0.tar.gz", hash = "sha256:382033132ef9f3da6025deec38376a74b2a8924098726c3efbbcba31b12e1244"},
 ]
 
 [package.dependencies]
@@ -3432,14 +3447,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-ost-osd"
-version = "4.2.2"
+version = "4.2.2+dev.cdfdb950b"
 description = "Simplest form OSD consists of configuration files that are required by OSO tools."
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_ost_osd-4.2.2-py3-none-any.whl", hash = "sha256:bdfab4bfd71d774611bfb6f80c3fb11d848dea500fff24a30851dfe4d150acdd"},
-    {file = "ska_ost_osd-4.2.2.tar.gz", hash = "sha256:026bb194e7853edd6fbe090ac531fbbb8b684725b3fb5a34607cbcc52231fe0d"},
+    {file = "ska_ost_osd-4.2.2+dev.cdfdb950b-py3-none-any.whl", hash = "sha256:76870e563aa8f4646bf2a96b20ee3bdd9c918539302e2a0ee7b0398115ff41de"},
+    {file = "ska_ost_osd-4.2.2+dev.cdfdb950b.tar.gz", hash = "sha256:d8e5c16aeac8cc4e0b91f6c638d23ffe3212766cdce1d9945a1e37c319f390f3"},
 ]
 
 [package.dependencies]
@@ -3448,13 +3463,12 @@ fastapi = {version = ">=0.115.8,<0.116.0", extras = ["standard"]}
 pydantic = ">=2.10.3,<3.0.0"
 simpleeval = ">=0.9.13,<0.10.0"
 ska-ser-logging = ">=0.4.1,<0.5.0"
-ska-ser-skuid = ">=3.3.3,<4.0.0"
 ska-telmodel = ">=1.24.3,<2.0.0"
 
 [package.source]
 type = "legacy"
-url = "https://artefact.skao.int/repository/pypi-internal/simple"
-reference = "ska-nexus"
+url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
+reference = "gitlab-ska-ost-osd"
 
 [[package]]
 name = "ska-ser-logging"
@@ -3475,19 +3489,24 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-ser-skuid"
-version = "3.3.3"
+version = "4.0.0"
 description = "Library that generates ID's for the SKA project"
 optional = false
-python-versions = ">=3.6,<4.0"
+python-versions = ">=3.10,<4"
 groups = ["main"]
 files = [
-    {file = "ska-ser-skuid-3.3.3.tar.gz", hash = "sha256:91ad1dda3e3a397e39dbb362046888f5a80e4f5ef022628cde7ccc93c4d9b057"},
-    {file = "ska_ser_skuid-3.3.3-py3-none-any.whl", hash = "sha256:743a4170024d208be49d262af2a326644356ef0933dd001cada05bbfcb1f67cd"},
+    {file = "ska_ser_skuid-4.0.0-py3-none-any.whl", hash = "sha256:ad5e9e49b923572a0d5f0e088f9a931ddacca7129f3a8ab02d93b9a41df207ad"},
+    {file = "ska_ser_skuid-4.0.0.tar.gz", hash = "sha256:07619fb08cc87b9fd6f2f0f9d954c1ff50ad13b84b637c93934c956ec1c1fd05"},
 ]
 
 [package.dependencies]
-requests = ">=2.25.1,<3.0.0"
-ska-ser-logging = ">=0.4.1,<0.5.0"
+annotated-types = ">=0.7.0,<0.8.0"
+py-machineid = "0.6.0"
+
+[package.extras]
+dev = ["black (>=24.2.0,<25.0.0)", "coverage (>=7.4.3,<8.0.0)", "fasteners (>=0.19,<1.0)", "flake8 (>=7.0.0,<8.0.0)", "isort (>=5.13.2,<6.0.0)", "pylint (>=3.1.0,<4.0.0)", "pylint-junit (>=0.3.4,<0.4.0)", "pytest (>=8.1.1,<9.0.0)", "pytest-cov (>=4.1.0,<5.0.0)", "pytest-json-report (>=1.5.0,<2.0.0)", "pytest-repeat (>=0.9.3,<0.10.0)"]
+http-client = ["requests (>=2.25.1,<3.0.0)", "ska-ser-logging (>=0.4.1,<1.0.0)"]
+http-server = ["falcon (>=3.1.3,<4.0.0)", "gunicorn (>=23.0.0,<23.1.0)", "ska-ser-logging (>=0.4.1,<1.0.0)"]
 
 [package.source]
 type = "legacy"
@@ -4369,6 +4388,19 @@ files = [
 ]
 
 [[package]]
+name = "winregistry"
+version = "2.1.2"
+description = "A Python library for interacting with the Windows registry"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "sys_platform == \"win32\""
+files = [
+    {file = "winregistry-2.1.2-py3-none-any.whl", hash = "sha256:e142548f56fc1fc6b83ddf88baca2e9e18cd6a266d9e00f111e54977dee768cf"},
+    {file = "winregistry-2.1.2.tar.gz", hash = "sha256:50260e1aaba4116f707f86a4e287ffcb1eeae7dc0a0883c6d1776017e693fc69"},
+]
+
+[[package]]
 name = "xsdata"
 version = "23.8"
 description = "Python XML Binding"
@@ -4419,4 +4451,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "85e47b2fdaaf32d6f473fcdbf952febdd577b4f2076f573edea220a690d7947c"
+content-hash = "97eb1487af8e93d93ed860c5df4e75f927f8dad373039475ee8f34b45da91eed"
