@@ -91,9 +91,7 @@
                 "2",
                 "5"
               ],
-              "observation_set_refs": [
-                "obs-02o2ac"
-              ],
+              "observation_set_ref": "obs-02o2ac",
               "script_parameters": {
                 "image_size": {
                   "value": 1024.0,

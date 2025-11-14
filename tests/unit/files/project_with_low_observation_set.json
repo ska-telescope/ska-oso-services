@@ -114,9 +114,7 @@
                 "2",
                 "5"
               ],
-              "observation_set_refs": [
-                "obs-vYzsub"
-              ],
+              "observation_set_ref": "obs-vYzsub",
               "script_parameters": {
                 "image_size": {
                   "value": 1024.0,
