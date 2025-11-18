@@ -1,4 +1,7 @@
 # pylint: disable=no-member
+import matplotlib
+
+matplotlib.use("Agg")
 import io
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -78,7 +81,6 @@ def _render_svg(
     min_elev: float,
     step_s: int = STEP_SECONDS_DEFAULT_VISIBILITY,
 ) -> bytes:
-    # Inline midnight-UTC calculation
     base = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     end = base + timedelta(days=1)
 
@@ -101,7 +103,7 @@ def _render_svg(
 
     fig, ax = plt.subplots(figsize=(12, 6.2))
 
-    # Curve (only above horizon)
+    # only above horizon
     ax.plot(
         times,
         np.where(alt >= 0, alt, np.nan),
@@ -122,7 +124,6 @@ def _render_svg(
         label=f"Min elevation ({min_elev:.0f}°)",
     )
 
-    # Visible region fill
     ax.fill_between(
         times,
         min_elev,

@@ -1,6 +1,3 @@
-import matplotlib
-
-matplotlib.use("Agg")
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
@@ -38,9 +35,7 @@ def visibility_svg(
 
     except HTTPException:
         raise
-    except ValueError as exc:
+    except ValueError as error:
         raise HTTPException(
-            status_code=400, detail=f"Invalid coordinates: {exc}"
-        ) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Plot error: {exc}") from exc
+            status_code=400, detail=f"Invalid coordinates: {error}"
+        ) from error
