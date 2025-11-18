@@ -126,7 +126,7 @@ def _render_svg(
         min_elev,
         alt,
         where=(alt >= min_elev),
-        color=T10["teal"],
+        color=T10_COLOURS["teal"],
         alpha=0.18,
     )
 
