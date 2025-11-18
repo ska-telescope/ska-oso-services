@@ -7,7 +7,11 @@ import astropy.units as u
 from ska_oso_pdm import SBDefinition, SubArrayLOW, SubArrayMID, Target, TelescopeType
 from ska_oso_pdm._shared import TimedeltaMs
 from ska_oso_pdm.project import ObservingBlock, ScienceProgramme
-from ska_oso_pdm.proposal.data_product_sdp import DataProductSDP, Weighting
+from ska_oso_pdm.proposal.data_product_sdp import (
+    DataProductSDP,
+    Polarisation,
+    Weighting,
+)
 from ska_oso_pdm.sb_definition import (
     CSPConfiguration,
     DishAllocation,
@@ -279,6 +283,12 @@ def _sdp_configuration_from_data_product_sdp(
         return value
 
     @convert_parameter.register
+    def _(value: list) -> str | list:
+        if all(isinstance(v, Polarisation) for v in value):
+            return "".join(value)
+        return value
+
+    @convert_parameter.register
     def _(value: u.quantity.Quantity) -> float:
         return value.value
 
@@ -290,15 +300,18 @@ def _sdp_configuration_from_data_product_sdp(
             else value.weighting
         )
 
+    parameters_to_ignore = ["kind", "variant", "gaussian_taper"]
+
     astropy_unit_mapper = {  # Units expected by the continuum-imaging SDP script
         "image_size": "pix",
         "image_cellsize": "arcsec",
     }
     parameters = {}
     for param_key, param_value in vars(dp_sdp.script_parameters).items():
-        if isinstance(param_value, u.quantity.Quantity):
-            param_value = param_value.to(astropy_unit_mapper[param_key])
-        parameters[param_key] = convert_parameter(param_value)
+        if param_key not in parameters_to_ignore:
+            if isinstance(param_value, u.quantity.Quantity):
+                param_value = param_value.to(astropy_unit_mapper[param_key])
+            parameters[param_key] = convert_parameter(param_value)
     return SDPConfiguration(
         sdp_script=SDPScript.CONTINUUM_IMAGING,
         script_version="latest",
