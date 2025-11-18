@@ -74,7 +74,7 @@ def _visible_duration(
     return seconds, hours, minutes
 
 
-def _render_svg(
+def render_svg(
     ra: str,
     dec: str,
     site: EarthLocation,
