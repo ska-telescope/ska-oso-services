@@ -109,13 +109,10 @@
           "data_product_sdps": [
             {
               "data_product_id": "SDP-1",
-              "products": [
-                "1",
-                "2",
-                "5"
-              ],
               "observation_set_ref": "obs-vYzsub",
               "script_parameters": {
+                "kind": "continuum",
+                "variant": "continuum image",
                 "image_size": {
                   "value": 1024.0,
                   "unit": "pix"
@@ -128,7 +125,7 @@
                   "weighting": "briggs",
                   "robust": "-2"
                 },
-                "polarisations": "I",
+                "polarisations": ["I"],
                 "channels_out": 12,
                 "fit_spectral_pol": 3
               }
@@ -143,6 +140,7 @@
           "result_details": [
             {
               "observation_set_ref": "obs-vYzsub",
+              "data_product_ref": "SDP-1",
               "target_ref": "47 tuc",
               "result": {
                 "supplied_type": "integration_time",
@@ -184,6 +182,7 @@
             },
             {
               "observation_set_ref": "obs-vYzsub",
+              "data_product_ref": "SDP-1",
               "target_ref": "target42",
               "result": {
                 "supplied_type": "integration_time",
