@@ -138,9 +138,7 @@
 					},
 					"spectral_resolution": "DUMMY",
 					"effective_resolution": "DUMMY",
-					"image_weighting": "DUMMY",
-					"robust" : "DUMMY",
-					"spectral_averaging": "DUMMY"
+					"spectral_averaging": 1
 				},
 				"details": "LOW + Continuum"
 			},
@@ -155,7 +153,7 @@
 					"number_of_stations": 1
 				},
 				"observation_type_details": {
-					"observation_type": "zoom",
+					"observation_type": "spectral line",
 					"bandwidth": {
 						"value": 0.0,
 						"unit": ""
@@ -175,9 +173,7 @@
 					},
 					"spectral_resolution": "DUMMY",
 					"effective_resolution": "DUMMY",
-					"image_weighting": "DUMMY",
-					"robust" : "DUMMY",
-					"spectral_averaging": "DUMMY"
+					"spectral_averaging":1
 				},
 				"details": "LOW + Zoom"
 			}
@@ -185,16 +181,11 @@
 		"data_product_sdps": [
 			{
 				"data_product_id": "SDP-1",
-				"products": [
-					"1",
-					"2",
-					"5"
-				],
-				"observation_set_refs": [
-					"mid-001",
-					"low-001"
-				],
+				"observation_set_ref": "mid-001",
+				
                 "script_parameters": {
+					"kind": "continuum",
+          "variant": "continuum image",
                   "image_size": {
                       "value": 1024.0,
                       "unit": "pix"
@@ -204,7 +195,7 @@
                       "unit": "arcsec"
                   },
                   "weight": {"weighting": "natural"},
-                  "polarisations": "I",
+                  "polarisations": ["I"],
                   "channels_out": 12,
                   "fit_spectral_pol": 3
                 }
@@ -218,6 +209,7 @@
 		"result_details": [
 			{
 				"observation_set_ref": "low-001",
+				"data_product_ref": "product1",
 				"target_ref": "M1",
 				"result": {
 					"supplied_type": "integration_time",
@@ -259,6 +251,7 @@
 			},
 			{
 				"observation_set_ref": "low-001",
+				"data_product_ref": "product1",
 				"target_ref": "M2",
 				"result": {
 					"supplied_type": "integration_time",
@@ -300,6 +293,7 @@
 			},
 			{
 				"observation_set_ref": "low-002",
+				"data_product_ref": "product1",
 				"target_ref": "M2",
 				"result": {
 					"supplied_type": "integration_time",

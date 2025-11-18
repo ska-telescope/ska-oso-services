@@ -113,7 +113,7 @@ def science_programme_from_observation_set(
     sdp_data_products_for_observation_set = [
         data_product
         for data_product in observation_info.data_product_sdps
-        if observation_set_id in data_product.observation_set_refs
+        if observation_set_id in data_product.observation_set_ref
     ]
 
     return ScienceProgramme(

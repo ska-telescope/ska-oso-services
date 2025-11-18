@@ -89,6 +89,8 @@
       "sdp_script": "continuum-imaging",
       "script_version": "latest",
       "script_parameters": {
+         "kind": "continuum",
+          "variant": "continuum image",
         "image_size": 1024.0,
         "image_cellsize": 1.8,
         "weight": "natural",
