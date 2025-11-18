@@ -42,9 +42,7 @@
                 },
                 "spectral_resolution": "5.43 kHz (8.1 km/s)",
                 "effective_resolution": "5.43 kHz (8.1 km/s)",
-                "image_weighting": "uniform",
-                "robust": "0",
-                "spectral_averaging": "1"
+                "spectral_averaging": 1
               }
             }
           ],
@@ -109,15 +107,11 @@
           "data_product_sdps": [
             {
               "data_product_id": "SDP-1",
-              "products": [
-                "1",
-                "2",
-                "5"
-              ],
-              "observation_set_refs": [
-                "obs-vYzsub"
-              ],
+              "observation_set_ref":
+                "obs-vYzsub",
               "script_parameters": {
+                 "kind": "continuum",
+          "variant": "continuum image",
                 "image_size": {
                   "value": 1024.0,
                   "unit": "pix"
@@ -130,7 +124,7 @@
                   "weighting": "briggs",
                   "robust": "-2"
                 },
-                "polarisations": "I",
+                "polarisations": ["I"],
                 "channels_out": 12,
                 "fit_spectral_pol": 3
               }
@@ -145,6 +139,7 @@
           "result_details": [
             {
               "observation_set_ref": "obs-vYzsub",
+              "data_product_ref": "product1",
               "target_ref": "47 tuc",
               "result": {
                 "supplied_type": "integration_time",
@@ -186,6 +181,7 @@
             },
             {
               "observation_set_ref": "obs-vYzsub",
+              "data_product_ref": "product1",
               "target_ref": "target42",
               "result": {
                 "supplied_type": "integration_time",
