@@ -1,19 +1,19 @@
+# pylint: disable=no-member
+import io
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-import io
 
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import Response
-from astropy.coordinates import EarthLocation, SkyCoord, AltAz
-from astropy.time import Time
 import astropy.units as u
-from ska_oso_services.common.static.constants import STEP_SECONDS_DEFAULT_VISIBILITY, T10_COLOURS
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+from astropy.coordinates import AltAz, EarthLocation, SkyCoord
+from astropy.time import Time
 
-
-
+from ska_oso_services.common.static.constants import (
+    STEP_SECONDS_DEFAULT_VISIBILITY,
+    T10_COLOURS,
+)
 
 
 @dataclass(frozen=True)
@@ -61,7 +61,9 @@ def _alts(
     return np.array(times.to_datetime(timezone=timezone.utc)), alt
 
 
-def _visible_duration(alt: np.ndarray, min_elev: float, step_s: int) -> tuple[int, int, int]:
+def _visible_duration(
+    alt: np.ndarray, min_elev: float, step_s: int
+) -> tuple[int, int, int]:
     """Return total visible time as (seconds, hours, minutes)."""
     seconds = int((alt >= min_elev).sum() * step_s)
     minutes, _ = divmod(seconds, 60)

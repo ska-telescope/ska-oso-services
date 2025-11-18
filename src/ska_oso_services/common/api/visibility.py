@@ -1,15 +1,13 @@
-# app.py
-import io, numpy as np, matplotlib
+import matplotlib
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt, matplotlib.dates as mdates
-from fastapi import FastAPI, Query, HTTPException
-from fastapi.responses import Response
-from astropy.time import Time
-import astropy.units as u
 import logging
-from fastapi import APIRouter
-from ska_oso_services.common.visibility import _render_svg, SITES
-from ska_oso_services.common.static.constants import STEP_SECONDS_DEFAULT_VISIBILITY, T10_COLOURS
+
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import Response
+
+from ska_oso_services.common.static.constants import STEP_SECONDS_DEFAULT_VISIBILITY
+from ska_oso_services.common.visibility import SITES, _render_svg
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +25,7 @@ def visibility_svg(
 ) -> Response:
     try:
         key = array.upper()
-        try:
-            site_cfg = SITES[key]
-        except KeyError:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported array '{array}'. Expected one of: {', '.join(SITES.keys())}.",
-            )
+        site_cfg = SITES[key]
 
         svg = _render_svg(
             ra=ra,
@@ -47,6 +39,8 @@ def visibility_svg(
     except HTTPException:
         raise
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=f"Invalid coordinates: {exc}") from exc
+        raise HTTPException(
+            status_code=400, detail=f"Invalid coordinates: {exc}"
+        ) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Plot error: {exc}") from exc

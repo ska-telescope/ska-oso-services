@@ -10,6 +10,5 @@ T10_COLOURS = {
     "blue": "#1A29B3",
     "teal": "#76B7B2",
     "gold": "#EDC948",
-    "red":  "#CA380B",
+    "red": "#CA380B",
 }
-

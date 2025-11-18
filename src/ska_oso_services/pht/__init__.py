@@ -18,4 +18,3 @@ router.include_router(panel_decision.router)
 router.include_router(panels.router)
 router.include_router(report.router)
 router.include_router(prslacc.router)
-

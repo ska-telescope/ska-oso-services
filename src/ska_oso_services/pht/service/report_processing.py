@@ -1,11 +1,9 @@
 from collections import defaultdict
-from itertools import chain
 from typing import Optional
-from urllib.parse import quote
 
 from ska_oso_services.pht.models.schemas import ProposalReportResponse
-from ska_oso_services.pht.utils.ms_graph import make_graph_call
-from ska_oso_services.pht.utils.constants import MS_GRAPH_URL
+from ska_oso_services.pht.utils.ms_graph import get_pi_office_location
+
 
 def _get_array_class(proposal) -> str:
     arrays = set()
@@ -18,7 +16,6 @@ def _get_array_class(proposal) -> str:
                 arrays.add("LOW")
             elif "mid" in array:
                 arrays.add("MID")
-                
 
     if "LOW" in arrays and "MID" in arrays:
         return "BOTH"
@@ -29,100 +26,45 @@ def _get_array_class(proposal) -> str:
     return "UNKNOWN"
 
 
-
-_GRAPH_SELECT_OFFICE = "officeLocation"
-
-def _extract_pi_user_id(proposal) -> Optional[str]:
-    """
-    Return the user_id (string) of the first principal investigator.
-    Works for proposal objects with attributes or dict-like structure.
-    """
-
-    # Try attribute-style first: proposal.proposal_info.investigators or proposal.investigators
-    investigators = (
-        getattr(getattr(proposal, "proposal_info", None), "investigators", None)
-        or []
-    )
-
-    for inv in investigators:
-        # handle dict OR object
-        principal_flag = (
-            inv.get("principal_investigator")
-            if isinstance(inv, dict)
-            else getattr(inv, "principal_investigator", None)
-        )
-
-        if principal_flag:
-            uid = (
-                inv.get("user_id")
-                if isinstance(inv, dict)
-                else getattr(inv, "user_id", None)
-            )
-            if uid:
-                s = str(uid).strip()
-                if s:
-                    return s
-
-    return None
-
-
-def get_pi_office_location(proposal) -> Optional[str]:
-    """
-    Fetch the Microsoft Graph 'officeLocation' for the PI.
-    """
-
-    uid = _extract_pi_user_id(proposal)
-    if not uid:
-        return None
-
-    url = f"{MS_GRAPH_URL}/users/{quote(uid, safe='')}?$select={_GRAPH_SELECT_OFFICE}"
-    user = make_graph_call(url, pagination=False) 
-
-    if isinstance(user, dict):
-        return user.get("officeLocation")
-
-    return None
-
-
-
 def join_proposals_panels_reviews_decisions(
     proposals, panels, reviews, decisions
 ) -> list[ProposalReportResponse]:
-    """Join proposals, panels, reviews, decisions at review_id-level (science/technical), 
-    falling back to proposal+decision when no reviews exist. Handles unavailable entities gracefully.
+    """Join proposals, panels, reviews, decisions at review_id-level
+    (science/technical).
+    Else:
+        Fall back to proposal - decision when no reviews exist.
+    Note: this inclludes all proposals statuses.
     """
     rows: list[ProposalReportResponse] = []
 
-    # ---- Index panels ----
-    panel_by_id = {p.panel_id: p for p in (panels or [])}
+    # ---- Proposal --> panel ----
     proposal_to_panel = {}
-    for p in (panels or []):
-        for pp in (p.proposals or []):
+    for p in panels or []:
+        for pp in p.proposals or []:
             proposal_to_panel[pp.prsl_id] = p
 
     # ---- Index decisions by proposal ----
     decision_by_pid = {d.prsl_id: d for d in (decisions or [])}
 
-    # ---- Cache PI office location per proposal ----
-    pi_location_by_prsl: dict[str, str | None] = {}
+    # ---- PI office location per proposal ----
+    pi_location_by_prsl: dict[str, Optional[str]] = {}
 
-    # ---- Index reviews by proposal (we will iterate *each* review row -> review_id-level join) ----
+    # ---- Index reviews by proposal ----
     reviews_by_prsl: dict[str, list] = defaultdict(list)
-    for r in (reviews or []):
+    for r in reviews or []:
         reviews_by_prsl[r.prsl_id].append(r)
 
-    # ---- Build reviewer status lookup, kind (Science vs Technical) ----
-    # key: (panel_id, reviewer_id, kind) -> status
     reviewer_status_lookup: dict[tuple[str, str, str], str] = {}
-    for p in (panels or []):
-        # Science reviewers
-        for rv in (p.sci_reviewers or []):
-            reviewer_status_lookup[(p.panel_id, rv.reviewer_id, "Science Review")] = rv.status
-        # Technical reviewers
-        for rv in (p.tech_reviewers or []):
-            reviewer_status_lookup[(p.panel_id, rv.reviewer_id, "Technical Review")] = rv.status
+    for p in panels or []:
+        for rv in p.sci_reviewers or []:
+            reviewer_status_lookup[(p.panel_id, rv.reviewer_id, "Science Review")] = (
+                rv.status
+            )
+        for rv in p.tech_reviewers or []:
+            reviewer_status_lookup[(p.panel_id, rv.reviewer_id, "Technical Review")] = (
+                rv.status
+            )
 
-    # ---- Build rows ----
     for proposal in proposals or []:
         prsl_id = proposal.prsl_id
         decision = decision_by_pid.get(prsl_id)
@@ -163,17 +105,16 @@ def join_proposals_panels_reviews_decisions(
         proposal_reviews = reviews_by_prsl.get(prsl_id, [])
 
         if proposal_reviews:
-            # Emit one row per review_id (science/technical etc.)
             for review in proposal_reviews:
                 kind = getattr(getattr(review, "review_type", None), "kind", None)
                 reviewer_id = getattr(review, "reviewer_id", None)
 
-                # Prefer kind-aware reviewer status from panel assignment if available
                 reviewer_status = None
                 if panel_id and reviewer_id and kind:
-                    reviewer_status = reviewer_status_lookup.get((panel_id, reviewer_id, kind))
+                    reviewer_status = reviewer_status_lookup.get(
+                        (panel_id, reviewer_id, kind)
+                    )
 
-                # Conflict only meaningful for Science reviews (as per your logic)
                 conflict_flag = (
                     getattr(getattr(review, "review_type", None), "conflict", None)
                     and getattr(review.review_type.conflict, "has_conflict", False)
@@ -181,8 +122,9 @@ def join_proposals_panels_reviews_decisions(
                     else False
                 )
 
-                # Review rank lives under review.review_type.rank if present
-                review_rank = getattr(getattr(review, "review_type", None), "rank", None)
+                review_rank = getattr(
+                    getattr(review, "review_type", None), "rank", None
+                )
 
                 rows.append(
                     ProposalReportResponse(
@@ -198,7 +140,6 @@ def join_proposals_panels_reviews_decisions(
                     )
                 )
         else:
-            # No reviews at all -> fallback to proposal + decision only
             rows.append(ProposalReportResponse(**proposal_common_kwargs))
 
     return rows

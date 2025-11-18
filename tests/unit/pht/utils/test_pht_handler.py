@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+from unittest import mock
 
 import pytest
 
@@ -97,39 +98,7 @@ class TestTransformUpdateProposal:
         assert out.observation_info is incoming.observation_info
 
 
-def test_join_proposals_panels_reviews_decisions():
-    proposal1 = TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00001")
-    proposal2 = TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00002")
-    panel = TestDataFactory.panel(
-        reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
-        panel_id="panel-test-20250616-00001",
-        prsl_id_1=proposal1.prsl_id,
-        prsl_id_2=proposal2.prsl_id,
-    )
-    decision = TestDataFactory.panel_decision(prsl_id=proposal1.prsl_id)
-    reviews = TestDataFactory.reviews(
-        prsl_id=proposal1.prsl_id,
-        reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
-        review_id="rvw-mvp01-20220923-00001",
-    )
-
-    rows = join_proposals_panels_reviews_decisions(
-        proposals=[proposal1, proposal2],
-        panels=[panel],
-        reviews=[reviews],
-        decisions=[decision],
-    )
-
-    assert isinstance(rows, list)
-    assert len(rows) == 2
-    assert rows[0].prsl_id == proposal1.prsl_id
-    assert rows[0].panel_id == panel.panel_id
-    assert rows[0].review_id == reviews.review_id
-    assert rows[0].prsl_id == decision.prsl_id
-
-
 def test_get_latest_entity_by_id():
-    # Use SimpleNamespace with the needed fields for each mocked proposal with metadata
     entities = [
         SimpleNamespace(prsl_id="id1", metadata=SimpleNamespace(version=1)),
         SimpleNamespace(
@@ -215,3 +184,54 @@ class TestGetArrayClass:
         """Test with no info attribute in proposal"""
         proposal = SimpleNamespace(proposal_info=None, observation_info=None)
         assert _get_array_class(proposal) == "UNKNOWN"
+
+
+class TestProposalReportJoins:
+    @mock.patch("ska_oso_services.pht.service.report_processing.get_pi_office_location")
+    def test_join_proposals_panels_reviews_decisions(self, mock_get_pi_office_location):
+        # Mock PI office location so we don't hit MS Graph
+        mock_get_pi_office_location.return_value = "Test Office A"
+
+        proposal1 = TestDataFactory.complete_proposal(
+            prsl_id="prsl-mvp01-20220923-00001"
+        )
+        proposal2 = TestDataFactory.complete_proposal(
+            prsl_id="prsl-mvp01-20220923-00002"
+        )
+
+        panel = TestDataFactory.panel(
+            reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
+            panel_id="panel-test-20250616-00001",
+            prsl_id_1=proposal1.prsl_id,
+            prsl_id_2=proposal2.prsl_id,
+        )
+
+        decision = TestDataFactory.panel_decision(prsl_id=proposal1.prsl_id)
+
+        reviews = TestDataFactory.reviews(
+            prsl_id=proposal1.prsl_id,
+            reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
+            review_id="rvw-mvp01-20220923-00001",
+        )
+
+        rows = join_proposals_panels_reviews_decisions(
+            proposals=[proposal1, proposal2],
+            panels=[panel],
+            reviews=[reviews],
+            decisions=[decision],
+        )
+
+        assert isinstance(rows, list)
+        assert len(rows) == 2
+
+        assert rows[0].prsl_id == proposal1.prsl_id
+        assert rows[0].panel_id == panel.panel_id
+        assert rows[0].review_id == reviews.review_id
+        assert rows[0].prsl_id == decision.prsl_id
+
+        assert rows[0].location == "Test Office A"
+        assert rows[1].location == "Test Office A"
+
+        assert mock_get_pi_office_location.call_count == 2
+        mock_get_pi_office_location.assert_any_call(proposal1)
+        mock_get_pi_office_location.assert_any_call(proposal2)
