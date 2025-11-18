@@ -27,7 +27,7 @@ global:
       clusterNamespace: ska-tango-archiver-db # The namespace the SGCluster is deployed to
       # If this is not set, PGHOST will default to the address of the Postgres instance deployed by the Stackgres operator,
       # using the .Values.global.oda.postgres.cluster and .Values.global.oda.postgres.clusterNamespace values
-      host: ~
+      host: oda.oda
       port: "5432"
       database: ~ # For pipeline deployments, this is dynamic so is set in the Makefile
       user: ~ # For pipeline deployments, this is set in the makefile to <database>_admin
