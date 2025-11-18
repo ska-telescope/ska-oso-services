@@ -11,6 +11,8 @@ Unreleased
 * [BUGFIX] Set `PGUSER` to `<.Values.global.oda.postgres.database>_admin` if `.Values.global.oda.postgres.user` isn't set
 * Adds SDP configurations to Scheduling Blocks generated from Proposals
 * Changes the SDP TMData source Helm configuration key from `ska-oso-services.rest.sdp.tmdata` to `global.oso.sdp_tmdata`
+* [BREAKING] Updates ODA version to 14.0.0 and OSD version to 5.0.0
+* Updates SBD generation from Project to handle additional script parameters
 
 9.2.0
 ***********
