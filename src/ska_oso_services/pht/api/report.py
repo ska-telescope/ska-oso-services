@@ -45,17 +45,17 @@ def get_report() -> List[ProposalReportResponse]:
         )
         # Filter out proposals that are not submitted
         # (i.e., those with status DRAFT or WITHDRAWN)
-        filtered_proposals = [
-            proposal
-            for proposal in proposals
-            if proposal.status not in {ProposalStatus.DRAFT, ProposalStatus.WITHDRAWN}
-        ]
+        # filtered_proposals = [
+        #     proposal
+        #     for proposal in proposals
+        #     if proposal.status not in {ProposalStatus.DRAFT, ProposalStatus.WITHDRAWN}
+        # ]
         panels = get_latest_entity_by_id(
             uow.panels.query(query_param), "panel_id"  # pylint: disable=no-member
         )
         reviews = get_latest_entity_by_id(uow.rvws.query(query_param), "review_id")
         decisions = get_latest_entity_by_id(uow.pnlds.query(query_param), "prsl_id")
     report = join_proposals_panels_reviews_decisions(
-        filtered_proposals, panels, reviews, decisions
+        proposals, panels, reviews, decisions
     )
     return report

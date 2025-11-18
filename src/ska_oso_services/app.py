@@ -45,7 +45,7 @@ LOGGER = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def combined_lifespan(app: FastAPI):
-    async with watchdog(allow_unsecured=["get_systemcoordinates", "get_osd_by_cycle"])(
+    async with watchdog(allow_unsecured=["get_systemcoordinates", "get_osd_by_cycle", "visibility_svg"])(
         app
     ):
         async with oda_lifespan(app):
