@@ -60,11 +60,11 @@ python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
 # PDM dependency is pulled in via the ODA rather than being explicitly set here
 # If updating this, also remember to update the Helm dependency in the umbrella chart
-ska-db-oda = {version = "13.1.1+dev.cab55814f", source = "gitlab-ska-db-oda"}
+ska-db-oda = "^14.0.0"
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
-ska-ost-osd = {version = "4.2.2+dev.cdfdb950b", source = "gitlab-ska-ost-osd"}
+ska-ost-osd = "5.0.0"
 ska-telmodel = "^1.24.3"
 aiosmtplib = "^4.0.1"
 boto3 = "^1.38.13"
