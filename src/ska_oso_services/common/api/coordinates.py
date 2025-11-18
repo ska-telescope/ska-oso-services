@@ -4,19 +4,19 @@
 # which makes no sense
 import logging
 from enum import Enum
+from typing import Annotated
 
 from fastapi import APIRouter
+from pydantic import Field
+from ska_oso_pdm import Target
 
 from ska_oso_services.common.coordinateslookup import (
-    Equatorial,
-    Galactic,
-    convert_to_galactic,
+    convert_icrs_to_galactic,
     get_coordinates,
-    round_coord,
 )
 from ska_oso_services.common.model import AppModel
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/coordinates")
 
@@ -26,12 +26,60 @@ class ReferenceFrame(str, Enum):
     galactic = "galactic"
 
 
-class EquatorialResponse(AppModel):
-    equatorial: Equatorial
+class Equatorial(AppModel):
+    """
+    This class is deprecated as the PDM Target can be used
+    instead - see GalacticResponse below.
+    """
+
+    ra: str
+    dec: str
+    velocity: float
+    redshift: float
 
 
-class GalacticResponse(AppModel):
-    galactic: Galactic
+class Galactic(AppModel):
+    """
+    This class is deprecated as the PDM Target can be used
+    instead - see EquatorialResponse below.
+    """
+
+    lon: float
+    lat: float
+    velocity: float
+    redshift: float
+
+
+class EquatorialResponse(Target):
+    """
+    Extension of the Target with the deprecated equatorial field.
+    Once use of the equatorial field is removed,
+    this class can be deleted and Target used.
+    """
+
+    equatorial: Annotated[
+        Equatorial,
+        Field(
+            deprecated="Use the PDM Target object fields instead - they contain the "
+            "same data that can be put straight into an SBD or Proposal"
+        ),
+    ]
+
+
+class GalacticResponse(Target):
+    """
+    Extension of the Target with the deprecated galactic field.
+    Once use of the galactic field is removed,
+    this class can be deleted and Target used.
+    """
+
+    galactic: Annotated[
+        Galactic,
+        Field(
+            deprecated="Use the PDM Target object fields instead - they contain the "
+            "same data that can be put straight into an SBD or Proposal"
+        ),
+    ]
 
 
 @router.get(
@@ -63,18 +111,29 @@ def get_systemcoordinates(
              In case of an error, an error response is returned.
     :rtype: GalacticResponse | EquatorialResponse
     """
-    logger.debug("GET coordinates: %s", identifier)
-    response = get_coordinates(identifier)
+    LOGGER.debug("GET coordinates: %s", identifier)
+    lookup_result_target = get_coordinates(identifier)
 
-    if reference_frame.lower() == "galactic":
+    if reference_frame == ReferenceFrame.galactic:
+        galactic_coordinates = convert_icrs_to_galactic(
+            lookup_result_target.reference_coordinate
+        )
         return GalacticResponse(
-            galactic=convert_to_galactic(
-                response.ra, response.dec, response.velocity, response.redshift
-            )
+            **lookup_result_target.model_dump(),
+            galactic=Galactic(
+                lon=round(galactic_coordinates.l, 2),
+                lat=round(galactic_coordinates.b, 4),
+                velocity=lookup_result_target.radial_velocity.quantity.value,
+                redshift=lookup_result_target.radial_velocity.redshift,
+            ),
         )
     else:
         return EquatorialResponse(
-            equatorial=round_coord(
-                response.ra, response.dec, response.velocity, response.redshift
-            )
+            **lookup_result_target.model_dump(),
+            equatorial=Equatorial(
+                ra=lookup_result_target.reference_coordinate.ra_str,
+                dec=lookup_result_target.reference_coordinate.dec_str,
+                velocity=lookup_result_target.radial_velocity.quantity.value,
+                redshift=lookup_result_target.radial_velocity.redshift,
+            ),
         )

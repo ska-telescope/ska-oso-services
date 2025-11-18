@@ -67,6 +67,18 @@ class NotFoundError(BadRequestError):
         super().__init__(detail=detail)
 
 
+class CatalogLookupError(HTTPException):
+    code = HTTPStatus.INTERNAL_SERVER_ERROR
+
+    def __init__(
+        self,
+        detail: Optional[str] = None,
+    ):
+        detail = detail or self.code.description
+
+        super().__init__(status_code=self.code, detail=detail)
+
+
 def _make_json_response(error_response: ErrorResponse) -> JSONResponse:
     """
     Utility helper to generate a JSONResponse to be returned by custom error handlers.
