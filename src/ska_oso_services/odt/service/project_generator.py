@@ -113,7 +113,11 @@ def science_programme_from_observation_set(
     sdp_data_products_for_observation_set = [
         data_product
         for data_product in observation_info.data_product_sdps
+<<<<<<< HEAD
         if observation_set_id in data_product.observation_set_ref
+=======
+        if observation_set_id == data_product.observation_set_ref
+>>>>>>> btn-2890-sbd-gen-pdm-v-26
     ]
 
     return ScienceProgramme(

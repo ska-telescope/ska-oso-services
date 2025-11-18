@@ -84,11 +84,10 @@
           "data_product_sdps": [
             {
               "data_product_id": "SDP-1",
-              "observation_set_ref":
-                "obs-02o2ac",
+              "observation_set_ref": "obs-02o2ac",
               "script_parameters": {
                 "kind": "continuum",
-          "variant": "continuum image",
+                "variant": "continuum image",
                 "image_size": {
                   "value": 1024.0,
                   "unit": "pix"
@@ -100,7 +99,7 @@
                 "weight": {
                   "weighting": "natural"
                 },
-                "polarisations": ["I"],
+                "polarisations": ["I", "Q", "U"],
                 "channels_out": 12,
                 "fit_spectral_pol": 3
               }
@@ -109,7 +108,7 @@
           "result_details": [
             {
               "observation_set_ref": "obs-02o2ac",
-              "data_product_ref": "product1",
+              "data_product_ref": "SDP-1",
               "target_ref": "47 tuc",
               "result": {
                 "supplied_type": "sensitivity",
@@ -212,7 +211,7 @@
           "result_details": [
             {
               "observation_set_ref": "obs-WdyixQ",
-              "data_product_ref": "product1",
+              "data_product_ref": "SDP-1",
               "target_ref": "target42",
               "result": {
                 "supplied_type": "integration_time",

@@ -129,8 +129,6 @@
 					},
 					"supplied": {
 						"supplied_type": "integration_time",
-						"value": 0.0,
-						"unit": "",
 						"quantity": {
 							"value": -12.345,
 							"unit": "m / s"
@@ -164,8 +162,6 @@
 					},
 					"supplied": {
 						"supplied_type": "sensitivity",
-						"value": 0.0,
-						"unit": "",
 						"quantity": {
 							"value": -12.345,
 							"unit": "m / s"
@@ -173,7 +169,8 @@
 					},
 					"spectral_resolution": "DUMMY",
 					"effective_resolution": "DUMMY",
-					"spectral_averaging":1
+					"spectral_averaging": 3,
+                    "number_of_channels": 10
 				},
 				"details": "LOW + Zoom"
 			}
@@ -181,11 +178,10 @@
 		"data_product_sdps": [
 			{
 				"data_product_id": "SDP-1",
-				"observation_set_ref": "mid-001",
-				
+				"observation_set_ref": "low-001",
                 "script_parameters": {
-					"kind": "continuum",
-          "variant": "continuum image",
+                  "kind": "continuum",
+                  "variant": "continuum image",
                   "image_size": {
                       "value": 1024.0,
                       "unit": "pix"
@@ -209,7 +205,7 @@
 		"result_details": [
 			{
 				"observation_set_ref": "low-001",
-				"data_product_ref": "product1",
+                "data_product_ref": "SDP-1",
 				"target_ref": "M1",
 				"result": {
 					"supplied_type": "integration_time",
@@ -251,7 +247,7 @@
 			},
 			{
 				"observation_set_ref": "low-001",
-				"data_product_ref": "product1",
+                "data_product_ref": "SDP-1",
 				"target_ref": "M2",
 				"result": {
 					"supplied_type": "integration_time",
@@ -293,7 +289,7 @@
 			},
 			{
 				"observation_set_ref": "low-002",
-				"data_product_ref": "product1",
+                "data_product_ref": "SDP-1",
 				"target_ref": "M2",
 				"result": {
 					"supplied_type": "integration_time",
