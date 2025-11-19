@@ -11,6 +11,7 @@ from pydantic import AwareDatetime
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.persistence.domain.query import DateQuery
 from ska_db_oda.persistence.fastapicontext import UnitOfWork
+from ska_oso_pdm.entity_status_history import ProjectStatus
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 
@@ -67,6 +68,13 @@ def prjs_prsl_post(
         project = generate_project(proposal)
 
         persisted_project = uow.prjs.add(project, user=auth.user_id)
+        # The status lifecycle isn't fully in place as of PI28, we set the default
+        # status to READY as this is required to be executed in the OET UI
+        uow.status.update_status(
+            entity_id=persisted_project.prj_id,
+            status=ProjectStatus.READY,
+            updated_by=auth.user_id,
+        )
 
         uow.commit()
 

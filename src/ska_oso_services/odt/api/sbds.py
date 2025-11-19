@@ -11,6 +11,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.persistence.fastapicontext import UnitOfWork
+from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common.auth import Permissions, Scope
@@ -124,6 +125,13 @@ def sbds_post(
         )
     with oda as uow:
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
+        # The status lifecycle isn't fully in place as of PI28, we set the default
+        # status to READY as this is required to be executed in the OET UI
+        uow.status.update_status(
+            entity_id=updated_sbd.sbd_id,
+            status=SBDStatus.READY,
+            updated_by=auth.user_id,
+        )
 
         uow.commit()
     return updated_sbd

@@ -9,7 +9,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.persistence.fastapicontext import UnitOfWork
-from ska_oso_pdm import TelescopeType
+from ska_oso_pdm.entity_status_history import ProjectStatus, SBDStatus
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
@@ -101,7 +101,13 @@ def prjs_post(
 
     with oda as uow:
         updated_prj = uow.prjs.add(prj, user=auth.user_id)
-
+        # The status lifecycle isn't fully in place as of PI28, we set the default
+        # status to READY as this is required to be executed in the OET UI
+        uow.status.update_status(
+            entity_id=updated_prj.prj_id,
+            status=ProjectStatus.READY,
+            updated_by=auth.user_id,
+        )
         uow.commit()
     return updated_prj
 
@@ -184,6 +190,13 @@ def prjs_sbds_post(
             sbd if sbd is not None else DEFAULT_SB_DEFINITION.model_copy(deep=True)
         )
         sbd = uow.sbds.add(sbd_to_save, user=auth.user_id)
+        # The status lifecycle isn't fully in place as of PI28, we set the default
+        # status to READY as this is required to be executed in the OET UI
+        uow.status.update_status(
+            entity_id=sbd.sbd_id,
+            status=SBDStatus.READY,
+            updated_by=auth.user_id,
+        )
 
         obs_block.sbd_ids.append(sbd.sbd_id)
         # Persist the change to the obs_block above
@@ -237,6 +250,13 @@ def prjs_ob_generate_sbds(
 
         for sbd in sbds:
             updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
+            # The status lifecycle isn't fully in place as of PI28, we set the default
+            # status to READY as this is required to be executed in the OET UI
+            uow.status.update_status(
+                entity_id=updated_sbd.sbd_id,
+                status=SBDStatus.READY,
+                updated_by=auth.user_id,
+            )
 
             obs_block.sbd_ids.append(updated_sbd.sbd_id)
 
@@ -274,6 +294,13 @@ def prjs_generate_sbds(
 
             for sbd in sbds:
                 updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
+                # The status lifecycle isn't fully in place as of PI28, so we set the
+                # default status to READY as required by OET UI for execution
+                uow.status.update_status(
+                    entity_id=updated_sbd.sbd_id,
+                    status=SBDStatus.READY,
+                    updated_by=auth.user_id,
+                )
 
                 obs_block.sbd_ids.append(updated_sbd.sbd_id)
 
