@@ -146,11 +146,13 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
         )
     ]
     if science_programme.data_product_sdps:
-        sdp_configurations.extend([
-            _sdp_configuration_from_data_product_sdp(
-                dp_sdp
-            )  for dp_sdp in science_programme.data_product_sdps if dp_sdp is not None
-        ])
+        sdp_configurations.extend(
+            [
+                _sdp_configuration_from_data_product_sdp(dp_sdp)
+                for dp_sdp in science_programme.data_product_sdps
+                if dp_sdp is not None
+            ]
+        )
 
     sbd = SBDefinition(
         telescope=telescope,
