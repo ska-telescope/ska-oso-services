@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.persistence.fastapicontext import UnitOfWork
 from ska_oso_pdm import TelescopeType
-from ska_oso_pdm.entity_status_history import ProjectStatus, SBDStatus
+from ska_oso_pdm.entity_status_history import ProjectStatus
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 
@@ -20,6 +20,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.odt.api.sbds import _create_sbd_status_entity
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
@@ -102,14 +103,8 @@ def prjs_post(
 
     with oda as uow:
         updated_prj = uow.prjs.add(prj, user=auth.user_id)
-        # The status lifecycle isn't fully in place as of PI28, we set the default
-        # status to READY as this is required to be executed in the OET UI
-        uow.status.update_status(
-            entity_id=updated_prj.prj_id,
-            status=ProjectStatus.READY,
-            updated_by=auth.user_id,
-        )
         uow.commit()
+    _create_prj_status_entity(updated_prj.prj_id, auth.user_id, oda)
     return updated_prj
 
 
@@ -191,19 +186,13 @@ def prjs_sbds_post(
             sbd if sbd is not None else DEFAULT_SB_DEFINITION.model_copy(deep=True)
         )
         sbd = uow.sbds.add(sbd_to_save, user=auth.user_id)
-        # The status lifecycle isn't fully in place as of PI28, we set the default
-        # status to READY as this is required to be executed in the OET UI
-        uow.status.update_status(
-            entity_id=sbd.sbd_id,
-            status=SBDStatus.READY,
-            updated_by=auth.user_id,
-        )
 
         obs_block.sbd_ids.append(sbd.sbd_id)
         # Persist the change to the obs_block above
         prj = uow.prjs.add(prj, user=auth.user_id)
 
         uow.commit()
+    _create_sbd_status_entity(sbd.sbd_id, auth.user_id, oda)
 
     return {"sbd": sbd, "prj": prj}
 
@@ -230,6 +219,7 @@ def prjs_ob_generate_sbds(
         identifier,
         obs_block_id,
     )
+    updated_sbd_ids = []
     with oda as uow:
         prj = uow.prjs.get(identifier)
         try:
@@ -251,18 +241,14 @@ def prjs_ob_generate_sbds(
 
         for sbd in sbds:
             updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
-            # The status lifecycle isn't fully in place as of PI28, we set the default
-            # status to READY as this is required to be executed in the OET UI
-            uow.status.update_status(
-                entity_id=updated_sbd.sbd_id,
-                status=SBDStatus.READY,
-                updated_by=auth.user_id,
-            )
+            updated_sbd_ids.append(updated_sbd.sbd_id)
 
             obs_block.sbd_ids.append(updated_sbd.sbd_id)
 
         updated_prj = uow.prjs.add(prj, user=auth.user_id)
         uow.commit()
+    for sbd_id in updated_sbd_ids:
+        _create_sbd_status_entity(sbd_id, auth.user_id, oda)
 
     return updated_prj
 
@@ -295,13 +281,6 @@ def prjs_generate_sbds(
 
             for sbd in sbds:
                 updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
-                # The status lifecycle isn't fully in place as of PI28, so we set the
-                # default status to READY as required by OET UI for execution
-                uow.status.update_status(
-                    entity_id=updated_sbd.sbd_id,
-                    status=SBDStatus.READY,
-                    updated_by=auth.user_id,
-                )
 
                 obs_block.sbd_ids.append(updated_sbd.sbd_id)
 
@@ -309,3 +288,14 @@ def prjs_generate_sbds(
         uow.commit()
 
     return updated_prj
+
+
+def _create_prj_status_entity(prj_id: str, user: str, oda: UnitOfWork):
+    with oda as uow:
+        # The status lifecycle isn't fully in place as of PI28, we set the default
+        # status to READY as this is required to be executed in the OET UI
+        uow.status.update_status(
+            entity_id=prj_id,
+            status=ProjectStatus.READY,
+            updated_by=user,
+        )
