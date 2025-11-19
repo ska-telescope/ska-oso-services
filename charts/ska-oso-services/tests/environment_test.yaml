@@ -22,29 +22,3 @@ tests:
           of: ConfigMap
       - isAPIVersion:
           of: v1
-
-  - it: should set SKUID_URL to default cluster domain if SKUID_URL is not set
-    documentIndex: 0
-    set:
-      rest:
-        skuid:
-          url:
-    asserts:
-      - equal:
-          path: data.SKUID_URL
-          value:
-            ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.techops.internal.skao.int:9870
-
-  - it: should configure SKUID_URL using custom cluster domain when set
-    documentIndex: 0
-    set:
-      global:
-        cluster_domain: foo
-      rest:
-        skuid:
-          url:
-    asserts:
-      - equal:
-          path: data.SKUID_URL
-          value:
-            ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.foo:9870

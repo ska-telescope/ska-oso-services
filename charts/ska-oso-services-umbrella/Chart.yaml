@@ -11,7 +11,7 @@ dependencies:
   repository: file://../ska-oso-services
 
 # ODA is a dependency of OSO services. Include it for data persistence
-# The ODA umbrella chart includes ODA API, PostgreSQL database and SKUID
+# The ODA umbrella chart includes ODA API and the PostgreSQL database
 - name: ska-db-oda-umbrella
   # If updating this, also remember to update the Python dependency
   version: 14.0.0
