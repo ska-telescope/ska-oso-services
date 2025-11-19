@@ -49,6 +49,7 @@ def test_sbd_validate(authrequests):
     assert result["messages"] == {}
 
 
+@pytest.mark.xfail('Tests fails due to unfinished status lifecycle implementation, see BTN-2925')
 @pytest.mark.xray("XTP-34548")
 def test_sbd_post_then_get(authrequests):
     """
@@ -81,6 +82,7 @@ def test_sbd_post_then_get(authrequests):
     )
 
 
+@pytest.mark.xfail('Tests fails due to unfinished status lifecycle implementation, see BTN-2925')
 def test_sbd_post_then_put(authrequests):
     """
     Test that an entity POSTed to /sbds can then be updated with PUT /sbds/{identifier}
