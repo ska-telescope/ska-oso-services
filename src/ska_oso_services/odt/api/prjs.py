@@ -9,6 +9,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.persistence.fastapicontext import UnitOfWork
+from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.entity_status_history import ProjectStatus, SBDStatus
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
