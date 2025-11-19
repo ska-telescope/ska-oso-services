@@ -311,11 +311,13 @@ def _sdp_configuration_from_data_product_sdp(
         and dp_sdp.script_parameters.variant is not ProductVariant.CONTINUUM_IMAGE
     ):
         LOGGER.warning(
-            f"Script parameters of {dp_sdp.script_parameters.kind} kind with variant "
-            f"{dp_sdp.script_parameters.variant} are not supported by Scheduling Blocks. "
-            f"Currently the only supported kind is {ProductType.CONTINUUM} with variant "
-            f"{ProductVariant.CONTINUUM_IMAGE}. The unsupported script parameters will be "
-            f"ignored in SBD conversion."
+            "Script parameters of %s kind with variant %s are not supported "
+            "by Scheduling Blocks. Currently the only supported kind is %s with %s. "
+            "The unsupported parameters will be ignored in SBD conversion.",
+            dp_sdp.script_parameters.kind,
+            dp_sdp.script_parameters.variant,
+            ProductType.CONTINUUM,
+            ProductVariant.CONTINUUM_IMAGE,
         )
         return None
 
