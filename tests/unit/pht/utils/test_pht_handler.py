@@ -25,12 +25,11 @@ def _to_iso_z(value):
 
 
 def _replace_investigators(proposal_info_obj, inv_objs):
-    """Return a copy of `proposal_info_obj` with 'investigators' replaced (Pydantic v2)."""  # noqa: E501
+    """Return a copy of `proposal_info_obj` with 'investigators' """  # noqa: E501
     return proposal_info_obj.model_copy(update={"investigators": inv_objs})
 
 
 def _parse_iso_z(s: str) -> datetime:
-    """Parse 'YYYY-MM-DDTHH:MM:SSZ' (or ISO with Z) into an aware UTC datetime."""
     return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
 
 
@@ -126,7 +125,7 @@ def test_get_latest_entity_by_id():
 
 class TestGetArrayClass:
     def test_low_only(self):
-        """Test when only Low array is present"""
+        """When only Low array is present"""
         proposal = SimpleNamespace(
             observation_info=SimpleNamespace(
                 observation_sets=[
@@ -138,7 +137,7 @@ class TestGetArrayClass:
         assert _get_array_class(proposal) == "LOW"
 
     def test_mid_only(self):
-        """Test when only Mid array is present"""
+        """Only Mid array is present"""
         proposal = SimpleNamespace(
             observation_info=SimpleNamespace(
                 observation_sets=[
@@ -150,7 +149,7 @@ class TestGetArrayClass:
         assert _get_array_class(proposal) == "MID"
 
     def test_both_arrays(self):
-        """Test when both Low and Mid arrays are present"""
+        """Both Low and Mid arrays are present"""
         proposal = SimpleNamespace(
             observation_info=SimpleNamespace(
                 observation_sets=[
@@ -162,14 +161,14 @@ class TestGetArrayClass:
         assert _get_array_class(proposal) == "BOTH"
 
     def test_unknown_empty_obs(self):
-        """Test when no observation sets are present"""
+        """No observation sets are present"""
         proposal = SimpleNamespace(
             observation_info=SimpleNamespace(observation_sets=[])
         )
         assert _get_array_class(proposal) == "UNKNOWN"
 
     def test_unknown_none_array(self):
-        """Test when array is None in observation set"""
+        """Array is None in observation set"""
         proposal = SimpleNamespace(
             observation_info=SimpleNamespace(
                 observation_sets=[
@@ -181,7 +180,7 @@ class TestGetArrayClass:
         assert _get_array_class(proposal) == "UNKNOWN"
 
     def test_unknown_no_info(self):
-        """Test with no info attribute in proposal"""
+        """No info attribute in proposal"""
         proposal = SimpleNamespace(proposal_info=None, observation_info=None)
         assert _get_array_class(proposal) == "UNKNOWN"
 
@@ -189,7 +188,6 @@ class TestGetArrayClass:
 class TestProposalReportJoins:
     @mock.patch("ska_oso_services.pht.service.report_processing.get_pi_office_location")
     def test_join_proposals_panels_reviews_decisions(self, mock_get_pi_office_location):
-        # Mock PI office location so we don't hit MS Graph
         mock_get_pi_office_location.return_value = "Test Office A"
 
         proposal1 = TestDataFactory.complete_proposal(
