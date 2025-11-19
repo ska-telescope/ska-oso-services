@@ -42,29 +42,6 @@ class TestProjectCreationFromProposal:
         assert_json_is_equal(resp.text, project.model_dump_json())
         uow_mock.prjs.add.assert_called_with(project, user=TEST_USER)
 
-    @mock.patch("ska_oso_services.odt.api.prsls.generate_project")
-    def test_project_status_is_created(
-        self, mock_generate_project, client_with_uow_mock
-    ):
-        """ """
-        client, uow_mock = client_with_uow_mock
-        proposal = TestDataFactory.complete_proposal(status=ProposalStatus.SUBMITTED)
-        uow_mock.prsls.get.return_value = proposal
-
-        project = TestDataFactory.project()
-        mock_generate_project.return_value = project
-        uow_mock.prjs.add.return_value = project
-
-        add_status_mock = mock.MagicMock()
-        uow_mock.prjs_status_history.add = add_status_mock
-
-        resp = client.post(
-            f"{PRSLS_API_URL}/{proposal.prsl_id}/generateProject",
-        )
-
-        assert resp.status_code == HTTPStatus.OK
-        add_status_mock.assert_called()
-
     def test_proposal_not_found(self, client_with_uow_mock):
         """ """
         client, uow_mock = client_with_uow_mock

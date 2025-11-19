@@ -85,27 +85,6 @@ class TestProjectPost:
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, created_project.model_dump_json())
 
-    def test_prjs_post_adds_status_entity(self, client_with_uow_mock):
-        """
-        Check the prjs_post also adds a status entity
-        """
-        client, uow_mock = client_with_uow_mock
-        created_project = TestDataFactory.project()
-        uow_mock.prjs.add.return_value = created_project
-        uow_mock.prjs.get.return_value = created_project
-
-        add_status_mock = mock.MagicMock()
-        uow_mock.prjs_status_history.add = add_status_mock
-
-        result = client.post(
-            f"{PRJS_API_URL}",
-            data=TestDataFactory.project(prj_id=None).model_dump_json(),
-            headers={"Content-type": "application/json"},
-        )
-
-        assert result.status_code == HTTPStatus.OK
-        add_status_mock.assert_called()
-
     def test_prjs_post_with_minimum_body(self, client_with_uow_mock):
         """
         Check the prjs_post method returns an 'empty' project with a
@@ -237,28 +216,6 @@ class TestProjectPut:
 
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, project.model_dump_json())
-
-    def test_prjs_put_adds_status(self, client_with_uow_mock):
-        """
-        Check the prjs_put also adds a status entity
-        """
-        client, uow_mock = client_with_uow_mock
-        uow_mock.prjs.__contains__.return_value = True
-        project = TestDataFactory.project()
-        uow_mock.prjs.add.return_value = project
-        uow_mock.prjs.get.return_value = project
-
-        add_status_mock = mock.MagicMock()
-        uow_mock.prjs_status_history.add = add_status_mock
-
-        result = client.put(
-            f"{PRJS_API_URL}/{project.prj_id}",
-            data=project.model_dump_json(),
-            headers={"Content-type": "application/json"},
-        )
-
-        assert result.status_code == HTTPStatus.OK
-        add_status_mock.assert_called()
 
     def test_prjs_put_wrong_identifier(self, client):
         """
@@ -414,29 +371,6 @@ class TestProjectAddSBDefinition:
         args, _ = uow_mock.prjs.add.call_args
         assert sbd.sbd_id in args[0].obs_blocks[0].sbd_ids
 
-    def test_prjs_post_sbd_adds_status_entities(self, client_with_uow_mock):
-        client, uow_mock = client_with_uow_mock
-        project = TestDataFactory.project()
-        obs_block_id = "ob-1"
-        project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
-        sbd = TestDataFactory.sbdefinition()
-        uow_mock.prjs.get.return_value = project
-        uow_mock.sbds.add.return_value = sbd
-        uow_mock.prjs.add.return_value = project
-
-        add_sbd_status_mock = mock.MagicMock()
-        uow_mock.sbds_status_history.add = add_sbd_status_mock
-
-        add_prj_status_mock = mock.MagicMock()
-        uow_mock.prjs_status_history.add = add_prj_status_mock
-
-        resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/sbds",
-        )
-
-        assert resp.status_code == HTTPStatus.OK
-        add_prj_status_mock.assert_called()
-
 
 class TestProjectGenerateSBDefinitions:
 
@@ -493,34 +427,6 @@ class TestProjectGenerateSBDefinitions:
 
             assert resp.json()["detail"] == "OSError('test error')"
             assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
-
-    @mock.patch("ska_oso_services.odt.api.prjs.generate_sbds")
-    def test_prjs_post_generate_sbd_adds_sbd_status_entity(
-        self, mock_generate_sbds, client_with_uow_mock
-    ):
-        """
-        Check the prjs_post also adds a status entity
-        """
-        client, uow_mock = client_with_uow_mock
-        project = TestDataFactory.project()
-        obs_block_id = "ob-1"
-        project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
-        sbd = TestDataFactory.sbdefinition()
-        uow_mock.prjs.get.return_value = project
-        uow_mock.sbds.add.return_value = sbd
-        uow_mock.prjs.add.return_value = project
-
-        mock_generate_sbds.return_value = [sbd]
-
-        add_status_mock = mock.MagicMock()
-        uow_mock.sbds_status_history.add = add_status_mock
-
-        response = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/generateSBDefinitions",
-        )
-
-        assert response.status_code == HTTPStatus.OK
-        add_status_mock.assert_called()
 
 
 class TestProjectObsBlockGenerateSBDefinitions:
@@ -593,31 +499,3 @@ class TestProjectObsBlockGenerateSBDefinitions:
 
             assert resp.json()["detail"] == "OSError('test error')"
             assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
-
-    @mock.patch("ska_oso_services.odt.api.prjs.generate_sbds")
-    def test_prjs_post_generate_sbd_adds_sbd_status_entity(
-        self, mock_generate_sbds, client_with_uow_mock
-    ):
-        """
-        Check the prjs_post also adds a status entity
-        """
-        client, uow_mock = client_with_uow_mock
-        project = TestDataFactory.project()
-        obs_block_id = "obs-block-00001"
-        project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
-        sbd = TestDataFactory.sbdefinition()
-        uow_mock.prjs.get.return_value = project
-        uow_mock.sbds.add.return_value = sbd
-        uow_mock.prjs.add.return_value = project
-
-        mock_generate_sbds.return_value = [sbd]
-
-        add_status_mock = mock.MagicMock()
-        uow_mock.sbds_status_history.add = add_status_mock
-
-        response = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateSBDefinitions",
-        )
-
-        assert response.status_code == HTTPStatus.OK
-        add_status_mock.assert_called()
