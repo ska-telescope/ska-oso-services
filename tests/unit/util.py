@@ -385,8 +385,8 @@ VALID_LOW_SBDEFINITION_JSON = TestDataFactory.lowsbdefinition().model_dump_json(
 SBDEFINITION_WITHOUT_ID_JSON = TestDataFactory.sbdefinition(
     sbd_id=None
 ).model_dump_json()
-SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON = TestDataFactory.sbdefinition(
-    sbd_id=None, without_metadata=True
+SBDEFINITION_WITHOUT_METADATA_JSON = TestDataFactory.sbdefinition(
+    without_metadata=True
 ).model_dump_json()
 
 VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(prj_id=None).model_dump_json()
