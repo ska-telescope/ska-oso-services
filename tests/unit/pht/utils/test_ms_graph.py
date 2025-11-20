@@ -6,8 +6,9 @@ import pytest
 
 from ska_oso_services.pht.utils.constants import MS_GRAPH_URL
 from ska_oso_services.pht.utils.ms_graph import (
+    _extract_pi_user_id,
     extract_profile_from_access_token,
-    make_graph_call, _extract_pi_user_id
+    make_graph_call,
 )
 
 MODULE = "ska_oso_services.pht.utils.ms_graph"
@@ -118,7 +119,6 @@ class TestMakeGraphCall:
 
         with pytest.raises(RuntimeError, match="Error fetching data from Graph API"):
             make_graph_call(f"{MS_GRAPH_URL}v1.0/users")
-
 
 
 class TestExtractPiUserId:

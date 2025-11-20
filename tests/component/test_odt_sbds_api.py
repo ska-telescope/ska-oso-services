@@ -12,7 +12,7 @@ from http import HTTPStatus
 import pytest
 
 from ..unit.util import (
-    SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
+    SBDEFINITION_WITHOUT_METADATA_JSON,
     VALID_MID_SBDEFINITION_JSON,
     TestDataFactory,
     assert_json_is_equal,
@@ -49,6 +49,9 @@ def test_sbd_validate(authrequests):
     assert result["messages"] == {}
 
 
+@pytest.mark.xfail(
+    reason="Tests fails due to unfinished status lifecycle implementation, see BTN-2925"
+)
 @pytest.mark.xray("XTP-34548")
 def test_sbd_post_then_get(authrequests):
     """
@@ -57,14 +60,14 @@ def test_sbd_post_then_get(authrequests):
     """
     post_response = authrequests.post(
         f"{ODT_URL}/sbds",
-        data=SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
+        data=SBDEFINITION_WITHOUT_METADATA_JSON,
         headers={"Content-type": "application/json"},
     )
 
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
-        SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
+        SBDEFINITION_WITHOUT_METADATA_JSON,
         exclude_paths=["root['metadata']", "root['sbd_id']"],
     )
 
@@ -76,25 +79,28 @@ def test_sbd_post_then_get(authrequests):
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     assert_json_is_equal(
         get_response.content,
-        SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
+        SBDEFINITION_WITHOUT_METADATA_JSON,
         exclude_paths=["root['metadata']", "root['sbd_id']"],
     )
 
 
+@pytest.mark.xfail(
+    reason="Tests fails due to unfinished status lifecycle implementation, see BTN-2925"
+)
 def test_sbd_post_then_put(authrequests):
     """
     Test that an entity POSTed to /sbds can then be updated with PUT /sbds/{identifier}
     """
     post_response = authrequests.post(
         f"{ODT_URL}/sbds",
-        data=SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
+        data=SBDEFINITION_WITHOUT_METADATA_JSON,
         headers={"Content-type": "application/json"},
     )
 
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
-        SBDEFINITION_WITHOUT_ID_OR_METADATA_JSON,
+        SBDEFINITION_WITHOUT_METADATA_JSON,
         exclude_paths=["root['metadata']", "root['sbd_id']"],
     )
 

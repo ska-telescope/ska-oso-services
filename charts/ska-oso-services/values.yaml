@@ -83,9 +83,6 @@ rest:
       # If left as null the default secret deployed by the PHT umbrella will be used.
       secret: ~
       key: ~
-
-  skuid:
-    url: # Standard SKUID svc address is used if this is not set
   ingress:
     enabled: true
 

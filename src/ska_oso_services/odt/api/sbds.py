@@ -11,7 +11,6 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.persistence.fastapicontext import UnitOfWork
-from ska_oso_pdm import SBDStatusHistory
 from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
 
@@ -126,11 +125,8 @@ def sbds_post(
         )
     with oda as uow:
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
-
-        sbd_status = _create_sbd_status_entity(updated_sbd)
-        uow.sbds_status_history.add(sbd_status, user=auth.user_id)
-
         uow.commit()
+    _set_sbd_status_to_ready(updated_sbd.sbd_id, auth.user_id, oda)
     return updated_sbd
 
 
@@ -173,11 +169,6 @@ def sbds_put(
         uow.sbds.get(identifier)
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
 
-        # In this PUT should we be updating the existing status
-        # and changing the version in it?
-        sbd_status = _create_sbd_status_entity(updated_sbd)
-        uow.sbds_status_history.add(sbd_status, user=auth.user_id)
-
         uow.commit()
     return updated_sbd
 
@@ -193,13 +184,12 @@ def validate(sbd: SBDefinition) -> ValidationResponse:
     return ValidationResponse(valid=valid, messages=validate_result)
 
 
-def _create_sbd_status_entity(sbd: SBDefinition) -> SBDStatusHistory:
-    return SBDStatusHistory(
-        sbd_ref=sbd.sbd_id,
-        sbd_version=sbd.metadata.version,
-        # At the start of PI26, the status lifecycle isn't fully in place
-        # We just set the default status to READY as this is required to be
-        # executed in the OET UI
-        current_status=SBDStatus.READY,
-        previous_status=SBDStatus.READY,
-    )
+def _set_sbd_status_to_ready(sbd_id: str, user: str, oda: UnitOfWork):
+    with oda as uow:
+        # The status lifecycle isn't fully in place as of PI28, we set the default
+        # status to READY as this is required to be executed in the OET UI
+        uow.status.update_status(
+            entity_id=sbd_id,
+            status=SBDStatus.READY,
+            updated_by=user,
+        )

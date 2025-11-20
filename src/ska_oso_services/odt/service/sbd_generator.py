@@ -1,4 +1,5 @@
 # pylint: disable=no-member
+import logging
 from functools import singledispatch
 from random import randint
 from typing import Any, Optional
@@ -10,6 +11,8 @@ from ska_oso_pdm.project import ObservingBlock, ScienceProgramme
 from ska_oso_pdm.proposal.data_product_sdp import (
     DataProductSDP,
     Polarisation,
+    ProductType,
+    ProductVariant,
     Weighting,
 )
 from ska_oso_pdm.sb_definition import (
@@ -44,6 +47,7 @@ from ska_oso_services.common.static.constants import (
     MID_CHANNEL_WIDTH_KHZ,
 )
 
+LOGGER = logging.getLogger(__name__)
 DEFAULT_CALIBRATION_STRATEGY = "highest_elevation"
 
 
@@ -142,10 +146,12 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
         )
     ]
     if science_programme.data_product_sdps:
-        sdp_configurations.append(
-            _sdp_configuration_from_data_product_sdp(
-                science_programme.data_product_sdps[0]
-            )
+        sdp_configurations.extend(
+            [
+                _sdp_configuration_from_data_product_sdp(dp_sdp)
+                for dp_sdp in science_programme.data_product_sdps
+                if dp_sdp is not None
+            ]
         )
 
     sbd = SBDefinition(
@@ -277,7 +283,7 @@ def _csp_configuration_from_science_programme(
 
 def _sdp_configuration_from_data_product_sdp(
     dp_sdp: DataProductSDP,
-) -> SDPConfiguration:
+) -> SDPConfiguration | None:
     @singledispatch
     def convert_parameter(value: Any) -> Any:
         return value
@@ -299,6 +305,21 @@ def _sdp_configuration_from_data_product_sdp(
             if value.robust is not None
             else value.weighting
         )
+
+    if (
+        dp_sdp.script_parameters.kind is not ProductType.CONTINUUM
+        and dp_sdp.script_parameters.variant is not ProductVariant.CONTINUUM_IMAGE
+    ):
+        LOGGER.warning(
+            "Script parameters of %s kind with variant %s are not supported "
+            "by Scheduling Blocks. Currently the only supported kind is %s with %s. "
+            "The unsupported parameters will be ignored in SBD conversion.",
+            dp_sdp.script_parameters.kind,
+            dp_sdp.script_parameters.variant,
+            ProductType.CONTINUUM,
+            ProductVariant.CONTINUUM_IMAGE,
+        )
+        return None
 
     parameters_to_ignore = ["kind", "variant", "gaussian_taper"]
 

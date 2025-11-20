@@ -22,11 +22,6 @@ The ODA connection is configured these environment variables and corresponding H
      - Required/optional in the application
      - Corresponding Helm value
      - Required/optional in the Helm chart
-   * - SKUID_URL
-     - The Kubernetes service address of a running SKUID service
-     - Required
-     - ``ska-oso-services.rest.skuid.url``
-     - Optional - will fall back on: ``ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.{{ .Values.global.cluster_domain }}:9870``
    * - PGHOST
      - The address of the PostgreSQL instance that the postgres ODA will connect to.
      - Required
