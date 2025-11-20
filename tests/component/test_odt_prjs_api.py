@@ -11,7 +11,7 @@ import json
 from http import HTTPStatus
 
 from ..unit.util import (
-    VALID_PROJECT_WITHOUT_JSON,
+    VALID_PROJECT_WITHOUT_ID_JSON,
     TestDataFactory,
     assert_json_is_equal,
 )
@@ -85,14 +85,14 @@ def test_prj_post_then_get(authrequests):
     """
     post_response = authrequests.post(
         f"{ODT_URL}/prjs",
-        data=VALID_PROJECT_WITHOUT_JSON,
+        data=VALID_PROJECT_WITHOUT_ID_JSON,
         headers={"Content-type": "application/json"},
     )
 
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
-        VALID_PROJECT_WITHOUT_JSON,
+        VALID_PROJECT_WITHOUT_ID_JSON,
         exclude_paths=["root['metadata']", "root['prj_id']"],
     )
 
@@ -104,7 +104,7 @@ def test_prj_post_then_get(authrequests):
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     assert_json_is_equal(
         get_response.content,
-        VALID_PROJECT_WITHOUT_JSON,
+        VALID_PROJECT_WITHOUT_ID_JSON,
         exclude_paths=["root['metadata']", "root['prj_id']"],
     )
 
@@ -116,14 +116,14 @@ def test_prj_post_then_put(authrequests):
     """
     post_response = authrequests.post(
         f"{ODT_URL}/prjs",
-        data=VALID_PROJECT_WITHOUT_JSON,
+        data=VALID_PROJECT_WITHOUT_ID_JSON,
         headers={"Content-type": "application/json"},
     )
 
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
-        VALID_PROJECT_WITHOUT_JSON,
+        VALID_PROJECT_WITHOUT_ID_JSON,
         exclude_paths=["root['metadata']", "root['prj_id']"],
     )
 
@@ -139,7 +139,7 @@ def test_prj_post_then_put(authrequests):
     assert put_response.status_code == HTTPStatus.OK, put_response.content
     assert_json_is_equal(
         put_response.content,
-        VALID_PROJECT_WITHOUT_JSON,
+        VALID_PROJECT_WITHOUT_ID_JSON,
         exclude_paths=["root['metadata']", "root['prj_id']"],
     )
     assert put_response.json()["metadata"]["version"] == 2

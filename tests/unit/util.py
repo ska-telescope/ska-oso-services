@@ -55,7 +55,7 @@ def load_string_from_file(filename: str, directory: str = "files") -> str:
 class TestDataFactory:
     @staticmethod
     def sbdefinition(
-        sbd_id: SBDefinitionID = "sbd-mvp01-20200325-00001",
+        sbd_id: SBDefinitionID | None = "sbd-mvp01-20200325-00001",
         version: int = 1,
         created_on: datetime = datetime.fromisoformat(
             "2022-03-28T15:43:53.971548+00:00"
@@ -97,7 +97,7 @@ class TestDataFactory:
 
     @staticmethod
     def project(
-        prj_id: str = "prj-mvp01-20220923-00001",
+        prj_id: str | None = "prj-mvp01-20220923-00001",
         version: int = 1,
     ) -> Project:
 
@@ -389,7 +389,7 @@ SBDEFINITION_WITHOUT_METADATA_JSON = TestDataFactory.sbdefinition(
     without_metadata=True
 ).model_dump_json()
 
-VALID_PROJECT_WITHOUT_JSON = TestDataFactory.project(prj_id=None).model_dump_json()
+VALID_PROJECT_WITHOUT_ID_JSON = TestDataFactory.project(prj_id=None).model_dump_json()
 
 # proposal entry
 VALID_NEW_PROPOSAL = TestDataFactory.proposal().model_dump_json()
