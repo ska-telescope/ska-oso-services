@@ -126,7 +126,7 @@ def sbds_post(
     with oda as uow:
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
         uow.commit()
-    _create_sbd_status_entity(updated_sbd.sbd_id, auth.user_id, oda)
+    _set_sbd_status_to_ready(updated_sbd.sbd_id, auth.user_id, oda)
     return updated_sbd
 
 
@@ -184,7 +184,7 @@ def validate(sbd: SBDefinition) -> ValidationResponse:
     return ValidationResponse(valid=valid, messages=validate_result)
 
 
-def _create_sbd_status_entity(sbd_id: str, user: str, oda: UnitOfWork):
+def _set_sbd_status_to_ready(sbd_id: str, user: str, oda: UnitOfWork):
     with oda as uow:
         # The status lifecycle isn't fully in place as of PI28, we set the default
         # status to READY as this is required to be executed in the OET UI
