@@ -16,6 +16,10 @@ Unreleased
 * Improvements to target catalog error handling and logging
 * Update the target catalog lookup response to return a PDM object with an extra `equatorial`/`galactic` deprecated field from the old response. 
   This means the change is backwards compatible, giving chance for users to update to migrate to use the Target object.
+  * Adds visibility plot endpoint to common
+  * Updates panel assignment to also create reviews and decisions
+  * Updates report to show all statuses and return location fo the PI
+
 
 9.2.0
 ***********
