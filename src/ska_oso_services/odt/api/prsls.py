@@ -16,7 +16,7 @@ from ska_oso_pdm.proposal.proposal import ProposalStatus
 
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.model import AppModel
-from ska_oso_services.odt.api.prjs import _create_prj_status_entity
+from ska_oso_services.odt.api.prjs import _set_prj_status_to_ready
 from ska_oso_services.odt.service.project_generator import generate_project
 
 LOGGER = logging.getLogger(__name__)
@@ -69,10 +69,8 @@ def prjs_prsl_post(
 
         persisted_project = uow.prjs.add(project, user=auth.user_id)
 
-        prj_status = _create_prj_status_entity(persisted_project)
-        uow.prjs_status_history.add(prj_status, user=auth.user_id)
-
         uow.commit()
+    _set_prj_status_to_ready(project.prj_id, auth.user_id, oda)
 
     return persisted_project
 

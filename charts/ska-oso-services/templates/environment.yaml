@@ -14,8 +14,3 @@ data:
   PIPELINE_TESTS_DEPLOYMENT: {{ .Values.pipeline_test_deployment | quote }}
   KUBE_NAMESPACE: {{ .Release.Namespace }}
   SDP_SCRIPT_TMDATA: {{ .Values.global.oso.sdp_tmdata }}
-  {{ if .Values.rest.skuid.url }}
-  SKUID_URL: {{ .Values.rest.skuid.url }}
-  {{ else }}
-  SKUID_URL: ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.{{ .Values.global.cluster_domain }}:9870
-  {{ end }}

@@ -32,20 +32,27 @@ priority = "supplemental"
 name = "PyPI"
 priority = "primary"
 
-# Uncomment this and the line below to include a non-released ODA version
-#[[tool.poetry.source]]
-#name = "gitlab-ska-db-oda"
-#url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
+#- Poetry explicit sources ------------------------------------------------------------
 #
-#[[tool.poetry.source]]  
-#name = "gitlab.ska-ost-osd"  
-#url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
-#priority = "explicit"
+# priority='explicit' means the following sources will only be used when explicitly
+# requested using a command like below
+#
+#     poetry add ska-db-oda@latest --source=gitlab-ska-db-oda
+#
+[[tool.poetry.source]]
+name = "gitlab-ska-db-oda"
+url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
+priority = "explicit"
 
-#[[tool.poetry.source]]
-#name = "gitlab-ska-ser-xray"
-#url = "https://gitlab.com/api/v4/projects/39434823/packages/pypi/simple"
-#priority = "explicit"
+[[tool.poetry.source]]
+name = "gitlab-ska-ost-osd"
+url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
+priority = "explicit"
+
+[[tool.poetry.source]]
+name = "gitlab-ska-ser-xray"
+url = "https://gitlab.com/api/v4/projects/39434823/packages/pypi/simple"
+priority = "explicit"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -53,11 +60,11 @@ python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
 # PDM dependency is pulled in via the ODA rather than being explicitly set here
 # If updating this, also remember to update the Helm dependency in the umbrella chart
-ska-db-oda = "^13.1.1"
+ska-db-oda = "^14.0.0"
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
-ska-ost-osd = "^4.2.1"
+ska-ost-osd = "5.0.0"
 ska-telmodel = "^1.24.3"
 aiosmtplib = "^4.0.1"
 boto3 = "^1.38.13"
