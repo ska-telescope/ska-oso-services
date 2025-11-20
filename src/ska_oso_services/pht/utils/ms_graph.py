@@ -1,9 +1,11 @@
 import re
+from typing import Optional
 from urllib.parse import quote
 
 import jwt
 import msal
 import requests
+from ska_oso_pdm.proposal import Proposal
 
 from ska_oso_services.pht.utils.constants import (
     CLIENT_ID,
@@ -17,7 +19,10 @@ client = msal.ConfidentialClientApplication(
     client_id=CLIENT_ID,
     authority=f"https://login.microsoftonline.com/{TENANT_ID}",
     client_credential=CLIENT_SECRET,
+    token_cache=None,
 )
+
+_GRAPH_SELECT_OFFICE = "officeLocation"
 
 
 def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
@@ -137,3 +142,47 @@ def get_users_by_group_id(group_id):
         for member in members
         if member.get("@odata.type") == "#microsoft.graph.user"
     ]
+
+
+def _extract_pi_user_id(proposal: Proposal) -> Optional[str]:
+    """
+    Return the user_id (string) of the principal investigator on the proposal.
+    """
+    proposal_info = getattr(proposal, "proposal_info", None)
+    if proposal_info is None:
+        return None
+
+    investigators = getattr(proposal_info, "investigators", None) or []
+    if not investigators:
+        return None
+
+    for inv in investigators:
+        if not getattr(inv, "principal_investigator", False):
+            continue
+
+        user_id = getattr(inv, "user_id", None)
+        if not user_id:
+            return None
+
+        user_id_str = str(user_id).strip()
+        return user_id_str or None
+
+    return None
+
+
+def get_pi_office_location(proposal: Proposal) -> Optional[str]:
+    """
+    Fetch the location for the PI.
+    """
+
+    uid = _extract_pi_user_id(proposal)
+    if not uid:
+        return None
+
+    url = f"{MS_GRAPH_URL}/users/{quote(uid, safe='')}?$select={_GRAPH_SELECT_OFFICE}"
+    user = make_graph_call(url, pagination=False)
+
+    if isinstance(user, dict):
+        return user.get(_GRAPH_SELECT_OFFICE)
+
+    return None

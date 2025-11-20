@@ -133,7 +133,10 @@
 							"value": -12.345,
 							"unit": "m / s"
 						}
-					}
+					},
+					"spectral_resolution": "DUMMY",
+					"effective_resolution": "DUMMY",
+					"spectral_averaging": 1
 				},
 				"details": "LOW + Continuum"
 			},

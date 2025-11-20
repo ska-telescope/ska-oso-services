@@ -47,9 +47,7 @@
                 },
                 "spectral_resolution": "13.44 kHz (5.1 km/s)",
                 "effective_resolution": "13.44 kHz (5.1 km/s)",
-                "image_weighting": "uniform",
-                "robust": "0",
-                "spectral_averaging": "1"
+                "spectral_averaging": 1
               }
             }
           ],
@@ -176,7 +174,7 @@
                 "effective_resolution": "13.44 kHz (3.4 km/s)",
                 "image_weighting": "uniform",
                 "robust": "0",
-                "spectral_averaging": "1"
+                "spectral_averaging":1
               }
             }
           ],

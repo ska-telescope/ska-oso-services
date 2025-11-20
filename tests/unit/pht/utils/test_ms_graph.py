@@ -6,6 +6,7 @@ import pytest
 
 from ska_oso_services.pht.utils.constants import MS_GRAPH_URL
 from ska_oso_services.pht.utils.ms_graph import (
+    _extract_pi_user_id,
     extract_profile_from_access_token,
     make_graph_call,
 )
@@ -118,3 +119,65 @@ class TestMakeGraphCall:
 
         with pytest.raises(RuntimeError, match="Error fetching data from Graph API"):
             make_graph_call(f"{MS_GRAPH_URL}v1.0/users")
+
+
+class TestExtractPiUserId:
+    def _make_proposal(self, investigators):
+        proposal_info = SimpleNamespace(investigators=investigators)
+        return SimpleNamespace(proposal_info=proposal_info)
+
+    def test_returns_trimmed_user_id_for_pi(self):
+        pi = SimpleNamespace(
+            principal_investigator=True,
+            user_id="  pi.user@example.com  ",
+        )
+        non_pi = SimpleNamespace(
+            principal_investigator=False,
+            user_id="other@example.com",
+        )
+        proposal = self._make_proposal([non_pi, pi])
+
+        result = _extract_pi_user_id(proposal)
+
+        assert result == "pi.user@example.com"
+
+    def test_returns_none_when_proposal_info_missing(self):
+        proposal = SimpleNamespace()
+        result = _extract_pi_user_id(proposal)
+        assert result is None
+
+    def test_returns_none_when_investigators_missing_or_empty(self):
+        proposal_info = SimpleNamespace(investigators=None)
+        proposal = SimpleNamespace(proposal_info=proposal_info)
+        assert _extract_pi_user_id(proposal) is None
+
+        # investigators is empty list
+        proposal_info2 = SimpleNamespace(investigators=[])
+        proposal2 = SimpleNamespace(proposal_info=proposal_info2)
+        assert _extract_pi_user_id(proposal2) is None
+
+    def test_returns_none_when_no_principal_investigator(self):
+        inv1 = SimpleNamespace(
+            principal_investigator=False,
+            user_id="user1@example.com",
+        )
+        inv2 = SimpleNamespace(
+            principal_investigator=False,
+            user_id="user2@example.com",
+        )
+        proposal = self._make_proposal([inv1, inv2])
+
+        result = _extract_pi_user_id(proposal)
+
+        assert result is None
+
+    def test_returns_none_when_pi_has_no_user_id(self):
+        # PI present but user_id is None
+        pi = SimpleNamespace(
+            principal_investigator=True,
+            user_id=None,
+        )
+        proposal = self._make_proposal([pi])
+
+        result = _extract_pi_user_id(proposal)
+        assert result is None

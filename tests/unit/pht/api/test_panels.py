@@ -678,6 +678,8 @@ class TestPanelsAssignmentsAPI:
     # --------------------------------------------------------------------
     # SV: existing panel & submitted proposals--> append only NEW
     # -------------------------------------------------------------------
+    @mock.patch("ska_oso_services.pht.api.panels.ensure_review_exist_or_create")
+    @mock.patch("ska_oso_services.pht.api.panels.ensure_decision_exist_or_create")
     @mock.patch("ska_oso_services.pht.api.panels.build_assignment_response")
     @mock.patch(
         "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
@@ -690,43 +692,67 @@ class TestPanelsAssignmentsAPI:
         mock_uow,
         mock_get_latest,
         mock_build_sv,
-        mock_ensure,
+        mock_ensure_status,
         mock_build_resp,
+        mock_ensure_decision,
+        mock_ensure_review,
         client,
     ):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
-        # submitted proposals returned by first get_latest
-        submitted_refs = [SimpleNamespace(prsl_id="p1"), SimpleNamespace(prsl_id="p2")]
+        # Two submitted proposals
+        proposal1 = SimpleNamespace(prsl_id="p1")
+        proposal2 = SimpleNamespace(prsl_id="p2")
+        submitted_refs = [proposal1, proposal2]
 
-        # existing SV panel ref by second get_latest
         mock_get_latest.side_effect = [
             submitted_refs,
-            [
-                SimpleNamespace(
-                    panel_id="panel-sv", sci_reviewers=["sciA"], tech_reviewers=["tecA"]
-                )
-            ],
+            [SimpleNamespace(panel_id="panel-sv")],
         ]
 
-        # uow.panels.get returns panel with p1 already assigned
-        existing_assignment = SimpleNamespace(prsl_id="p1")
-        sv_panel = SimpleNamespace(
+        reviewer_id = REVIEWERS["sci_reviewers"][0]["id"]
+
+        sv_panel = TestDataFactory.panel_with_assignment(
             panel_id="panel-sv",
             name="Science Verification",
-            proposals=[existing_assignment],
-            sci_reviewers=["sciA"],
-            tech_reviewers=["tecA"],
+            sci_reviewers=[
+                {
+                    "reviewer_id": reviewer_id,
+                    "assigned_on": "2025-06-16T11:23:01Z",
+                    "status": "Pending",
+                }
+            ],
+            tech_reviewers=[
+                {
+                    "reviewer_id": reviewer_id,
+                    "assigned_on": "2025-06-16T11:23:01Z",
+                    "status": "Pending",
+                }
+            ],
+            proposals=[
+                {"prsl_id": proposal1.prsl_id, "assigned_on": "2025-05-21T09:30:00Z"},
+                {"prsl_id": proposal2.prsl_id, "assigned_on": "2025-05-21T09:45:00Z"},
+            ],
+            cycle="test",
+            expiry_date="2025-12-31T00:00:00Z",
         )
+
+        # sv_panel.proposals contains two ProposalAssignment models
+        assignment1, assignment2 = sv_panel.proposals
+
+        # Only p1 is assigned
+        sv_panel.proposals = [assignment1]
         uow.panels.get.return_value = sv_panel
 
-        # SV candidates include both p1 and p2 (p1 is duplicate)
-        a1 = SimpleNamespace(prsl_id="p1")
-        a2 = SimpleNamespace(prsl_id="p2")
-        mock_build_sv.return_value = [a1, a2]
+        # SV candidates include both p1 and p2
+        mock_build_sv.return_value = [assignment1, assignment2]
 
-        # Persist returns the panel object
+        # Decision/review creation
+        mock_ensure_decision.return_value = "pnld-1"
+        mock_ensure_review.return_value = "rvw-1"
+
+        # Returns the panel object
         uow.panels.add.return_value = sv_panel
 
         mock_build_resp.return_value = [
@@ -739,21 +765,21 @@ class TestPanelsAssignmentsAPI:
         ]
 
         resp = client.post(
-            f"{PANELS_API_URL}/assignments", params={"param": "Science Verification"}
+            f"{PANELS_API_URL}/assignments",
+            params={"param": "Science Verification"},
         )
+
         assert resp.status_code == HTTPStatus.OK, resp.text
         assert resp.json() == mock_build_resp.return_value
 
-        # New assignment appended (p2), persist once, commits once
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
-        # Status updated for only the newly added id(s)
-        args, _ = mock_ensure.call_args
+        assert mock_ensure_status.call_count == 1
+        args, _ = mock_ensure_status.call_args
         ids_iter = args[2]
         assert set(list(ids_iter)) == {"p2"}
 
-        # Response building called with SV summary map
         mock_build_resp.assert_called_once()
         passed_map = mock_build_resp.call_args[0][0]
         assert set(passed_map.keys()) == {panels_api.SV_NAME}

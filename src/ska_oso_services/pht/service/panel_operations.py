@@ -100,10 +100,9 @@ def assign_to_existing_panel(
     Assign only to an existing panel; never create.
     Returns (persisted_panel, added_count, added_prsl_ids).
 
-    IMPORTANT: Does NOT change proposal statuses. Caller must update statuses
-    AFTER committing this panel change.
+    NOTE: Does NOT change proposal statuses.
     """
-    # Overwrite reviewers only if provided (send [] explicitly if you want to clear)
+    # Overwrite reviewers only if provided
     if sci_reviewers is not None:
         panel.sci_reviewers = sci_reviewers
     if tech_reviewers is not None:
