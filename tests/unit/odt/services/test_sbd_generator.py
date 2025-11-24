@@ -3,6 +3,7 @@ from unittest import mock
 from ska_oso_pdm import SBDefinition
 
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
+from tests.unit.odt.api.test_sdp import patch_env_var  # pylint: disable=unused-import
 from tests.unit.util import TestDataFactory, load_string_from_file
 
 
