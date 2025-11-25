@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ***********
 
+10.0.1
+***********
+* Update PDM 14.0.2
+
 
 10.0.0
 ***********
