@@ -10,7 +10,6 @@ from ska_oso_pdm import Target
 from ska_oso_services.validation.model import (
     ValidationIssue,
     ValidationIssueType,
-    ValidationResult,
     Validator,
     validate,
 )
@@ -22,11 +21,11 @@ MID_LOCATION = EarthLocation.of_site("SKA Mid")
 MID_OBSERVER = Observer(location=MID_LOCATION)
 
 
-def validate_mid_target(target: Target) -> ValidationResult:
+def validate_mid_target(target: Target) -> list[ValidationIssue]:
     return validate(target, MID_TARGET_VALIDATORS)
 
 
-def validate_low_target(target: Target) -> ValidationResult:
+def validate_low_target(target: Target) -> list[ValidationIssue]:
     return validate(target, LOW_TARGET_VALIDATORS)
 
 
@@ -49,7 +48,7 @@ def validate_low_elevation(target: Any) -> list[ValidationIssue]:
         return [
             ValidationIssue(
                 level=ValidationIssueType.WARNING,
-                message="Source never reaches an elevation of 45 degrees "
+                message=f"Maximum elevation ({max_elevation.value} degrees) is less than 45 degrees "
                 "- performance may be degraded",
             )
         ]
