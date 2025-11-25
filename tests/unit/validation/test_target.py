@@ -9,7 +9,7 @@ class TestMid:
 
     def test_target_is_valid(self):
         result = validate_mid_target(MidTargetBuilder())
-        assert result.valid is True
+        assert result == []
 
     def test_target_below_min_elevation(self):
         result = validate_mid_target(
@@ -20,14 +20,13 @@ class TestMid:
                 ),
             )
         )
-        assert result.valid is False
-        assert result.issues[0].message == "Source never rises above 15 degrees"
+        assert result[0].message == "Source never rises above 15 degrees"
 
 
 class TestLow:
     def test_target_is_valid(self):
         result = validate_low_target(LowTargetBuilder())
-        assert result.valid is True
+        assert result == []
 
     def test_target_below_horizon(self):
         result = validate_low_target(
@@ -38,8 +37,7 @@ class TestLow:
                 ),
             )
         )
-        assert result.valid is False
-        assert result.issues[0].message == "Source never rises above the horizon"
+        assert result[0].message == "Source never rises above the horizon"
 
     def test_target_below_min_elevation(self):
         result = validate_low_target(
@@ -50,10 +48,8 @@ class TestLow:
                 ),
             )
         )
-        assert result.valid is False
         assert (
-            result.issues[0].message
-            == "Source never reaches an elevation of 45 degrees "
+            result[0].message == "Source never reaches an elevation of 45 degrees "
             "- performance may be degraded"
         )
-        assert result.issues[0].level == ValidationIssueType.WARNING
+        assert result[0].level == ValidationIssueType.WARNING

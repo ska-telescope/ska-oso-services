@@ -30,6 +30,7 @@ from ska_oso_services.common.error_handling import (
     osd_error_handler,
     pydantic_validation_error_handler,
 )
+from ska_oso_services.validation.api.routes import router as validation_router
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
@@ -80,6 +81,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
     app.include_router(api.common_router, prefix=API_PREFIX)
     app.include_router(odt.router, prefix=API_PREFIX)
     app.include_router(pht.router, prefix=API_PREFIX)
+    app.include_router(validation_router, prefix=API_PREFIX)
     app.exception_handler(ODANotFound)(oda_not_found_handler)
     app.exception_handler(ODAError)(oda_error_handler)
     app.exception_handler(ValidationError)(pydantic_validation_error_handler)

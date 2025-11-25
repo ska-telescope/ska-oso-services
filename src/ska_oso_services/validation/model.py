@@ -1,12 +1,12 @@
 from enum import Enum
-from typing import Callable, TypeVar
+from typing import Any, Callable, TypeVar
 
 from pydantic import Field
 from ska_oso_pdm import PdmObject
 
 from ska_oso_services.common.model import AppModel
 
-T = TypeVar("T", bound=PdmObject)
+T = TypeVar("T", bound=PdmObject | tuple)
 
 
 class ValidationIssueType(str, Enum):
@@ -23,49 +23,23 @@ class ValidationIssue(AppModel):
 Validator = Callable[[T], list[ValidationIssue]]
 
 
-class ValidationResult(AppModel):
-    valid: bool
-    issues: list[ValidationIssue] = Field(default_factory=list)  # rename to issues?
-
-
-def validate(entity: T, validators: list[Validator[T]]) -> ValidationResult:
-    issues = [
+def validate(entity: T, validators: list[Validator[T]]) -> list[ValidationIssue]:
+    return [
         validation_issue
         for validator in validators
         for validation_issue in validator(entity)
     ]
-    return validation_result_from_issues(issues)
 
 
-def apply_validation_result_to_field(
-    field: str, validation_result: ValidationResult
-) -> ValidationResult:
+def apply_validation_issues_to_fields(
+    field: str, validation_issues: list[ValidationIssue]
+) -> list[ValidationIssue]:
     """
     TODO
     """
-    if validation_result == ValidationResult(valid=True):
-        return validation_result
-
-    return ValidationResult(
-        valid=False,
-        issues=[
-            issue.model_copy(update={"field": field})
-            for issue in validation_result.issues
-        ],
-    )
-
-
-def validation_result_from_issues(
-    validation_issues: list[ValidationIssue],
-) -> ValidationResult:
-    return ValidationResult(valid=not bool(validation_issues), issues=validation_issues)
-
-
-def combine_validation_results(
-    validation_results: list[ValidationResult],
-) -> ValidationResult:
-    combined_issues = [
-        issue for result in validation_results for issue in result.issues
+    return [
+        issue.model_copy(
+            update={"field": field if issue.field is None else f"{field}.{issue.field}"}
+        )
+        for issue in validation_issues
     ]
-
-    return validation_result_from_issues(combined_issues)
