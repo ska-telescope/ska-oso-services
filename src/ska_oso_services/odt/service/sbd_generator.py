@@ -42,6 +42,7 @@ from ska_oso_services.common.calibrator_strategy import (
 )
 from ska_oso_services.common.calibrators import find_appropriate_calibrators
 from ska_oso_services.common.osdmapper import get_osd_data
+from ska_oso_services.common.sdpmapper import get_script_versions
 from ska_oso_services.common.static.constants import (
     LOW_STATION_CHANNEL_WIDTH_MHZ,
     MID_CHANNEL_WIDTH_KHZ,
@@ -333,10 +334,15 @@ def _sdp_configuration_from_data_product_sdp(
             if isinstance(param_value, u.quantity.Quantity):
                 param_value = param_value.to(astropy_unit_mapper[param_key])
             parameters[param_key] = convert_parameter(param_value)
+    latest_continuum_script_version = (
+        get_script_versions(SDPScript.CONTINUUM_IMAGING.value) or ["latest"]
+    )[
+        -1
+    ]  # Use 'latest' if version not found in TMData
     return SDPConfiguration(
         sdp_script=SDPScript.CONTINUUM_IMAGING,
-        script_version="latest",
-        script_parameters=parameters,
+        script_version=latest_continuum_script_version,
+        script_parameters={"continuum_imaging": parameters},
     )
 
 

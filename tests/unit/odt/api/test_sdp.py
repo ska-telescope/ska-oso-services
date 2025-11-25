@@ -26,7 +26,7 @@ class TestGetSdpScriptsAPI:
         monkeypatch.delenv("SDP_SCRIPT_TMDATA", raising=False)
         with pytest.raises(RuntimeError) as excinfo:
             _ = get_versions("vis-receive")
-            assert "SDP_SCRIPT_TMDATA" in excinfo.value
+        assert "SDP_SCRIPT_TMDATA" in str(excinfo)
 
     def test_get_script_with_missing_script(self):
         versions = get_versions("junk")

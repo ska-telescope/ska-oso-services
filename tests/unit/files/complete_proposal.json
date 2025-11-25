@@ -120,12 +120,12 @@
 				"observation_type_details": {
 					"observation_type": "continuum",
 					"bandwidth": {
-						"value": 0.0,
-						"unit": ""
+						"value": 75e6,
+						"unit": "Hz"
 					},
 					"central_frequency": {
-						"value": 0.0,
-						"unit": ""
+						"value": 100e6,
+						"unit": "Hz"
 					},
 					"supplied": {
 						"supplied_type": "integration_time",
@@ -153,12 +153,12 @@
 				"observation_type_details": {
 					"observation_type": "spectral line",
 					"bandwidth": {
-						"value": 0.0,
-						"unit": ""
+						"value": 75e6,
+						"unit": "Hz"
 					},
 					"central_frequency": {
-						"value": 0.0,
-						"unit": ""
+						"value": 300e6,
+						"unit": "Hz"
 					},
 					"supplied": {
 						"supplied_type": "sensitivity",
