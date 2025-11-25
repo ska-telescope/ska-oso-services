@@ -119,9 +119,6 @@ def create_proposal(
         )
         with oda.uow() as uow:
             proposal.proposal_info.investigators.append(new_investigator)
-            #TODO: Update the line below to be flexible for SV and proposals
-            #We can use the OSD here to know the active cycle and handle this accordingly?
-            proposal.prsl_id = generate_entity_id("sv")
             created_prsl = uow.prsls.add(proposal, auth.user_id)
             # Create permissions
             create_prslacc = ProposalAccess(
