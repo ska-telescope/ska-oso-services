@@ -394,7 +394,7 @@ def test_get_proposals_by_status(authrequests):
 
     # Create proposals with different statuses additionally
     for status in ["draft", "rejected"]:
-        prsl_id = f"svi-{status}-{uuid.uuid4().hex[:8]}"
+        prsl_id = f"prsl-{status}-{uuid.uuid4().hex[:8]}"
         proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id, status=status)
         proposal_json = proposal.model_dump_json()
 
