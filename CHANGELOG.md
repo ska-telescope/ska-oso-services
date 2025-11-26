@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
-***********
+**********
+
+10.0.2
+**********
+* Update ODA to v14.0.4
 
 10.0.1
 ***********
