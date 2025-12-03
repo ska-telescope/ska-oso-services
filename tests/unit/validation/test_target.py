@@ -31,9 +31,9 @@ class TestLow:
     def test_target_below_horizon(self):
         result = validate_low_target(
             LowTargetBuilder(
-                name="Polaris",
+                name="JVAS 1938+666",
                 reference_coordinate=ICRSCoordinates(
-                    ra_str="02:31:49.09456", dec_str="+89:15:50.7923"
+                    ra_str="19:38:25.2890", dec_str="+66:48:52.915"
                 ),
             )
         )
@@ -42,14 +42,15 @@ class TestLow:
     def test_target_below_min_elevation(self):
         result = validate_low_target(
             LowTargetBuilder(
-                name="Polaris",
+                name="47 Tuc",
                 reference_coordinate=ICRSCoordinates(
-                    ra_str="02:31:49.09456", dec_str="+89:15:50.7923"
+                    ra_str="00:24:05.3590", dec_str="-72:04:53.200"
                 ),
             )
         )
         assert (
-            result[0].message == "Source never reaches an elevation of 45 degrees "
+            result[0].message
+            == "Maximum elevation (44.88 degrees) is less than 45 degrees "
             "- performance may be degraded"
         )
         assert result[0].level == ValidationIssueType.WARNING

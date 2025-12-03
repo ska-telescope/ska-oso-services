@@ -1,6 +1,4 @@
 # pylint: disable=no-member
-from typing import Any
-
 import astropy.units as u
 from astroplan import Observer
 from astropy.coordinates import AltAz, EarthLocation, Latitude
@@ -22,14 +20,29 @@ MID_OBSERVER = Observer(location=MID_LOCATION)
 
 
 def validate_mid_target(target: Target) -> list[ValidationIssue]:
+    """
+    :param target: a Target intended to be observed by SKA Mid
+    :return: the collated ValidationIssues resulting from applying each of the
+        :data:`~ska_oso_services.validation.target.MID_TARGET_VALIDATORS` to the target
+    """
     return validate(target, MID_TARGET_VALIDATORS)
 
 
 def validate_low_target(target: Target) -> list[ValidationIssue]:
+    """
+    :param target: a Target intended to be observed by SKA Low
+    :return: the collated ValidationIssues resulting from applying each of
+                the LOW_TARGET_VALIDATORS to the target
+    """
     return validate(target, LOW_TARGET_VALIDATORS)
 
 
 def validation_mid_elevation(target: Target) -> list[ValidationIssue]:
+    """
+    :param target: a Target intended to be observed by SKA Mid
+    :return: a validation error if the target doesn't reach the minimum 15 degrees
+            elevation required for Mid
+    """
     max_elevation = _find_max_elevation(target, MID_OBSERVER)
 
     if max_elevation < Latitude(15, unit=u.deg):
@@ -38,7 +51,13 @@ def validation_mid_elevation(target: Target) -> list[ValidationIssue]:
     return []
 
 
-def validate_low_elevation(target: Any) -> list[ValidationIssue]:
+def validate_low_elevation(target: Target) -> list[ValidationIssue]:
+    """
+    :param target: a Target intended to be observed by SKA Low
+    :return: a validation error if the target doesn't rise above the horizon,
+         a validation warning if the maximum elevation of the target is less
+         than 45 degrees
+    """
     max_elevation = _find_max_elevation(target, LOW_OBSERVER)
 
     if max_elevation < Latitude(0, unit=u.deg):
@@ -48,8 +67,8 @@ def validate_low_elevation(target: Any) -> list[ValidationIssue]:
         return [
             ValidationIssue(
                 level=ValidationIssueType.WARNING,
-                message=f"Maximum elevation ({max_elevation.value} degrees) is less than 45 degrees "
-                "- performance may be degraded",
+                message=f"Maximum elevation ({round(max_elevation.value, 2)} degrees) "
+                f"is less than 45 degrees - performance may be degraded",
             )
         ]
 
@@ -57,6 +76,9 @@ def validate_low_elevation(target: Any) -> list[ValidationIssue]:
 
 
 def _find_max_elevation(target: Target, observer: Observer) -> Latitude:
+    """
+    Finds the maximum elevation of the target at the telescope site.
+    """
     target_sky_coords = target.reference_coordinate.to_sky_coord()
     target_transit_time = observer.target_meridian_transit_time(
         time=Time.now(), target=target_sky_coords, which="next"
@@ -67,4 +89,10 @@ def _find_max_elevation(target: Target, observer: Observer) -> Latitude:
 
 
 LOW_TARGET_VALIDATORS: list[Validator[Target]] = [validate_low_elevation]
+""" The list of :func:`~ska_oso_services.validation.model.Validator` functions to
+    be applied to a Target intended to be observed by SKA Low """
+
+
 MID_TARGET_VALIDATORS: list[Validator[Target]] = [validation_mid_elevation]
+""" The list of :func:`~ska_oso_services.validation.model.Validator` functions to
+    be applied to a Target intended to be observed by SKA Mid """
