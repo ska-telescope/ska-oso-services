@@ -1,4 +1,3 @@
-from astropy.constants import c as speed_of_light
 from ska_oso_pdm import SBDefinition, TelescopeType
 
 from ska_oso_services.validation.model import (
@@ -10,6 +9,14 @@ from ska_oso_services.validation.target import validate_low_target, validate_mid
 
 
 def validate_sbdefinition(sbd: SBDefinition) -> list[ValidationIssue]:
+    """
+    Applies all relevant Validators to the SBDefinition elements,
+    collecting all the results into a single list.
+
+    :param sbd: the full SBDefinition to validate
+    :return: the collated ValidationIssues resulting from applying all the
+                SBDefinition Validators
+    """
     sbd_is_mid = sbd.telescope == TelescopeType.SKA_MID
 
     target_validator = validate_mid_target if sbd_is_mid else validate_low_target

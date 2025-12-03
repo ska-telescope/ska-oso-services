@@ -46,6 +46,7 @@ For instructions on developing the application, see the `README <https://gitlab.
     :caption: User Guide
     :hidden:
 
+    external/validation.rst
     external/odt_rest_api.rst
     external/pht_rest_api.rst
 
