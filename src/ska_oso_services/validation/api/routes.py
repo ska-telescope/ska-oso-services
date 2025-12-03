@@ -9,24 +9,25 @@ from ska_oso_services.odt.api.sbds import API_ROLES
 from ska_oso_services.validation.model import ValidationIssue
 from ska_oso_services.validation.sbdefinition import validate_sbdefinition
 
-router = APIRouter(prefix="/validation", tags=["OSO Validation API endpoints"])
+router = APIRouter(prefix="/validate", tags=["OSO Validation API endpoints"])
 
 
 class ValidationResponse(AppModel):
     valid: bool | None = None
-    messages: list[ValidationIssue]
+    issues: list[ValidationIssue]
 
     def model_post_init(self, context: Any, /) -> None:
         if self.valid is None:
-            self.valid = not bool(self.messages)
+            self.valid = not bool(self.issues)
 
 
 @router.post(
     path="/sbd",
-    summary="Validate an SBD TODO",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
+    summary="Validates an SBDefinition returning any validation issues tied to"
+    "specific parts of the SBDefinition as a JSONPath",
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READ})],
 )
 def validate_sbd(sbd: SBDefinition) -> ValidationResponse:
     result = validate_sbdefinition(sbd)
 
-    return ValidationResponse(messages=result)
+    return ValidationResponse(issues=result)

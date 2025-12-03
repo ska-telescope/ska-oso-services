@@ -15,6 +15,8 @@ some helper functions for applying and combining ``Validator``.
 The other modules define validation for specific entities, with higher level entities using
 combining validation for their elements.
 
+The validation is exposed via the REST API - see the SwaggerUI for documentation.
+
 .. toctree::
     :maxdepth: 1
 
