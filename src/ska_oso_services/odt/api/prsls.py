@@ -2,6 +2,8 @@
 These functions map to the API paths, with the returned value being the API response
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime
 from typing import Annotated

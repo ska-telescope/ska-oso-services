@@ -104,8 +104,9 @@ def validate_tied_array_beam(
     target: Target, csp_config: CSPConfiguration, telescope: TelescopeType
 ) -> list[ValidationIssue]:
     """
-    Validates each of the PST beams are within the half-power beamwidth
-    (HPBW) of the dish or station for the given CSPConfiguration and source
+    :return: a validation error for any of the PST beams that are further than
+            half of the half-power beamwidth (HPBW) of the dish or station beam
+            for the given source
     """
     hpbw = _calculate_hpbw(csp_config, telescope)
 
