@@ -32,7 +32,8 @@ def validate_low_target(target: Target) -> list[ValidationIssue]:
     """
     :param target: a Target intended to be observed by SKA Low
     :return: the collated ValidationIssues resulting from applying each of
-                the LOW_TARGET_VALIDATORS to the target
+        the :data:`~ska_oso_services.validation.target.LOW_TARGET_VALIDATORS`
+        to the target
     """
     return validate(target, LOW_TARGET_VALIDATORS)
 
@@ -54,7 +55,7 @@ def validation_mid_elevation(target: Target) -> list[ValidationIssue]:
 def validate_low_elevation(target: Target) -> list[ValidationIssue]:
     """
     :param target: a Target intended to be observed by SKA Low
-    :return: a validation error if the target doesn't rise above the horizon,
+    :return: a validation error if the target doesn't rise above the horizon;
          a validation warning if the maximum elevation of the target is less
          than 45 degrees
     """
