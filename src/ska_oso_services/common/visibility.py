@@ -1,5 +1,6 @@
 # pylint: disable=no-member
 import matplotlib
+from astropy.units import Quantity
 
 matplotlib.use("Agg")
 import io
@@ -29,17 +30,17 @@ class SiteConfig:
 SITES: dict[str, SiteConfig] = {
     "LOW": SiteConfig(
         location=EarthLocation(
-            lat=-26.82472208 * u.deg,
-            lon=116.7644482 * u.deg,
-            height=377.8 * u.m,
+            lat=Quantity(-26.82472208, u.deg),
+            lon=Quantity(116.7644482, u.deg),
+            height=Quantity(377.8, u.m),
         ),
         min_elev_deg=20.0,
     ),
     "MID": SiteConfig(
         location=EarthLocation(
-            lat=-30.7130 * u.deg,
-            lon=21.4430 * u.deg,
-            height=1000 * u.m,
+            lat=Quantity(-30.7130, u.deg),
+            lon=Quantity(21.4430, u.deg),
+            height=Quantity(1000, u.m),
         ),
         min_elev_deg=15.0,
     ),

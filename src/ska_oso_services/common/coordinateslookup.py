@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # https://stackoverflow.com/a/50099819
 # pylint: disable=no-member,no-name-in-module
 import logging

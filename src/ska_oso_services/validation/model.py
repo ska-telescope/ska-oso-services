@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 from typing import Callable, TypeVar
 
@@ -5,7 +7,7 @@ from ska_oso_pdm import PdmObject
 
 from ska_oso_services.common.model import AppModel
 
-T = TypeVar("T", bound=PdmObject | tuple)
+T = TypeVar("T", bound=PdmObject)
 
 
 class ValidationIssueType(str, Enum):
