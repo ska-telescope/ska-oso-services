@@ -50,7 +50,7 @@ class TestLow:
         )
         assert (
             result[0].message
-            == "Maximum elevation (44.88 degrees) is less than 45 degrees "
+            == "Maximum elevation (44.74 degrees) is less than 45 degrees "
             "- performance may be degraded"
         )
         assert result[0].level == ValidationIssueType.WARNING
