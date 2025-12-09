@@ -1,9 +1,9 @@
 # pylint: disable=no-member
 import astropy.units as u
 from astroplan import Observer
-from astropy.coordinates import AltAz, EarthLocation, Latitude
-from astropy.time import Time
-from ska_oso_pdm import Target
+from astropy.coordinates import EarthLocation, Latitude
+from astropy.units import Quantity
+from ska_oso_pdm import Target, TelescopeType
 
 from ska_oso_services.validation.model import (
     ValidationIssue,
@@ -44,7 +44,7 @@ def validation_mid_elevation(target: Target) -> list[ValidationIssue]:
     :return: a validation error if the target doesn't reach the minimum 15 degrees
             elevation required for Mid
     """
-    max_elevation = _find_max_elevation(target, MID_OBSERVER)
+    max_elevation = _find_max_elevation(target, TelescopeType.SKA_MID)
 
     if max_elevation < Latitude(15, unit=u.deg):
         return [ValidationIssue(message="Source never rises above 15 degrees")]
@@ -59,7 +59,7 @@ def validate_low_elevation(target: Target) -> list[ValidationIssue]:
          a validation warning if the maximum elevation of the target is less
          than 45 degrees
     """
-    max_elevation = _find_max_elevation(target, LOW_OBSERVER)
+    max_elevation = _find_max_elevation(target, TelescopeType.SKA_LOW)
 
     if max_elevation < Latitude(0, unit=u.deg):
         return [ValidationIssue(message="Source never rises above the horizon")]
@@ -76,17 +76,15 @@ def validate_low_elevation(target: Target) -> list[ValidationIssue]:
     return []
 
 
-def _find_max_elevation(target: Target, observer: Observer) -> Latitude:
+def _find_max_elevation(target: Target, telescope: TelescopeType) -> Latitude:
     """
-    Finds the maximum elevation of the target at the telescope site.
+    Finds the maximum elevation of the target at the telescope site, returning
+    an angle elevation that's negative if the target never rises above the horizon.
     """
+    location = MID_LOCATION if telescope == TelescopeType.SKA_MID else LOW_LOCATION
     target_sky_coords = target.reference_coordinate.to_sky_coord()
-    target_transit_time = observer.target_meridian_transit_time(
-        time=Time.now(), target=target_sky_coords, which="next"
-    )
-    return target_sky_coords.transform_to(
-        AltAz(obstime=target_transit_time, location=observer.location),
-    ).alt
+
+    return Quantity(90.0, u.deg) - abs(location.lat - target_sky_coords.dec)
 
 
 LOW_TARGET_VALIDATORS: list[Validator[Target]] = [validate_low_elevation]
