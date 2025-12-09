@@ -1,14 +1,37 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Callable, TypeVar
+from functools import wraps
+from inspect import signature
+from typing import Callable, Generic, TypeVar, get_type_hints
 
 from pydantic import Field
-from ska_oso_pdm import PdmObject
+from ska_oso_pdm import PdmObject, TelescopeType
 
 from ska_oso_services.common.model import AppModel
 
 T = TypeVar("T", bound=PdmObject)
+
+
+class ValidationContext(Generic[T], AppModel):
+    """
+    This models the input to all :func:`~ska_oso_services.validation.model.Validator`
+    functions and should provide all information that the Validator requires.
+    """
+
+    primary_entity: T
+    source_jsonpath: str = Field(
+        "$",
+        description="The JSONPath of the primary_entity if it is being validated "
+        "within a higher-level object",
+    )
+    relevant_context: dict = Field(
+        default_factory=dict,
+        description="Any extra objects or information the validator needs",
+    )
+    telescope: TelescopeType | None = Field(
+        None, description="The telescope the primary_entity applies to, if appropriate"
+    )
 
 
 class ValidationIssueType(str, Enum):
@@ -24,18 +47,75 @@ class ValidationIssue(AppModel):
     """
 
     message: str = Field(
-        description="List of observations associated with the proposal",
+        description="Human-readable information on why the primary_entity is invalid",
     )
-    field: str | None = None
+    field: str = Field(
+        "$",
+        description="The JSONPath for the specific part of the primary_entity "
+        "that is invalid",
+    )
     level: ValidationIssueType = ValidationIssueType.ERROR
 
 
-Validator = Callable[[T], list[ValidationIssue]]
-""" The general Validator function type. It should take the item to validate
-    and return a list of ValidationIssues."""
+Validator = Callable[[ValidationContext[T]], list[ValidationIssue]]
+""" The general Validator function type. It should take the entity to validate
+    wrapped in a ValidationContext and return a list of ValidationIssues."""
 
 
-def validate(entity: T, validators: list[Validator[T]]) -> list[ValidationIssue]:
+def validator(validator_func: Validator[T]) -> Validator[T]:
+    """
+    A decorator to mark a :func:`~ska_oso_services.validation.model.Validator`
+
+    This decorator will combine the source_jsonpath from the input ValidationContext
+    with any of the Validator output ValidationIssue fields.
+
+    It will also perform a type check on the Validator signature.
+    """
+
+    def combine_jsonpath(source_jsonpath: str = "$", validator_field: str = "$") -> str:
+        if validator_field == "$":
+            return source_jsonpath
+
+        return f"{source_jsonpath}.{validator_field.lstrip('$')}"
+
+    @wraps(validator_func)
+    def wrapper(entity_context: ValidationContext[T]) -> list[ValidationIssue]:
+        result = validator_func(entity_context)
+
+        return [
+            issue.model_copy(
+                update={
+                    "field": combine_jsonpath(
+                        entity_context.source_jsonpath, issue.field
+                    )
+                }
+            )
+            for issue in result
+        ]
+
+    validator_func_signature = signature(validator_func)
+    type_hints = get_type_hints(validator_func)
+    value_error = ValueError(
+        "Validator function must accept a single ValidationContext "
+        "and return a list[ValidationIssue]"
+    )
+
+    if len(validator_func_signature.parameters) != 1 or len(type_hints) != 2:
+        raise value_error
+
+    arg_type = type_hints[next(iter(validator_func_signature.parameters))]
+    if "ska_oso_services.validation.model.ValidationContext" not in str(arg_type):
+        raise value_error
+
+    if type_hints.get("return") != list[ValidationIssue]:
+        raise value_error
+
+    return wrapper
+
+
+def validate(
+    entity_context: ValidationContext[T], validators: list[Validator[T]]
+) -> list[ValidationIssue]:
     """
     Applies a set of validators to an entity and collects any resulting
     ValidationIssues into a single list.
@@ -43,26 +123,22 @@ def validate(entity: T, validators: list[Validator[T]]) -> list[ValidationIssue]
     return [
         validation_issue
         for validator in validators
-        for validation_issue in validator(entity)
+        for validation_issue in validator(entity_context)
     ]
 
 
-def apply_validation_issues_to_fields(
-    field: str, validation_issues: list[ValidationIssue]
-) -> list[ValidationIssue]:
+def check_relevant_context_contains(
+    keys: list[str], validation_context: ValidationContext
+) -> None:
     """
-    Creates a copy of the input validation_issues with the input field appended to
-    any existing field in each issue in the input list.
+    Performs a check that the keys are present in the relevant_context
 
-    This is useful for collecting lower level ValidationIssue in the context of
-    validating some higher level object. For example, a Target Validator might return
-    a ValidationIssue for the root of the Target so the field would be empty.
-    But if this is Validator is applied to a Target within an SBDefinition then
-    the field should be the path of the Target within the SBDefinition.
+    :raises ValueError: if any of the keys are not present
     """
-    return [
-        issue.model_copy(
-            update={"field": field if issue.field is None else f"{field}.{issue.field}"}
+    missing_keys = [
+        key for key in keys if key not in validation_context.relevant_context
+    ]
+    if len(missing_keys) > 0:
+        raise ValueError(
+            f"ValidationContext is missing relevant_context: {missing_keys}"
         )
-        for issue in validation_issues
-    ]

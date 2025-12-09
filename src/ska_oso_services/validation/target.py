@@ -6,10 +6,12 @@ from astropy.units import Quantity
 from ska_oso_pdm import Target, TelescopeType
 
 from ska_oso_services.validation.model import (
+    ValidationContext,
     ValidationIssue,
     ValidationIssueType,
     Validator,
     validate,
+    validator,
 )
 
 LOW_LOCATION = EarthLocation.of_site("SKA Low")
@@ -19,32 +21,35 @@ MID_LOCATION = EarthLocation.of_site("SKA Mid")
 MID_OBSERVER = Observer(location=MID_LOCATION)
 
 
-def validate_mid_target(target: Target) -> list[ValidationIssue]:
+def validate_target(target_context: ValidationContext[Target]) -> list[ValidationIssue]:
     """
-    :param target: a Target intended to be observed by SKA Mid
-    :return: the collated ValidationIssues resulting from applying each of the
-        :data:`~ska_oso_services.validation.target.MID_TARGET_VALIDATORS` to the target
-    """
-    return validate(target, MID_TARGET_VALIDATORS)
-
-
-def validate_low_target(target: Target) -> list[ValidationIssue]:
-    """
-    :param target: a Target intended to be observed by SKA Low
+    :param target_context: a ValidationContext containing a Target to be validated
     :return: the collated ValidationIssues resulting from applying each of
-        the :data:`~ska_oso_services.validation.target.LOW_TARGET_VALIDATORS`
-        to the target
+            the :data:`~ska_oso_services.validation.target.MID_TARGET_VALIDATORS`
+            of :data:`~ska_oso_services.validation.target.LOW_TARGET_VALIDATORS`
+            to the target
     """
-    return validate(target, LOW_TARGET_VALIDATORS)
+    validators = (
+        MID_TARGET_VALIDATORS
+        if target_context.telescope == TelescopeType.SKA_MID
+        else LOW_TARGET_VALIDATORS
+    )
+    return validate(target_context, validators)
 
 
-def validation_mid_elevation(target: Target) -> list[ValidationIssue]:
+@validator
+def validation_mid_elevation(
+    target_context: ValidationContext[Target],
+) -> list[ValidationIssue]:
     """
-    :param target: a Target intended to be observed by SKA Mid
+    :param target_context: a ValidationContext containing an SKA-Mid Target
+        to be validated
     :return: a validation error if the target doesn't reach the minimum 15 degrees
             elevation required for Mid
     """
-    max_elevation = _find_max_elevation(target, TelescopeType.SKA_MID)
+    max_elevation = _find_max_elevation(
+        target_context.primary_entity, TelescopeType.SKA_MID
+    )
 
     if max_elevation < Latitude(15, unit=u.deg):
         return [ValidationIssue(message="Source never rises above 15 degrees")]
@@ -52,14 +57,20 @@ def validation_mid_elevation(target: Target) -> list[ValidationIssue]:
     return []
 
 
-def validate_low_elevation(target: Target) -> list[ValidationIssue]:
+@validator
+def validate_low_elevation(
+    target_context: ValidationContext[Target],
+) -> list[ValidationIssue]:
     """
-    :param target: a Target intended to be observed by SKA Low
+    :param target_context: a ValidationContext containing an SKA-Low Target
+        to be validated
     :return: a validation error if the target doesn't rise above the horizon;
          a validation warning if the maximum elevation of the target is less
          than 45 degrees
     """
-    max_elevation = _find_max_elevation(target, TelescopeType.SKA_LOW)
+    max_elevation = _find_max_elevation(
+        target_context.primary_entity, TelescopeType.SKA_LOW
+    )
 
     if max_elevation < Latitude(0, unit=u.deg):
         return [ValidationIssue(message="Source never rises above the horizon")]

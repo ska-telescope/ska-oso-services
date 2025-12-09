@@ -43,7 +43,7 @@ def test_sbd_validate(authrequests):
     assert result["valid"] is False
     assert result["issues"] == [
         {
-            "field": "targets.0",
+            "field": "$.targets.0",
             "level": "error",
             "message": "Source never rises above the horizon",
         }
