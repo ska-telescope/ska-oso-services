@@ -1,12 +1,19 @@
 from ska_oso_pdm import SBDefinition, Target, TelescopeType
 from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 
-from ska_oso_services.validation.model import ValidationContext, ValidationIssue
+from ska_oso_services.validation.model import (
+    ValidationContext,
+    ValidationIssue,
+    validator,
+)
 from ska_oso_services.validation.scan import validate_scan_definition
 from ska_oso_services.validation.target import validate_target
 
 
-def validate_sbdefinition(sbd: SBDefinition) -> list[ValidationIssue]:
+@validator
+def validate_sbdefinition(
+    sbd_context: ValidationContext[SBDefinition],
+) -> list[ValidationIssue]:
     """
     Applies all relevant Validators to the SBDefinition elements,
     collecting all the results into a single list.
@@ -15,6 +22,7 @@ def validate_sbdefinition(sbd: SBDefinition) -> list[ValidationIssue]:
     :return: the collated ValidationIssues resulting from applying all the
                 SBDefinition Validators
     """
+    sbd = sbd_context.primary_entity
     target_validation_results = [
         issue
         for index, target in enumerate(sbd.targets)
@@ -35,7 +43,7 @@ def validate_sbdefinition(sbd: SBDefinition) -> list[ValidationIssue]:
         # Though technically the validation issue comes from the scan,
         # it makes more sense to surface it to the user as a target issue
         # TODO this will need a bit of a refactor when there is some
-        #  validation that needs to be attached to the scan or csp config
+        #  new validation that needs to be attached to the scan or csp config
         scan_context = ValidationContext(
             primary_entity=scan,
             source_jsonpath=f"$.targets.{target_index}",

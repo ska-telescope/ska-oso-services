@@ -9,7 +9,6 @@ from ska_oso_services.validation.model import (
     ValidationContext,
     ValidationIssue,
     ValidationIssueType,
-    Validator,
     validate,
     validator,
 )
@@ -21,19 +20,19 @@ MID_LOCATION = EarthLocation.of_site("SKA Mid")
 MID_OBSERVER = Observer(location=MID_LOCATION)
 
 
+@validator
 def validate_target(target_context: ValidationContext[Target]) -> list[ValidationIssue]:
     """
     :param target_context: a ValidationContext containing a Target to be validated
     :return: the collated ValidationIssues resulting from applying each of
-            the :data:`~ska_oso_services.validation.target.MID_TARGET_VALIDATORS`
-            of :data:`~ska_oso_services.validation.target.LOW_TARGET_VALIDATORS`
-            to the target
+            the relevant Target Validators to the Target
     """
-    validators = (
-        MID_TARGET_VALIDATORS
-        if target_context.telescope == TelescopeType.SKA_MID
-        else LOW_TARGET_VALIDATORS
-    )
+
+    if target_context.telescope == TelescopeType.SKA_MID:
+        validators = [validation_mid_elevation]
+    else:
+        validators = [validate_low_elevation]
+
     return validate(target_context, validators)
 
 
@@ -96,13 +95,3 @@ def _find_max_elevation(target: Target, telescope: TelescopeType) -> Latitude:
     target_sky_coords = target.reference_coordinate.to_sky_coord()
 
     return Quantity(90.0, u.deg) - abs(location.lat - target_sky_coords.dec)
-
-
-LOW_TARGET_VALIDATORS: list[Validator[Target]] = [validate_low_elevation]
-""" The list of :func:`~ska_oso_services.validation.model.Validator` functions to
-    be applied to a Target intended to be observed by SKA Low """
-
-
-MID_TARGET_VALIDATORS: list[Validator[Target]] = [validation_mid_elevation]
-""" The list of :func:`~ska_oso_services.validation.model.Validator` functions to
-    be applied to a Target intended to be observed by SKA Mid """

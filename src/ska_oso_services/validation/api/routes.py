@@ -6,7 +6,7 @@ from ska_oso_pdm import SBDefinition
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.model import AppModel
 from ska_oso_services.odt.api.sbds import API_ROLES
-from ska_oso_services.validation.model import ValidationIssue
+from ska_oso_services.validation.model import ValidationContext, ValidationIssue
 from ska_oso_services.validation.sbdefinition import validate_sbdefinition
 
 router = APIRouter(prefix="/validate", tags=["OSO Validation API endpoints"])
@@ -28,6 +28,9 @@ class ValidationResponse(AppModel):
     dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READ})],
 )
 def validate_sbd(sbd: SBDefinition) -> ValidationResponse:
-    result = validate_sbdefinition(sbd)
+    sbd_validation_context = ValidationContext(
+        primary_entity=sbd, telescope=sbd.telescope
+    )
+    result = validate_sbdefinition(sbd_validation_context)
 
     return ValidationResponse(issues=result)
