@@ -67,48 +67,37 @@ def validator(validator_func: Validator[T]) -> Validator[T]:
     A decorator to mark a :func:`~ska_oso_services.validation.model.Validator`
 
     This decorator will combine the source_jsonpath from the input ValidationContext
-    with any of the Validator output ValidationIssue fields.
+    with any of the Validator output ValidationIssue fields. To handle nested Validator
+    calls, the decorator will set the source_jsonpath back to the root before passing
+    the ValidationContext to the decorated Validator. Ultimately this means that the
+    callers of the Validators only need to worry about setting the source_jsonpath
+    at the point the Validator is called, and the appending of nested results is
+    handled by this decorator
 
-    It will also perform a type check on the Validator signature.
+    :raises ValueError: It will also perform a type check on the Validator signature,
+        raising an error if the decorated function does not have the correct parameters
+        or type hints.
     """
 
-    def combine_jsonpath(source_jsonpath: str = "$", validator_field: str = "$") -> str:
-        if validator_field == "$":
-            return source_jsonpath
-
-        return f"{source_jsonpath}.{validator_field.lstrip('$')}"
+    _check_validator_signature(validator_func)
 
     @wraps(validator_func)
     def wrapper(entity_context: ValidationContext[T]) -> list[ValidationIssue]:
-        result = validator_func(entity_context)
+        context_without_source = entity_context.model_copy(
+            update={"source_jsonpath": "$"}
+        )
+        result = validator_func(context_without_source)
 
         return [
             issue.model_copy(
                 update={
-                    "field": combine_jsonpath(
+                    "field": _combine_jsonpath(
                         entity_context.source_jsonpath, issue.field
                     )
                 }
             )
             for issue in result
         ]
-
-    validator_func_signature = signature(validator_func)
-    type_hints = get_type_hints(validator_func)
-    value_error = ValueError(
-        "Validator function must accept a single ValidationContext "
-        "and return a list[ValidationIssue]"
-    )
-
-    if len(validator_func_signature.parameters) != 1 or len(type_hints) != 2:
-        raise value_error
-
-    arg_type = type_hints[next(iter(validator_func_signature.parameters))]
-    if "ska_oso_services.validation.model.ValidationContext" not in str(arg_type):
-        raise value_error
-
-    if type_hints.get("return") != list[ValidationIssue]:
-        raise value_error
 
     return wrapper
 
@@ -142,3 +131,33 @@ def check_relevant_context_contains(
         raise ValueError(
             f"ValidationContext is missing relevant_context: {missing_keys}"
         )
+
+
+def _check_validator_signature(validator_func: Validator[T]) -> None:
+    """
+    :raises: ValueError if the signature of the input function
+        is not correct for a Validator
+    """
+    validator_func_signature = signature(validator_func)
+    type_hints = get_type_hints(validator_func)
+    value_error = ValueError(
+        "Validator function must accept a single ValidationContext "
+        "and return a list[ValidationIssue], with type hints"
+    )
+
+    if len(validator_func_signature.parameters) != 1 or len(type_hints) != 2:
+        raise value_error
+
+    arg_type = type_hints[next(iter(validator_func_signature.parameters))]
+    if "ska_oso_services.validation.model.ValidationContext" not in str(arg_type):
+        raise value_error
+
+    if type_hints.get("return") != list[ValidationIssue]:
+        raise value_error
+
+
+def _combine_jsonpath(source_jsonpath: str = "$", validator_field: str = "$") -> str:
+    if validator_field == "$":
+        return source_jsonpath
+
+    return f"{source_jsonpath}.{validator_field.lstrip('$.')}"

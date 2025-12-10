@@ -17,13 +17,13 @@ from ska_oso_services.common.static.constants import (
 from ska_oso_services.validation.model import (
     ValidationContext,
     ValidationIssue,
-    Validator,
     check_relevant_context_contains,
     validate,
     validator,
 )
 
 
+@validator
 def validate_scan_definition(
     scan_definition_context: ValidationContext[ScanDefinition],
 ) -> list[ValidationIssue]:
@@ -32,17 +32,11 @@ def validate_scan_definition(
         to be validated. This should also contain a relevant_context with the target
         and csp_config for the scan
     :return: the collated ValidationIssues resulting from applying each of
-            the :data:`~ska_oso_services.validation.scan.MID_SCAN_VALIDATORS`
-            or :data:`~ska_oso_services.validation.scan.LOW_SCAN_VALIDATORS`
-            to the scan_definition
+            scan Validators to the scan_definition
     """
     check_relevant_context_contains(["target", "csp_config"], scan_definition_context)
 
-    validators = (
-        MID_SCAN_VALIDATORS
-        if scan_definition_context.telescope == TelescopeType.SKA_MID
-        else LOW_SCAN_VALIDATORS
-    )
+    validators = [validate_tied_array_beam_within_hpbw]
 
     return validate(scan_definition_context, validators)
 
@@ -126,17 +120,3 @@ def _calculate_hpbw(csp_config: CSPConfiguration, telescope: TelescopeType) -> A
     max_frequency_hz = Quantity(max(band_upper_limits_hz), unit=u.s**-1)
 
     return ((speed_of_light / max_frequency_hz) / diameter_m) * u.rad
-
-
-LOW_SCAN_VALIDATORS: list[Validator[ScanDefinition]] = [
-    validate_tied_array_beam_within_hpbw
-]
-""" The list of :func:`~ska_oso_services.validation.model.Validator` functions to
-    be applied to a Target intended to be observed by SKA Low """
-
-
-MID_SCAN_VALIDATORS: list[Validator[ScanDefinition]] = [
-    validate_tied_array_beam_within_hpbw
-]
-""" The list of :func:`~ska_oso_services.validation.model.Validator` functions to
-    be applied to a Target intended to be observed by SKA Mid """

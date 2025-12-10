@@ -30,7 +30,9 @@ def test_each_target_is_validated(mock_validate_target):
         targets=generate_targets(MidTargetBuilder, num_targets=3)
     )
 
-    result = validate_sbdefinition(sbd)
+    input_context = ValidationContext(primary_entity=sbd, telescope=sbd.telescope)
+
+    result = validate_sbdefinition(input_context)
 
     assert result == [
         TEST_VALIDATION_ISSUE,
@@ -50,7 +52,9 @@ def test_each_target_has_field_added(mock_validate_target):
         targets=generate_targets(MidTargetBuilder, num_targets=3)
     )
 
-    result = validate_sbdefinition(sbd)
+    input_context = ValidationContext(primary_entity=sbd, telescope=sbd.telescope)
+
+    result = validate_sbdefinition(input_context)
 
     assert result == [
         TEST_VALIDATION_ISSUE.model_copy(update={"field": "$.targets.0"}),
@@ -67,6 +71,8 @@ def test_scans_are_validated(mock_validate_target, mock_validate_scan_definition
     sbd = LowSBDefinitionBuilder()
     sbd = populate_scan_sequences(sbd, scan_durations=1)
 
-    result = validate_sbdefinition(sbd)
+    input_context = ValidationContext(primary_entity=sbd, telescope=sbd.telescope)
+
+    result = validate_sbdefinition(input_context)
 
     assert result == INVALID_RESULT
