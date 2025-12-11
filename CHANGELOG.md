@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Update OSD version to 5.1.0 ObservatoryPolicy model
 
 10.0.2
 **********

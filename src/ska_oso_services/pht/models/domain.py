@@ -93,15 +93,20 @@ class CycleInformation(BaseModel):
 
 class CyclePolicies(BaseModel):
     normal_max_hours: int
+    max_targets: Optional[int] = None
+    max_observation_setups: Optional[int] = None
+    max_data_products: Optional[int] = None
 
 
 class TelescopeCapabilities(BaseModel):
-    Mid: str
-    Low: str
+    Mid: Optional[str] = None
+    Low: Optional[str] = None
 
 
 class ObservatoryPolicy(BaseModel):
     cycle_number: int
+    cycle_id: Optional[str] = None
+    type: Optional[str] = None
     cycle_description: str
     cycle_information: CycleInformation
     cycle_policies: CyclePolicies
@@ -173,8 +178,8 @@ class Low(BaseModel):
 
 
 class Capabilities(BaseModel):
-    mid: Mid
-    low: Low
+    mid: Optional[Mid] = None
+    low: Optional[Low] = None
 
 
 class OsdDataModel(BaseModel):
