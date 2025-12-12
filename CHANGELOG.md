@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Update OSD version to 5.1.0 and change ObservatoryPolicy, CyclePolicies, and TelescopeCapabilities models.
 
 10.0.2
 **********
