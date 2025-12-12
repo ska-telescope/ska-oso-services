@@ -1,6 +1,5 @@
 # pylint: disable=no-member
 import astropy.units as u
-from astroplan import Observer
 from astropy.coordinates import EarthLocation, Latitude
 from astropy.units import Quantity
 from ska_oso_pdm import Target, TelescopeType
@@ -14,10 +13,7 @@ from ska_oso_services.validation.model import (
 )
 
 LOW_LOCATION = EarthLocation.of_site("SKA Low")
-LOW_OBSERVER = Observer(location=LOW_LOCATION)
-
 MID_LOCATION = EarthLocation.of_site("SKA Mid")
-MID_OBSERVER = Observer(location=MID_LOCATION)
 
 
 @validator
