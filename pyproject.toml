@@ -100,7 +100,7 @@ ska-ser-sphinx-theme = "^0.2.1"
 # Could not import extension sphinxcontrib.openapi (exception: cannot import name 'error_string' from 'docutils.io'
 mistune = "^2"
 # Required to be installed for the autodocs for the version check
-ska-ost-osd = "5.0.0"
+ska-ost-osd = "^5.0.0"
 
 
 [tool.coverage.run]
