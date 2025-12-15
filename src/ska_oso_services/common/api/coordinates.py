@@ -118,11 +118,12 @@ def get_systemcoordinates(
         galactic_coordinates = convert_icrs_to_galactic(
             lookup_result_target.reference_coordinate
         )
+        lookup_result_target.reference_coordinate = galactic_coordinates
         return GalacticResponse(
             **lookup_result_target.model_dump(),
             galactic=Galactic(
-                lon=round(galactic_coordinates.l, 2),
-                lat=round(galactic_coordinates.b, 4),
+                lon=galactic_coordinates.l,
+                lat=galactic_coordinates.b,
                 velocity=lookup_result_target.radial_velocity.quantity.value,
                 redshift=lookup_result_target.radial_velocity.redshift,
             ),

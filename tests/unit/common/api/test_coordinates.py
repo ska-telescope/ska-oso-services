@@ -94,13 +94,13 @@ class TestCoordinates:
                 "reference_frame": "LSRK",
             },
             "reference_coordinate": {
-                "dec_str": "+41:16:07.500",
+                "kind": "galactic",
+                "l": 121.17,
+                "b": -21.5733,
                 "epoch": 2000.0,
-                "kind": "icrs",
                 "parallax": 0.0,
-                "pm_dec": 0.0,
-                "pm_ra": 0.0,
-                "ra_str": "00:42:44.3300",
+                "pm_l": 0.0,
+                "pm_b": 0.0,
             },
             "target_id": "",
         }
