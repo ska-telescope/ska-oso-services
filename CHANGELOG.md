@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* [BUGFIX] Updates `/coordinates/galactic` to return a PDM target with a galactic coordinate object
 
 10.1.0
 **********
