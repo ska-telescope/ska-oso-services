@@ -12,3 +12,6 @@ T10_COLOURS = {
     "gold": "#EDC948",
     "red": "#CA380B",
 }
+
+MID_DISH_DIAMETER_M = 15
+LOW_STATION_DIAMETER_M = 39

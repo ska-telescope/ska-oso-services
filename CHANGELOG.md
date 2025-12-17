@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Add ``validation`` package with an API to validate ``SBDefinition``
 
 11.0.0
 **********

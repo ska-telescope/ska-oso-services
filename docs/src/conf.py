@@ -21,6 +21,27 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
+autodoc_mock_imports = [
+    "astropy",
+    "astroplan",
+    "astroquery",
+    "ska_db_oda",
+    "ska_oso_pdm",
+    "ska_ost_osd",
+    "ska_aaa_authhelpers",
+    "ska_ser_logging",
+    "fastapi",
+    "starlette",
+    "pydantic",
+    "pydantic_core",
+    "botocore",
+    "boto3",
+    "aiosmtplib",
+    "matplotlib",
+    "jwt",
+    "msal"
+]
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -39,7 +60,7 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages',  
+    'sphinx.ext.githubpages',
     'sphinxcontrib.openapi']
 
 
@@ -206,5 +227,5 @@ epub_exclude_files = ['search.html']
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'python': ('https://docs.python.org/3/', None)}
+intersphinx_mapping = {"python": ("https://docs.python.org/", None)}
 openapi_default_renderer='httpdomain'
