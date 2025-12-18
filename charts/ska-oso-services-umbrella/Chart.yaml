@@ -14,6 +14,6 @@ dependencies:
 # The ODA umbrella chart includes ODA API and the PostgreSQL database
 - name: ska-db-oda-umbrella
   # If updating this, also remember to update the Python dependency
-  version: 14.2.0
-  repository: https://artefact.skao.int/repository/helm-internal
+  version: 14.2.0-dev.c176eb604
+  repository: https://gitlab.com/api/v4/projects/27507143/packages/helm/dev/charts
   condition: ska-db-oda-umbrella.enabled
