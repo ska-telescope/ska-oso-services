@@ -2,7 +2,7 @@ from collections import defaultdict
 from random import randint
 
 from ska_oso_pdm import Project, Proposal
-from ska_oso_pdm.project import ObservingBlock, ScienceProgramme, Purpose
+from ska_oso_pdm.project import ObservingBlock, Purpose, ScienceProgramme
 from ska_oso_pdm.proposal import ObservationSets
 from ska_oso_pdm.proposal.info import ObservationInfo
 
@@ -55,7 +55,7 @@ def generate_project(proposal: Proposal) -> Project:
         prsl_ref=proposal.prsl_id,
         name=proposal.proposal_info.title,
         obs_blocks=observing_blocks,
-        purpose=Purpose.SCIENCE
+        purpose=Purpose.SCIENCE,
     )
 
 
