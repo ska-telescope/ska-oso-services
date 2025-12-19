@@ -1,6 +1,7 @@
 from unittest import mock
 
 from ska_oso_pdm import CalibrationStrategy
+from ska_oso_pdm.project import Purpose
 
 from ska_oso_services.odt.service.project_generator import generate_project
 from tests.unit.util import TestDataFactory
@@ -34,6 +35,7 @@ def test_project_from_proposal_without_groups(mock_randint):
     project = generate_project(proposal)
     assert proposal.prsl_id == project.prsl_ref
     assert len(project.obs_blocks) == 2
+    assert project.purpose == Purpose.SCIENCE
 
     # Check the first observing block contents
     first_obs_block = project.obs_blocks[0]
@@ -94,6 +96,7 @@ def test_project_from_proposal_with_groups():
     project = generate_project(proposal)
     assert proposal.prsl_id == project.prsl_ref
     assert len(project.obs_blocks) == 1
+    assert project.purpose == Purpose.SCIENCE
 
     # Check the observing block has two science programmes
     first_obs_block = project.obs_blocks[0]
