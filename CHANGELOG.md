@@ -6,7 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-* Add ``validation`` package with an API to validate ``SBDefinition``
+* Adds ``validation`` package with an API to validate ``SBDefinition``
+* Adds project purpose to projects generated from proposals and constrains it to be 'Science'
 
 11.0.0
 **********
