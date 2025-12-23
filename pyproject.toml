@@ -45,6 +45,11 @@ url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
 priority = "explicit"
 
 [[tool.poetry.source]]
+name = "gitlab-ska-oso-pdm"
+url = "https://gitlab.com/api/v4/projects/17509042/packages/pypi/simple"
+priority = "explicit"
+
+[[tool.poetry.source]]
 name = "gitlab-ska-ost-osd"
 url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple"
 priority = "explicit"
@@ -60,7 +65,7 @@ python-dateutil = "^2.8.2"
 ska-ser-logging = "^0.4.1"
 # PDM dependency is pulled in via the ODA rather than being explicitly set here
 # If updating this, also remember to update the Helm dependency in the umbrella chart
-ska-db-oda = "^14.0.4"
+ska-db-oda = "^14.2.1"
 pydantic = "^2.9"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 astroquery = "0.4.9"
