@@ -4,7 +4,7 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+11.1.0
 **********
 * Adds ``validation`` package with an API to validate ``SBDefinition``
 * Adds project purpose to projects generated from proposals and constrains it to be 'Science'
