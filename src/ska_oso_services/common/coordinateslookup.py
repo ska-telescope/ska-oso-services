@@ -67,7 +67,7 @@ def get_coordinates(object_name: str) -> Target:
     raise NotFoundError(detail=not_found_msg)
 
 
-def lookup_in_simbad(object_name: str) -> Target | None:
+def lookup_in_simbad(object_name: str, reference_frame: "icrs" | "galactic" = "icrs") -> Target | None:
     LOGGER.debug("Looking up %s in SIMBAD", object_name)
     Simbad.add_votable_fields("velocity")
     result_table_simbad = Simbad.query_object(object_name)
@@ -138,7 +138,7 @@ def convert_icrs_to_galactic(icrs_coordinates: ICRSCoordinates) -> GalacticCoord
     sky_coord = icrs_coordinates.to_sky_coord()
 
     return GalacticCoordinates(
-        l=round(sky_coord.galactic.l.value, 2), b=round(sky_coord.galactic.b.value, 4)
+        l=round(sky_coord.galactic.l.value, 7), b=round(sky_coord.galactic.b.value, 7)
     )
 
 
