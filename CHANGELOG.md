@@ -4,6 +4,10 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+11.2.0
+**********
+* Update ODA to v14.3.0
+
 11.1.0
 **********
 * Adds ``validation`` package with an API to validate ``SBDefinition``
