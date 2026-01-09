@@ -161,7 +161,7 @@ class AA2_LOW(BaseModel):
     number_beams: int
     max_baseline_km: int
     available_bandwidth_hz: int
-    channel_width_hz: float
+    channel_width_hz: Optional[float] = None
     cbf_modes: list[str]
     number_zoom_windows: int
     number_zoom_channels: int
