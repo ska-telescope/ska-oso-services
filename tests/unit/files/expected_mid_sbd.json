@@ -76,7 +76,8 @@
       "scan_duration_ms": 3.6e6,
       "target_ref": "47 tuc",
       "csp_configuration_ref": "csp-configuration-12345",
-      "pointing_correction": "MAINTAIN"
+      "pointing_correction": "MAINTAIN",
+      "scan_intent": "Science"
     }]
   },
   "sdp_configurations": [
