@@ -13,7 +13,9 @@ from ska_ost_osd.osd.routers.api import get_osd
 from ska_oso_services.common.error_handling import OSDError
 from ska_oso_services.common.model import AppModel
 
-SUPPORTED_ARRAY_ASSEMBLIES = ["AA0.5", "AA1", "AA2"]
+SUPPORTED_COMMON_ARRAY_ASSEMBLIES = ["AA0.5", "AA1", "AA2"]
+MID_ARRAY_ASSEMBLIES = ["Mid_ITF"]
+LOW_ARRAY_ASSEMBLIES = ["AA2_SV", "Low_ITF"]
 
 OSD_VERSION = version("ska-ost-osd")
 OSD_SOURCE = "car"
@@ -40,6 +42,15 @@ class FrequencyBand:
 class Subarray:
     name: str
     receptors: list[str | int]
+    available_bandwidth_hz: float
+    number_pst_beams: int
+    number_fsps: int
+
+
+@dataclasses.dataclass
+class LowSubarray(Subarray):
+    number_substations: int
+    number_subarray_beams: int
 
 
 class MidConfiguration(AppModel):
@@ -49,7 +60,7 @@ class MidConfiguration(AppModel):
 
 class LowConfiguration(AppModel):
     frequency_band: FrequencyBand
-    subarrays: list[Subarray]
+    subarrays: list[LowSubarray]
 
 
 class Configuration(AppModel):
@@ -75,7 +86,7 @@ def configuration_from_osd() -> Configuration:
 
 def _get_mid_telescope_configuration() -> MidConfiguration:
     subarrays = []
-    for array_assembly in SUPPORTED_ARRAY_ASSEMBLIES:
+    for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + MID_ARRAY_ASSEMBLIES:
         mid_response = get_osd_data(
             array_assembly=array_assembly,
             capabilities="mid",
@@ -87,6 +98,15 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
                 name=array_assembly,
                 receptors=mid_response["capabilities"]["mid"][array_assembly][
                     "number_dish_ids"
+                ],
+                available_bandwidth_hz=mid_response["capabilities"]["mid"][
+                    array_assembly
+                ]["available_bandwidth_hz"],
+                number_pst_beams=mid_response["capabilities"]["mid"][array_assembly][
+                    "number_pst_beams"
+                ],
+                number_fsps=mid_response["capabilities"]["mid"][array_assembly][
+                    "number_fsps"
                 ],
             )
         )
@@ -121,7 +141,7 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
 
 def _get_low_telescope_configuration() -> LowConfiguration:
     subarrays = []
-    for array_assembly in SUPPORTED_ARRAY_ASSEMBLIES:
+    for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + LOW_ARRAY_ASSEMBLIES:
         low_response = get_osd_data(
             array_assembly=array_assembly,
             capabilities="low",
@@ -129,11 +149,26 @@ def _get_low_telescope_configuration() -> LowConfiguration:
             osd_version=OSD_VERSION,
         )
         subarrays.append(
-            Subarray(
+            LowSubarray(
                 name=array_assembly,
                 receptors=low_response["capabilities"]["low"][array_assembly][
                     "number_station_ids"
                 ],
+                available_bandwidth_hz=low_response["capabilities"]["low"][
+                    array_assembly
+                ]["available_bandwidth_hz"],
+                number_pst_beams=low_response["capabilities"]["low"][array_assembly][
+                    "number_pst_beams"
+                ],
+                number_fsps=low_response["capabilities"]["low"][array_assembly][
+                    "number_fsps"
+                ],
+                number_substations=low_response["capabilities"]["low"][array_assembly][
+                    "number_substations"
+                ],
+                number_subarray_beams=low_response["capabilities"]["low"][
+                    array_assembly
+                ]["number_beams"],
             )
         )
 

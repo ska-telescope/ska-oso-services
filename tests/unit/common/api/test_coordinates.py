@@ -73,7 +73,7 @@ class TestCoordinates:
         expected_response = {
             "galactic": {
                 "lat": -21.5733088,
-                "lon":  121.1743291,
+                "lon": 121.1743291,
                 "redshift": 0.0,
                 "velocity": 519.1,
             },
@@ -96,7 +96,7 @@ class TestCoordinates:
             },
             "reference_coordinate": {
                 "kind": "galactic",
-                "l":  121.1743291,
+                "l": 121.1743291,
                 "b": -21.5733088,
                 "epoch": 2000.0,
                 "parallax": 0.0,
