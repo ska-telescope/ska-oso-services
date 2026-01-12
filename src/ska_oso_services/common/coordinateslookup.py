@@ -67,7 +67,7 @@ def get_coordinates(object_name: str) -> Target:
     raise NotFoundError(detail=not_found_msg)
 
 
-def lookup_in_simbad(object_name: str, reference_frame: "icrs" | "galactic" = "icrs") -> Target | None:
+def lookup_in_simbad(object_name: str) -> Target | None:
     LOGGER.debug("Looking up %s in SIMBAD", object_name)
     Simbad.add_votable_fields("velocity")
     result_table_simbad = Simbad.query_object(object_name)
