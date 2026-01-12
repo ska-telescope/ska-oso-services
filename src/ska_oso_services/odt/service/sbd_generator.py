@@ -98,6 +98,7 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
                 scan_duration_ms=target_scan_duration_ms,
                 target_ref=target.target_id,
                 csp_configuration_ref=target_csp_configuration_ref,
+                scan_intent="Science",
             )
         ]
 
@@ -124,6 +125,7 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
                     scan_duration_ms=calibration_strategy.duration_ms,
                     target_ref=calibrator.calibrator.target_id,
                     csp_configuration_ref=target_csp_configuration_ref,
+                    scan_intent="Calibrator",
                 )
 
                 match calibrator.when:
