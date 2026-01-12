@@ -32,8 +32,8 @@ from . import OSO_SERVICES_URL
             "galactic",
             {
                 "galactic": {
-                    "lat": -44.8891,
-                    "lon": 305.9,
+                    "lat": -44.8891135,
+                    "lon": 305.8953327,
                     "redshift": 0.0,
                     "velocity": -17.2,
                 }
@@ -56,8 +56,8 @@ from . import OSO_SERVICES_URL
             "galactic",
             {
                 "galactic": {
-                    "lat": -78.5856,
-                    "lon": 354.21,
+                    "lat": -78.5856477,
+                    "lon": 354.2101595,
                     "redshift": 0.0,
                     "velocity": 6800.0,
                 }
