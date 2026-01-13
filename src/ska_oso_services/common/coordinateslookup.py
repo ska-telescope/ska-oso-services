@@ -138,7 +138,7 @@ def convert_icrs_to_galactic(icrs_coordinates: ICRSCoordinates) -> GalacticCoord
     sky_coord = icrs_coordinates.to_sky_coord()
 
     return GalacticCoordinates(
-        l=round(sky_coord.galactic.l.value, 2), b=round(sky_coord.galactic.b.value, 4)
+        l=round(sky_coord.galactic.l.value, 7), b=round(sky_coord.galactic.b.value, 7)
     )
 
 

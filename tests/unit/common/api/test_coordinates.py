@@ -12,6 +12,7 @@ from tests.unit.util import assert_json_is_equal
 COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
 
 TEST_TARGET_WITH_VELOCITY = Target(
+    name="M83",
     reference_coordinate=ICRSCoordinates(
         ra_str="00:42:44.3300", dec_str="+41:16:07.500"
     ),
@@ -32,7 +33,7 @@ class TestCoordinates:
                 "redshift": 0.0,
                 "velocity": 519.1,
             },
-            "name": "",
+            "name": "M83",
             "pointing_pattern": {
                 "active": "SinglePointParameters",
                 "parameters": [
@@ -71,12 +72,12 @@ class TestCoordinates:
 
         expected_response = {
             "galactic": {
-                "lat": -21.5733,
-                "lon": 121.17,
+                "lat": -21.5733088,
+                "lon": 121.1743291,
                 "redshift": 0.0,
                 "velocity": 519.1,
             },
-            "name": "",
+            "name": "M83",
             "pointing_pattern": {
                 "active": "SinglePointParameters",
                 "parameters": [
@@ -95,8 +96,8 @@ class TestCoordinates:
             },
             "reference_coordinate": {
                 "kind": "galactic",
-                "l": 121.17,
-                "b": -21.5733,
+                "l": 121.1743291,
+                "b": -21.5733088,
                 "epoch": 2000.0,
                 "parallax": 0.0,
                 "pm_l": 0.0,
