@@ -4,13 +4,14 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+11.3.0
 **********
 * Update generated SBDs to have scan intents
 * Update OSD to v5.2.0
 * Update /configuration endpoint to include `Low-ITF`, `AA2_SV` and `Mid_ITF` and to also return `available_bandwidth_hz`,
   `number_pst_beams` and `number_fsps` for both Mid and Low and `number_substations` and `number_subarray_beams` for Low only
 * Fixed precision of the Galactic look-up response
+* [BUGFIX] make channel_width_hz optional in OSD response model for PHT
 
 11.2.0
 **********
