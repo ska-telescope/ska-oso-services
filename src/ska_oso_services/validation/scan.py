@@ -9,10 +9,10 @@ from ska_oso_pdm._shared import PointedMosaicParameters
 from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 
 from ska_oso_services.common.static.constants import (
-    LOW_STATION_CHANNEL_WIDTH_MHZ,
-    LOW_STATION_DIAMETER_M,
-    MID_CHANNEL_WIDTH_KHZ,
-    MID_DISH_DIAMETER_M,
+    LOW_STATION_CHANNEL_WIDTH,
+    LOW_STATION_DIAMETER,
+    MID_CHANNEL_WIDTH,
+    MID_DISH_DIAMETER,
 )
 from ska_oso_services.validation.model import (
     ValidationContext,
