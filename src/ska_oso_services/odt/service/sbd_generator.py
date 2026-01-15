@@ -39,8 +39,8 @@ from ska_oso_services.common.calibrators import find_appropriate_calibrators
 from ska_oso_services.common.osdmapper import get_osd_data
 from ska_oso_services.common.sdpmapper import get_script_versions
 from ska_oso_services.common.static.constants import (
-    LOW_STATION_CHANNEL_WIDTH_MHZ,
-    MID_CHANNEL_WIDTH_KHZ,
+    LOW_STATION_CHANNEL_WIDTH,
+    MID_CHANNEL_WIDTH,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -224,8 +224,8 @@ def _csp_configuration_from_science_programme(
                     Correlation(
                         spw_id=1,
                         number_of_channels=int(
-                            observation_type_details.bandwidth.to(u.Hz).value
-                            / (LOW_STATION_CHANNEL_WIDTH_MHZ * 1e6)
+                            observation_type_details.bandwidth
+                            / LOW_STATION_CHANNEL_WIDTH
                         ),
                         centre_frequency=observation_type_details.central_frequency.to(u.Hz).value,
                         integration_time_ms=849,
@@ -250,8 +250,8 @@ def _csp_configuration_from_science_programme(
                                     observation_type_details.central_frequency.to(u.Hz).value
                                 ),
                                 number_of_channels=int(
-                                    observation_type_details.bandwidth.to(u.Hz).value
-                                    / (MID_CHANNEL_WIDTH_KHZ * 1e3)
+                                    observation_type_details.bandwidth
+                                    / MID_CHANNEL_WIDTH
                                 ),
                                 zoom_factor=0,
                                 time_integration_factor=10,
