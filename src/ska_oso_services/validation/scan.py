@@ -9,10 +9,10 @@ from ska_oso_pdm._shared import PointedMosaicParameters
 from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 
 from ska_oso_services.common.static.constants import (
-    LOW_STATION_CHANNEL_WIDTH_MHZ,
-    LOW_STATION_DIAMETER_M,
-    MID_CHANNEL_WIDTH_KHZ,
-    MID_DISH_DIAMETER_M,
+    LOW_STATION_CHANNEL_WIDTH,
+    LOW_STATION_DIAMETER,
+    MID_CHANNEL_WIDTH,
+    MID_DISH_DIAMETER,
 )
 from ska_oso_services.validation.model import (
     ValidationContext,
@@ -104,18 +104,19 @@ def _calculate_hpbw(csp_config: CSPConfiguration, telescope: TelescopeType) -> A
      not define any spectral windows.
     """
     if telescope == TelescopeType.SKA_LOW:
-        diameter_m = Quantity(LOW_STATION_DIAMETER_M, unit=u.m)
+        diameter_m = LOW_STATION_DIAMETER
         band_upper_limits_hz = [
             spw.centre_frequency
-            + (LOW_STATION_CHANNEL_WIDTH_MHZ * 1e6 * spw.number_of_channels / 2)
+            + (LOW_STATION_CHANNEL_WIDTH.to(u.Hz).value * spw.number_of_channels / 2)
             for spw in csp_config.lowcbf.correlation_spws
         ]
     else:
         # TODO once Mid supports Meerkdat dishes (and tied array beams!) need to use the
         #  correct dish size here based on the array
-        diameter_m = Quantity(MID_DISH_DIAMETER_M, unit=u.m)
+        diameter_m = MID_DISH_DIAMETER
         band_upper_limits_hz = [
-            spw.centre_frequency + (MID_CHANNEL_WIDTH_KHZ * 1e3 * spw.number_of_channels / 2)
+            spw.centre_frequency
+            + (MID_CHANNEL_WIDTH.to(u.Hz).value * spw.number_of_channels / 2)
             for spw in csp_config.midcbf.subbands[0].correlation_spws
         ]
 
