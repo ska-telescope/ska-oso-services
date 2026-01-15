@@ -95,6 +95,7 @@ pylint-junit = "^0.3.2"
 flake8 = "^7.0.0"
 deepdiff = "^7.0.0"
 ska-ser-xray = "^0.7.0"
+numpy = "<2.4.0"
 
 [tool.poetry.group.docs]
 optional = true
