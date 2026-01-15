@@ -1,4 +1,4 @@
-from ska_oso_pdm import SBDefinition, Target, TelescopeType
+from ska_oso_pdm import SBDefinition, Target, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 
 from ska_oso_services.validation.model import (
@@ -23,6 +23,24 @@ def validate_sbdefinition(
                 SBDefinition Validators
     """
     sbd = sbd_context.primary_entity
+
+    # for backwards compatibility.
+    if not sbd.validate_against:
+        if sbd.telescope == TelescopeType.SKA_MID:
+            validation_array_assembly = (
+                sbd.dish_allocations.selected_subarray_definition
+            )
+        else:
+            validation_array_assembly = sbd.mccs_allocation.selected_subarray_definition
+
+        # but this won't work if it's a custom array, so subbing out for the
+        # most permissive array assembly
+        if validation_array_assembly == "Custom":
+            validation_array_assembly = ValidationArrayAssembly.AA2
+
+    else:
+        validation_array_assembly = sbd.validate_against
+
     target_validation_results = [
         issue
         for index, target in enumerate(sbd.targets)
@@ -31,6 +49,7 @@ def validate_sbdefinition(
                 primary_entity=target,
                 source_jsonpath=f"$.targets.{index}",
                 telescope=sbd.telescope,
+                array_assembly=validation_array_assembly,
             )
         )
     ]
@@ -49,6 +68,7 @@ def validate_sbdefinition(
             source_jsonpath=f"$.targets.{target_index}",
             telescope=sbd.telescope,
             relevant_context={"target": target, "csp_config": csp_config},
+            array_assembly=validation_array_assembly,
         )
 
         scan_validation_results += validate_scan_definition(scan_context)
