@@ -8,7 +8,6 @@ from typing import Callable, Generic, TypeVar, get_type_hints
 from pydantic import Field
 from ska_oso_pdm import PdmObject, TelescopeType, ValidationArrayAssembly
 
-
 from ska_oso_services.common.model import AppModel
 
 T = TypeVar("T", bound=PdmObject)
@@ -33,9 +32,10 @@ class ValidationContext(Generic[T], AppModel):
     telescope: TelescopeType | None = Field(
         None, description="The telescope the primary_entity applies to, if appropriate"
     )
-    array_assembly: ValidationArrayAssembly = Field(
-        default=ValidationArrayAssembly.AA05,
-        description="The array assembly to validate the primary_entity against, if appropriate",
+    array_assembly: ValidationArrayAssembly | None = Field(
+        None,
+        description="The array assembly to validate the primary_entity against, "
+        "if appropriate",
     )
 
 
