@@ -25,7 +25,7 @@ def validate_target(target_context: ValidationContext[Target]) -> list[Validatio
     """
 
     if target_context.telescope == TelescopeType.SKA_MID:
-        validators = [validation_mid_elevation]
+        validators = [validate_mid_elevation]
     else:
         validators = [validate_low_elevation]
 
@@ -33,7 +33,7 @@ def validate_target(target_context: ValidationContext[Target]) -> list[Validatio
 
 
 @validator
-def validation_mid_elevation(
+def validate_mid_elevation(
     target_context: ValidationContext[Target],
 ) -> list[ValidationIssue]:
     """
