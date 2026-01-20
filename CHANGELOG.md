@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Updated /configuration end point to return all the basic capabilities in the OSD for Low 
 
 11.3.0
 **********
