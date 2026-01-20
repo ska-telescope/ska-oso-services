@@ -18,9 +18,10 @@ T10_COLOURS = {
 MID_DISH_DIAMETER = 15 * u.m
 LOW_STATION_DIAMETER = 39 * u.m
 
-# CSP constants taken from the CSP source code. Common sample rate for all receptor data streams,
-# achieved after Resampling & Delay Tracking  (RDT) [Hz]; applies for all function
-# modes except VLBI
+# CSP constants taken from the CSP source code.
+# Common sample rate for all receptor data streams,
+# achieved after Resampling & Delay Tracking  (RDT) [Hz];
+# applies for all function modes except VLBI
 COMMON_SAMPLE_RATE = 220200960 * u.Hz
 VCC_OVERSAMPLING_FACTOR = 10 / 9
 FREQUENCY_SLICE_BANDWIDTH = COMMON_SAMPLE_RATE / VCC_OVERSAMPLING_FACTOR
