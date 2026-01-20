@@ -1,4 +1,4 @@
-from ska_oso_services.common.osdmapper import Configuration, FrequencyBand
+from ska_oso_services.common.osdmapper import Configuration, LowFrequencyBand
 from ska_oso_services.odt.api.configuration import configuration_get
 
 
@@ -13,8 +13,14 @@ def test_configuration_get():
     response = configuration_get()
 
     assert isinstance(response, Configuration)
-    assert response.ska_low.frequency_band == FrequencyBand(
-        min_frequency_hz=50e6, max_frequency_hz=350e6
+    assert response.ska_low.frequency_band == LowFrequencyBand(
+        min_frequency_hz=50e6,
+        max_frequency_hz=350e6,
+        min_coarse_channel=64,
+        max_coarse_channel=447,
+        coarse_channel_width_hz=781250.0,
+        number_continuum_channels_per_coarse_channel=144,
+        number_zoom_channels_per_coarse_channel=432,
     )
     assert len(response.ska_mid.frequency_band) == 6
     assert len(response.ska_mid.subarrays) == 4
