@@ -34,8 +34,7 @@ class ValidationContext(Generic[T], AppModel):
     )
     array_assembly: ValidationArrayAssembly | None = Field(
         None,
-        description="The array assembly to validate the primary_entity against, "
-        "if appropriate",
+        description="The array assembly to validate the primary_entity against, " "if appropriate",
     )
 
 

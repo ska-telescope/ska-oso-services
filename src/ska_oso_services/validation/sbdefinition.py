@@ -23,9 +23,7 @@ def validate_sbdefinition(
     # for backwards compatibility.
     if not sbd.validate_against:
         if sbd.telescope == TelescopeType.SKA_MID:
-            validation_array_assembly = (
-                sbd.dish_allocations.selected_subarray_definition
-            )
+            validation_array_assembly = sbd.dish_allocations.selected_subarray_definition
         else:
             validation_array_assembly = sbd.mccs_allocation.selected_subarray_definition
 

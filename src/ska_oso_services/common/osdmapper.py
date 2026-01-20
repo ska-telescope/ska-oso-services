@@ -59,6 +59,9 @@ class Subarray:
     number_pst_beams: int
     number_fsps: int
 
+@dataclasses.dataclass
+class MidSubarray(Subarray):
+    allowed_channel_width_values_hz: list[int]
 
 @dataclasses.dataclass
 class LowSubarray(Subarray):
@@ -107,11 +110,14 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
             osd_version=OSD_VERSION,
         )
         subarrays.append(
-            Subarray(
+            MidSubarray(
                 name=array_assembly,
                 receptors=mid_response["capabilities"]["mid"][array_assembly]["number_dish_ids"],
                 available_bandwidth_hz=mid_response["capabilities"]["mid"][array_assembly][
                     "available_bandwidth_hz"
+                ],
+                allowed_channel_width_values_hz = mid_response["capabilities"]["mid"][array_assembly][
+                    "allowed_channel_width_values"
                 ],
                 number_pst_beams=mid_response["capabilities"]["mid"][array_assembly][
                     "number_pst_beams"
