@@ -80,6 +80,7 @@ argcomplete = "^1.9.4"
 msal = "^1.33.0"
 astroplan = "^0.10.1"
 matplotlib = "^3.10.7"
+numpy = "<2.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
