@@ -5,8 +5,8 @@ from ska_oso_pdm.builders.target_builder import LowTargetBuilder, MidTargetBuild
 from ska_oso_services.validation.model import ValidationContext, ValidationIssueType
 from ska_oso_services.validation.target import (
     validate_low_elevation,
+    validate_mid_elevation,
     validate_target,
-    validation_mid_elevation,
 )
 from tests.unit.validation import LMC_TARGET
 
@@ -27,7 +27,7 @@ def test_mid_target_below_min_elevation():
         ),
         telescope=TelescopeType.SKA_MID,
     )
-    result = validation_mid_elevation(input_context)
+    result = validate_mid_elevation(input_context)
     assert result[0].message == "Source never rises above 15 degrees"
 
 

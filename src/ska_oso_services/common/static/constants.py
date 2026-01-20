@@ -1,10 +1,34 @@
 # pylint: disable=no-member
 from astropy import units as u
+from ska_oso_pdm import TelescopeType, ValidationArrayAssembly
 
-MID_CHANNEL_WIDTH = 13.44 * u.kHz
-LOW_STATION_CHANNEL_WIDTH = 0.78125 * u.MHz
+from ska_oso_services.validation import (
+    get_low_basic_capability_parameter_from_osd,
+    get_subarray_specific_parameter_from_osd,
+)
+
+MID_CHANNEL_WIDTH = (
+    get_subarray_specific_parameter_from_osd(
+        TelescopeType.SKA_MID,
+        ValidationArrayAssembly.AA05,
+        "allowed_channel_width_values_hz",
+    )[0] # we're only supporting continuum right now, so we only need this number
+    * u.Hz
+)
+
+
+LOW_MINIMUM_FREQUENCY = get_low_basic_capability_parameter_from_osd("min_frequency_hz") * u.Hz
+LOW_MAXIMUM_FREQUENCY = get_low_basic_capability_parameter_from_osd("max_frequency_hz") * u.Hz
+LOW_STATION_CHANNEL_WIDTH = (
+    get_low_basic_capability_parameter_from_osd("coarse_channel_width_hz") * u.Hz
+)
+
 LOW_CHANNEL_BLOCK = 8 * LOW_STATION_CHANNEL_WIDTH  # = 6.25 MHz
-LOW_CONTINUUM_CHANNEL_WIDTH = (24 * LOW_STATION_CHANNEL_WIDTH) / 3456
+LOW_CONTINUUM_CHANNEL_WIDTH = (
+    LOW_STATION_CHANNEL_WIDTH
+    / get_low_basic_capability_parameter_from_osd("number_continuum_channels_per_coarse_channel")
+)
+
 LOW_PST_CHANNEL_WIDTH = (16 * LOW_STATION_CHANNEL_WIDTH) / 3456
 STEP_SECONDS_DEFAULT_VISIBILITY = 10
 # palette
@@ -24,4 +48,4 @@ LOW_STATION_DIAMETER = 39 * u.m
 # applies for all function modes except VLBI
 COMMON_SAMPLE_RATE = 220200960 * u.Hz
 VCC_OVERSAMPLING_FACTOR = 10 / 9
-FREQUENCY_SLICE_BANDWIDTH = COMMON_SAMPLE_RATE / VCC_OVERSAMPLING_FACTOR
+MID_FREQUENCY_SLICE_BANDWIDTH = COMMON_SAMPLE_RATE / VCC_OVERSAMPLING_FACTOR
