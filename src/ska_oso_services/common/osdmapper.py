@@ -34,8 +34,21 @@ class Band5bSubband:
 class FrequencyBand:
     max_frequency_hz: float
     min_frequency_hz: float
-    rx_id: str | None = None
+
+
+@dataclasses.dataclass
+class MidFrequencyBand(FrequencyBand):
+    rx_id: str
     band5b_subbands: list[Band5bSubband] | None = None
+
+
+@dataclasses.dataclass
+class LowFrequencyBand(FrequencyBand):
+    min_coarse_channel: int
+    max_coarse_channel: int
+    coarse_channel_width_hz: float
+    number_continuum_channels_per_coarse_channel: int
+    number_zoom_channels_per_coarse_channel: int
 
 
 @dataclasses.dataclass
@@ -54,12 +67,12 @@ class LowSubarray(Subarray):
 
 
 class MidConfiguration(AppModel):
-    frequency_band: list[FrequencyBand]
+    frequency_band: list[MidFrequencyBand]
     subarrays: list[Subarray]
 
 
 class LowConfiguration(AppModel):
-    frequency_band: FrequencyBand
+    frequency_band: LowFrequencyBand
     subarrays: list[LowSubarray]
 
 
@@ -128,7 +141,7 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
             else None
         )
 
-        return FrequencyBand(**receiver_information, band5b_subbands=band5b_subbands)
+        return MidFrequencyBand(**receiver_information, band5b_subbands=band5b_subbands)
 
     return MidConfiguration(
         frequency_band=[
@@ -174,8 +187,15 @@ def _get_low_telescope_configuration() -> LowConfiguration:
 
     receiver_information = low_response["capabilities"]["low"]["basic_capabilities"]
 
+    # the following is a hack because I missed that the key in the OSD
+    # should have included `_hz`
+
+    receiver_information["coarse_channel_width_hz"] = receiver_information[
+        "coarse_channel_width"
+    ]
+
     return LowConfiguration(
-        frequency_band=FrequencyBand(**receiver_information), subarrays=subarrays
+        frequency_band=LowFrequencyBand(**receiver_information), subarrays=subarrays
     )
 
 
