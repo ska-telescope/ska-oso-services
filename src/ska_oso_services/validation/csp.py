@@ -4,6 +4,7 @@ import math
 
 from astropy import units as u
 from astropy.cosmology import available
+from astropy.units import Quantity
 from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.sb_definition import CSPConfiguration
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
@@ -133,7 +134,9 @@ def validate_mid_spw_centre_frequency(
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
-                message=f"Centre Frequency of spectral window {centre_frequency} is outside of {band_id}",
+                message=f"Centre frequency of "
+                        f"spectral window {centre_frequency}"
+                        f" is outside of {band_id}",
             )
         ]
 
@@ -143,7 +146,8 @@ def validate_mid_spw_bandwidth(
     spw_context: ValidationContext[CorrelationSPWConfiguration],
 ) -> list[ValidationIssue]:
     """
-    function to validate the bandwidth of an individual MID spectral window
+    function to validate the bandwidth
+    of an individual MID spectral window
     """
     available_bandwidth = (
         get_subarray_specific_parameter_from_osd(
@@ -152,8 +156,7 @@ def validate_mid_spw_bandwidth(
         * u.Hz
     )
 
-    number_of_channels = spw_context.primary_entity.number_of_channels
-    spw_bandwidth = MID_CHANNEL_WIDTH * number_of_channels
+    spw_bandwidth = _calculate_spw_bandwidth(spw_context)
 
     if spw_bandwidth > available_bandwidth:
         return [
@@ -171,15 +174,14 @@ def validate_mid_spw_window(
     spw_context: ValidationContext[CorrelationSPWConfiguration],
 ) -> list[ValidationIssue]:
 
-    centre_frequency = spw_context.primary_entity.centre_frequency
-    number_of_channels = spw_context.primary_entity.number_of_channels
-    spw_bandwidth = (MID_CHANNEL_WIDTH * number_of_channels).to("Hz").value
+    centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
+    spw_bandwidth = _calculate_spw_bandwidth(spw_context)
 
     band_data = spw_context.relevant_context["band_data_from_osd"]
 
     if (centre_frequency + 0.5 * spw_bandwidth) > band_data.max_frequency_hz or (
         centre_frequency - 0.5 * spw_bandwidth
-    ) < band_data.min_frequency_hz:
+    ) < band_data.min_frequency_hz * u.Hz:
 
         return [
             ValidationIssue(
@@ -198,25 +200,21 @@ def validate_mid_fsps(
     """
 
     centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
-    number_of_channels = spw_context.primary_entity.number_of_channels
-    zoom_factor = spw_context.primary_entity.zoom_factor
+    spw_bandwidth = _calculate_spw_bandwidth(spw_context)
 
     frequency_offset = spw_context.relevant_context[
         "frequency_offset"
     ]  # should be zero
 
-    channel_bandwidth = MID_CHANNEL_WIDTH / (2**zoom_factor)
-    spw_bandwidth = channel_bandwidth * number_of_channels
-
-    spw_min = centre_frequency - 0.5 * spw_bandwidth
-    spw_max = centre_frequency + 0.5 * spw_bandwidth
+    minimum_spw_frequency = centre_frequency - 0.5 * spw_bandwidth
+    maximum_spw_frequency = centre_frequency + 0.5 * spw_bandwidth
 
     coarse_channel_low = math.floor(
-        (spw_min - frequency_offset + (0.5 * FREQUENCY_SLICE_BANDWIDTH))
+        (minimum_spw_frequency - frequency_offset + (0.5 * FREQUENCY_SLICE_BANDWIDTH))
         / FREQUENCY_SLICE_BANDWIDTH
     )
     coarse_channel_high = math.floor(
-        (spw_max - frequency_offset + (0.5 * FREQUENCY_SLICE_BANDWIDTH))
+        (maximum_spw_frequency - frequency_offset + (0.5 * FREQUENCY_SLICE_BANDWIDTH))
         / FREQUENCY_SLICE_BANDWIDTH
     )
 
@@ -234,6 +232,22 @@ def validate_mid_fsps(
                 f"for array assembly {spw_context.array_assembly}",
             )
         ]
+
+
+def _calculate_spw_bandwidth(
+    spw_context: ValidationContext[CorrelationSPWConfiguration],
+) -> tuple[Quantity, Quantity]:
+    """
+    private function to calculate the minimum and maximum frequencies of spectral windows
+    """
+
+    number_of_channels = spw_context.primary_entity.number_of_channels
+    zoom_factor = spw_context.primary_entity.zoom_factor
+
+    channel_bandwidth = MID_CHANNEL_WIDTH / (2**zoom_factor)
+    spw_bandwidth = channel_bandwidth * number_of_channels
+
+    return spw_bandwidth
 
 
 def get_mid_frequency_band_info(
