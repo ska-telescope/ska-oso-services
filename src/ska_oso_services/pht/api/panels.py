@@ -182,7 +182,7 @@ def auto_assign_to_panel(
                     uow, auth, (a.prsl_id for a in sv_assignments_to_add)
                 )
                 logger.info(
-                    "Updated existing Science Verification panel %s " "(added %d proposals)",
+                    "Updated existing Science Verification panel %s (added %d proposals)",
                     sv_panel_id,
                     len(sv_assignments_to_add),
                 )
