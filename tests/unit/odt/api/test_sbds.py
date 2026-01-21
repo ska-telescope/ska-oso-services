@@ -62,10 +62,7 @@ class TestSBDefinitionAPI:
 
         response = client.get(f"{SBDS_API_URL}/sbd-1234")
 
-        assert (
-            response.json()["detail"]
-            == "The requested identifier sbd-1234 could not be found."
-        )
+        assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_sbds_get_error(self, client_with_uow_mock):
@@ -107,9 +104,7 @@ class TestSBDefinitionAPI:
         Check the sbds_validate handles a valid return value from the
         validation layer and creates the correct response
         """
-        mock_validate.return_value = {
-            "validation_error": "some validation error message"
-        }
+        mock_validate.return_value = {"validation_error": "some validation error message"}
 
         response = client.post(
             f"{SBDS_API_URL}/validate",
@@ -242,8 +237,7 @@ class TestSBDefinitionAPI:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
         assert response.json() == {
             "detail": (
-                "There is a mismatch between the SBD "
-                "ID for the endpoint and the JSON payload"
+                "There is a mismatch between the SBD " "ID for the endpoint and the JSON payload"
             )
         }
 
@@ -276,9 +270,7 @@ class TestSBDefinitionAPI:
         """
         mock_validate.return_value = {}
         client, uow_mock = client_with_uow_mock
-        uow_mock.sbds.get.side_effect = ODANotFound(
-            identifier="sbd-mvp01-20200325-00001"
-        )
+        uow_mock.sbds.get.side_effect = ODANotFound(identifier="sbd-mvp01-20200325-00001")
 
         response = client.put(
             f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",

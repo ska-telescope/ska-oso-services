@@ -25,9 +25,7 @@ from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
 
-DEFAULT_OBSERVING_BLOCK = ObservingBlock(
-    obs_block_id="observing-block-12345", sbd_ids=[]
-)
+DEFAULT_OBSERVING_BLOCK = ObservingBlock(obs_block_id="observing-block-12345", sbd_ids=[])
 
 DEFAULT_AUTHOR = Author(pis=[], cois=[])
 
@@ -54,9 +52,7 @@ router = APIRouter(prefix="/prjs")
 @router.get(
     "/{identifier}",
     summary="Get Project by identifier",
-    dependencies=[
-        Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})
-    ],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})],
 )
 def prjs_get(identifier: str, oda: UnitOfWork) -> Project:
     """
@@ -173,18 +169,12 @@ def prjs_sbds_post(
         prj = uow.prjs.get(identifier)
         try:
             obs_block = next(
-                obs_block
-                for obs_block in prj.obs_blocks
-                if obs_block.obs_block_id == obs_block_id
+                obs_block for obs_block in prj.obs_blocks if obs_block.obs_block_id == obs_block_id
             )
         except StopIteration:
             # pylint: disable=raise-missing-from
-            raise NotFoundError(
-                detail=f"Observing Block '{obs_block_id}' not found in Project"
-            )
-        sbd_to_save = (
-            sbd if sbd is not None else DEFAULT_SB_DEFINITION.model_copy(deep=True)
-        )
+            raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
+        sbd_to_save = sbd if sbd is not None else DEFAULT_SB_DEFINITION.model_copy(deep=True)
         sbd = uow.sbds.add(sbd_to_save, user=auth.user_id)
 
         obs_block.sbd_ids.append(sbd.sbd_id)
@@ -224,15 +214,11 @@ def prjs_ob_generate_sbds(
         prj = uow.prjs.get(identifier)
         try:
             obs_block = next(
-                obs_block
-                for obs_block in prj.obs_blocks
-                if obs_block.obs_block_id == obs_block_id
+                obs_block for obs_block in prj.obs_blocks if obs_block.obs_block_id == obs_block_id
             )
         except StopIteration:
             # pylint: disable=raise-missing-from
-            raise NotFoundError(
-                detail=f"Observing Block '{obs_block_id}' not found in Project"
-            )
+            raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
 
         # Overwrite any existing SBDefinitions that were linked to the ObservingBlock
         obs_block.sbd_ids = []

@@ -25,9 +25,7 @@ def test_correct_authorization_enforced(url, role, status):
 
 
 def test_user_extracted_from_auth():
-    token = mint_test_token(
-        audience=AUDIENCE, scopes={"odt:readwrite"}, roles={Role.SW_ENGINEER}
-    )
+    token = mint_test_token(audience=AUDIENCE, scopes={"odt:readwrite"}, roles={Role.SW_ENGINEER})
     response = requests.post(
         f"{ODT_URL}/prjs",
         data=VALID_PROJECT_WITHOUT_ID_JSON,

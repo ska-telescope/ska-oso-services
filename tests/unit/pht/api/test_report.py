@@ -13,9 +13,7 @@ HEADERS = {"Content-type": "application/json"}
 class TestReportsAPI:
     @mock.patch("ska_oso_services.pht.api.report.oda.uow", autospec=True)
     def test_get_report_success(self, mock_uow, client):
-        mock_proposals = [
-            TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00001")
-        ]
+        mock_proposals = [TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00001")]
         mock_panels = [
             TestDataFactory.panel(
                 prsl_id_1=mock_proposals[0].prsl_id,
@@ -29,9 +27,7 @@ class TestReportsAPI:
                 review_id="rvw-mvp01-20220923-00001",
             )
         ]
-        mock_decisions = [
-            TestDataFactory.panel_decision(prsl_id=mock_proposals[0].prsl_id)
-        ]
+        mock_decisions = [TestDataFactory.panel_decision(prsl_id=mock_proposals[0].prsl_id)]
         mock_report = [
             TestDataFactory.proposal_report(
                 prsl_id=mock_proposals[0].prsl_id,

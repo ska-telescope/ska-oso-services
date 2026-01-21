@@ -68,9 +68,7 @@ def assert_user_has_permission_for_proposal(
     )
     access = rows[0] if rows else None
     if not access:
-        raise ForbiddenError(
-            detail=f"You do not have access to this proposal with id:{prsl_id}"
-        )
+        raise ForbiddenError(detail=f"You do not have access to this proposal with id:{prsl_id}")
     return rows
 
 

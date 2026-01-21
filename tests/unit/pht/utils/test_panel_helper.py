@@ -196,12 +196,8 @@ class TestGroupProposalsByScienceCategory:
             pytest.param(
                 ["Cosmology", "Pulsars"],
                 [
-                    TestDataFactory.proposal_by_category(
-                        "prsl-1", "Cosmology", info_as="dict"
-                    ),
-                    TestDataFactory.proposal_by_category(
-                        "prsl-2", "Pulsars", info_as="obj"
-                    ),
+                    TestDataFactory.proposal_by_category("prsl-1", "Cosmology", info_as="dict"),
+                    TestDataFactory.proposal_by_category("prsl-2", "Pulsars", info_as="obj"),
                 ],
                 {"Cosmology": ["prsl-1"], "Pulsars": ["prsl-2"]},
                 0,
@@ -220,13 +216,9 @@ class TestGroupProposalsByScienceCategory:
             pytest.param(
                 ["Cosmology"],
                 [
-                    TestDataFactory.proposal_by_category(
-                        "prsl-1", None, info_as="dict"
-                    ),
+                    TestDataFactory.proposal_by_category("prsl-1", None, info_as="dict"),
                     TestDataFactory.proposal_by_category("prsl-2", None, info_as="obj"),
-                    TestDataFactory.proposal_by_category(
-                        "prsl-3", None, info_as="none"
-                    ),
+                    TestDataFactory.proposal_by_category("prsl-3", None, info_as="none"),
                 ],
                 {"Cosmology": []},
                 3,
@@ -287,15 +279,11 @@ class TestGroupProposalsByScienceCategory:
             ),
         ],
     )
-    def test_unmatched_warning_message_includes_details(
-        self, caplog, proposal, expected_cat_repr
-    ):
+    def test_unmatched_warning_message_includes_details(self, caplog, proposal, expected_cat_repr):
         with caplog.at_level("WARNING"):
             group_proposals_by_science_category([proposal], ["Cosmology"])
 
-        msgs = [
-            rec.message for rec in caplog.records if "Skipping proposal" in rec.message
-        ]
+        msgs = [rec.message for rec in caplog.records if "Skipping proposal" in rec.message]
         assert len(msgs) == 1
         assert proposal.prsl_id in msgs[0]
         assert expected_cat_repr in msgs[0]
@@ -335,9 +323,7 @@ class TestEnsureSubmittedProposalsUnderReview:
     def test_skips_when_already_under_review(self):
         """When proposal already UNDER_REVIEW."""
         uow = mock.MagicMock()
-        p = SimpleNamespace(
-            prsl_id="prop-ur", status=panels_api.ProposalStatus.UNDER_REVIEW
-        )
+        p = SimpleNamespace(prsl_id="prop-ur", status=panels_api.ProposalStatus.UNDER_REVIEW)
         uow.prsls.get.return_value = p
         user = "test_user"
         ensure_submitted_proposals_under_review(uow, user, ["prop-ur"])

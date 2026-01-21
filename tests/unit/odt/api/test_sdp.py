@@ -10,9 +10,7 @@ SDP_API_URL = f"{ODT_BASE_API_URL}/sdp"
 
 @pytest.fixture(autouse=True)
 def patch_env_var(monkeypatch):
-    sdp_test_tmdata_path = "file://" + str(
-        Path(__file__).resolve().parents[3] / "tmdata"
-    )
+    sdp_test_tmdata_path = "file://" + str(Path(__file__).resolve().parents[3] / "tmdata")
     monkeypatch.setenv("SDP_SCRIPT_TMDATA", sdp_test_tmdata_path)
 
 
@@ -42,9 +40,7 @@ class TestGetSdpScriptsAPI:
         monkeypatch.setenv("SDP_SCRIPT_TMDATA", "junk")
         with pytest.raises(ValueError) as excinfo:
             _ = get_versions("vis-receive")
-            assert "TMData base path error: Base path does not exist" in str(
-                excinfo.value
-            )
+            assert "TMData base path error: Base path does not exist" in str(excinfo.value)
 
     def test_get_params_expected_output(self):
         result = get_params(name="vis-receive", version="5.1.0")

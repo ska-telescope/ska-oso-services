@@ -112,8 +112,7 @@ def _calculate_hpbw(csp_config: CSPConfiguration, telescope: TelescopeType) -> A
         #  correct dish size here based on the array
         diameter_m = Quantity(MID_DISH_DIAMETER_M, unit=u.m)
         band_upper_limits_hz = [
-            spw.centre_frequency
-            + (MID_CHANNEL_WIDTH_KHZ * 1e3 * spw.number_of_channels / 2)
+            spw.centre_frequency + (MID_CHANNEL_WIDTH_KHZ * 1e3 * spw.number_of_channels / 2)
             for spw in csp_config.midcbf.subbands[0].correlation_spws
         ]
 

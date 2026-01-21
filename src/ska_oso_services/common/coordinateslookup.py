@@ -84,9 +84,7 @@ def lookup_in_simbad(object_name: str) -> Target | None:
     rvz_type = result_table_simbad["rvz_type"]
     match rvz_type:
         case "z":
-            radial_velocity = RadialVelocity(
-                redshift=result_table_simbad["rvz_redshift"]
-            )
+            radial_velocity = RadialVelocity(redshift=result_table_simbad["rvz_redshift"])
         case "v":
             radial_velocity = RadialVelocity(
                 quantity=(
@@ -119,10 +117,7 @@ def lookup_in_ned(object_name: str) -> Target | None:
     pdm_coordinate = _sky_coord_to_pdm_icrs(coordinates)
 
     # For NED we only take the redshift
-    if (
-        hasattr(result_table_ned["Redshift"], "mask")
-        and result_table_ned["Redshift"].mask[0]
-    ):
+    if hasattr(result_table_ned["Redshift"], "mask") and result_table_ned["Redshift"].mask[0]:
         radial_velocity = RadialVelocity(redshift=0)
     else:
         radial_velocity = RadialVelocity(redshift=result_table_ned["Redshift"][0])

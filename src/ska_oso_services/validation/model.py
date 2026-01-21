@@ -51,8 +51,7 @@ class ValidationIssue(AppModel):
     )
     field: str = Field(
         "$",
-        description="The JSONPath for the specific part of the primary_entity "
-        "that is invalid",
+        description="The JSONPath for the specific part of the primary_entity " "that is invalid",
     )
     level: ValidationIssueType = ValidationIssueType.ERROR
 
@@ -83,18 +82,12 @@ def validator(validator_func: Validator[T]) -> Validator[T]:
 
     @wraps(validator_func)
     def wrapper(entity_context: ValidationContext[T]) -> list[ValidationIssue]:
-        context_without_source = entity_context.model_copy(
-            update={"source_jsonpath": "$"}
-        )
+        context_without_source = entity_context.model_copy(update={"source_jsonpath": "$"})
         result = validator_func(context_without_source)
 
         return [
             issue.model_copy(
-                update={
-                    "field": _combine_jsonpath(
-                        entity_context.source_jsonpath, issue.field
-                    )
-                }
+                update={"field": _combine_jsonpath(entity_context.source_jsonpath, issue.field)}
             )
             for issue in result
         ]
@@ -124,13 +117,9 @@ def check_relevant_context_contains(
 
     :raises ValueError: if any of the keys are not present
     """
-    missing_keys = [
-        key for key in keys if key not in validation_context.relevant_context
-    ]
+    missing_keys = [key for key in keys if key not in validation_context.relevant_context]
     if len(missing_keys) > 0:
-        raise ValueError(
-            f"ValidationContext is missing relevant_context: {missing_keys}"
-        )
+        raise ValueError(f"ValidationContext is missing relevant_context: {missing_keys}")
 
 
 def _check_validator_signature(validator_func: Validator[T]) -> None:

@@ -8,12 +8,7 @@ from pydantic import ValidationError
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.persistence.domain.query import CustomQuery
-from ska_oso_pdm.proposal import (
-    Proposal,
-    ProposalAccess,
-    ProposalPermissions,
-    ProposalRole,
-)
+from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalPermissions, ProposalRole
 from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
@@ -52,10 +47,7 @@ from ska_oso_services.pht.utils.ms_graph import (
     extract_profile_from_access_token,
     get_users_by_mail,
 )
-from ska_oso_services.pht.utils.pht_helper import (
-    generate_entity_id,
-    get_latest_entity_by_id,
-)
+from ska_oso_services.pht.utils.pht_helper import generate_entity_id, get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -175,9 +167,7 @@ def get_proposals_by_status(
     has_role = Role.SW_ENGINEER in roles
     is_admin = PrslRole.OPS_PROPOSAL_ADMIN in groups
     is_chair = PrslRole.OPS_REVIEW_CHAIR in groups
-    has_review_group = (
-        PrslRole.SCIENCE_REVIEWER in groups or PrslRole.TECHNICAL_REVIEWER in groups
-    )
+    has_review_group = PrslRole.SCIENCE_REVIEWER in groups or PrslRole.TECHNICAL_REVIEWER in groups
 
     if not (has_role or is_admin or is_chair or has_review_group):
         logger.info("No access roles/groups; returning 0 proposals.")
@@ -186,15 +176,10 @@ def get_proposals_by_status(
     def _latest_by_status(uow, status) -> list["Proposal"]:
 
         return (
-            get_latest_entity_by_id(
-                uow.prsls.query(CustomQuery(status=status)), "prsl_id"
-            )
-            or []
+            get_latest_entity_by_id(uow.prsls.query(CustomQuery(status=status)), "prsl_id") or []
         )
 
-    def _filter_by_prsl_ids(
-        proposals: list["Proposal"], ids: set[str]
-    ) -> list["Proposal"]:
+    def _filter_by_prsl_ids(proposals: list["Proposal"], ids: set[str]) -> list["Proposal"]:
         if not ids:
             return []
         return [p for p in proposals if getattr(p, "prsl_id", None) in ids]
@@ -204,9 +189,7 @@ def get_proposals_by_status(
             latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
             latest_submitted = _latest_by_status(uow, ProposalStatus.SUBMITTED)
             # TODO: filter by panel_prsl_ids intersection
-            proposals = merge_latest_with_preference(
-                latest_under_review, latest_submitted
-            )
+            proposals = merge_latest_with_preference(latest_under_review, latest_submitted)
 
         elif is_chair:
             latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
@@ -409,9 +392,7 @@ def update_proposal(
                     auth.user_id,
                 )
                 raise ForbiddenError(
-                    detail=(
-                        f"You do not have access to submit proposal with id:{prsl_id}"
-                    )
+                    detail=(f"You do not have access to submit proposal with id:{prsl_id}")
                 )
         elif ProposalPermissions.Update not in rows[0].permissions:
             logger.info(
@@ -439,9 +420,7 @@ def update_proposal(
                 prsl_id,
                 prsl.prsl_id,
             )
-            raise UnprocessableEntityError(
-                detail="Proposal ID in path and body do not match."
-            )
+            raise UnprocessableEntityError(detail="Proposal ID in path and body do not match.")
 
         # Verify proposal exists
         existing = uow.prsls.get(prsl_id)

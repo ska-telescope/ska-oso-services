@@ -18,16 +18,12 @@ DUMMY_NED_ASTROPY_TABLE = {"RA": [204.25383], "DEC": [-29.865761], "Redshift": [
 
 TEST_TARGET_WITH_VELOCITY = Target(
     name="M83",
-    reference_coordinate=ICRSCoordinates(
-        ra_str="13:37:00.9192", dec_str="-29:51:56.740"
-    ),
+    reference_coordinate=ICRSCoordinates(ra_str="13:37:00.9192", dec_str="-29:51:56.740"),
     radial_velocity=RadialVelocity(quantity=Quantity(value=519.1, unit="km/s")),
 )
 TEST_TARGET_WITH_REDSHIFT = Target(
     name="M83",
-    reference_coordinate=ICRSCoordinates(
-        ra_str="13:37:00.9192", dec_str="-29:51:56.740"
-    ),
+    reference_coordinate=ICRSCoordinates(ra_str="13:37:00.9192", dec_str="-29:51:56.740"),
     radial_velocity=RadialVelocity(redshift=54),
 )
 

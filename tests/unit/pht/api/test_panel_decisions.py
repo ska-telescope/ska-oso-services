@@ -51,9 +51,7 @@ class Testpanel_decisionAPI:
         assert response.json() == panel_decision_obj.decision_id
 
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
-    def test_create_panel_decision_value_error_raises_bad_request(
-        self, mock_oda, client
-    ):
+    def test_create_panel_decision_value_error_raises_bad_request(self, mock_oda, client):
         """
         ValueError in panel_decision creation and ensure it raises BadRequestError.
         """
@@ -143,9 +141,7 @@ class Testpanel_decisionAPI:
         assert resp.status_code == HTTPStatus.FORBIDDEN
         assert "permission" in resp.json()["detail"].lower()
 
-    @mock.patch(
-        "ska_oso_services.pht.api.panel_decision.Permissions.__call__", autospec=True
-    )
+    @mock.patch("ska_oso_services.pht.api.panel_decision.Permissions.__call__", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_get_panel_decision_list_none(self, mock_oda, mock_perm_call, client):
         """
@@ -195,9 +191,7 @@ class Testpanel_decisionAPI:
         ],
     )
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
-    def test_panel_decision_put_success_for_decided(
-        self, mock_uow, client, recommendation
-    ):
+    def test_panel_decision_put_success_for_decided(self, mock_uow, client, recommendation):
         """
         Check the pnlds_put method returns the expected response when status is decided
         """

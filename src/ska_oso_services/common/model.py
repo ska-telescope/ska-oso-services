@@ -7,9 +7,7 @@ from pydantic import BaseModel, ConfigDict
 class AppModel(BaseModel):
     """Base class for application data models - as distinct from PDM objects"""
 
-    model_config = ConfigDict(
-        extra="forbid", validate_default=True, validate_assignment=True
-    )
+    model_config = ConfigDict(extra="forbid", validate_default=True, validate_assignment=True)
 
 
 class ValidationResponse(AppModel):

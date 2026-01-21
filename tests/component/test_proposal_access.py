@@ -156,9 +156,7 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
 
     get_result = get_response.json()
 
-    get_result_filtered = [
-        item for item in get_result if item["prsl_id"] == TEST_PRSL_ID
-    ]
+    get_result_filtered = [item for item in get_result if item["prsl_id"] == TEST_PRSL_ID]
 
     assert len(get_result_filtered) == 1
     assert get_result_filtered[0]["prsl_id"] == TEST_PRSL_ID

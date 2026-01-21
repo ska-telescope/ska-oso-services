@@ -94,9 +94,7 @@ def test_proposal_create_then_put(authrequests):
 
     # Update title and PUT back
     updated_entity = get_v1.json()
-    updated_entity["title"] = (
-        f"{updated_entity.get('title', 'Untitled')} (updated title)"
-    )
+    updated_entity["title"] = f"{updated_entity.get('title', 'Untitled')} (updated title)"
     put_resp = authrequests.put(
         f"{PHT_URL}/prsls/{prsl_id}",
         data=json.dumps(updated_entity),
@@ -183,9 +181,7 @@ def test_proposal_create_then_put_update_forbidden(authrequests):
     # Get my proposal access record and remove(update) access from proposal access
     access_records = authrequests.get(f"{PHT_URL}/proposal-access/{prsl_id}")
 
-    filtered_access = [
-        obj for obj in access_records.json() if obj.get("user_id") == TEST_USER
-    ]
+    filtered_access = [obj for obj in access_records.json() if obj.get("user_id") == TEST_USER]
     my_access_record = filtered_access[0]
     my_access_id = my_access_record["access_id"]
 
@@ -199,9 +195,7 @@ def test_proposal_create_then_put_update_forbidden(authrequests):
 
     # Update title and PUT back
     updated_entity = get_v1.json()
-    updated_entity["title"] = (
-        f"{updated_entity.get('title', 'Untitled')} (updated title)"
-    )
+    updated_entity["title"] = f"{updated_entity.get('title', 'Untitled')} (updated title)"
     put_resp = authrequests.put(
         f"{PHT_URL}/prsls/{prsl_id}",
         data=json.dumps(updated_entity),
@@ -246,9 +240,7 @@ def test_proposal_create_then_put_submit_forbidden(authrequests):
     # Get my proposal access record and remove(update) access from proposal access
     access_records = authrequests.get(f"{PHT_URL}/proposal-access/{prsl_id}")
 
-    filtered_access = [
-        obj for obj in access_records.json() if obj.get("user_id") == TEST_USER
-    ]
+    filtered_access = [obj for obj in access_records.json() if obj.get("user_id") == TEST_USER]
     my_access_record = filtered_access[0]
     my_access_id = my_access_record["access_id"]
 
@@ -379,9 +371,7 @@ def test_get_proposals_by_status(authrequests):
     # Create proposals with the target status to test
     for _ in range(3):
         prsl_id = f"prsl-pending-{uuid.uuid4().hex[:8]}"
-        proposal = TestDataFactory.complete_proposal(
-            prsl_id=prsl_id, status=status_to_test
-        )
+        proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id, status=status_to_test)
         proposal_json = proposal.model_dump_json()
 
         response = authrequests.post(
@@ -417,9 +407,7 @@ def test_get_proposals_by_status(authrequests):
 
     # All with 'draft' should be returned
     for prsl_id in created_ids_with_target_status:
-        assert (
-            prsl_id in returned_ids
-        ), f"Missing {prsl_id} from GET /status/{status_to_test}"
+        assert prsl_id in returned_ids, f"Missing {prsl_id} from GET /status/{status_to_test}"
 
     # Other statuses should not be returned
     for prsl_id in created_ids_with_other_status:

@@ -92,9 +92,7 @@ class TestPanelsUpdateAPI:
 
         assigned_on = datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc)
 
-        tech = TestDataFactory.reviewer_assignment(
-            reviewer_id="rev-001", assigned_on=assigned_on
-        )
+        tech = TestDataFactory.reviewer_assignment(reviewer_id="rev-001", assigned_on=assigned_on)
         prop_assign = TestDataFactory.proposal_assignment(
             prsl_id="prsl-001", assigned_on=assigned_on
         )
@@ -154,12 +152,8 @@ class TestPanelsUpdateAPI:
         mock_get_latest_ops.return_value = [existing_ref]
 
         assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
-        tech = TestDataFactory.reviewer_assignment(
-            reviewer_id="rev-001", assigned_on=assigned_on
-        )
-        prop = TestDataFactory.proposal_assignment(
-            prsl_id="prsl-001", assigned_on=assigned_on
-        )
+        tech = TestDataFactory.reviewer_assignment(reviewer_id="rev-001", assigned_on=assigned_on)
+        prop = TestDataFactory.proposal_assignment(prsl_id="prsl-001", assigned_on=assigned_on)
         panel_body = TestDataFactory.panel_with_assignment(
             panel_id="panel-123",
             name="Cosmology",
@@ -259,9 +253,7 @@ class TestPanelsUpdateAPI:
         sci = TestDataFactory.reviewer_assignment(
             reviewer_id="rev-sci-001", assigned_on=assigned_on
         )
-        prop = TestDataFactory.proposal_assignment(
-            prsl_id="prsl-001", assigned_on=assigned_on
-        )
+        prop = TestDataFactory.proposal_assignment(prsl_id="prsl-001", assigned_on=assigned_on)
         panel_body = TestDataFactory.panel_with_assignment(
             panel_id="panel-123",
             name="Cosmology",
@@ -317,9 +309,7 @@ class TestPanelsUpdateAPI:
         sci = TestDataFactory.reviewer_assignment(
             reviewer_id="rev-sci-001", assigned_on=assigned_on
         )
-        prop = TestDataFactory.proposal_assignment(
-            prsl_id="prsl-001", assigned_on=assigned_on
-        )
+        prop = TestDataFactory.proposal_assignment(prsl_id="prsl-001", assigned_on=assigned_on)
         panel_body = TestDataFactory.panel_with_assignment(
             panel_id="panel-123",
             name="Cosmology",
@@ -378,9 +368,7 @@ class TestPanelsUpdateAPI:
         sci = TestDataFactory.reviewer_assignment(
             reviewer_id="rev-sci-001", assigned_on=assigned_on
         )
-        prop = TestDataFactory.proposal_assignment(
-            prsl_id="prsl-001", assigned_on=assigned_on
-        )
+        prop = TestDataFactory.proposal_assignment(prsl_id="prsl-001", assigned_on=assigned_on)
         panel_body = TestDataFactory.panel_with_assignment(
             panel_id="panel-123",
             name="Cosmology",
@@ -459,9 +447,7 @@ class TestPanelsAPI:
         )
 
         uow_mock = mock.MagicMock()
-        uow_mock.panels.add.side_effect = UniqueConstraintViolation(
-            "You name is duplicated"
-        )
+        uow_mock.panels.add.side_effect = UniqueConstraintViolation("You name is duplicated")
         mock_uow().__enter__.return_value = uow_mock
 
         data = panel.json()
@@ -521,9 +507,7 @@ class TestPanelsGenerateAPI:
             panel_id="panel-888", name="Science Verification"
         )
 
-        resp = client.post(
-            f"{PANELS_API_URL}/generate", params={"param": "Science Verification"}
-        )
+        resp = client.post(f"{PANELS_API_URL}/generate", params={"param": "Science Verification"})
         assert resp.status_code == HTTPStatus.OK, resp.content
         assert resp.json() == "panel-888"
 
@@ -541,9 +525,7 @@ class TestPanelsGenerateAPI:
 
         mock_get_latest.return_value = [SimpleNamespace(panel_id="panel-existing-sv")]
 
-        resp = client.post(
-            f"{PANELS_API_URL}/generate", params={"param": "science verification"}
-        )
+        resp = client.post(f"{PANELS_API_URL}/generate", params={"param": "science verification"})
         assert resp.status_code == HTTPStatus.OK, resp.content
         assert resp.json() == "panel-existing-sv"
 
@@ -573,9 +555,7 @@ class TestPanelsGenerateAPI:
             [],
         ]
 
-        resp = client.post(
-            f"{PANELS_API_URL}/generate", params={"param": "anything-not-sv"}
-        )
+        resp = client.post(f"{PANELS_API_URL}/generate", params={"param": "anything-not-sv"})
         assert resp.status_code == 200, resp.text
 
         body = resp.json()
@@ -596,9 +576,7 @@ class TestPanelsGenerateAPI:
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
-        monkeypatch.setattr(
-            panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True
-        )
+        monkeypatch.setattr(panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True)
 
         mock_get_latest.side_effect = [
             [SimpleNamespace(panel_id="panel-cosmology")],
@@ -618,9 +596,7 @@ class TestPanelsGenerateAPI:
     # SV: Case-insensitive + trim
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
-    def test_generate_sv_case_insensitive_and_trim(
-        self, mock_get_latest, mock_uow, client
-    ):
+    def test_generate_sv_case_insensitive_and_trim(self, mock_get_latest, mock_uow, client):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
@@ -643,9 +619,7 @@ class TestPanelsAssignmentsAPI:
     # --------------------------------------------------------------------
     # SV: existing SV panel & NO submitted proposals--> return panel_id (str)
     # --------------------------------------------------------------------
-    @mock.patch(
-        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
-    )
+    @mock.patch("ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
@@ -681,9 +655,7 @@ class TestPanelsAssignmentsAPI:
     @mock.patch("ska_oso_services.pht.api.panels.ensure_review_exist_or_create")
     @mock.patch("ska_oso_services.pht.api.panels.ensure_decision_exist_or_create")
     @mock.patch("ska_oso_services.pht.api.panels.build_assignment_response")
-    @mock.patch(
-        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
-    )
+    @mock.patch("ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
@@ -788,9 +760,7 @@ class TestPanelsAssignmentsAPI:
         assert persisted is sv_panel
 
     @mock.patch("ska_oso_services.pht.api.panels.build_assignment_response")
-    @mock.patch(
-        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
-    )
+    @mock.patch("ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review")
     @mock.patch("ska_oso_services.pht.api.panels.assign_to_existing_panel")
     @mock.patch("ska_oso_services.pht.api.panels.group_proposals_by_science_category")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
@@ -810,9 +780,7 @@ class TestPanelsAssignmentsAPI:
         mock_uow.return_value.__enter__.return_value = uow
 
         # deterministic pool
-        monkeypatch.setattr(
-            panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True
-        )
+        monkeypatch.setattr(panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True)
 
         # get_latest call sequence (exactly 3 calls):
         # 1) fetch SUBMITTED proposals
@@ -876,9 +844,7 @@ class TestPanelsAssignmentsAPI:
     # Category: no existing panels (all missing) --> empty list, no status
     # --------------------------------------------------------------------
     @mock.patch("ska_oso_services.pht.api.panels.build_assignment_response")
-    @mock.patch(
-        "ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review"
-    )
+    @mock.patch("ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review")
     @mock.patch("ska_oso_services.pht.api.panels.group_proposals_by_science_category")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
@@ -895,9 +861,7 @@ class TestPanelsAssignmentsAPI:
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
-        monkeypatch.setattr(
-            panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True
-        )
+        monkeypatch.setattr(panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True)
 
         mock_get_latest.side_effect = [
             [SimpleNamespace(prsl_id="c1"), SimpleNamespace(prsl_id="s1")],  # SUBMITTED
@@ -913,9 +877,7 @@ class TestPanelsAssignmentsAPI:
         # No updates --> build empty response
         mock_build_resp.return_value = []
 
-        resp = client.post(
-            f"{PANELS_API_URL}/assignments", params={"param": "anything"}
-        )
+        resp = client.post(f"{PANELS_API_URL}/assignments", params={"param": "anything"})
         assert resp.status_code == HTTPStatus.OK, resp.text
         assert resp.json() == []
 

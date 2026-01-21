@@ -10,10 +10,7 @@ from fastapi import APIRouter
 from pydantic import Field
 from ska_oso_pdm import Target
 
-from ska_oso_services.common.coordinateslookup import (
-    convert_icrs_to_galactic,
-    get_coordinates,
-)
+from ska_oso_services.common.coordinateslookup import convert_icrs_to_galactic, get_coordinates
 from ska_oso_services.common.model import AppModel
 
 LOGGER = logging.getLogger(__name__)
@@ -84,8 +81,7 @@ class GalacticResponse(Target):
 
 @router.get(
     "/{identifier}/{reference_frame}",
-    summary="Look up the coordinates for the given object "
-    "identifier in astronomy catalogs.",
+    summary="Look up the coordinates for the given object " "identifier in astronomy catalogs.",
 )
 def get_systemcoordinates(
     identifier: str, reference_frame: ReferenceFrame
@@ -115,9 +111,7 @@ def get_systemcoordinates(
     lookup_result_target = get_coordinates(identifier)
 
     if reference_frame == ReferenceFrame.galactic:
-        galactic_coordinates = convert_icrs_to_galactic(
-            lookup_result_target.reference_coordinate
-        )
+        galactic_coordinates = convert_icrs_to_galactic(lookup_result_target.reference_coordinate)
         lookup_result_target.reference_coordinate = galactic_coordinates
         return GalacticResponse(
             **lookup_result_target.model_dump(),

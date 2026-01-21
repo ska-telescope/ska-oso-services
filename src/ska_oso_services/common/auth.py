@@ -10,9 +10,7 @@ AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "api://e4d6bb9b-cdd0-46c4-b30a-d045091b50
 
 # This should never be true in production, because
 if getenv("PIPELINE_TESTS_DEPLOYMENT", "false") == "true":
-    Permissions = partial(
-        Requires, audience=AUDIENCE, keys=TEST_PUBLIC_KEYS, issuer=TEST_ISSUER
-    )
+    Permissions = partial(Requires, audience=AUDIENCE, keys=TEST_PUBLIC_KEYS, issuer=TEST_ISSUER)
 else:
     Permissions = partial(Requires, audience=AUDIENCE)
 

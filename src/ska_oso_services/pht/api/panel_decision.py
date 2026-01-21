@@ -7,10 +7,7 @@ from ska_aaa_authhelpers.roles import Role
 from ska_db_oda.persistence.domain.query import CustomQuery
 from ska_oso_pdm import PanelDecision, Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
-from ska_oso_pdm.proposal_management.panel_decision import (
-    PanelReviewStatus,
-    Recommendation,
-)
+from ska_oso_pdm.proposal_management.panel_decision import PanelReviewStatus, Recommendation
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -59,9 +56,7 @@ def create_panel_decision(
             uow.commit()
         return created_decision.decision_id
     except ValueError as err:
-        logger.exception(
-            "ValueError when adding Decision for a panel to the ODA: %s", err
-        )
+        logger.exception("ValueError when adding Decision for a panel to the ODA: %s", err)
         raise BadRequestError(
             detail=f"Failed when attempting to create a Decision: '{err.args[0]}'",
         ) from err
@@ -145,9 +140,7 @@ def update_panel_decision(
             decision_id,
             decision.decision_id,
         )
-        raise UnprocessableEntityError(
-            detail="Decision ID in path and body do not match."
-        )
+        raise UnprocessableEntityError(detail="Decision ID in path and body do not match.")
 
     with oda.uow() as uow:
         # Verify Decision exists
@@ -164,12 +157,8 @@ def update_panel_decision(
 
                 existing_prsl: Proposal = uow.prsls.get(existing_decision.prsl_id)
                 if not existing_prsl:
-                    logger.info(
-                        "Proposal not found for update: %s", existing_decision.prsl_id
-                    )
-                    raise NotFoundError(
-                        detail="Proposal not found: {existing_decision.prsl_id}"
-                    )
+                    logger.info("Proposal not found for update: %s", existing_decision.prsl_id)
+                    raise NotFoundError(detail="Proposal not found: {existing_decision.prsl_id}")
 
                 match updated_decision.recommendation:
                     case None:
@@ -218,22 +207,16 @@ def get_panel_decisions_for_user(
     """
 
     logger.debug("GET Decision LIST query for the user")
-    groups = (
-        getattr(auth, "groups", set()) or set()
-    )  # TODO: revisit if or set() is needed
+    groups = getattr(auth, "groups", set()) or set()  # TODO: revisit if or set() is needed
 
     has_role = (
         Role.SW_ENGINEER in getattr(auth, "roles", set()) or set()
     )  # TODO: revisit if or set() is needed
-    has_group = (
-        PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
-    )
+    has_group = PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
 
     if not (has_role or has_group):
         raise ForbiddenError("You do not have permission to retrieve decisions.")
 
     with oda.uow() as uow:
-        decisions = get_latest_entity_by_id(
-            uow.pnlds.query(CustomQuery()), "decision_id"
-        )
+        decisions = get_latest_entity_by_id(uow.pnlds.query(CustomQuery()), "decision_id")
     return decisions

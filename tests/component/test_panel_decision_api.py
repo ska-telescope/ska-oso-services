@@ -29,9 +29,7 @@ def test_create_and_get_panel_decision(authrequests):
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     decision_id = post_response.json()
-    assert isinstance(
-        decision_id, str
-    ), f"Expected string, got {type(decision_id)}: {decision_id}"
+    assert isinstance(decision_id, str), f"Expected string, got {type(decision_id)}: {decision_id}"
 
     # GET created proposal
     get_response = authrequests.get(f"{PHT_URL}/panel/decision/{decision_id}")
