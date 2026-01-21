@@ -7,7 +7,7 @@ from unittest import mock
 
 import pytest
 from pydantic import ValidationError
-from ska_db_oda.persistence.domain.errors import ODANotFound
+from ska_db_oda.repository.domain import ODANotFound
 from ska_oso_pdm.project import ObservingBlock
 
 from tests.unit.conftest import ODT_BASE_API_URL

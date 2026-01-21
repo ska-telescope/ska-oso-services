@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
-from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm import PanelDecision, Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel_decision import PanelReviewStatus, Recommendation

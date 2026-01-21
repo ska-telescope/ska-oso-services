@@ -283,8 +283,7 @@
           "image_cellsize": 0.5,
           "weight": "briggs -2",
           "polarisations": "I",
-          "channels_out": 12,
-          "fit_spectral_pol": 3
+          "channels_out": 12
         }
       }
     }

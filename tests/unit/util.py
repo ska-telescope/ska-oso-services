@@ -8,7 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from deepdiff import DeepDiff
-from ska_db_oda.persistence.domain import set_identifier
+from ska_db_oda.repository.domain import set_identifier
 from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal

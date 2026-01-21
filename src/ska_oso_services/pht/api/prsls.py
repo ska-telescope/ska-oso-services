@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalPermissions, ProposalRole
 from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus

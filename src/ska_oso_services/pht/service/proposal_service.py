@@ -3,7 +3,7 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Iterable
 
-from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal import Proposal, ProposalAccess
 
 from ska_oso_services.common.error_handling import ForbiddenError

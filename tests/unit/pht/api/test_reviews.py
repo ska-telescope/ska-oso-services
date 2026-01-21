@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import status
-from ska_db_oda.persistence.domain.errors import ODANotFound
+from ska_db_oda.repository.domain import ODANotFound
 
 from tests.unit.conftest import PHT_BASE_API_URL
 from tests.unit.util import VALID_REVIEW, TestDataFactory, assert_json_is_equal

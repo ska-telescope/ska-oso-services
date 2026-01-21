@@ -6,7 +6,7 @@ from http import HTTPStatus
 from unittest import mock
 
 import pytest
-from ska_db_oda.persistence.domain.errors import ODANotFound
+from ska_db_oda.repository.domain import ODANotFound
 
 from ska_oso_services.common.model import ValidationResponse
 from tests.unit.conftest import ODT_BASE_API_URL

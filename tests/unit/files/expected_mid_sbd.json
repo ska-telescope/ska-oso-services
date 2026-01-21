@@ -95,8 +95,7 @@
           "image_cellsize": 1.8,
           "weight": "natural",
           "polarisations": "IQU",
-          "channels_out": 12,
-          "fit_spectral_pol": 3
+          "channels_out": 12
         }
       }
     }
