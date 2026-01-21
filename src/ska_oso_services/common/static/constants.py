@@ -7,12 +7,19 @@ from ska_oso_services.validation import (
     get_subarray_specific_parameter_from_osd,
 )
 
+# for both AA0.5 and AA1 this list has one element
+# this is a list for AA2 and is something to do  with
+# how MID is handling zoom windows. The MID and LOW
+# OSD have diverged in this respect - we should probably
+# address this before we support zooms
+
+
 MID_CHANNEL_WIDTH = (
     get_subarray_specific_parameter_from_osd(
         TelescopeType.SKA_MID,
         ValidationArrayAssembly.AA05,
         "allowed_channel_width_values_hz",
-    )[0] # we're only supporting continuum right now, so we only need this number
+    )[0]
     * u.Hz
 )
 
