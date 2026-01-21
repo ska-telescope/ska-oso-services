@@ -37,9 +37,7 @@ def generate_project(proposal: Proposal) -> Project:
 
         # Now create a ScienceProgramme for each ObservationSet in the group
         science_programmes = [
-            science_programme_from_observation_set(
-                observation_set, proposal.observation_info
-            )
+            science_programme_from_observation_set(observation_set, proposal.observation_info)
             for observation_set in observation_set_group
         ]
         index = randint(10000, 99999)
@@ -96,9 +94,7 @@ def science_programme_from_observation_set(
     ]
 
     # The ObservationSet <-> Target link is via the Results
-    target_ids = [
-        result_detail.target_ref for result_detail in results_for_observation_set
-    ]
+    target_ids = [result_detail.target_ref for result_detail in results_for_observation_set]
 
     targets_for_observation_set = [
         target for target in observation_info.targets if target.target_id in target_ids
@@ -107,8 +103,7 @@ def science_programme_from_observation_set(
     # As of PI28 we expect the PHT to only create a single CalibrationStrategy, if any.
     # So we just copy it over into each science programme
     calibration_strategies_for_observation_set = [
-        calibration_strategy
-        for calibration_strategy in observation_info.calibration_strategy
+        calibration_strategy for calibration_strategy in observation_info.calibration_strategy
     ]
 
     sdp_data_products_for_observation_set = [

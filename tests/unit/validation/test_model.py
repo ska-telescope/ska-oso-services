@@ -83,8 +83,7 @@ def test_decorator_appends_source():
     assert result == [
         TEST_VALIDATION_ISSUE_WITH_FIELD.model_copy(
             update={
-                "field": f"{test_source_jsonpath}"
-                f".{TEST_VALIDATION_ISSUE_WITH_FIELD.field}"
+                "field": f"{test_source_jsonpath}" f".{TEST_VALIDATION_ISSUE_WITH_FIELD.field}"
             }
         ),
     ]
@@ -99,9 +98,7 @@ def test_check_relevant_context_contains():
     )
 
     with pytest.raises(ValueError) as excinfo:
-        check_relevant_context_contains(
-            ["first_context", "second_context"], input_context
-        )
+        check_relevant_context_contains(["first_context", "second_context"], input_context)
 
     assert "ValidationContext is missing relevant_context: ['second_context']" in str(
         excinfo.value

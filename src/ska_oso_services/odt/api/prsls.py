@@ -129,18 +129,14 @@ def prj_details(
 
         all_proposals = get_latest_entities(uow.prsls.query(date_query), "prsl_id")
         # Filter out any proposals that are in draft (see SKB-1031 for details)
-        all_proposals = [
-            prsl for prsl in all_proposals if prsl.status != ProposalStatus.DRAFT
-        ]
+        all_proposals = [prsl for prsl in all_proposals if prsl.status != ProposalStatus.DRAFT]
         # As the Project/Proposal relationship is stored as a foreign key
         # on the Project, to find Proposals without Projects we need to filter
         # in this roundabout way
         projects_with_proposals = [
             project for project in all_projects if project.prsl_ref is not None
         ]
-        proposal_ids_with_projects = [
-            project.prsl_ref for project in projects_with_proposals
-        ]
+        proposal_ids_with_projects = [project.prsl_ref for project in projects_with_proposals]
         proposals_without_projects = [
             proposal
             for proposal in all_proposals

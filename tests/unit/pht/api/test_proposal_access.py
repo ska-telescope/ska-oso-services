@@ -23,9 +23,7 @@ class TestProposalAccessAPI:
 
         data = proposal_access.json()
 
-        response = client.post(
-            f"{PROPOSAL_ACCESS_API_URL}/create", data=data, headers=HEADERS
-        )
+        response = client.post(f"{PROPOSAL_ACCESS_API_URL}/create", data=data, headers=HEADERS)
 
         assert response.status_code == HTTPStatus.OK
 
@@ -34,9 +32,7 @@ class TestProposalAccessAPI:
         assert proposal_access.access_id == result
 
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow")
-    def test_proposal_access_post_duplicate_prsl_id_user_id_pair(
-        self, mock_uow, client
-    ):
+    def test_proposal_access_post_duplicate_prsl_id_user_id_pair(self, mock_uow, client):
         panel = TestDataFactory.proposal_access(prsl_id="dup prsl_id")
 
         uow_mock = mock.MagicMock()
@@ -47,9 +43,7 @@ class TestProposalAccessAPI:
 
         data = panel.json()
 
-        response = client.post(
-            f"{PROPOSAL_ACCESS_API_URL}/create", data=data, headers=HEADERS
-        )
+        response = client.post(f"{PROPOSAL_ACCESS_API_URL}/create", data=data, headers=HEADERS)
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
 

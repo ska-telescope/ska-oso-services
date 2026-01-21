@@ -37,9 +37,7 @@ def extract_profile_from_access_token(auth) -> tuple[str, str, str]:
         token = token.split(" ", 1)[1]
 
     try:
-        claims = jwt.decode(
-            token, options={"verify_signature": False, "verify_exp": False}
-        )
+        claims = jwt.decode(token, options={"verify_signature": False, "verify_exp": False})
     except jwt.InvalidTokenError:
         return "", "", ""
 
@@ -91,9 +89,7 @@ def make_graph_call(url, pagination=True):
                 else:
                     url = None
             except Exception as err:
-                raise RuntimeError(
-                    f"Error fetching data from Graph API: {err}"
-                ) from err
+                raise RuntimeError(f"Error fetching data from Graph API: {err}") from err
         return graph_results
     else:
         error = token_result.get("error")
@@ -137,11 +133,7 @@ def get_users_by_group_id(group_id):
     members_url = f"{MS_GRAPH_URL}/groups/{group_id}/members"
     members = make_graph_call(members_url, False)
 
-    return [
-        member
-        for member in members
-        if member.get("@odata.type") == "#microsoft.graph.user"
-    ]
+    return [member for member in members if member.get("@odata.type") == "#microsoft.graph.user"]
 
 
 def _extract_pi_user_id(proposal: Proposal) -> Optional[str]:

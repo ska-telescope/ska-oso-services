@@ -12,10 +12,7 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import UnprocessableEntityError
 from ska_oso_services.pht.models.domain import PrslRole
-from ska_oso_services.pht.models.schemas import (
-    PanelAssignResponse,
-    PanelBatchCreateResult,
-)
+from ska_oso_services.pht.models.schemas import PanelAssignResponse, PanelBatchCreateResult
 from ska_oso_services.pht.service.panel_operations import (
     assign_to_existing_panel,
     build_assignment_response,
@@ -129,23 +126,17 @@ def auto_assign_to_panel(
 
                 sv_panel = uow.panels.get(sv_panel_id)
 
-                sv_candidate_assignments = build_sv_panel_proposals(
-                    submitted_proposal_refs
-                )
+                sv_candidate_assignments = build_sv_panel_proposals(submitted_proposal_refs)
 
                 # Append only proposals not already assigned to the SV panel
-                existing_prsl_ids = {
-                    proposal.prsl_id for proposal in (sv_panel.proposals or [])
-                }
+                existing_prsl_ids = {proposal.prsl_id for proposal in (sv_panel.proposals or [])}
                 sv_assignments_to_add = [
                     candidate
                     for candidate in sv_candidate_assignments
                     if candidate.prsl_id not in existing_prsl_ids
                 ]
                 if sv_assignments_to_add:
-                    sv_panel.proposals = (
-                        sv_panel.proposals or []
-                    ) + sv_assignments_to_add
+                    sv_panel.proposals = (sv_panel.proposals or []) + sv_assignments_to_add
 
                 # TODO: move the reviews and decison creation to a common function
                 # to be used here and the PUT endpoint.
@@ -191,8 +182,7 @@ def auto_assign_to_panel(
                     uow, auth, (a.prsl_id for a in sv_assignments_to_add)
                 )
                 logger.info(
-                    "Updated existing Science Verification panel %s "
-                    "(added %d proposals)",
+                    "Updated existing Science Verification panel %s (added %d proposals)",
                     sv_panel_id,
                     len(sv_assignments_to_add),
                 )
@@ -210,9 +200,7 @@ def auto_assign_to_panel(
 
         existing_by_name: dict[str, Panel] = {}
         for pname in PANEL_NAME_POOL:
-            refs = get_latest_entity_by_id(
-                uow.panels.query(CustomQuery(name=pname)), "panel_id"
-            )
+            refs = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=pname)), "panel_id")
             if refs:
                 existing_by_name[pname] = uow.panels.get(refs[0].panel_id)
 
@@ -307,9 +295,7 @@ def auto_create_panel(
             )
             created = uow.panels.add(sv_panel, auth.user_id)
             uow.commit()
-            logger.info(
-                "Science Verification panel created (panel_id=%s)", created.panel_id
-            )
+            logger.info("Science Verification panel created (panel_id=%s)", created.panel_id)
             return created.panel_id
 
         # --- Science category panels path ---
@@ -468,9 +454,7 @@ def update_panel(
         ensure_submitted_proposals_under_review(uow, auth, (r for r in proposal_ids))
 
         uow.commit()
-    logger.info(
-        "Panel %s updated; reviews updated=%d", panel.panel_id, len(updated_review_ids)
-    )
+    logger.info("Panel %s updated; reviews updated=%d", panel.panel_id, len(updated_review_ids))
     return panel
 
 

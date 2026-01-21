@@ -77,9 +77,7 @@ async def send_email_async(email: str, prsl_id: str):
 
     except SMTPRecipientsRefused as err:
         logger.error("Recipient refused: %s", str(err))
-        raise UnprocessableEntityError(
-            detail="Unable to send email for this recipient."
-        ) from err
+        raise UnprocessableEntityError(detail="Unable to send email for this recipient.") from err
 
     except SMTPException as err:
         logger.error("SMTP error for %s: %s", email, str(err))

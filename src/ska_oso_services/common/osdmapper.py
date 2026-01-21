@@ -109,18 +109,14 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
         subarrays.append(
             Subarray(
                 name=array_assembly,
-                receptors=mid_response["capabilities"]["mid"][array_assembly][
-                    "number_dish_ids"
+                receptors=mid_response["capabilities"]["mid"][array_assembly]["number_dish_ids"],
+                available_bandwidth_hz=mid_response["capabilities"]["mid"][array_assembly][
+                    "available_bandwidth_hz"
                 ],
-                available_bandwidth_hz=mid_response["capabilities"]["mid"][
-                    array_assembly
-                ]["available_bandwidth_hz"],
                 number_pst_beams=mid_response["capabilities"]["mid"][array_assembly][
                     "number_pst_beams"
                 ],
-                number_fsps=mid_response["capabilities"]["mid"][array_assembly][
-                    "number_fsps"
-                ],
+                number_fsps=mid_response["capabilities"]["mid"][array_assembly]["number_fsps"],
             )
         )
 
@@ -133,10 +129,7 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
 
     def frequency_band_from_receiver_information_for_band(receiver_information):
         band5b_subbands = (
-            [
-                Band5bSubband(**sub_band)
-                for sub_band in receiver_information["sub_bands"]
-            ]
+            [Band5bSubband(**sub_band) for sub_band in receiver_information["sub_bands"]]
             if receiver_information["rx_id"] == "Band_5b"
             else None
         )
@@ -167,21 +160,19 @@ def _get_low_telescope_configuration() -> LowConfiguration:
                 receptors=low_response["capabilities"]["low"][array_assembly][
                     "number_station_ids"
                 ],
-                available_bandwidth_hz=low_response["capabilities"]["low"][
-                    array_assembly
-                ]["available_bandwidth_hz"],
+                available_bandwidth_hz=low_response["capabilities"]["low"][array_assembly][
+                    "available_bandwidth_hz"
+                ],
                 number_pst_beams=low_response["capabilities"]["low"][array_assembly][
                     "number_pst_beams"
                 ],
-                number_fsps=low_response["capabilities"]["low"][array_assembly][
-                    "number_fsps"
-                ],
+                number_fsps=low_response["capabilities"]["low"][array_assembly]["number_fsps"],
                 number_substations=low_response["capabilities"]["low"][array_assembly][
                     "number_substations"
                 ],
-                number_subarray_beams=low_response["capabilities"]["low"][
-                    array_assembly
-                ]["number_beams"],
+                number_subarray_beams=low_response["capabilities"]["low"][array_assembly][
+                    "number_beams"
+                ],
             )
         )
 
@@ -190,9 +181,7 @@ def _get_low_telescope_configuration() -> LowConfiguration:
     # the following is a hack because I missed that the key in the OSD
     # should have included `_hz`
 
-    receiver_information["coarse_channel_width_hz"] = receiver_information[
-        "coarse_channel_width"
-    ]
+    receiver_information["coarse_channel_width_hz"] = receiver_information["coarse_channel_width"]
 
     return LowConfiguration(
         frequency_band=LowFrequencyBand(**receiver_information), subarrays=subarrays
@@ -213,9 +202,5 @@ def get_osd_data(*args, **kwargs):
         osd_data = get_osd(params)
     except (OSDModelError, ValueError) as error:
         raise OSDError(error)
-    data = (
-        osd_data.model_dump()["result_data"]
-        if hasattr(osd_data, "model_dump")
-        else osd_data
-    )
+    data = osd_data.model_dump()["result_data"] if hasattr(osd_data, "model_dump") else osd_data
     return data

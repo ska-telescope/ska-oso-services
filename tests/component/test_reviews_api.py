@@ -29,9 +29,7 @@ def test_create_and_get_review(authrequests):
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     review_id = post_response.json()
-    assert isinstance(
-        review_id, str
-    ), f"Expected string, got {type(review_id)}: {review_id}"
+    assert isinstance(review_id, str), f"Expected string, got {type(review_id)}: {review_id}"
 
     # GET created proposal
     get_response = authrequests.get(f"{PHT_URL}/reviews/{review_id}")
@@ -133,6 +131,4 @@ def test_get_list_reviews_for_user(authrequests):
     # Check that all created reviews are returned
     returned_ids = {p["review_id"] for p in reviews}
     for review_id in created_ids:
-        assert (
-            review_id in returned_ids
-        ), f"Missing proposal {review_id} in GET /users/reviews"
+        assert review_id in returned_ids, f"Missing proposal {review_id} in GET /users/reviews"

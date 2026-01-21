@@ -163,9 +163,7 @@ class TestGetReviewAPI:
         data = response.json()
         assert data["review_id"] == review_id
 
-    @mock.patch(
-        "ska_oso_services.pht.api.reviews.get_latest_entity_by_id", autospec=True
-    )
+    @mock.patch("ska_oso_services.pht.api.reviews.get_latest_entity_by_id", autospec=True)
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_get_review_list_success(self, mock_oda, mock_get_latest, client):
         """
@@ -185,9 +183,7 @@ class TestGetReviewAPI:
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(review_objs)
 
-    @mock.patch(
-        "ska_oso_services.pht.api.reviews.get_latest_entity_by_id", autospec=True
-    )
+    @mock.patch("ska_oso_services.pht.api.reviews.get_latest_entity_by_id", autospec=True)
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_get_review_list_none(self, mock_oda, mock_get_latest, client):
         """

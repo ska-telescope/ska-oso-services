@@ -27,15 +27,8 @@ from ska_oso_pdm.sb_definition import (
 )
 from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration, MidCBFConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
-from ska_oso_pdm.sb_definition.csp.midcbf import (
-    CorrelationSPWConfiguration,
-    ReceiverBand,
-    Subband,
-)
-from ska_oso_pdm.sb_definition.mccs.mccs_allocation import (
-    Aperture,
-    SubarrayBeamConfiguration,
-)
+from ska_oso_pdm.sb_definition.csp.midcbf import CorrelationSPWConfiguration, ReceiverBand, Subband
+from ska_oso_pdm.sb_definition.mccs.mccs_allocation import Aperture, SubarrayBeamConfiguration
 from ska_oso_pdm.sb_definition.procedures import GitScript
 
 from ska_oso_services.common.calibrator_strategy import (
@@ -116,9 +109,7 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
             )
 
             for calibrator in calibrators:
-                calibrators_in_use[calibrator.calibrator.target_id] = (
-                    calibrator.calibrator
-                )
+                calibrators_in_use[calibrator.calibrator.target_id] = calibrator.calibrator
 
                 calibrator_scan_definition = ScanDefinition(
                     scan_definition_id=_sbd_internal_id(ScanDefinition),
@@ -235,9 +226,7 @@ def _csp_configuration_from_science_programme(
                             observation_type_details.bandwidth.to(u.Hz).value
                             / (LOW_STATION_CHANNEL_WIDTH_MHZ * 1e6)
                         ),
-                        centre_frequency=observation_type_details.central_frequency.to(
-                            u.Hz
-                        ).value,
+                        centre_frequency=observation_type_details.central_frequency.to(u.Hz).value,
                         integration_time_ms=849,
                         logical_fsp_ids=[],
                         zoom_factor=0,
@@ -257,9 +246,7 @@ def _csp_configuration_from_science_programme(
                                 spw_id=1,
                                 logical_fsp_ids=[],
                                 centre_frequency=(
-                                    observation_type_details.central_frequency.to(
-                                        u.Hz
-                                    ).value
+                                    observation_type_details.central_frequency.to(u.Hz).value
                                 ),
                                 number_of_channels=int(
                                     observation_type_details.bandwidth.to(u.Hz).value
@@ -305,11 +292,7 @@ def _sdp_configuration_from_data_product_sdp(
 
     @convert_parameter.register
     def _(value: Weighting) -> str:
-        return (
-            f"{value.weighting} {value.robust}"
-            if value.robust is not None
-            else value.weighting
-        )
+        return f"{value.weighting} {value.robust}" if value.robust is not None else value.weighting
 
     if (
         dp_sdp.script_parameters.kind is not ProductType.CONTINUUM
@@ -359,9 +342,7 @@ def _scan_time_ms_from_science_programme(
     and we then need to get the time from the sensitivity calculator results
     """
     if (
-        science_programme.observation_sets[
-            0
-        ].observation_type_details.supplied.supplied_type
+        science_programme.observation_sets[0].observation_type_details.supplied.supplied_type
         == "integration_time"
     ):
         return TimedeltaMs(
@@ -378,17 +359,11 @@ def _scan_time_ms_from_science_programme(
             for result_detail in science_programme.result_details
             if result_detail.target_ref == target_id
         )
-        return TimedeltaMs(
-            milliseconds=result_for_target.result.continuum.to(u.ms).value
-        )
+        return TimedeltaMs(milliseconds=result_for_target.result.continuum.to(u.ms).value)
 
 
-def _dish_allocation(
-    subarray: SubArrayMID, scan_sequence: list[ScanDefinition]
-) -> DishAllocation:
-    osd_data = get_osd_data(
-        array_assembly=subarray.value, capabilities="mid", source="car"
-    )
+def _dish_allocation(subarray: SubArrayMID, scan_sequence: list[ScanDefinition]) -> DishAllocation:
+    osd_data = get_osd_data(array_assembly=subarray.value, capabilities="mid", source="car")
     dish_ids = osd_data["capabilities"]["mid"][subarray.value]["number_dish_ids"]
 
     return DishAllocation(
@@ -399,12 +374,8 @@ def _dish_allocation(
     )
 
 
-def _mccs_allocation(
-    subarray: SubArrayLOW, scan_sequence: list[ScanDefinition]
-) -> MCCSAllocation:
-    osd_data = get_osd_data(
-        array_assembly=subarray.value, capabilities="low", source="car"
-    )
+def _mccs_allocation(subarray: SubArrayLOW, scan_sequence: list[ScanDefinition]) -> MCCSAllocation:
+    osd_data = get_osd_data(array_assembly=subarray.value, capabilities="low", source="car")
 
     station_ids = osd_data["capabilities"]["low"][subarray.value]["number_station_ids"]
 
@@ -466,9 +437,7 @@ def _sbd_internal_id_and_name(pdm_type: type) -> tuple[str, str]:
     """
     random_int = randint(10000, 99999)
 
-    mapping = {
-        CSPConfiguration: (f"csp-configuration-{random_int}", f"Config {random_int}")
-    }
+    mapping = {CSPConfiguration: (f"csp-configuration-{random_int}", f"Config {random_int}")}
 
     return mapping[pdm_type]
 
@@ -479,7 +448,4 @@ def _copy_targets_with_name(targets: list[Target]) -> list[Target]:
     name. Here we populate the name with the ID that is set in the Proposal, assuming
     it is unique. Longer term we should standardise how these fields are set.
     """
-    return [
-        target.model_copy(update={"name": target.target_id}, deep=True)
-        for target in targets
-    ]
+    return [target.model_copy(update={"name": target.target_id}, deep=True) for target in targets]

@@ -14,11 +14,7 @@ from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal.proposal_access import ProposalAccess
 from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
-from ska_oso_pdm.proposal_management.panel import (
-    Panel,
-    ProposalAssignment,
-    ReviewerAssignment,
-)
+from ska_oso_pdm.proposal_management.panel import Panel, ProposalAssignment, ReviewerAssignment
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
 
 CUR_DIR = Path(__file__).parent
@@ -57,9 +53,7 @@ class TestDataFactory:
     def sbdefinition(
         sbd_id: SBDefinitionID | None = "sbd-mvp01-20200325-00001",
         version: int = 1,
-        created_on: datetime = datetime.fromisoformat(
-            "2022-03-28T15:43:53.971548+00:00"
-        ),
+        created_on: datetime = datetime.fromisoformat("2022-03-28T15:43:53.971548+00:00"),
         without_metadata: bool = False,
     ) -> SBDefinition:
         sbd = mid_imaging_sb()
@@ -78,9 +72,7 @@ class TestDataFactory:
     def lowsbdefinition(
         sbd_id: SBDefinitionID = "sbd-mvp01-20200325-00001",
         version: int = 1,
-        created_on: datetime = datetime.fromisoformat(
-            "2022-03-28T15:43:53.971548+00:00"
-        ),
+        created_on: datetime = datetime.fromisoformat("2022-03-28T15:43:53.971548+00:00"),
         without_metadata: bool = False,
     ) -> SBDefinition:
         sbd = low_imaging_sb()
@@ -211,9 +203,7 @@ class TestDataFactory:
         status: str = "Pending",
     ) -> ReviewerAssignment:
         if isinstance(assigned_on, datetime):
-            assigned_on_str = assigned_on.astimezone(timezone.utc).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
+            assigned_on_str = assigned_on.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
             assigned_on_str = assigned_on
         data = {
@@ -229,9 +219,7 @@ class TestDataFactory:
         prsl_id: str = "prsl-001", assigned_on: datetime | str = "2025-05-21T09:30:00Z"
     ) -> dict:
         if isinstance(assigned_on, datetime):
-            assigned_on_str = assigned_on.astimezone(timezone.utc).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
+            assigned_on_str = assigned_on.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
             assigned_on_str = assigned_on
         data = {
@@ -302,9 +290,7 @@ class TestDataFactory:
         return panel
 
     @staticmethod
-    def complete_proposal(
-        prsl_id: str = "prsl-mvp01-20220923-00001", status="draft"
-    ) -> Proposal:
+    def complete_proposal(prsl_id: str = "prsl-mvp01-20220923-00001", status="draft") -> Proposal:
         filename = "complete_proposal.json"
         data = load_string_from_file(filename)
         prsl = Proposal.model_validate_json(data)
@@ -368,11 +354,7 @@ class TestDataFactory:
     def proposal_by_category(prsl_id, science_category, *, info_as="dict"):
         """Module-level helper so it’s usable inside @parametrize."""
         if info_as == "dict":
-            info = (
-                {}
-                if science_category is None
-                else {"science_category": science_category}
-            )
+            info = {} if science_category is None else {"science_category": science_category}
         elif info_as == "obj":
             info = SimpleNamespace(science_category=science_category)
         else:
@@ -382,9 +364,7 @@ class TestDataFactory:
 
 VALID_MID_SBDEFINITION_JSON = TestDataFactory.sbdefinition().model_dump_json()
 VALID_LOW_SBDEFINITION_JSON = TestDataFactory.lowsbdefinition().model_dump_json()
-SBDEFINITION_WITHOUT_ID_JSON = TestDataFactory.sbdefinition(
-    sbd_id=None
-).model_dump_json()
+SBDEFINITION_WITHOUT_ID_JSON = TestDataFactory.sbdefinition(sbd_id=None).model_dump_json()
 SBDEFINITION_WITHOUT_METADATA_JSON = TestDataFactory.sbdefinition(
     without_metadata=True
 ).model_dump_json()
@@ -397,11 +377,7 @@ VALID_COMPLETE_PROPOSAL = TestDataFactory.complete_proposal().model_dump_json()
 VALID_REVIEW = TestDataFactory.reviews().model_dump_json()
 VALID_PANEL_DECISION = TestDataFactory.panel_decision().model_dump_json()
 PAYLOAD_SUCCESS = TestDataFactory.email_payload()
-PAYLOAD_CONNECT_FAIL = TestDataFactory.email_payload(
-    "connectfail@example.com", "PRSL999"
-)
+PAYLOAD_CONNECT_FAIL = TestDataFactory.email_payload("connectfail@example.com", "PRSL999")
 PAYLOAD_BAD_TO = TestDataFactory.email_payload("badto@example.com", "PRSLBAD")
-PAYLOAD_GENERIC_FAIL = TestDataFactory.email_payload(
-    "genericfail@example.com", "GENERICFAIL"
-)
+PAYLOAD_GENERIC_FAIL = TestDataFactory.email_payload("genericfail@example.com", "GENERICFAIL")
 REVIEWERS = json.loads(load_string_from_file("get_reviewers.json"))

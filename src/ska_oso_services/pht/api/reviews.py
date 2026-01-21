@@ -47,9 +47,7 @@ def create_review(
                 kind=reviews.review_type.kind,
                 reviewer_id=reviews.reviewer_id,
             )
-            existing_rvws = get_latest_entity_by_id(
-                uow.rvws.query(query_param), "review_id"
-            )
+            existing_rvws = get_latest_entity_by_id(uow.rvws.query(query_param), "review_id")
             existing_rvw = existing_rvws[0] if existing_rvws else None
 
             if existing_rvw and existing_rvw.metadata.version == 1:
@@ -108,9 +106,7 @@ def get_reviews_for_user(
     groups = getattr(auth, "groups", set())
 
     has_role = Role.SW_ENGINEER in getattr(auth, "roles", set())
-    has_group = (
-        PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
-    )
+    has_group = PrslRole.OPS_PROPOSAL_ADMIN in groups or PrslRole.OPS_REVIEW_CHAIR in groups
 
     with oda.uow() as uow:
         if has_group or has_role:
@@ -157,9 +153,7 @@ def update_review(
             review_id,
             review.review_id,
         )
-        raise UnprocessableEntityError(
-            detail="Review ID in path and body do not match."
-        )
+        raise UnprocessableEntityError(detail="Review ID in path and body do not match.")
 
     with oda.uow() as uow:
         # Verify Review exists
@@ -171,20 +165,14 @@ def update_review(
         try:
             # check that the user is the owner of the review or has SW_ENGINEER role
             # TODO: update this with roles in 2 places
-            if (
-                existing.reviewer_id != auth.user_id
-                and Role.SW_ENGINEER not in auth.roles
-            ):
+            if existing.reviewer_id != auth.user_id and Role.SW_ENGINEER not in auth.roles:
                 logger.warning(
-                    "User %s attempted to update review %s owned by %s. "
-                    "Review not updated.",
+                    "User %s attempted to update review %s owned by %s. Review not updated.",
                     auth.user_id,
                     review_id,
                     existing.reviewer_id,
                 )
-                raise BadRequestError(
-                    detail="You do not have permission to update this review."
-                )
+                raise BadRequestError(detail="You do not have permission to update this review.")
             updated_review = uow.rvws.add(review, auth.user_id)
             uow.commit()
             logger.info("Review %s updated successfully", review_id)

@@ -42,9 +42,7 @@ def validation_mid_elevation(
     :return: a validation error if the target doesn't reach the minimum 15 degrees
             elevation required for Mid
     """
-    max_elevation = _find_max_elevation(
-        target_context.primary_entity, TelescopeType.SKA_MID
-    )
+    max_elevation = _find_max_elevation(target_context.primary_entity, TelescopeType.SKA_MID)
 
     if max_elevation < Latitude(15, unit=u.deg):
         return [ValidationIssue(message="Source never rises above 15 degrees")]
@@ -63,9 +61,7 @@ def validate_low_elevation(
          a validation warning if the maximum elevation of the target is less
          than 45 degrees
     """
-    max_elevation = _find_max_elevation(
-        target_context.primary_entity, TelescopeType.SKA_LOW
-    )
+    max_elevation = _find_max_elevation(target_context.primary_entity, TelescopeType.SKA_LOW)
 
     if max_elevation < Latitude(0, unit=u.deg):
         return [ValidationIssue(message="Source never rises above the horizon")]

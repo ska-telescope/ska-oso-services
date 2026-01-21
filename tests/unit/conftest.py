@@ -31,9 +31,7 @@ def dummy_calibrator_table() -> QTable:
     """
     Fixture to create a dummy table so the tests won't fail if a new calibrator is added
     """
-    path_to_test_table = (
-        Path(__file__).parents[0] / "files" / "dummy_calibrator_table.ecsv"
-    )
+    path_to_test_table = Path(__file__).parents[0] / "files" / "dummy_calibrator_table.ecsv"
     return astropy_ascii.read(path_to_test_table)
 
 
@@ -92,9 +90,7 @@ def client(test_app: FastAPI, headers: dict) -> TestClient:
 @pytest.fixture
 def client_with_uow_mock(headers: dict):
     """Provide a TestClient with the mock UoW dependency override applied."""
-    test_app = create_app(
-        production=False
-    )  # Don't want to use the module scoped fixture
+    test_app = create_app(production=False)  # Don't want to use the module scoped fixture
     mock_uow = MagicMock()
     mock_entered_uow = MagicMock()
     mock_uow.__enter__.return_value = mock_entered_uow

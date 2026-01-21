@@ -57,13 +57,9 @@ def join_proposals_panels_reviews_decisions(
     reviewer_status_lookup: dict[tuple[str, str, str], str] = {}
     for p in panels or []:
         for rv in p.sci_reviewers or []:
-            reviewer_status_lookup[(p.panel_id, rv.reviewer_id, "Science Review")] = (
-                rv.status
-            )
+            reviewer_status_lookup[(p.panel_id, rv.reviewer_id, "Science Review")] = rv.status
         for rv in p.tech_reviewers or []:
-            reviewer_status_lookup[(p.panel_id, rv.reviewer_id, "Technical Review")] = (
-                rv.status
-            )
+            reviewer_status_lookup[(p.panel_id, rv.reviewer_id, "Technical Review")] = rv.status
 
     for proposal in proposals or []:
         prsl_id = proposal.prsl_id
@@ -111,9 +107,7 @@ def join_proposals_panels_reviews_decisions(
 
                 reviewer_status = None
                 if panel_id and reviewer_id and kind:
-                    reviewer_status = reviewer_status_lookup.get(
-                        (panel_id, reviewer_id, kind)
-                    )
+                    reviewer_status = reviewer_status_lookup.get((panel_id, reviewer_id, kind))
 
                 conflict_flag = (
                     getattr(getattr(review, "review_type", None), "conflict", None)
@@ -122,9 +116,7 @@ def join_proposals_panels_reviews_decisions(
                     else False
                 )
 
-                review_rank = getattr(
-                    getattr(review, "review_type", None), "rank", None
-                )
+                review_rank = getattr(getattr(review, "review_type", None), "rank", None)
 
                 rows.append(
                     ProposalReportResponse(

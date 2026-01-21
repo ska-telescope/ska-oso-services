@@ -13,9 +13,7 @@ COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
 
 TEST_TARGET_WITH_VELOCITY = Target(
     name="M83",
-    reference_coordinate=ICRSCoordinates(
-        ra_str="00:42:44.3300", dec_str="+41:16:07.500"
-    ),
+    reference_coordinate=ICRSCoordinates(ra_str="00:42:44.3300", dec_str="+41:16:07.500"),
     radial_velocity=RadialVelocity(quantity=Quantity(value=519.1, unit="km/s")),
 )
 
@@ -116,9 +114,7 @@ class TestCoordinates:
         """
         Test 404 when object is not found in SIMBAD or NED
         """
-        mock_get_coordinates.side_effect = NotFoundError(
-            "Object not found in SIMBAD or NED"
-        )
+        mock_get_coordinates.side_effect = NotFoundError("Object not found in SIMBAD or NED")
 
         response = client.get(f"{COORDINATES_API_URL}/NOSOURCE/equatorial")
 

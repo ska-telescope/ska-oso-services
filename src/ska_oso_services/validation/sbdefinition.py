@@ -1,11 +1,7 @@
 from ska_oso_pdm import SBDefinition, Target, TelescopeType
 from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 
-from ska_oso_services.validation.model import (
-    ValidationContext,
-    ValidationIssue,
-    validator,
-)
+from ska_oso_services.validation.model import ValidationContext, ValidationIssue, validator
 from ska_oso_services.validation.scan import validate_scan_definition
 from ska_oso_services.validation.target import validate_target
 
@@ -56,9 +52,7 @@ def validate_sbdefinition(
     return target_validation_results + scan_validation_results
 
 
-def _lookup_target_for_scan(
-    scan: ScanDefinition, sbd: SBDefinition
-) -> tuple[Target, int]:
+def _lookup_target_for_scan(scan: ScanDefinition, sbd: SBDefinition) -> tuple[Target, int]:
     return next(
         (target, index)
         for index, target in enumerate(sbd.targets)

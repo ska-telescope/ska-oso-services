@@ -54,9 +54,8 @@ def test_scan_definition_validation_requires_relevant_context():
     with pytest.raises(ValueError) as excinfo:
         validate_scan_definition(input_context)
 
-    assert (
-        "ValidationContext is missing relevant_context: ['target', 'csp_config']"
-        in str(excinfo.value)
+    assert "ValidationContext is missing relevant_context: ['target', 'csp_config']" in str(
+        excinfo.value
     )
 
 

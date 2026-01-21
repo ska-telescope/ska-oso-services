@@ -15,10 +15,7 @@ from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
 
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.common.error_handling import (
-    BadRequestError,
-    UnprocessableEntityError,
-)
+from ska_oso_services.common.error_handling import BadRequestError, UnprocessableEntityError
 from ska_oso_services.common.model import ValidationResponse
 from ska_oso_services.odt.validation import validate_sbd
 
@@ -37,9 +34,7 @@ router = APIRouter(prefix="/sbds")
 @router.get(
     "/create",
     summary="Create empty SBD",
-    dependencies=[
-        Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})
-    ],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})],
 )
 def sbds_create() -> SBDefinition:
     """
@@ -69,9 +64,7 @@ def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
 @router.get(
     "/{identifier}",
     summary="Get SBD by identifier",
-    dependencies=[
-        Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})
-    ],
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})],
 )
 def sbds_get(
     identifier: str,
@@ -158,8 +151,7 @@ def sbds_put(
     if sbd.sbd_id != identifier:
         raise UnprocessableEntityError(
             detail=(
-                "There is a mismatch between the SBD ID for the endpoint and the "
-                "JSON payload"
+                "There is a mismatch between the SBD ID for the endpoint and the " "JSON payload"
             ),
         )
 

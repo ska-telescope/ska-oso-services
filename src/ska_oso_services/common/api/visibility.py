@@ -34,6 +34,4 @@ def visibility_svg(
         return Response(content=svg, media_type="image/svg+xml")
 
     except ValueError as error:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid coordinates: {error}"
-        ) from error
+        raise HTTPException(status_code=400, detail=f"Invalid coordinates: {error}") from error

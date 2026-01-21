@@ -22,9 +22,7 @@ def test_get_list_panels_for_user(authrequests):
     # Create 2 panels with unique panel_ids
     for i in range(2):
         panel_id = f"panel-test-{uuid.uuid4().hex[:8]}"
-        panel = TestDataFactory.panel_basic(
-            panel_id=panel_id, name=f"Star{i + 1}", cycle="2024A"
-        )
+        panel = TestDataFactory.panel_basic(panel_id=panel_id, name=f"Star{i + 1}", cycle="2024A")
         panel_json = panel.model_dump_json()
 
         response = authrequests.post(

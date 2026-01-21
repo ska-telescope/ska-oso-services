@@ -20,9 +20,7 @@ from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(
-    prefix="/proposal-access", tags=["PPT API - Proposal Access Management"]
-)
+router = APIRouter(prefix="/proposal-access", tags=["PPT API - Proposal Access Management"])
 
 
 @router.post("/create", summary="Creates a new Proposal Access")
@@ -56,9 +54,7 @@ def post_create_access(
         ) from err
 
 
-@router.get(
-    "/user", summary="Get a list of proposal access the requesting user has access to"
-)
+@router.get("/user", summary="Get a list of proposal access the requesting user has access to")
 def get_access_for_user(
     auth: Annotated[
         AuthContext,
@@ -72,9 +68,7 @@ def get_access_for_user(
 
     with oda.uow() as uow:
         query_param = CustomQuery(user_id=auth.user_id)
-        proposal_access = get_latest_entity_by_id(
-            uow.prslacc.query(query_param), "access_id"
-        )
+        proposal_access = get_latest_entity_by_id(uow.prslacc.query(query_param), "access_id")
     if not proposal_access:
         return []
     return proposal_access
@@ -107,15 +101,12 @@ def get_access_by_prsl_id(
         if not proposal_access_pi:
             raise ForbiddenError(
                 detail=(
-                    "Forbidden error while getting proposal access: "
-                    "Not Principal Investigator"
+                    "Forbidden error while getting proposal access: " "Not Principal Investigator"
                 )
             )
 
         query_param = CustomQuery(prsl_id=prsl_id)
-        proposal_access = get_latest_entity_by_id(
-            uow.prslacc.query(query_param), "access_id"
-        )
+        proposal_access = get_latest_entity_by_id(uow.prslacc.query(query_param), "access_id")
 
     if not proposal_access:
         return []
@@ -147,9 +138,7 @@ def update_access(
             return updated_prsl
 
     except ValueError as err:
-        logger.error(
-            "Validation failed for proposal access with id %s: %s", access_id, err
-        )
+        logger.error("Validation failed for proposal access with id %s: %s", access_id, err)
         raise BadRequestError(
             detail="Validation error while saving proposal access: {err.args[0]}"
         ) from err

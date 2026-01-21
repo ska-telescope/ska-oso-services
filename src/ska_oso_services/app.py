@@ -11,11 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 from ska_aaa_authhelpers import AuditLogFilter, watchdog
-from ska_db_oda.persistence.domain.errors import (
-    ODAError,
-    ODANotFound,
-    UniqueConstraintViolation,
-)
+from ska_db_oda.persistence.domain.errors import ODAError, ODANotFound, UniqueConstraintViolation
 from ska_db_oda.persistence.fastapicontext import oda_lifespan
 from ska_ser_logging import configure_logging
 

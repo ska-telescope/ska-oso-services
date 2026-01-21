@@ -100,17 +100,11 @@ class TestTransformUpdateProposal:
 def test_get_latest_entity_by_id():
     entities = [
         SimpleNamespace(prsl_id="id1", metadata=SimpleNamespace(version=1)),
-        SimpleNamespace(
-            prsl_id="id1", metadata=SimpleNamespace(version=3)
-        ),  # latest for id1
+        SimpleNamespace(prsl_id="id1", metadata=SimpleNamespace(version=3)),  # latest for id1
         SimpleNamespace(prsl_id="id1", metadata=SimpleNamespace(version=2)),
-        SimpleNamespace(
-            prsl_id="id2", metadata=SimpleNamespace(version=1)
-        ),  # only one for id2
+        SimpleNamespace(prsl_id="id2", metadata=SimpleNamespace(version=1)),  # only one for id2
         SimpleNamespace(prsl_id="id3", metadata=SimpleNamespace(version=2)),
-        SimpleNamespace(
-            prsl_id="id3", metadata=SimpleNamespace(version=5)
-        ),  # latest for id3
+        SimpleNamespace(prsl_id="id3", metadata=SimpleNamespace(version=5)),  # latest for id3
         SimpleNamespace(prsl_id="id3", metadata=SimpleNamespace(version=1)),
     ]
 
@@ -162,9 +156,7 @@ class TestGetArrayClass:
 
     def test_unknown_empty_obs(self):
         """No observation sets are present"""
-        proposal = SimpleNamespace(
-            observation_info=SimpleNamespace(observation_sets=[])
-        )
+        proposal = SimpleNamespace(observation_info=SimpleNamespace(observation_sets=[]))
         assert _get_array_class(proposal) == "UNKNOWN"
 
     def test_unknown_none_array(self):
@@ -190,12 +182,8 @@ class TestProposalReportJoins:
     def test_join_proposals_panels_reviews_decisions(self, mock_get_pi_office_location):
         mock_get_pi_office_location.return_value = "Test Office A"
 
-        proposal1 = TestDataFactory.complete_proposal(
-            prsl_id="prsl-mvp01-20220923-00001"
-        )
-        proposal2 = TestDataFactory.complete_proposal(
-            prsl_id="prsl-mvp01-20220923-00002"
-        )
+        proposal1 = TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00001")
+        proposal2 = TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00002")
 
         panel = TestDataFactory.panel(
             reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],

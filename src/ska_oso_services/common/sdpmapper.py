@@ -65,9 +65,7 @@ def get_script_params(name: str, version: str) -> dict[str, Any]:
             (
                 s
                 for s in scripts.get("scripts", [])
-                if s.get("name") == name
-                and s.get("version") == version
-                and "schema" in s
+                if s.get("name") == name and s.get("version") == version and "schema" in s
             ),
             None,
         )

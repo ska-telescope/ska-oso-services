@@ -28,9 +28,7 @@ class ValidationResponse(AppModel):
     dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READ})],
 )
 def validate_sbd(sbd: SBDefinition) -> ValidationResponse:
-    sbd_validation_context = ValidationContext(
-        primary_entity=sbd, telescope=sbd.telescope
-    )
+    sbd_validation_context = ValidationContext(primary_entity=sbd, telescope=sbd.telescope)
     result = validate_sbdefinition(sbd_validation_context)
 
     return ValidationResponse(issues=result)

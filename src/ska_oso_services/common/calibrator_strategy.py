@@ -71,6 +71,5 @@ def lookup_observatory_calibration_strategy(
         return OBSERVATORY_CALIBRATION_STRATEGIES[calibration_strategy_id]
     except KeyError as err:
         raise ValueError(
-            f"Observatory Calibration Strategy with calibration_strategy_id "
-            f"{err} not found."
+            f"Observatory Calibration Strategy with calibration_strategy_id " f"{err} not found."
         )

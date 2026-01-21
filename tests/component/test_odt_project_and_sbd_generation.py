@@ -44,9 +44,7 @@ def test_sbds_generated_from_project(authrequests):
     prj_id = post_response.json()["prj_id"]
 
     # Generate the SBDefinitions
-    generate_response = authrequests.post(
-        f"{ODT_URL}/prjs/{prj_id}/generateSBDefinitions"
-    )
+    generate_response = authrequests.post(f"{ODT_URL}/prjs/{prj_id}/generateSBDefinitions")
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text
     project = Project.model_validate_json(generate_response.text)
@@ -73,8 +71,7 @@ def test_sbds_generated_from_project_obs_block(authrequests):
 
     # Generate the SBDefinitions
     generate_response = authrequests.post(
-        f"{ODT_URL}/prjs"
-        f"/{prj_id}/{project.obs_blocks[0].obs_block_id}/generateSBDefinitions"
+        f"{ODT_URL}/prjs" f"/{prj_id}/{project.obs_blocks[0].obs_block_id}/generateSBDefinitions"
     )
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text
@@ -84,7 +81,5 @@ def test_sbds_generated_from_project_obs_block(authrequests):
     assert len(project.obs_blocks[0].sbd_ids) == 1
 
     # Check the SBDefinitions exists in the ODA
-    get_response = authrequests.get(
-        f"{ODT_URL}/sbds/{project.obs_blocks[0].sbd_ids[0]}"
-    )
+    get_response = authrequests.get(f"{ODT_URL}/sbds/{project.obs_blocks[0].sbd_ids[0]}")
     assert get_response.status_code == HTTPStatus.OK

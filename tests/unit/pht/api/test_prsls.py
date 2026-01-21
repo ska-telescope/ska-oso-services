@@ -51,21 +51,13 @@ class TestListAccess:
 
         # Initial raw rows
         rows_init = [
-            TestDataFactory.proposal_access(
-                access_id="seed", user_id=user_id, prsl_id="seed-prsl"
-            )
+            TestDataFactory.proposal_access(access_id="seed", user_id=user_id, prsl_id="seed-prsl")
         ]
         uow.prslacc.query.return_value = rows_init
         mock_latest.return_value = [
-            TestDataFactory.proposal_access(
-                access_id="a2", user_id=user_id, prsl_id="prsl-b"
-            ),
-            TestDataFactory.proposal_access(
-                access_id="a1", user_id=user_id, prsl_id="prsl-a"
-            ),
-            TestDataFactory.proposal_access(
-                access_id="a3", user_id=user_id, prsl_id="prsl-a"
-            ),
+            TestDataFactory.proposal_access(access_id="a2", user_id=user_id, prsl_id="prsl-b"),
+            TestDataFactory.proposal_access(access_id="a1", user_id=user_id, prsl_id="prsl-a"),
+            TestDataFactory.proposal_access(access_id="a3", user_id=user_id, prsl_id="prsl-a"),
         ]
 
         response = ps.list_accessible_proposal_ids(uow, user_id)
@@ -208,9 +200,7 @@ class TestOSD:
         assert response.status_code == HTTPStatus.OK
         res = response.json()
         assert res["observatory_policy"]["cycle_number"] == 1
-        assert (
-            res["observatory_policy"]["cycle_information"]["cycle_id"] == "SKAO_2027_1"
-        )
+        assert res["observatory_policy"]["cycle_information"]["cycle_id"] == "SKAO_2027_1"
 
 
 class TestProposalAPI:
@@ -385,9 +375,7 @@ class TestGetProposalReview:
         response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
         assert response.status_code == HTTPStatus.OK
 
-        expected = [
-            obj.model_dump(mode="json", exclude={"metadata"}) for obj in review_objs
-        ]
+        expected = [obj.model_dump(mode="json", exclude={"metadata"}) for obj in review_objs]
         payload = response.json()
         # align shapes by dropping metadata
         del payload[0]["metadata"]
@@ -411,9 +399,7 @@ class TestPutProposalAPI:
         autospec=True,
     )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_proposal_put_success(
-        self, mock_uow, mock_acl, proposal_status, permissions, client
-    ):
+    def test_proposal_put_success(self, mock_uow, mock_acl, proposal_status, permissions, client):
         """
         Check the prsls_put method returns the expected response
         """
@@ -432,9 +418,7 @@ class TestPutProposalAPI:
         uow_mock.prsls.get.return_value = proposal_obj
         mock_uow().__enter__.return_value = uow_mock
 
-        mock_acl.return_value = [
-            TestDataFactory.proposal_access(permissions=permissions)
-        ]
+        mock_acl.return_value = [TestDataFactory.proposal_access(permissions=permissions)]
 
         result = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
@@ -480,9 +464,7 @@ class TestPutProposalAPI:
         uow_mock.prsls.get.return_value = proposal_obj
         mock_uow().__enter__.return_value = uow_mock
 
-        mock_acl.return_value = [
-            TestDataFactory.proposal_access(permissions=permissions)
-        ]
+        mock_acl.return_value = [TestDataFactory.proposal_access(permissions=permissions)]
 
         result = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
@@ -541,9 +523,7 @@ class TestPutProposalAPI:
         uow_mock.prsls.get.return_value = None  # not found
         mock_uow.return_value.__enter__.return_value = uow_mock
 
-        mock_acl.return_value = [
-            TestDataFactory.proposal_access(permissions=["update"])
-        ]
+        mock_acl.return_value = [TestDataFactory.proposal_access(permissions=["update"])]
 
         response = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
@@ -566,9 +546,7 @@ class TestPutProposalAPI:
         proposal_obj = TestDataFactory.proposal()
         path_id = "diff-id"
 
-        mock_acl.return_value = [
-            TestDataFactory.proposal_access(permissions=["update"])
-        ]
+        mock_acl.return_value = [TestDataFactory.proposal_access(permissions=["update"])]
 
         response = client.put(
             f"{PROPOSAL_API_URL}/{path_id}",
@@ -596,9 +574,7 @@ class TestPutProposalAPI:
         uow_mock.prsls.add.side_effect = ValueError("Invalid proposal content")
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        mock_acl.return_value = [
-            TestDataFactory.proposal_access(permissions=["update"])
-        ]
+        mock_acl.return_value = [TestDataFactory.proposal_access(permissions=["update"])]
 
         response = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
@@ -745,18 +721,10 @@ class TestGetProposalsByStatus:
     # -----------------------------------------------------------
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_privileged_engineer_prefers_under_review_then_submitted(
-        self, mock_uow, mock_latest
-    ):
-        p_1st_same = TestDataFactory.complete_proposal(
-            prsl_id="prsl-1", status="under review"
-        )
-        p_sub_same = TestDataFactory.complete_proposal(
-            prsl_id="prsl-1", status="submitted"
-        )
-        p_sub_other = TestDataFactory.complete_proposal(
-            prsl_id="prsl-2", status="submitted"
-        )
+    def test_privileged_engineer_prefers_under_review_then_submitted(self, mock_uow, mock_latest):
+        p_1st_same = TestDataFactory.complete_proposal(prsl_id="prsl-1", status="under review")
+        p_sub_same = TestDataFactory.complete_proposal(prsl_id="prsl-1", status="submitted")
+        p_sub_other = TestDataFactory.complete_proposal(prsl_id="prsl-2", status="submitted")
 
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
@@ -778,9 +746,7 @@ class TestGetProposalsByStatus:
 
         calls = uow.prsls.query.call_args_list
         assert len(calls) == 2
-        assert (
-            getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        )
+        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
         assert getattr(calls[1].args[0], "status") == prsl_api.ProposalStatus.SUBMITTED
         assert mock_latest.call_count == 2
 
@@ -807,9 +773,7 @@ class TestGetProposalsByStatus:
 
         calls = uow.prsls.query.call_args_list
         assert len(calls) == 2
-        assert (
-            getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        )
+        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
         assert getattr(calls[1].args[0], "status") == prsl_api.ProposalStatus.SUBMITTED
         assert mock_latest.call_count == 2
 
@@ -848,9 +812,7 @@ class TestGetProposalsByStatus:
 
         calls = uow.prsls.query.call_args_list
         assert len(calls) == 1
-        assert (
-            getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        )
+        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
         mock_get_review_ids.assert_called_once_with(
             mock_uow.return_value.__enter__.return_value, "rev-1"
         )
@@ -884,15 +846,9 @@ class TestGetProposalsByStatus:
     @mock.patch(f"{PRSL_MODULE}.get_panel_prsl_ids", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_review_chair_only_under_review(
-        self, mock_uow, mock_latest, mock_panel_ids
-    ):
-        p_ur_a = TestDataFactory.complete_proposal(
-            prsl_id="prsl-a", status="under review"
-        )
-        p_ur_b = TestDataFactory.complete_proposal(
-            prsl_id="prsl-b", status="under review"
-        )
+    def test_review_chair_only_under_review(self, mock_uow, mock_latest, mock_panel_ids):
+        p_ur_a = TestDataFactory.complete_proposal(prsl_id="prsl-a", status="under review")
+        p_ur_b = TestDataFactory.complete_proposal(prsl_id="prsl-b", status="under review")
 
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
@@ -917,9 +873,7 @@ class TestGetProposalsByStatus:
 
         calls = uow.prsls.query.call_args_list
         assert len(calls) == 1
-        assert (
-            getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        )
+        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
 
         # where panel prsl_ids intercept
         mock_panel_ids.assert_called_once_with(uow, prsl_api.SV_NAME)
@@ -931,9 +885,7 @@ class TestGetProposalsByStatus:
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_admin_behaves_like_privileged(self, mock_uow, mock_latest):
-        p_1st = TestDataFactory.complete_proposal(
-            prsl_id="prsl-x", status="under review"
-        )
+        p_1st = TestDataFactory.complete_proposal(prsl_id="prsl-x", status="under review")
         p_sub = TestDataFactory.complete_proposal(prsl_id="prsl-y", status="submitted")
 
         uow = mock.MagicMock()
@@ -956,9 +908,7 @@ class TestGetProposalsByStatus:
 
         calls = uow.prsls.query.call_args_list
         assert len(calls) == 2
-        assert (
-            getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        )
+        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
         assert getattr(calls[1].args[0], "status") == prsl_api.ProposalStatus.SUBMITTED
         assert mock_latest.call_count == 2
 
@@ -998,9 +948,7 @@ class TestGetReviewerPrslIds:
 
     @mock.patch(f"{MODULE}.get_panel_prsl_ids", autospec=True)
     @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
-    def test_dedupes_and_returns_only_valid_ids_with_factory(
-        self, mock_latest, mock_panel_ids
-    ):
+    def test_dedupes_and_returns_only_valid_ids_with_factory(self, mock_latest, mock_panel_ids):
         uow = mock.MagicMock()
         rows = [
             TestDataFactory.reviews(review_id="r1", reviewer_id="kjf", prsl_id="p1"),
@@ -1163,9 +1111,7 @@ class TestGetUserEmail:
         assert response.json() == {"detail": f"User not found with email: {email}"}
 
     @mock.patch("ska_oso_services.pht.utils.ms_graph.make_graph_call")
-    def test_get_user_by_invalid_email_user_not_found(
-        self, mock_make_graph_call, client
-    ):
+    def test_get_user_by_invalid_email_user_not_found(self, mock_make_graph_call, client):
         email = "invalid*address@example.com"
         mock_make_graph_call.return_value = []
 

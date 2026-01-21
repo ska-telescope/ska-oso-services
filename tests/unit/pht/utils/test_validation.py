@@ -47,8 +47,6 @@ def test_validate_proposal_observation_set_no_target():
 
     expected = {
         "result": False,
-        "validation_errors": [
-            "Observation Set wrong too has no Targets linked in Results"
-        ],
+        "validation_errors": ["Observation Set wrong too has no Targets linked in Results"],
     }
     assert expected == res

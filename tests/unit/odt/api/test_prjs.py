@@ -39,10 +39,7 @@ class TestProjectGet:
         uow_mock.prjs.get.side_effect = ODANotFound(identifier="prj-1234")
 
         result = client.get(f"{PRJS_API_URL}/prj-1234")
-        assert (
-            result.json()["detail"]
-            == "The requested identifier prj-1234 could not be found."
-        )
+        assert result.json()["detail"] == "The requested identifier prj-1234 could not be found."
         assert result.status_code == HTTPStatus.NOT_FOUND
 
     def test_prjs_get_error(self, client_with_uow_mock):
@@ -273,10 +270,7 @@ class TestProjectPut:
         )
 
         assert resp.status_code == HTTPStatus.NOT_FOUND
-        assert (
-            resp.json()["detail"]
-            == "The requested identifier prj-999 could not be found."
-        )
+        assert resp.json()["detail"] == "The requested identifier prj-999 could not be found."
 
     def test_prjs_put_oda_error(self, client_with_uow_mock):
         """
@@ -315,10 +309,7 @@ class TestProjectAddSBDefinition:
         )
 
         assert resp.status_code == HTTPStatus.NOT_FOUND
-        assert (
-            resp.json()["detail"]
-            == "The requested identifier prj-999 could not be found."
-        )
+        assert resp.json()["detail"] == "The requested identifier prj-999 could not be found."
 
     def test_prjs_post_sbd_obs_block_id_not_found(self, client_with_uow_mock):
         client, uow_mock = client_with_uow_mock
@@ -375,9 +366,7 @@ class TestProjectAddSBDefinition:
 class TestProjectGenerateSBDefinitions:
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_sbds")
-    def test_prjs_post_generate_sbd_success(
-        self, mock_generate_sbds, client_with_uow_mock
-    ):
+    def test_prjs_post_generate_sbd_success(self, mock_generate_sbds, client_with_uow_mock):
         client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         obs_block_id = "ob-1"
@@ -410,10 +399,7 @@ class TestProjectGenerateSBDefinitions:
         )
 
         assert resp.status_code == HTTPStatus.NOT_FOUND
-        assert (
-            resp.json()["detail"]
-            == f"The requested identifier {prj_id} could not be found."
-        )
+        assert resp.json()["detail"] == f"The requested identifier {prj_id} could not be found."
 
     def test_prjs_post_generate_sbd_oda_error(self, client_with_uow_mock):
         """ """
@@ -432,9 +418,7 @@ class TestProjectGenerateSBDefinitions:
 class TestProjectObsBlockGenerateSBDefinitions:
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_sbds")
-    def test_prjs_post_ob_generate_sbd_success(
-        self, mock_generate_sbds, client_with_uow_mock
-    ):
+    def test_prjs_post_ob_generate_sbd_success(self, mock_generate_sbds, client_with_uow_mock):
         client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         obs_block_id = "ob-1"
@@ -464,14 +448,9 @@ class TestProjectObsBlockGenerateSBDefinitions:
         )
 
         assert resp.status_code == HTTPStatus.NOT_FOUND
-        assert (
-            resp.json()["detail"]
-            == f"The requested identifier {prj_id} could not be found."
-        )
+        assert resp.json()["detail"] == f"The requested identifier {prj_id} could not be found."
 
-    def test_prjs_post_ob_generate_sbd_obs_block_id_not_found(
-        self, client_with_uow_mock
-    ):
+    def test_prjs_post_ob_generate_sbd_obs_block_id_not_found(self, client_with_uow_mock):
         client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         project.obs_blocks = []
@@ -482,10 +461,7 @@ class TestProjectObsBlockGenerateSBDefinitions:
         )
 
         assert resp.status_code == HTTPStatus.NOT_FOUND
-        assert (
-            resp.json()["detail"]
-            == "Observing Block 'obs-block-00001' not found in Project"
-        )
+        assert resp.json()["detail"] == "Observing Block 'obs-block-00001' not found in Project"
 
     def test_prjs_post_ob_generate_sbd_oda_error(self, client_with_uow_mock):
         """ """

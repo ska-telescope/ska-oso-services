@@ -24,9 +24,7 @@ def test_project_from_proposal_without_groups(mock_randint):
     # this might need to be removed if/when Stargazer add calibration_strategy to the
     # test proposal
     proposal.observation_info.calibration_strategy = [
-        CalibrationStrategy(
-            observatory_defined=True, notes="I prefer Pictor A if possible"
-        )
+        CalibrationStrategy(observatory_defined=True, notes="I prefer Pictor A if possible")
     ]
 
     proposal.observation_info.observation_sets[0].group_id = None
@@ -54,8 +52,7 @@ def test_project_from_proposal_without_groups(mock_randint):
     assert len(first_ob_science_programme.targets) == 2
 
     assert (
-        proposal.observation_info.data_product_sdps
-        == first_ob_science_programme.data_product_sdps
+        proposal.observation_info.data_product_sdps == first_ob_science_programme.data_product_sdps
     )
 
     # Check the second observing block contents
@@ -74,8 +71,7 @@ def test_project_from_proposal_without_groups(mock_randint):
     assert len(second_ob_science_programme.targets) == 1
 
     assert (
-        proposal.observation_info.data_product_sdps
-        == first_ob_science_programme.data_product_sdps
+        proposal.observation_info.data_product_sdps == first_ob_science_programme.data_product_sdps
     )
 
 
@@ -116,8 +112,7 @@ def test_project_from_proposal_with_groups():
     assert len(ob_first_science_programme.targets) == 2
 
     assert (
-        proposal.observation_info.data_product_sdps
-        == ob_first_science_programme.data_product_sdps
+        proposal.observation_info.data_product_sdps == ob_first_science_programme.data_product_sdps
     )
 
     # Check the second science programme

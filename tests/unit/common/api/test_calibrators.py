@@ -13,17 +13,13 @@ mocked_return = [
     Target(
         target_id="calibrator-00001",
         name="3C 444",
-        reference_coordinate=ICRSCoordinates(
-            ra_str="22:14:25.752", dec_str="-17:01:36.29"
-        ),
+        reference_coordinate=ICRSCoordinates(ra_str="22:14:25.752", dec_str="-17:01:36.29"),
         radial_velocity=RadialVelocity(redshift=0.153053),
     ),
     Target(
         target_id="calibrator-00002",
         name="Centaurus A",
-        reference_coordinate=ICRSCoordinates(
-            ra_str="13:25:27.6152", dec_str="-43:01:08.805"
-        ),
+        reference_coordinate=ICRSCoordinates(ra_str="13:25:27.6152", dec_str="-43:01:08.805"),
         radial_velocity=RadialVelocity(redshift=0.00187695),
     ),
 ]

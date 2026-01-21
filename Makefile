@@ -71,7 +71,7 @@ PYTHON_SWITCHES_FOR_PYLINT =
 
 # Restore Black's preferred line length which otherwise would be overridden by
 # System Team makefiles' 79 character default
-PYTHON_LINE_LENGTH = 88
+PYTHON_LINE_LENGTH = 99
 
 # Set the k8s test command run inside the testing pod to only run the component
 # tests (no k8s pod deployment required for unit tests)

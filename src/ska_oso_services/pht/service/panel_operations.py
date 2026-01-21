@@ -16,17 +16,12 @@ from ska_oso_pdm.proposal_management.review import (
 
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.models.schemas import PanelAssignResponse
-from ska_oso_services.pht.utils.pht_helper import (
-    generate_entity_id,
-    get_latest_entity_by_id,
-)
+from ska_oso_services.pht.utils.pht_helper import generate_entity_id, get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
 
-def build_assignment_response(
-    updates: dict[str, tuple[Panel, int]]
-) -> list[PanelAssignResponse]:
+def build_assignment_response(updates: dict[str, tuple[Panel, int]]) -> list[PanelAssignResponse]:
     """Convert name -> (panel, added_count) to response list."""
     return [
         PanelAssignResponse(
@@ -121,9 +116,7 @@ def assign_to_existing_panel(
         prsl_id = getattr(inc, "prsl_id", None)
         if not prsl_id or prsl_id in existing_ids:
             continue
-        to_add_assignments.append(
-            ProposalAssignment(prsl_id=prsl_id, assigned_on=assigned_at)
-        )
+        to_add_assignments.append(ProposalAssignment(prsl_id=prsl_id, assigned_on=assigned_at))
         to_add_ids.append(prsl_id)
 
     if to_add_assignments:
@@ -174,15 +167,11 @@ def ensure_review_exist_or_create(
     if kind == "Technical Review":
         review_type = TechnicalReview(kind="Technical Review")
     else:
-        review_type = ScienceReview(
-            kind="Science Review", conflict=Conflict(has_conflict=False)
-        )
+        review_type = ScienceReview(kind="Science Review", conflict=Conflict(has_conflict=False))
 
     new_review = PanelReview(
         panel_id=param.panel_id,
-        review_id=generate_entity_id(
-            "rvw-tec" if kind == "Technical Review" else "rvw-sci"
-        ),
+        review_id=generate_entity_id("rvw-tec" if kind == "Technical Review" else "rvw-sci"),
         reviewer_id=reviewer_id,
         cycle=param.cycle,
         prsl_id=proposal_id,
@@ -218,7 +207,5 @@ def ensure_decision_exist_or_create(uow, param, proposal_id: str) -> str:
         prsl_id=proposal_id,
     )
     created_pnld: PanelDecision = uow.pnlds.add(new_review)
-    logger.info(
-        "Creating decision %s (prsl_id=%s)", created_pnld.decision_id, proposal_id
-    )
+    logger.info("Creating decision %s (prsl_id=%s)", created_pnld.decision_id, proposal_id)
     return created_pnld.decision_id

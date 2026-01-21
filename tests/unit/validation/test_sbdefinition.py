@@ -7,11 +7,7 @@ from ska_oso_pdm.builders import (
 )
 from ska_oso_pdm.builders.target_builder import MidTargetBuilder, generate_targets
 
-from ska_oso_services.validation.model import (
-    ValidationContext,
-    ValidationIssue,
-    validator,
-)
+from ska_oso_services.validation.model import ValidationContext, ValidationIssue, validator
 from ska_oso_services.validation.sbdefinition import validate_sbdefinition
 
 TEST_VALIDATION_ISSUE = ValidationIssue(message="test invalid result")
@@ -26,9 +22,7 @@ def test_each_target_is_validated(mock_validate_target):
         VALID_RESULT,
         INVALID_RESULT,
     ]
-    sbd = MidSBDefinitionBuilder(
-        targets=generate_targets(MidTargetBuilder, num_targets=3)
-    )
+    sbd = MidSBDefinitionBuilder(targets=generate_targets(MidTargetBuilder, num_targets=3))
 
     input_context = ValidationContext(primary_entity=sbd, telescope=sbd.telescope)
 
@@ -48,9 +42,7 @@ def test_each_target_has_field_added(mock_validate_target):
 
     mock_validate_target.side_effect = mock_validator
 
-    sbd = MidSBDefinitionBuilder(
-        targets=generate_targets(MidTargetBuilder, num_targets=3)
-    )
+    sbd = MidSBDefinitionBuilder(targets=generate_targets(MidTargetBuilder, num_targets=3))
 
     input_context = ValidationContext(primary_entity=sbd, telescope=sbd.telescope)
 

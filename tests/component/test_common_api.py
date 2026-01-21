@@ -178,12 +178,7 @@ def test_coordinates_get(authrequests, identifier, reference_frame, expected_res
     and returns a success response with the resolved coordinates
     """
 
-    response = authrequests.get(
-        f"{OSO_SERVICES_URL}/coordinates/{identifier}/{reference_frame}"
-    )
+    response = authrequests.get(f"{OSO_SERVICES_URL}/coordinates/{identifier}/{reference_frame}")
 
     assert response.status_code == HTTPStatus.OK, response.json()
-    assert (
-        response.json()["reference_coordinate"]
-        == expected_response["reference_coordinate"]
-    )
+    assert response.json()["reference_coordinate"] == expected_response["reference_coordinate"]

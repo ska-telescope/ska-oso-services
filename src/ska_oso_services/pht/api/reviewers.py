@@ -11,9 +11,7 @@ router = APIRouter(tags=["PMT API - Reviewers"])
     "/reviewers",
     summary="Retrieve a list of reviewers",
     dependencies=[
-        Permissions(
-            roles=[Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READ]
-        )
+        Permissions(roles=[Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN], scopes=[Scope.PHT_READ])
     ],
 )
 def get_reviewers() -> dict:

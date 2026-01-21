@@ -63,15 +63,11 @@ class TestMakeGraphCall:
     @mock.patch(f"{MODULE}.client.acquire_token_silent")
     @mock.patch(f"{MODULE}.client.acquire_token_for_client")
     @mock.patch("ska_oso_services.pht.utils.ms_graph.requests.get")
-    def test_graph_call(
-        self, mock_get, mock_acquire_token_for_client, mock_acquire_token_silent
-    ):
+    def test_graph_call(self, mock_get, mock_acquire_token_for_client, mock_acquire_token_silent):
         mock_acquire_token_silent.return_value = None
         mock_acquire_token_for_client.return_value = {"access_token": "fake-token"}
 
-        mock_get.return_value.json.return_value = {
-            "value": [{"id": "1", "name": "Username"}]
-        }
+        mock_get.return_value.json.return_value = {"value": [{"id": "1", "name": "Username"}]}
 
         results = make_graph_call(f"{MS_GRAPH_URL}/users")
 
@@ -106,9 +102,7 @@ class TestMakeGraphCall:
             "error_description": "Error desc",
         }
 
-        with pytest.raises(
-            RuntimeError, match="Failed to acquire token: invalid_client"
-        ):
+        with pytest.raises(RuntimeError, match="Failed to acquire token: invalid_client"):
             make_graph_call(f"{MS_GRAPH_URL}/v1.0/users")
 
     @mock.patch(f"{MODULE}.client.acquire_token_silent")
