@@ -43,7 +43,7 @@ def create_review(
 
         with oda.uow() as uow:
             query_param = CustomQuery(
-                prsl_id=reviews.prsl_id,
+                prsl_fk=reviews.prsl_id,
                 kind=reviews.review_type.kind,
                 reviewer_id=reviews.reviewer_id,
             )

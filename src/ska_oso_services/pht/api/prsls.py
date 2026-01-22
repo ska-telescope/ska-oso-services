@@ -351,7 +351,7 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
     """
     logger.debug("GET reviews for a prsl_id: %s", prsl_id)
     with oda.uow() as uow:
-        query = CustomQuery(prsl_id=prsl_id)
+        query = CustomQuery(prsl_fk=prsl_id)
         reviews = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
 
     return reviews

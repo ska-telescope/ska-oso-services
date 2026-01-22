@@ -61,7 +61,7 @@ def assert_user_has_permission_for_proposal(
     """
     rows = (
         get_latest_entity_by_id(
-            uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id)),
+            uow.prslacc.query(CustomQuery(user_id=user_id, prsl_fk=prsl_id)),
             ACCESS_ID,
         )
         or []

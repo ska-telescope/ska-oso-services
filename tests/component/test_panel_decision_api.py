@@ -21,10 +21,20 @@ def test_create_and_get_panel_decision(authrequests):
     Assumes the server is running and accessible.
     """
 
+    # Add proposal to link to
+    post_response = authrequests.post(
+        f"{PHT_URL}/prsls/create",
+        data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK, post_response.text
+    prsl_id = post_response.json()["prsl_id"]
+
+    panel_decision_json = TestDataFactory.panel_decision(prsl_id=prsl_id).model_dump_json()
     # POST using JSON string
     post_response = authrequests.post(
         f"{PHT_URL}/panel/decision/create",
-        data=VALID_PANEL_DECISION,
+        data=panel_decision_json,
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -37,7 +47,7 @@ def test_create_and_get_panel_decision(authrequests):
     actual_payload = get_response.json()
 
     # Prepare expected payload from input
-    expected_payload = json.loads(VALID_PANEL_DECISION)
+    expected_payload = json.loads(panel_decision_json)
 
     # Strip dynamic fields
     for obj in (actual_payload, expected_payload):
@@ -55,10 +65,19 @@ def test_panel_decision_create_then_put(authrequests):
     and the version number increments as expected.
     """
 
+    # Add proposal to link to
+    post_response = authrequests.post(
+        f"{PHT_URL}/prsls/create",
+        data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK, post_response.text
+    prsl_id = post_response.json()["prsl_id"]
+
     # POST a new proposal
     post_response = authrequests.post(
         f"{PHT_URL}/panel/decision/create",
-        data=VALID_PANEL_DECISION,
+        data=TestDataFactory.panel_decision(prsl_id=prsl_id).model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
 
@@ -219,8 +238,16 @@ def test_get_list_panel_decision_for_user(authrequests):
 
     # Create 2 reviews with unique decision_ids
     for _ in range(2):
+        # Add proposal to link to
+        post_response = authrequests.post(
+            f"{PHT_URL}/prsls/create",
+            data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert post_response.status_code == HTTPStatus.OK, post_response.text
+        prsl_id = post_response.json()["prsl_id"]
         decision_id = f"pnld-test-{uuid.uuid4().hex[:8]}"
-        proposal = TestDataFactory.panel_decision(decision_id=decision_id)
+        proposal = TestDataFactory.panel_decision(decision_id=decision_id, prsl_id=prsl_id)
         proposal_json = proposal.model_dump_json()
 
         response = authrequests.post(

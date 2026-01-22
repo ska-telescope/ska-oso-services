@@ -10,6 +10,8 @@ import json
 # pylint: disable=missing-timeout
 from http import HTTPStatus
 
+from ska_oso_pdm import Project
+
 from ..unit.util import VALID_PROJECT_WITHOUT_ID_JSON, TestDataFactory, assert_json_is_equal
 from . import ODT_URL
 
@@ -30,7 +32,7 @@ def test_empty_sbd_created_and_linked_to_project(authrequests):
     # Create an SBDefinition in that Project in the first observing block
     sbd_post_response = authrequests.post(
         f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/sbds",
-        data=json.dumps({"telescope": "ska_mid"}),
+        data=json.dumps({"telescope": "ska_mid", "ob_ref": obs_block_id}),
         headers={"Content-type": "application/json"},
     )
     assert sbd_post_response.status_code == HTTPStatus.OK
@@ -62,7 +64,7 @@ def test_sbd_created_and_linked_to_project(authrequests):
     # Create an SBDefinition in that Project in the first observing block
     sbd_post_response = authrequests.post(
         f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/sbds",
-        data=json.dumps({"telescope": "ska_mid"}),
+        data=json.dumps({"telescope": "ska_mid", "ob_ref": obs_block_id}),
         headers={"Content-type": "application/json"},
     )
     assert sbd_post_response.status_code == HTTPStatus.OK, sbd_post_response.content
@@ -89,7 +91,12 @@ def test_prj_post_then_get(authrequests):
     assert_json_is_equal(
         post_response.content,
         VALID_PROJECT_WITHOUT_ID_JSON,
-        exclude_paths=["root['metadata']", "root['prj_id']"],
+        exclude_paths=[
+            "root['metadata']",
+            "root['prj_id']",
+            "root['obs_blocks'][0]['obs_block_id']",
+            "root['obs_blocks'][1]['obs_block_id']",
+        ],
     )
 
     prj_id = post_response.json()["prj_id"]
@@ -97,11 +104,17 @@ def test_prj_post_then_get(authrequests):
 
     # Assert the ODT can get the Project, ignoring the metadata as it contains
     # timestamps and is the responsibility of the ODA
+
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     assert_json_is_equal(
         get_response.content,
         VALID_PROJECT_WITHOUT_ID_JSON,
-        exclude_paths=["root['metadata']", "root['prj_id']"],
+        exclude_paths=[
+            "root['metadata']",
+            "root['prj_id']",
+            "root['obs_blocks'][0]['obs_block_id']",
+            "root['obs_blocks'][1]['obs_block_id']",
+        ],
     )
 
 

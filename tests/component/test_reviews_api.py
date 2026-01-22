@@ -103,8 +103,18 @@ def test_get_list_reviews_for_user(authrequests):
 
     # Create 2 reviews with unique review_ids
     for _ in range(2):
-        prsl_id = f"prsl-test-{uuid.uuid4().hex[:8]}"
-        review = TestDataFactory.reviews(prsl_id=prsl_id, reviewer_id="test_user")
+        # Add project to link reviews to
+        post_response = authrequests.post(
+            f"{PHT_URL}/prsls/create",
+            data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert post_response.status_code == HTTPStatus.OK, post_response.text
+        prsl_id = post_response.json()["prsl_id"]
+
+        review = TestDataFactory.reviews(
+            review_id=f"rvw-test-{uuid.uuid4().hex[:8]}", prsl_id=prsl_id, reviewer_id="test_user"
+        )
         review_json = review.model_dump_json()
 
         response = authrequests.post(

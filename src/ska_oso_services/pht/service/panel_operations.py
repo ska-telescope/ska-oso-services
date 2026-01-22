@@ -2,8 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Iterable
 
-from ska_db_oda.repository.domain import ODANotFound
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.repository.domain import CustomQuery, ODANotFound
 from ska_oso_pdm import PanelDecision, PanelReview
 from ska_oso_pdm.proposal.proposal import Proposal, ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel, ProposalAssignment

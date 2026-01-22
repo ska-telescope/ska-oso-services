@@ -320,12 +320,13 @@ def test_get_reviews_for_panel_with_wrong_id(authrequests):
 
 
 def test_get_reviews_for_panel_with_valid_id(authrequests):
-    proposal = TestDataFactory.complete_proposal("my proposal")
+    proposal = TestDataFactory.complete_proposal(prsl_id=None)
     response = authrequests.post(
         f"{PHT_URL}/prsls/create",
         data=proposal.json(),
         headers={"Content-Type": "application/json"},
     )
+    prsl_id = response.json()["prsl_id"]
     assert response.status_code == HTTPStatus.OK
 
     panel_id = "panel-test-20250717-00001"
@@ -339,7 +340,7 @@ def test_get_reviews_for_panel_with_valid_id(authrequests):
     assert response.status_code == HTTPStatus.OK
     review = [
         TestDataFactory.reviews(
-            prsl_id=proposal.prsl_id,
+            prsl_id=prsl_id,
         )
     ]
     response = authrequests.post(
@@ -349,7 +350,7 @@ def test_get_reviews_for_panel_with_valid_id(authrequests):
     )
     assert response.status_code == HTTPStatus.OK
 
-    response = authrequests.get(f"{PHT_URL}/prsls/reviews/{proposal.prsl_id}")
+    response = authrequests.get(f"{PHT_URL}/prsls/reviews/{prsl_id}")
     assert response.status_code == HTTPStatus.OK
     res = response.json()
     del res[0]["metadata"]

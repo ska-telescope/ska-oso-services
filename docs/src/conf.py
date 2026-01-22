@@ -39,7 +39,8 @@ autodoc_mock_imports = [
     "aiosmtplib",
     "matplotlib",
     "jwt",
-    "msal"
+    "msal",
+    "ska_ser_skuid"
 ]
 
 # -- General configuration ------------------------------------------------

@@ -90,7 +90,7 @@ def get_access_by_prsl_id(
 
     with oda.uow() as uow:
         query_param_pi = CustomQuery(
-            prsl_id=prsl_id,
+            prsl_fk=prsl_id,
             user_id=auth.user_id,
             role=ProposalRole.PrincipalInvestigator,
         )
@@ -105,7 +105,7 @@ def get_access_by_prsl_id(
                 )
             )
 
-        query_param = CustomQuery(prsl_id=prsl_id)
+        query_param = CustomQuery(prsl_fk=prsl_id)
         proposal_access = get_latest_entity_by_id(uow.prslacc.query(query_param), "access_id")
 
     if not proposal_access:

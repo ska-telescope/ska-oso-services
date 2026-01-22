@@ -13,6 +13,8 @@ from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.entity_status_history import ProjectStatus
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
+from ska_ser_skuid.tools.entity_types import EntityType
+from ska_ser_skuid.tools.generate import mint_randint_skuid
 
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
@@ -25,14 +27,9 @@ from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
 
-DEFAULT_OBSERVING_BLOCK = ObservingBlock(obs_block_id="observing-block-12345", sbd_ids=[])
 
 DEFAULT_AUTHOR = Author(pis=[], cois=[])
 
-DEFAULT_PROJECT = Project(
-    obs_blocks=[DEFAULT_OBSERVING_BLOCK.model_copy(deep=True)],
-    author=DEFAULT_AUTHOR.model_copy(deep=True),
-)
 
 DEFAULT_SB_DEFINITION = SBDefinition(
     telescope=TelescopeType.SKA_MID,
@@ -47,6 +44,10 @@ API_ROLES = {
 }
 
 router = APIRouter(prefix="/prjs")
+
+
+def empty_observing_block() -> ObservingBlock:
+    return ObservingBlock(obs_block_id=mint_randint_skuid(EntityType.OB), sbd_ids=[])
 
 
 @router.get(
@@ -80,10 +81,13 @@ def prjs_post(
     """
     LOGGER.debug("POST PRJ")
     if prj is None:
-        prj = DEFAULT_PROJECT.model_copy(deep=True)
+        prj = Project(
+            obs_blocks=[empty_observing_block()],
+            author=DEFAULT_AUTHOR.model_copy(deep=True),
+        )
     else:
         if not prj.obs_blocks:
-            prj.obs_blocks = [DEFAULT_OBSERVING_BLOCK.model_copy(deep=True)]
+            prj.obs_blocks = [empty_observing_block()]
         if prj.author is None:
             prj.author = DEFAULT_AUTHOR.model_copy(deep=True)
     # Ensure the identifier is None so the ODA doesn't try to perform an update
