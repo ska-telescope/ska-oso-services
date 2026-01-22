@@ -9,6 +9,7 @@ from ska_oso_pdm.sb_definition import CSPConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 from ska_oso_pdm.sb_definition.csp.midcbf import CorrelationSPWConfiguration
 
+from ska_oso_services.common.osdmapper import Band5bSubband, MidFrequencyBand
 from ska_oso_services.common.static.constants import (
     LOW_CONTINUUM_CHANNEL_WIDTH,
     LOW_MAXIMUM_FREQUENCY,
@@ -157,6 +158,8 @@ def validate_low_spw_centre_frequency(
             )
         ]
 
+    return []
+
 
 @validator
 def validate_mid_spw_centre_frequency(
@@ -172,10 +175,11 @@ def validate_mid_spw_centre_frequency(
         centre_frequency_hz > band_data.max_frequency_hz
         or centre_frequency_hz < band_data.min_frequency_hz
     ):
-        if band_data.sub_bands:
-            band_id = "Band5b subband " + str(band_data.sub_band)
-        else:
-            band_id = band_data.rx_id
+        match band_data:
+            case Band5bSubband():
+                band_id = "Band5b subband " + str(band_data.sub_band)
+            case MidFrequencyBand():
+                band_id = band_data.rx_id
 
         return [
             ValidationIssue(
@@ -185,6 +189,8 @@ def validate_mid_spw_centre_frequency(
                 f" is outside of {band_id}",
             )
         ]
+
+    return []
 
 
 @validator
@@ -215,6 +221,8 @@ def validate_continuum_spw_bandwidth(
             )
         ]
 
+    return []
+
 
 @validator
 def validate_low_spw_window(
@@ -234,6 +242,8 @@ def validate_low_spw_window(
             )
         ]
 
+    return []
+
 
 @validator
 def validate_mid_spw_window(
@@ -245,7 +255,7 @@ def validate_mid_spw_window(
 
     band_data = spw_context.relevant_context["band_data_from_osd"]
 
-    if (centre_frequency + 0.5 * spw_bandwidth) > band_data.max_frequency_hz or (
+    if (centre_frequency + 0.5 * spw_bandwidth) > band_data.max_frequency_hz * u.Hz or (
         centre_frequency - 0.5 * spw_bandwidth
     ) < band_data.min_frequency_hz * u.Hz:
 
@@ -255,6 +265,8 @@ def validate_mid_spw_window(
                 message="Spectral window is outside allowed range",
             )
         ]
+
+    return []
 
 
 @validator
@@ -268,7 +280,9 @@ def validate_mid_fsps(
     centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
     spw_bandwidth = _calculate_continuum_spw_bandwidth(spw_context)
 
-    frequency_offset = spw_context.relevant_context["frequency_offset"]  # should be zero
+    frequency_offset = spw_context.relevant_context[
+        "subband_frequency_slice_offset"
+    ]  # should be zero
 
     minimum_spw_frequency = centre_frequency - 0.5 * spw_bandwidth
     maximum_spw_frequency = centre_frequency + 0.5 * spw_bandwidth
@@ -285,7 +299,7 @@ def validate_mid_fsps(
     n_fsps = coarse_channel_high - coarse_channel_low + 1
 
     available_fsps = get_subarray_specific_parameter_from_osd(
-        spw_context.telescope, spw_context.array_assembly, "available_fsps"
+        spw_context.telescope, spw_context.array_assembly, "number_fsps"
     )
 
     if n_fsps > available_fsps:
@@ -296,6 +310,8 @@ def validate_mid_fsps(
                 f" of FSPs available for array assembly {spw_context.array_assembly}",
             )
         ]
+
+    return []
 
 
 def _calculate_continuum_spw_bandwidth(
