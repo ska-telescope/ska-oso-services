@@ -11,11 +11,11 @@ from ska_oso_pdm.sb_definition.csp.midcbf import CorrelationSPWConfiguration
 
 from ska_oso_services.common.osdmapper import Band5bSubband, MidFrequencyBand
 from ska_oso_services.common.static.constants import (
-    LOW_CONTINUUM_CHANNEL_WIDTH,
-    LOW_MAXIMUM_FREQUENCY,
-    LOW_MINIMUM_FREQUENCY,
-    MID_CHANNEL_WIDTH,
-    MID_FREQUENCY_SLICE_BANDWIDTH,
+    low_continuum_channel_width,
+    low_maximum_frequency,
+    low_minimum_frequency,
+    mid_channel_width,
+    mid_frequency_slice_bandwidth,
 )
 from ska_oso_services.validation import (
     get_mid_frequency_band_data_from_osd,
@@ -29,7 +29,6 @@ from ska_oso_services.validation.model import (
     validate,
     validator,
 )
-
 
 @validator
 def validate_csp(
@@ -148,7 +147,7 @@ def validate_low_spw_centre_frequency(
 
     centre_frequency_hz = spw_context.primary_entity.centre_frequency
 
-    if centre_frequency_hz < LOW_MINIMUM_FREQUENCY or centre_frequency_hz > LOW_MAXIMUM_FREQUENCY:
+    if centre_frequency_hz < low_minimum_frequency() or centre_frequency_hz > low_maximum_frequency():
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
@@ -231,9 +230,9 @@ def validate_low_spw_window(
     centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
     spw_bandwidth = _calculate_continuum_spw_bandwidth(spw_context)
 
-    if (centre_frequency + 0.5 * spw_bandwidth) > LOW_MAXIMUM_FREQUENCY or (
+    if (centre_frequency + 0.5 * spw_bandwidth) > low_maximum_frequency() or (
         centre_frequency - 0.5 * spw_bandwidth
-    ) < LOW_MINIMUM_FREQUENCY:
+    ) < low_minimum_frequency():
 
         return [
             ValidationIssue(
@@ -288,12 +287,12 @@ def validate_mid_fsps(
     maximum_spw_frequency = centre_frequency + 0.5 * spw_bandwidth
 
     coarse_channel_low = math.floor(
-        (minimum_spw_frequency - frequency_offset + (0.5 * MID_FREQUENCY_SLICE_BANDWIDTH))
-        / MID_FREQUENCY_SLICE_BANDWIDTH
+        (minimum_spw_frequency - frequency_offset + (0.5 * mid_frequency_slice_bandwidth()))
+        / mid_frequency_slice_bandwidth()
     )
     coarse_channel_high = math.floor(
-        (maximum_spw_frequency - frequency_offset + (0.5 * MID_FREQUENCY_SLICE_BANDWIDTH))
-        / MID_FREQUENCY_SLICE_BANDWIDTH
+        (maximum_spw_frequency - frequency_offset + (0.5 * mid_frequency_slice_bandwidth()))
+        / mid_frequency_slice_bandwidth()
     )
 
     n_fsps = coarse_channel_high - coarse_channel_low + 1
@@ -328,9 +327,9 @@ def _calculate_continuum_spw_bandwidth(
         raise ValueError("zoom windows are not yet supported")
 
     if spw_context.telescope == TelescopeType.SKA_MID:
-        channel_width = MID_CHANNEL_WIDTH
+        channel_width = mid_channel_width()
     else:
-        channel_width = LOW_CONTINUUM_CHANNEL_WIDTH
+        channel_width = low_continuum_channel_width()
 
     spw_bandwidth = channel_width * number_of_channels
 
