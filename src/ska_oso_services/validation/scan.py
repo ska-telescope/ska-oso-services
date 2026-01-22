@@ -9,10 +9,10 @@ from ska_oso_pdm._shared import PointedMosaicParameters
 from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 
 from ska_oso_services.common.static.constants import (
-    LOW_STATION_CHANNEL_WIDTH,
     LOW_STATION_DIAMETER,
-    MID_CHANNEL_WIDTH,
     MID_DISH_DIAMETER,
+    low_station_channel_width,
+    mid_channel_width,
 )
 from ska_oso_services.validation.model import (
     ValidationContext,
@@ -107,7 +107,7 @@ def _calculate_hpbw(csp_config: CSPConfiguration, telescope: TelescopeType) -> A
         diameter_m = LOW_STATION_DIAMETER
         band_upper_limits_hz = [
             spw.centre_frequency
-            + (LOW_STATION_CHANNEL_WIDTH.to(u.Hz).value * spw.number_of_channels / 2)
+            + (low_station_channel_width().to(u.Hz).value * spw.number_of_channels / 2)
             for spw in csp_config.lowcbf.correlation_spws
         ]
     else:
@@ -115,7 +115,8 @@ def _calculate_hpbw(csp_config: CSPConfiguration, telescope: TelescopeType) -> A
         #  correct dish size here based on the array
         diameter_m = MID_DISH_DIAMETER
         band_upper_limits_hz = [
-            spw.centre_frequency + (MID_CHANNEL_WIDTH.to(u.Hz).value * spw.number_of_channels / 2)
+            spw.centre_frequency
+            + (mid_channel_width().to(u.Hz).value * spw.number_of_channels / 2)
             for spw in csp_config.midcbf.subbands[0].correlation_spws
         ]
 

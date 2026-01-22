@@ -1,4 +1,6 @@
-from ska_oso_pdm import TelescopeType, ValidationArrayAssembly
+from typing import Union
+
+from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
 from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
 
@@ -24,8 +26,8 @@ def get_low_basic_capability_parameter_from_osd(parameter: str):
 
 
 def get_mid_frequency_band_data_from_osd(
-    obs_band: ReceiverBand, band5b_subband: pdm_Band5bSubband | None = None
-) -> MidFrequencyBand | Band5bSubband:
+    obs_band: ReceiverBand, band5b_subband: Union[pdm_Band5bSubband, None] = None
+) -> Union[MidFrequencyBand, Band5bSubband]:
     if obs_band != ReceiverBand.BAND_5B and band5b_subband is not None:
         raise ValueError(f"cannot specify and band 5b subband for band {obs_band}")
     elif obs_band == ReceiverBand.BAND_5B and band5b_subband is None:
@@ -49,14 +51,14 @@ def get_mid_frequency_band_data_from_osd(
 
 def get_subarray_specific_parameter_from_osd(
     telescope: TelescopeType,
-    validation_array_assembly: ValidationArrayAssembly,
+    validation_array_assembly: Union[ValidationArrayAssembly, SubArrayMID, SubArrayLOW],
     parameter: str,
 ):
     """
     utility function to extract subarray specific parameters from the OSD
     """
     if telescope.value not in OSD.keys():
-        raise ValueError("invalid telescope")
+        raise ValueError(f"invalid telescope: {telescope.value}")
 
     telescope_osd = OSD[telescope.value]
 
