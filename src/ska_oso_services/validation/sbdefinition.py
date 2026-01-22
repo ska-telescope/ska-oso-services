@@ -1,6 +1,7 @@
 from ska_oso_pdm import SBDefinition, Target, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 
+from ska_oso_services.validation.csp import validate_csp
 from ska_oso_services.validation.model import ValidationContext, ValidationIssue, validator
 from ska_oso_services.validation.scan import validate_scan_definition
 from ska_oso_services.validation.target import validate_target
@@ -48,6 +49,19 @@ def validate_sbdefinition(
         )
     ]
 
+    csp_validation_results = [
+        issue
+        for index, csp_config in enumerate(sbd.csp_configurations)
+        for issue in validate_csp(
+            ValidationContext(
+                primary_entity=csp_config,
+                source_jsonpath=f"$.csp_configurations.{index}",
+                telescope=sbd.telescope,
+                array_assembly=validation_array_assembly,
+            )
+        )
+    ]
+
     scan_validation_results = []
     for scan in _get_scan_sequence(sbd):
         target, target_index = _lookup_target_for_scan(scan, sbd)
@@ -67,7 +81,7 @@ def validate_sbdefinition(
 
         scan_validation_results += validate_scan_definition(scan_context)
 
-    return target_validation_results + scan_validation_results
+    return target_validation_results + csp_validation_results + scan_validation_results
 
 
 def _lookup_target_for_scan(scan: ScanDefinition, sbd: SBDefinition) -> tuple[Target, int]:
