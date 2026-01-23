@@ -36,9 +36,9 @@ from ska_oso_services.common.calibrator_strategy import (
     lookup_observatory_calibration_strategy,
 )
 from ska_oso_services.common.calibrators import find_appropriate_calibrators
+from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.common.sdpmapper import get_script_versions
 from ska_oso_services.common.static.constants import low_station_channel_width, mid_channel_width
-from ska_oso_services.validation import get_subarray_specific_parameter_from_osd
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_CALIBRATION_STRATEGY = "highest_elevation"

@@ -9,17 +9,18 @@ from ska_oso_pdm.sb_definition import CSPConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 from ska_oso_pdm.sb_definition.csp.midcbf import CorrelationSPWConfiguration
 
-from ska_oso_services.common.osdmapper import Band5bSubband, MidFrequencyBand
+from ska_oso_services.common.osdmapper import (
+    Band5bSubband,
+    MidFrequencyBand,
+    get_mid_frequency_band_data_from_osd,
+    get_subarray_specific_parameter_from_osd,
+)
 from ska_oso_services.common.static.constants import (
     low_continuum_channel_width,
     low_maximum_frequency,
     low_minimum_frequency,
     mid_channel_width,
     mid_frequency_slice_bandwidth,
-)
-from ska_oso_services.validation import (
-    get_mid_frequency_band_data_from_osd,
-    get_subarray_specific_parameter_from_osd,
 )
 from ska_oso_services.validation.model import (
     ValidationContext,
@@ -29,6 +30,7 @@ from ska_oso_services.validation.model import (
     validate,
     validator,
 )
+
 
 @validator
 def validate_csp(
@@ -147,7 +149,10 @@ def validate_low_spw_centre_frequency(
 
     centre_frequency_hz = spw_context.primary_entity.centre_frequency
 
-    if centre_frequency_hz < low_minimum_frequency() or centre_frequency_hz > low_maximum_frequency():
+    if (
+        centre_frequency_hz < low_minimum_frequency()
+        or centre_frequency_hz > low_maximum_frequency()
+    ):
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
