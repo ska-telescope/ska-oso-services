@@ -5,7 +5,7 @@ from astropy import units as u
 from astropy.units import Quantity
 from ska_oso_pdm import TelescopeType, ValidationArrayAssembly
 
-from ska_oso_services.validation import (
+from ska_oso_services.common.osdmapper import (
     get_low_basic_capability_parameter_from_osd,
     get_subarray_specific_parameter_from_osd,
 )
