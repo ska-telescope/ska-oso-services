@@ -10,9 +10,7 @@ import json
 # pylint: disable=missing-timeout
 from http import HTTPStatus
 
-from ska_oso_pdm import Project
-
-from ..unit.util import VALID_PROJECT_WITHOUT_ID_JSON, TestDataFactory, assert_json_is_equal
+from ..unit.util import TestDataFactory, assert_json_is_equal
 from . import ODT_URL
 
 
@@ -81,16 +79,17 @@ def test_prj_post_then_get(authrequests):
     Test that an entity sent to POST /prjs can then be retrieved
     with GET /prjs/{identifier}
     """
+    project_json = TestDataFactory.project(prj_id=None).model_dump_json()
     post_response = authrequests.post(
         f"{ODT_URL}/prjs",
-        data=VALID_PROJECT_WITHOUT_ID_JSON,
+        data=project_json,
         headers={"Content-type": "application/json"},
     )
 
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
-        VALID_PROJECT_WITHOUT_ID_JSON,
+        project_json,
         exclude_paths=[
             "root['metadata']",
             "root['prj_id']",
@@ -108,7 +107,7 @@ def test_prj_post_then_get(authrequests):
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     assert_json_is_equal(
         get_response.content,
-        VALID_PROJECT_WITHOUT_ID_JSON,
+        project_json,
         exclude_paths=[
             "root['metadata']",
             "root['prj_id']",
@@ -121,26 +120,31 @@ def test_prj_post_then_get(authrequests):
 def test_prj_post_then_put(authrequests):
     """
     Test that an entity sent to POST /prjs can then be
-    updated with PUT /prjs/{identifier}
+    updated with PUT /prjs/{identifier} - this tests an OB can be added
     """
+    project = TestDataFactory.project(prj_id=None)
+    project_json = project.model_dump_json()
     post_response = authrequests.post(
         f"{ODT_URL}/prjs",
-        data=VALID_PROJECT_WITHOUT_ID_JSON,
+        data=project_json,
         headers={"Content-type": "application/json"},
     )
 
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
-        VALID_PROJECT_WITHOUT_ID_JSON,
+        project_json,
         exclude_paths=["root['metadata']", "root['prj_id']"],
     )
 
     prj_id = post_response.json()["prj_id"]
-    prj_to_update = TestDataFactory.project(prj_id=prj_id).model_dump_json()
+    project.prj_id = prj_id
+    project.obs_blocks.append(TestDataFactory.project(prj_id=prj_id).obs_blocks[0])
+    updated_project_json = project.model_dump_json()
+
     put_response = authrequests.put(
         f"{ODT_URL}/prjs/{prj_id}",
-        data=prj_to_update,
+        data=updated_project_json,
         headers={"Content-type": "application/json"},
     )
     # Assert the ODT can get the Project, ignoring the metadata as it contains
@@ -148,7 +152,7 @@ def test_prj_post_then_put(authrequests):
     assert put_response.status_code == HTTPStatus.OK, put_response.content
     assert_json_is_equal(
         put_response.content,
-        VALID_PROJECT_WITHOUT_ID_JSON,
+        updated_project_json,
         exclude_paths=["root['metadata']", "root['prj_id']"],
     )
     assert put_response.json()["metadata"]["version"] == 2

@@ -34,7 +34,7 @@ def test_project_generated_from_proposal(authrequests):
 
 def test_sbds_generated_from_project(authrequests):
     # First need to add a Project to generate from
-    project = TestDataFactory.project_with_two_mid_observation_groups(prj_id=None)
+    project = TestDataFactory.project_with_two_mid_observation_groups(prj_id=None, prsl_ref=None)
     post_response = authrequests.post(
         f"{ODT_URL}/prjs",
         data=project.model_dump_json(),
@@ -60,7 +60,7 @@ def test_sbds_generated_from_project(authrequests):
 
 def test_sbds_generated_from_project_obs_block(authrequests):
     # First need to add a Project to generate from
-    project = TestDataFactory.project_with_two_low_targets(prj_id=None)
+    project = TestDataFactory.project_with_two_low_targets(prj_id=None, prsl_ref=None)
     post_response = authrequests.post(
         f"{ODT_URL}/prjs",
         data=project.model_dump_json(),

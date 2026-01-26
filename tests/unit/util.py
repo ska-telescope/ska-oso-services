@@ -16,6 +16,8 @@ from ska_oso_pdm.proposal.proposal_access import ProposalAccess
 from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel, ProposalAssignment, ReviewerAssignment
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
+from ska_ser_skuid.tools.entity_types import EntityType
+from ska_ser_skuid.tools.generate import mint_randint_skuid
 
 CUR_DIR = Path(__file__).parent
 
@@ -99,12 +101,16 @@ class TestDataFactory:
         set_identifier(prj, prj_id)
         prj.metadata.version = version
 
+        for ob in prj.obs_blocks:
+            ob.obs_block_id = mint_randint_skuid(entity_type=EntityType.OB)
+
         return prj
 
     @staticmethod
     def project_with_two_mid_observation_groups(
         prj_id: str | None = "prj-mvp01-20220923-00001",
         version: int = 1,
+        prsl_ref: str | None = "prsl-t0001-20250715-00002",
     ) -> Project:
 
         data = load_string_from_file("project_with_mid_observation_set.json")
@@ -113,12 +119,18 @@ class TestDataFactory:
         set_identifier(prj, prj_id)
         prj.metadata.version = version
 
+        prj.prsl_ref = prsl_ref
+
+        for ob in prj.obs_blocks:
+            ob.obs_block_id = mint_randint_skuid(entity_type=EntityType.OB)
+
         return prj
 
     @staticmethod
     def project_with_two_low_targets(
         prj_id: str | None = "prj-mvp01-20220923-00001",
         version: int = 1,
+        prsl_ref: str | None = "prsl-t0001-20250715-00002",
     ) -> Project:
 
         data = load_string_from_file("project_with_low_observation_set.json")
@@ -126,6 +138,11 @@ class TestDataFactory:
 
         set_identifier(prj, prj_id)
         prj.metadata.version = version
+
+        prj.prsl_ref = prsl_ref
+
+        for ob in prj.obs_blocks:
+            ob.obs_block_id = mint_randint_skuid(entity_type=EntityType.OB)
 
         return prj
 
