@@ -16,6 +16,7 @@ def test_sbds_generated_from_observing_block_with_two_mid_observation_groups(
     ob = project.obs_blocks[0]
     data = load_string_from_file("expected_mid_sbd.json")
     expected_sbd = SBDefinition.model_validate_json(data)
+    expected_sbd.ob_ref = ob.obs_block_id
 
     sbds = generate_sbds(ob)
 
@@ -32,6 +33,7 @@ def test_sbds_generated_from_observing_block_with_two_low_targets(mock_randint):
     ob = project.obs_blocks[0]
     data = load_string_from_file("expected_low_sbd.json")
     expected_sbd = SBDefinition.model_validate_json(data)
+    expected_sbd.ob_ref = ob.obs_block_id
 
     sbds = generate_sbds(ob)
 
