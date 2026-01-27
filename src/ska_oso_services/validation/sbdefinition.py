@@ -66,13 +66,14 @@ def validate_sbdefinition(
     receptor_validation_results = []
     if sbd.telescope == TelescopeType.SKA_LOW:
         mccs_validation_results = validate_mccs(
-                ValidationContext(
-                    primary_entity=sbd.mccs_allocation,
-                    source_jsonpath="$.mccs_allocation",
-                    telescope=sbd.telescope,
-                    array_assembly=validation_array_assembly,
-                )
+            ValidationContext(
+                primary_entity=sbd.mccs_allocation,
+                source_jsonpath="$.mccs_allocation",
+                telescope=sbd.telescope,
+                relevant_context={"targets": sbd.targets},
+                array_assembly=validation_array_assembly,
             )
+        )
 
         receptor_validation_results = mccs_validation_results
 
