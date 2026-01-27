@@ -147,7 +147,7 @@ def validate_low_spw_centre_frequency(
     spw_context: ValidationContext[Correlation],
 ) -> list[ValidationIssue]:
 
-    centre_frequency_hz = spw_context.primary_entity.centre_frequency *u.Hz
+    centre_frequency_hz = spw_context.primary_entity.centre_frequency * u.Hz
 
     if (
         centre_frequency_hz < low_minimum_frequency()
