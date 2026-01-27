@@ -4211,14 +4211,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-ser-skuid"
-version = "4.0.0"
+version = "4.1.0"
 description = "Library that generates ID's for the SKA project"
 optional = false
 python-versions = ">=3.10,<4"
 groups = ["main"]
 files = [
-    {file = "ska_ser_skuid-4.0.0-py3-none-any.whl", hash = "sha256:ad5e9e49b923572a0d5f0e088f9a931ddacca7129f3a8ab02d93b9a41df207ad"},
-    {file = "ska_ser_skuid-4.0.0.tar.gz", hash = "sha256:07619fb08cc87b9fd6f2f0f9d954c1ff50ad13b84b637c93934c956ec1c1fd05"},
+    {file = "ska_ser_skuid-4.1.0-py3-none-any.whl", hash = "sha256:611e5fcb3eb974b685db653340f1421705544b1b5dcef2ecbbb03d3a99a963f1"},
+    {file = "ska_ser_skuid-4.1.0.tar.gz", hash = "sha256:5b2027f39bdcb1c65100f6d0f22ba7f48244a7ba8d580ef1f97551fd94c3375a"},
 ]
 
 [package.dependencies]
@@ -4226,7 +4226,6 @@ annotated-types = ">=0.7.0,<0.8.0"
 py-machineid = "0.6.0"
 
 [package.extras]
-dev = ["black (>=24.2.0,<25.0.0)", "coverage (>=7.4.3,<8.0.0)", "fasteners (>=0.19,<1.0)", "flake8 (>=7.0.0,<8.0.0)", "isort (>=5.13.2,<6.0.0)", "pylint (>=3.1.0,<4.0.0)", "pylint-junit (>=0.3.4,<0.4.0)", "pytest (>=8.1.1,<9.0.0)", "pytest-cov (>=4.1.0,<5.0.0)", "pytest-json-report (>=1.5.0,<2.0.0)", "pytest-repeat (>=0.9.3,<0.10.0)"]
 http-client = ["requests (>=2.25.1,<3.0.0)", "ska-ser-logging (>=0.4.1,<1.0.0)"]
 http-server = ["falcon (>=3.1.3,<4.0.0)", "gunicorn (>=23.0.0,<23.1.0)", "ska-ser-logging (>=0.4.1,<1.0.0)"]
 
