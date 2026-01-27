@@ -6,7 +6,7 @@ from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
 
-from ska_db_oda.persistence.domain.errors import UniqueConstraintViolation
+from ska_db_oda.repository.domain import UniqueConstraintViolation
 
 from ska_oso_services.pht.api import panels as panels_api
 from tests.unit.conftest import PHT_BASE_API_URL

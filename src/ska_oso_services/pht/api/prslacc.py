@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal import ProposalAccess, ProposalRole
 
 from ska_oso_services.common import oda
@@ -90,7 +90,7 @@ def get_access_by_prsl_id(
 
     with oda.uow() as uow:
         query_param_pi = CustomQuery(
-            prsl_id=prsl_id,
+            prsl_fk=prsl_id,
             user_id=auth.user_id,
             role=ProposalRole.PrincipalInvestigator,
         )
@@ -105,7 +105,7 @@ def get_access_by_prsl_id(
                 )
             )
 
-        query_param = CustomQuery(prsl_id=prsl_id)
+        query_param = CustomQuery(prsl_fk=prsl_id)
         proposal_access = get_latest_entity_by_id(uow.prslacc.query(query_param), "access_id")
 
     if not proposal_access:

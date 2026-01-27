@@ -9,7 +9,7 @@ from unittest import mock
 
 import pytest
 from ska_aaa_authhelpers.test_helpers import TEST_USER
-from ska_db_oda.persistence.domain.errors import ODANotFound
+from ska_db_oda.repository.domain import ODANotFound
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 
 from ska_oso_services.odt.api.prsls import ProposalProjectDetails

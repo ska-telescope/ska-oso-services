@@ -3,7 +3,7 @@ from typing import List
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers.roles import Role
-from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_db_oda.repository.domain import CustomQuery
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope

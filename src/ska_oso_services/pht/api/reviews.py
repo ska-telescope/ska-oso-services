@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
-from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm import PanelReview
 
 from ska_oso_services.common import oda
@@ -43,7 +43,7 @@ def create_review(
 
         with oda.uow() as uow:
             query_param = CustomQuery(
-                prsl_id=reviews.prsl_id,
+                prsl_fk=reviews.prsl_id,
                 kind=reviews.review_type.kind,
                 reviewer_id=reviews.reviewer_id,
             )

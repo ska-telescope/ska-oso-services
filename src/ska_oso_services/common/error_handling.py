@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from fastapi import HTTPException, Request
 from pydantic import ValidationError
-from ska_db_oda.persistence.domain.errors import ODAError, ODANotFound, UniqueConstraintViolation
+from ska_db_oda.repository.domain import ODAError, ODANotFound, UniqueConstraintViolation
 from ska_ost_osd.common.error_handling import generic_exception_handler
 from starlette.responses import JSONResponse
 

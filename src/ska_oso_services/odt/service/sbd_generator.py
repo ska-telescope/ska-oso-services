@@ -57,12 +57,12 @@ def generate_sbds(obs_block: ObservingBlock) -> list[SBDefinition]:
     as defined in the Proposal
     """
     return [
-        _sbd_from_science_programme(science_programme)
+        _sbd_from_science_programme(science_programme, obs_block.obs_block_id)
         for science_programme in obs_block.science_programmes
     ]
 
 
-def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefinition:
+def _sbd_from_science_programme(science_programme: ScienceProgramme, ob_ref: str) -> SBDefinition:
     science_programme.targets = _copy_targets_with_name(science_programme.targets)
 
     observation_set = science_programme.observation_sets[0]
@@ -151,6 +151,7 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme) -> SBDefini
         )
 
     sbd = SBDefinition(
+        ob_ref=ob_ref,
         telescope=telescope,
         activities=_default_activities(),
         dish_allocations=dish_allocations,

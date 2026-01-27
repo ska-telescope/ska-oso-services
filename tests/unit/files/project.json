@@ -18,18 +18,12 @@
         "obs_block_id": "ob-1",
         "name": "Block 1",
         "sbd_ids": [
-           "sbd-mvp01-20220923-00001",
-           "sbd-mvp01-20220923-00002",
-           "sbd-mvp01-20220923-00003"
         ]
      },
      {
         "obs_block_id": "ob-2",
         "name": "Block 2",
         "sbd_ids": [
-           "sbd-mvp01-20220923-00004",
-           "sbd-mvp01-20220923-00005",
-           "sbd-mvp01-20220923-00006"
         ]
      }
   ]

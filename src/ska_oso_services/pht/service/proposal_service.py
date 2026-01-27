@@ -3,7 +3,7 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Iterable
 
-from ska_db_oda.persistence.domain.query import CustomQuery
+from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal import Proposal, ProposalAccess
 
 from ska_oso_services.common.error_handling import ForbiddenError
@@ -61,7 +61,7 @@ def assert_user_has_permission_for_proposal(
     """
     rows = (
         get_latest_entity_by_id(
-            uow.prslacc.query(CustomQuery(user_id=user_id, prsl_id=prsl_id)),
+            uow.prslacc.query(CustomQuery(user_id=user_id, prsl_fk=prsl_id)),
             ACCESS_ID,
         )
         or []

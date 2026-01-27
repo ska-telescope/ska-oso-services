@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token, monkeypatch_pubkeys
-from ska_db_oda.persistence.fastapicontext import get_uow
+from ska_db_oda.rest.fastapicontext import get_uow
 
 from ska_oso_services import create_app
 from ska_oso_services.common.auth import AUDIENCE, Scope

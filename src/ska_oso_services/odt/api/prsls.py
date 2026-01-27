@@ -11,8 +11,8 @@ from typing import Annotated
 from fastapi import APIRouter
 from pydantic import AwareDatetime
 from ska_aaa_authhelpers import AuthContext, Role
-from ska_db_oda.persistence.domain.query import DateQuery
-from ska_db_oda.persistence.fastapicontext import UnitOfWork
+from ska_db_oda.repository.domain import DateQuery
+from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm.project import Project
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 
