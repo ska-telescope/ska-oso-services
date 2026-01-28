@@ -2,6 +2,7 @@
 import dataclasses
 
 import astropy.units as u
+from ska_oso_pdm import ValidationArrayAssembly
 from ska_oso_pdm.sb_definition import MCCSAllocation, ScanDefinition
 
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
@@ -60,10 +61,21 @@ def validate_number_substations(
     """
     mccs_allocation = mccs_context.primary_entity
 
-    substations_per_subarray_beam = [
+    number_substations = [
         len(subarray_beam.apertures) for subarray_beam in mccs_allocation.subarray_beams
     ]
-    total_number_of_substations = sum(substations_per_subarray_beam)
+
+    # special rule for AA0.5 - for reasons
+    if mccs_context.array_assembly == ValidationArrayAssembly.AA05:
+        # we need the number of stations in the observation, assume that both subarray beams
+        # have the same number of stations and apertures - is this correct?
+        stations = mccs_allocation.subarray_beams[0].apertures
+        number_of_stations = len([station for station in stations if station.substation_id == 1])
+
+        total_number_of_substations = sum(number_substations) - number_of_stations
+
+    else:
+        total_number_of_substations = number_substations
 
     allowed_number_of_substations = get_subarray_specific_parameter_from_osd(
         mccs_context.telescope, mccs_context.array_assembly, "number_substations"
