@@ -54,42 +54,39 @@ def validate_number_substations(
     mccs_context: ValidationContext[MCCSAllocation],
 ) -> list[ValidationIssue]:
     """
-    function to validate that the number of substations in an mccs allocation does not exceed the
+    function to validate that the number of substations in a MCCS subarray beam does not exceed the
     allowed value for a given array assembly
 
     :param mccs_context: a ValidationContext containing a Target to be validated
     """
     mccs_allocation = mccs_context.primary_entity
 
-    number_substations = [
-        len(subarray_beam.apertures) for subarray_beam in mccs_allocation.subarray_beams
-    ]
-
-    # special rule for AA0.5 - for reasons
-    if mccs_context.array_assembly == ValidationArrayAssembly.AA05:
-        # we need the number of stations in the observation, assume that both subarray beams
-        # have the same number of stations and apertures - is this correct?
-        stations = mccs_allocation.subarray_beams[0].apertures
-        number_of_stations = len([station for station in stations if station.substation_id == 1])
-
-        total_number_of_substations = sum(number_substations) - number_of_stations
-
-    else:
-        total_number_of_substations = number_substations
-
     allowed_number_of_substations = get_subarray_specific_parameter_from_osd(
         mccs_context.telescope, mccs_context.array_assembly, "number_substations"
     )
 
-    if total_number_of_substations > allowed_number_of_substations:
-        return [
-            ValidationIssue(
-                level=ValidationIssueType.ERROR,
-                message=f"total number of substations {total_number_of_substations} "
-                f"exceeds allowed {allowed_number_of_substations} for "
-                f"{mccs_context.array_assembly}",
+    for subarray_beam in mccs_allocation.subarray_beams:
+        # special rule of AA0.5, because it's a bit more complicated
+
+        if mccs_context.array_assembly == ValidationArrayAssembly.AA05:
+            number_of_stations = len(
+                [station for station in subarray_beam.apertures if station.substation_id == 1]
             )
-        ]
+            total_number_of_substations = len(subarray_beam.apertures) - number_of_stations
+
+        else:
+            total_number_of_substations = len(subarray_beam.apertures)
+
+        if total_number_of_substations > allowed_number_of_substations:
+            return [
+                ValidationIssue(
+                    level=ValidationIssueType.ERROR,
+                    field=f"$mccs_allocation.subarray_beams[{subarray_beam.subarray_beam_id - 1}]",
+                    message=f"total number of substations {total_number_of_substations} "
+                    f"in subarray beam {subarray_beam.subarray_beam_id} exceeds allowed"
+                    f" {allowed_number_of_substations} for {mccs_context.array_assembly}",
+                )
+            ]
 
     return []
 
