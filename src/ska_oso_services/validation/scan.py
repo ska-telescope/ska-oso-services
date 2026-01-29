@@ -66,7 +66,7 @@ def validate_tied_array_beam_within_hpbw(
             f"the HPBW for CSP {csp_config.name}",
         )
         for index, pst_beam in enumerate(target.tied_array_beams.pst_beams)
-        if hpbw and _angular_separation(target, pst_beam) > (hpbw / 2)
+        if hpbw is not None and _angular_separation(target, pst_beam) > (hpbw / 2)
     ]
 
 
