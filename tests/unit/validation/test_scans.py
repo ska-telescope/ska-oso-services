@@ -59,6 +59,17 @@ def test_scan_definition_validation_requires_relevant_context():
     )
 
 
+def test_csp_with_no_spws():
+    sbd = MidSBDefinitionBuilder(targets=[LMC_TARGET])
+    sbd.csp_configurations[0].midcbf.subbands[0].correlation_spws = []
+    sbd = populate_scan_sequences(sbd, scan_durations=1)
+
+    input_context = _validation_context_for_first_scan(sbd)
+
+    result = validate_tied_array_beam_within_hpbw(input_context)
+    assert result == []
+
+
 def test_tied_array_beam_not_within_hpbw():
     sbd = LowSBDefinitionBuilder()
     sbd.targets = [LMC_TARGET]
