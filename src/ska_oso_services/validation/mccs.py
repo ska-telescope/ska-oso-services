@@ -4,6 +4,7 @@ import dataclasses
 import astropy.units as u
 from ska_oso_pdm import ValidationArrayAssembly
 from ska_oso_pdm.sb_definition import MCCSAllocation, ScanDefinition
+from ska_oso_pdm.sb_definition.mccs.mccs_allocation import SubarrayBeamConfiguration
 
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.validation.model import (
@@ -23,7 +24,12 @@ def validate_mccs(mccs_context: ValidationContext[MCCSAllocation]) -> list[Valid
     :return: the collated ValidationIssues resulting from applying each of
             the relevant Target Validators to the Target
     """
-    validators = [validate_number_subarray_beams, validate_number_substations]
+    validators = [
+        validate_number_subarray_beams,
+        validate_number_substations,
+        validate_number_of_pst_beams_per_scan,
+        validate_subarray_beams_per_scan_have_the_same_duration,
+    ]
     return validate(mccs_context, validators)
 
 
@@ -106,11 +112,11 @@ def validate_number_of_pst_beams_per_scan(
     )
 
     mccs_allocation = mccs_context.primary_entity
-    targets = mccs_allocation.relevant_context["targets"]
-    scan_slices = __build_scan_slices(mccs_allocation)
+    targets = mccs_context.relevant_context["targets"]
+    scans = __build_scan_slices(mccs_allocation)
 
-    for scans in scan_slices:
-        target_refs = [scan.target_ref for scan in scans.scans]
+    for scan in scans:
+        target_refs = [beam_scan.scan.target_ref for beam_scan in scan.beam_scans]
         number_pst_beams = 0
 
         for ref in target_refs:
@@ -143,10 +149,12 @@ def validate_subarray_beams_per_scan_have_the_same_duration(
     """
     mccs_allocation = mccs_context.primary_entity
 
-    scan_slices = __build_scan_slices(mccs_allocation)
+    scans = __build_scan_slices(mccs_allocation)
 
-    for scans in scan_slices:
-        scan_durations = len({scan.scan_duration.to(u.s) for scan in scans.scans})
+    for scan in scans:
+        scan_durations = len(
+            {beam_scan.scan.scan_duration.to(u.s) for beam_scan in scan.beam_scans}
+        )
 
         return (
             [
@@ -160,10 +168,45 @@ def validate_subarray_beams_per_scan_have_the_same_duration(
         )
 
 
+# @validator
+# def validate_low_station_bandwidth(
+#     mccs_context: ValidationContext[MCCSAllocation],
+# ) -> list[ValidationIssue]:
+#     """
+#     function to validate that each station can provide the bandwidth being requested
+#     """
+#
+#     check_relevant_context_contains(["csp_config"], mccs_context)
+#     csp_config_refs = mccs_context.relevant_context["csp_config"]
+#
+#     mccs_allocation = mccs_context.primary_entity
+#
+#     scans = __build_scan_slices(mccs_allocation)
+#
+#     for scan in scans:
+#         scan_durations = len(
+#             {beam_scan.scan.scan_duration.to(u.s) for beam_scan in scan.beam_scan}
+#         )
+#
+#
+#
+#     # here I'm looping over the subarray beams and getting their scans,
+#     # the scans in scans_with_beams are in order (right???) so
+#     for scans in scans_with_beams:
+#
+#         csp_refs = [scan.csp_configuration_ref for scan in scans.scans]
+
+
+@dataclasses.dataclass(frozen=True)
+class BeamScan:
+    beam: SubarrayBeamConfiguration
+    scan: ScanDefinition
+
+
 @dataclasses.dataclass
 class ScanSlice:
     index: int
-    scans: list[ScanDefinition]
+    beam_scans: list[BeamScan]
 
 
 def __build_scan_slices(mccs_allocation: MCCSAllocation) -> list[ScanSlice]:
@@ -172,18 +215,17 @@ def __build_scan_slices(mccs_allocation: MCCSAllocation) -> list[ScanSlice]:
     rather than "beams that have scans"
     """
 
-    scan_count = {
-        len(subarray_beam.scan_sequence) for subarray_beam in mccs_allocation.subarray_beams
-    }
+    beams = mccs_allocation.subarray_beams
+
+    scan_count = {len(subarray_beam.scan_sequence) for subarray_beam in beams}
 
     # we enforce this in the ODT but adding for defensiveness
     if len(scan_count) != 1:
         raise ValueError("All subarray beams should have the same number of scans")
 
     slices = []
-    for idx, scans in enumerate(
-        zip(*(subarray_beam.scan_sequence for subarray_beam in mccs_allocation.subarray_beams))
-    ):
-        slices.append(ScanSlice(index=idx, scans=list(scans)))
+    for idx, scans in enumerate(zip(*(subarray_beam.scan_sequence for subarray_beam in beams))):
+        beam_scans = [BeamScan(beam=beam, scan=scan) for beam, scan in zip(beams, scans)]
+        slices.append(ScanSlice(index=idx, beam_scans=beam_scans))
 
     return slices
