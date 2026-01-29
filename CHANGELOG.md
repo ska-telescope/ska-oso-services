@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ************
 * Update to ODA v15.1.0 with PDM v27.0.0
+* [BUGFIX] Pass scan validation if no SPWs are defined on a CSP configuration
 
 11.4.0
 **********
