@@ -212,7 +212,7 @@ def validate_continuum_spw_bandwidth(
         * u.Hz
     )
 
-    spw_bandwidth = _calculate_continuum_spw_bandwidth(spw_context)
+    spw_bandwidth = calculate_continuum_spw_bandwidth(spw_context)
 
     if spw_bandwidth > available_bandwidth:
         return [
@@ -233,7 +233,7 @@ def validate_low_spw_window(
     spw_context: ValidationContext[Correlation],
 ) -> list[ValidationIssue]:
     centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
-    spw_bandwidth = _calculate_continuum_spw_bandwidth(spw_context)
+    spw_bandwidth = calculate_continuum_spw_bandwidth(spw_context)
 
     if (centre_frequency + 0.5 * spw_bandwidth) > low_maximum_frequency() or (
         centre_frequency - 0.5 * spw_bandwidth
@@ -255,7 +255,7 @@ def validate_mid_spw_window(
 ) -> list[ValidationIssue]:
 
     centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
-    spw_bandwidth = _calculate_continuum_spw_bandwidth(spw_context)
+    spw_bandwidth = calculate_continuum_spw_bandwidth(spw_context)
 
     band_data = spw_context.relevant_context["band_data_from_osd"]
 
@@ -282,7 +282,7 @@ def validate_mid_fsps(
     """
 
     centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
-    spw_bandwidth = _calculate_continuum_spw_bandwidth(spw_context)
+    spw_bandwidth = calculate_continuum_spw_bandwidth(spw_context)
 
     frequency_offset = spw_context.relevant_context[
         "subband_frequency_slice_offset"
@@ -318,7 +318,7 @@ def validate_mid_fsps(
     return []
 
 
-def _calculate_continuum_spw_bandwidth(
+def calculate_continuum_spw_bandwidth(
     spw_context: ValidationContext[CorrelationSPWConfiguration] | ValidationContext[Correlation],
 ) -> Quantity:
     """
