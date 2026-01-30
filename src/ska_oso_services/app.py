@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 from ska_aaa_authhelpers import AuditLogFilter, watchdog
 from ska_db_oda.repository.domain import ODAError, ODANotFound, UniqueConstraintViolation
+from ska_db_oda.repository.domain.errors import ODAIntegrityError
 from ska_ser_logging import configure_logging
 
 from ska_oso_services import odt, pht
@@ -19,6 +20,7 @@ from ska_oso_services.common.error_handling import (
     OSDError,
     dangerous_internal_server_handler,
     oda_error_handler,
+    oda_integrity_error_handler,
     oda_not_found_handler,
     oda_unique_constraint_handler,
     osd_error_handler,
@@ -70,6 +72,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
     app.include_router(pht.router, prefix=API_PREFIX)
     app.include_router(validation_router, prefix=API_PREFIX)
     app.exception_handler(ODANotFound)(oda_not_found_handler)
+    app.exception_handler(ODAIntegrityError)(oda_integrity_error_handler)
     app.exception_handler(ODAError)(oda_error_handler)
     app.exception_handler(ValidationError)(pydantic_validation_error_handler)
     app.exception_handler(UniqueConstraintViolation)(oda_unique_constraint_handler)

@@ -345,7 +345,6 @@ class TestProjectAddSBDefinition:
         sbd = TestDataFactory.sbdefinition()
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
-        uow_mock.prjs.add.return_value = project
 
         resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/sbds",
@@ -359,8 +358,8 @@ class TestProjectAddSBDefinition:
         }
         assert expected_response == resp.json()
 
-        args, _ = uow_mock.prjs.add.call_args
-        assert sbd.sbd_id in args[0].obs_blocks[0].sbd_ids
+        args, _ = uow_mock.sbds.add.call_args
+        assert args[0].ob_ref == obs_block_id
 
 
 class TestProjectGenerateSBDefinitions:
@@ -371,10 +370,9 @@ class TestProjectGenerateSBDefinitions:
         project = TestDataFactory.project()
         obs_block_id = "ob-1"
         project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
-        sbd = TestDataFactory.sbdefinition()
+        sbd = TestDataFactory.sbdefinition(ob_ref=obs_block_id)
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
-        uow_mock.prjs.add.return_value = project
 
         mock_generate_sbds.return_value = [sbd]
 
@@ -383,9 +381,10 @@ class TestProjectGenerateSBDefinitions:
         )
 
         assert response.status_code == HTTPStatus.OK
-        assert project.obs_blocks[0].sbd_ids == [sbd.sbd_id]
-        uow_mock.prjs.add.assert_called_once()
+
         uow_mock.sbds.add.assert_called_once()
+        args, _ = uow_mock.sbds.add.call_args
+        assert args[0].ob_ref == obs_block_id
         assert_json_is_equal(response.text, project.model_dump_json())
 
     def test_prjs_post_generate_sbd_prj_id_not_found(self, client_with_uow_mock):
@@ -423,10 +422,9 @@ class TestProjectObsBlockGenerateSBDefinitions:
         project = TestDataFactory.project()
         obs_block_id = "ob-1"
         project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
-        sbd = TestDataFactory.sbdefinition()
+        sbd = TestDataFactory.sbdefinition(ob_ref=obs_block_id)
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
-        uow_mock.prjs.add.return_value = project
 
         mock_generate_sbds.return_value = [sbd]
 
@@ -435,7 +433,8 @@ class TestProjectObsBlockGenerateSBDefinitions:
         )
 
         assert resp.status_code == HTTPStatus.OK
-        assert project.obs_blocks[0].sbd_ids == [sbd.sbd_id]
+        args, _ = uow_mock.sbds.add.call_args
+        assert args[0].ob_ref == obs_block_id
 
     def test_prjs_post_ob_generate_sbd_prj_id_not_found(self, client_with_uow_mock):
         """ """

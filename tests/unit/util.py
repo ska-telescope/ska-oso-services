@@ -55,6 +55,7 @@ class TestDataFactory:
     def sbdefinition(
         sbd_id: SBDefinitionID | None = "sbd-mvp01-20200325-00001",
         version: int = 1,
+        ob_ref: str = "ob-mvp01-20200325-00001",
         created_on: datetime = datetime.fromisoformat("2022-03-28T15:43:53.971548+00:00"),
         without_metadata: bool = False,
     ) -> SBDefinition:
@@ -67,6 +68,8 @@ class TestDataFactory:
 
         sbd.metadata.version = version
         sbd.metadata.created_on = created_on
+
+        sbd.ob_ref = ob_ref
 
         return sbd
 
