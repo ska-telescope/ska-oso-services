@@ -70,7 +70,7 @@ def validate_sbdefinition(
                 primary_entity=sbd.mccs_allocation,
                 source_jsonpath="$.mccs_allocation",
                 telescope=sbd.telescope,
-                relevant_context={"targets": sbd.targets},
+                relevant_context={"targets": sbd.targets, "csp_config": sbd.csp_configurations},
                 array_assembly=validation_array_assembly,
             )
         )
