@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ************
 * [BUGFIX] Pass scan validation if no SPWs are defined on a CSP configuration
+* Added further SBD validation for CSP for both Mid and Low, and MCCS
 
 12.0.0
 **********
