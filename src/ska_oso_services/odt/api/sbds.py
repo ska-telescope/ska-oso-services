@@ -13,6 +13,7 @@ from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
+from starlette.responses import Response
 
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import BadRequestError, UnprocessableEntityError
@@ -163,6 +164,26 @@ def sbds_put(
 
         uow.commit()
     return updated_sbd
+
+
+@router.delete(
+    "/{identifier}",
+    summary="Delete an SBDefinition by identifier",
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
+)
+def sbds_delete(
+    oda: UnitOfWork,
+    identifier: str,
+) -> Response:
+    """
+    Deletes the SchedulingBlockDefinition with the given identifier.
+    Returns 204 No Content on success.
+    """
+    LOGGER.debug("DELETE SBD sbd_id: %s", identifier)
+    with oda as uow:
+        uow.sbds.delete(identifier)
+        uow.commit()
+    return Response(status_code=204)
 
 
 def validate(sbd: SBDefinition) -> ValidationResponse:

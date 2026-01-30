@@ -492,9 +492,7 @@ class TestProjectDeleteObservingBlock:
         resp = client.delete(f"{PRJS_API_URL}/{prj_id}/{obs_block_id}")
         assert resp.status_code == HTTPStatus.OK
         assert_json_is_equal(resp.text, updated_project.model_dump_json())
-        uow_mock.prjs.delete_observing_block.assert_called_once_with(
-            prj_id, obs_block_id, user=mock.ANY
-        )
+        uow_mock.prjs.delete_observing_block.assert_called_once_with(prj_id, obs_block_id)
 
     def test_delete_observing_integrity_error(self, client_with_uow_mock):
         """

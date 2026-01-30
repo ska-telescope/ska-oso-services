@@ -45,6 +45,7 @@ API_ROLES = {
 
 router = APIRouter(prefix="/prjs")
 
+
 def empty_observing_block() -> ObservingBlock:
     return ObservingBlock(obs_block_id=mint_randint_skuid(EntityType.OB), sbd_ids=[])
 
@@ -172,13 +173,9 @@ def prjs_sbds_post(
         raise BadRequestError(detail="ob_ref in SBDefinition body does not match the request URL")
     with oda as uow:
         prj = uow.prjs.get(identifier)
-        try:
-            next(
-                obs_block for obs_block in prj.obs_blocks if obs_block.obs_block_id == obs_block_id
-            )
-        except StopIteration:
-            # pylint: disable=raise-missing-from
+        if obs_block_id not in [ob.obs_block_id for ob in prj.obs_blocks]:
             raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
+
         sbd_to_save = sbd if sbd is not None else DEFAULT_SB_DEFINITION.model_copy(deep=True)
         sbd_to_save.ob_ref = obs_block_id
         sbd = uow.sbds.add(sbd_to_save, user=auth.user_id)

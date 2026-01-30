@@ -168,3 +168,34 @@ def test_sbd_put_validation_error(authrequests):
     result = response.json()
 
     assert result["detail"][0]["msg"] == "Input should be 'ska_mid', 'ska_low' or 'MeerKAT'"
+
+
+def test_sbd_delete_success(authrequests, test_project):
+    """
+    Test that DELETE /sbds/{identifier} removes the SBD and returns 204 No Content.
+    """
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
+    post_response = authrequests.post(
+        f"{ODT_URL}/sbds",
+        data=sbd.model_dump_json(),
+        headers={"Content-type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
+    sbd_id = post_response.json()["sbd_id"]
+
+    delete_response = authrequests.delete(f"{ODT_URL}/sbds/{sbd_id}")
+    assert delete_response.status_code == HTTPStatus.NO_CONTENT, delete_response.content
+
+    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
+    assert get_response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_sbd_delete_not_found(authrequests):
+    """
+    Test that DELETE /sbds/{identifier} returns 404 if SBD not found.
+    """
+    bad_sbd_id = "not-a-sbd"
+    delete_response = authrequests.delete(f"{ODT_URL}/sbds/{bad_sbd_id}")
+    assert delete_response.status_code == HTTPStatus.NOT_FOUND
+
+    assert "The requested identifier could not be found" in delete_response.json()["detail"]
