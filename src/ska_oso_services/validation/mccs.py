@@ -7,6 +7,7 @@ from ska_oso_pdm.sb_definition import MCCSAllocation, ScanDefinition
 from ska_oso_pdm.sb_definition.mccs.mccs_allocation import SubarrayBeamConfiguration
 
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
+from ska_oso_services.validation.csp import calculate_continuum_spw_bandwidth
 from ska_oso_services.validation.model import (
     ValidationContext,
     ValidationIssue,
@@ -29,6 +30,7 @@ def validate_mccs(mccs_context: ValidationContext[MCCSAllocation]) -> list[Valid
         validate_number_substations,
         validate_number_of_pst_beams_per_scan,
         validate_subarray_beams_per_scan_have_the_same_duration,
+        validate_station_bandwidth,
     ]
     return validate(mccs_context, validators)
 
@@ -71,6 +73,7 @@ def validate_number_substations(
         mccs_context.telescope, mccs_context.array_assembly, "number_substations"
     )
 
+    validation_issues = []
     for subarray_beam in mccs_allocation.subarray_beams:
         # special rule of AA0.5, because it's a bit more complicated
 
@@ -84,7 +87,7 @@ def validate_number_substations(
             total_number_of_substations = len(subarray_beam.apertures)
 
         if total_number_of_substations > allowed_number_of_substations:
-            return [
+            validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
                     field=f"$mccs_allocation.subarray_beams[{subarray_beam.subarray_beam_id - 1}]",
@@ -92,9 +95,9 @@ def validate_number_substations(
                     f"in subarray beam {subarray_beam.subarray_beam_id} exceeds allowed"
                     f" {allowed_number_of_substations} for {mccs_context.array_assembly}",
                 )
-            ]
+            )
 
-    return []
+    return validation_issues
 
 
 # These don't feel like an MCCS validator - but the structure of the SBD, the fact
@@ -115,6 +118,7 @@ def validate_number_of_pst_beams_per_scan(
     targets = mccs_context.relevant_context["targets"]
     scans = __build_scan_slices(mccs_allocation)
 
+    validation_issues = []
     for scan in scans:
         target_refs = [beam_scan.scan.target_ref for beam_scan in scan.beam_scans]
         number_pst_beams = 0
@@ -127,16 +131,16 @@ def validate_number_of_pst_beams_per_scan(
             )
 
         if number_pst_beams > allowed_number_pst_beams:
-            return [
+            validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
                     message=f"number of pst beams {number_pst_beams} for scan {scans.index} "
                     f"exceeds allowed {allowed_number_pst_beams} for "
                     f"{mccs_context.array_assembly}",
                 )
-            ]
+            )
 
-    return []
+    return validation_issues
 
 
 @validator
@@ -151,50 +155,94 @@ def validate_subarray_beams_per_scan_have_the_same_duration(
 
     scans = __build_scan_slices(mccs_allocation)
 
+    validation_issues = []
     for scan in scans:
         scan_durations = len(
             {beam_scan.scan.scan_duration.to(u.s) for beam_scan in scan.beam_scans}
         )
 
-        return (
-            [
+        if scan_durations > 1:
+            validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
                     message=f"The scan durations for scan {scans.index} are not equal",
                 )
-            ]
-            if scan_durations > 1
-            else []
+            )
+
+    return validation_issues
+
+
+@validator
+def validate_station_bandwidth(
+    mccs_context: ValidationContext[MCCSAllocation],
+) -> list[ValidationIssue]:
+    """
+    function to validate that each station can provide the bandwidth being requested
+    """
+
+    check_relevant_context_contains(["csp_config"], mccs_context)
+    csp_configs = mccs_context.relevant_context["csp_config"]
+
+    mccs_allocation = mccs_context.primary_entity
+
+    available_bandwidth = (
+        get_subarray_specific_parameter_from_osd(
+            mccs_context.telescope, mccs_context.array_assembly, "available_bandwidth_hz"
         )
+        * u.Hz
+    )
 
+    validation_issues = []
 
-# @validator
-# def validate_low_station_bandwidth(
-#     mccs_context: ValidationContext[MCCSAllocation],
-# ) -> list[ValidationIssue]:
-#     """
-#     function to validate that each station can provide the bandwidth being requested
-#     """
-#
-#     check_relevant_context_contains(["csp_config"], mccs_context)
-#     csp_config_refs = mccs_context.relevant_context["csp_config"]
-#
-#     mccs_allocation = mccs_context.primary_entity
-#
-#     scans = __build_scan_slices(mccs_allocation)
-#
-#     for scan in scans:
-#         scan_durations = len(
-#             {beam_scan.scan.scan_duration.to(u.s) for beam_scan in scan.beam_scan}
-#         )
-#
-#
-#
-#     # here I'm looping over the subarray beams and getting their scans,
-#     # the scans in scans_with_beams are in order (right???) so
-#     for scans in scans_with_beams:
-#
-#         csp_refs = [scan.csp_configuration_ref for scan in scans.scans]
+    # this is the SBD in "scan space" i.e. where scans are split into subarray beams
+    scans = __build_scan_slices(mccs_allocation)
+
+    # for each scan in the SBD, there are subarray beam scans
+    for scan in scans:
+        # then getting the csp details and substation info for each subarray beam scan
+        beam_bandwidths = []
+        beam_max_stations = []
+        for beam in scan.beam_scans:
+            max_number_of_substations = max(
+                [station.substation_id for station in beam.beam.apertures]
+            )
+            csp_config = next(
+                csp_config
+                for csp_config in csp_configs
+                if csp_config.config_id == beam.scan.csp_configuration_ref
+            )
+
+            # now calculating the bandwidth for each spectral window in a
+            # subarray beam
+            spw_bandwidths = [
+                calculate_continuum_spw_bandwidth(
+                    ValidationContext(
+                        primary_entity=spw,
+                        telescope=mccs_context.telescope,
+                        array_assembly=mccs_context.array_assembly,
+                    )
+                )
+                for spw in csp_config.lowcbf.correlation_spws
+            ]
+
+            # appending the summed bandwidth to the beam bandwidths list
+            beam_bandwidths.append(sum(spw_bandwidths))
+            beam_max_stations.append(max_number_of_substations)
+
+        max_total_bandwith = sum(beam_bandwidths) * max(beam_max_stations)
+
+        if max_total_bandwith > available_bandwidth:
+            validation_issues.append(
+                ValidationIssue(
+                    level=ValidationIssueType.ERROR,
+                    message=f"At least one station is using more bandwidth "
+                    f"({max_total_bandwith.to(u.MHz).value} MHz) than is "
+                    f"available ({available_bandwidth.to(u.MHz).value} MHz)"
+                    f"for array assembly {mccs_context.array_assembly}",
+                )
+            )
+
+        return validation_issues
 
 
 @dataclasses.dataclass(frozen=True)
