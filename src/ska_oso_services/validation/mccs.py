@@ -218,6 +218,7 @@ def validate_station_bandwidth(
                 calculate_continuum_spw_bandwidth(
                     ValidationContext(
                         primary_entity=spw,
+                        source_jsonpath=f"$.subarray_beams[{beam.beam.subarray_beam_id - 1}]",
                         telescope=mccs_context.telescope,
                         array_assembly=mccs_context.array_assembly,
                     )
