@@ -64,7 +64,7 @@ def validate_tied_array_beam_within_hpbw(
             f"the HPBW for CSP {csp_config.name}",
         )
         for index, pst_beam in enumerate(target.tied_array_beams.pst_beams)
-        if _angular_separation(target, pst_beam) > (hpbw / 2)
+        if hpbw is not None and _angular_separation(target, pst_beam) > (hpbw / 2)
     ]
 
 
@@ -99,6 +99,9 @@ def _calculate_hpbw(csp_config: CSPConfiguration, telescope: TelescopeType) -> A
 
     This finds the maximum frequency in the spectral setup and then uses this
     to calculate an angle with lamda / diameter.
+
+    Returns the calculated angle in radians or None if the CSP configuration does
+     not define any spectral windows.
     """
     if telescope == TelescopeType.SKA_LOW:
         diameter_m = Quantity(LOW_STATION_DIAMETER_M, unit=u.m)
@@ -115,6 +118,9 @@ def _calculate_hpbw(csp_config: CSPConfiguration, telescope: TelescopeType) -> A
             spw.centre_frequency + (MID_CHANNEL_WIDTH_KHZ * 1e3 * spw.number_of_channels / 2)
             for spw in csp_config.midcbf.subbands[0].correlation_spws
         ]
+
+    if not band_upper_limits_hz:
+        return None
 
     max_frequency_hz = Quantity(max(band_upper_limits_hz), unit=u.s**-1)
 
