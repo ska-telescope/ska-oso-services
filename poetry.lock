@@ -2871,24 +2871,6 @@ files = [
 ]
 
 [[package]]
-name = "psycopg-pool"
-version = "3.3.0"
-description = "Connection Pool for Psycopg"
-optional = false
-python-versions = ">=3.10"
-groups = ["main"]
-files = [
-    {file = "psycopg_pool-3.3.0-py3-none-any.whl", hash = "sha256:2e44329155c410b5e8666372db44276a8b1ebd8c90f1c3026ebba40d4bc81063"},
-    {file = "psycopg_pool-3.3.0.tar.gz", hash = "sha256:fa115eb2860bd88fce1717d75611f41490dec6135efb619611142b24da3f6db5"},
-]
-
-[package.dependencies]
-typing-extensions = ">=4.6"
-
-[package.extras]
-test = ["anyio (>=4.0)", "mypy (>=1.14)", "pproxy (>=2.7)", "pytest (>=6.2.5)", "pytest-cov (>=3.0)", "pytest-randomly (>=3.5)"]
-
-[[package]]
 name = "py"
 version = "1.11.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
@@ -4118,25 +4100,24 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-db-oda"
-version = "14.3.0"
+version = "15.1.0"
 description = "SKA Database OSO Data Archive"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_db_oda-14.3.0-py3-none-any.whl", hash = "sha256:7537f1dfaed08ffb559545c72ed791c11deacb7642443ee79063d3f4aa74305b"},
-    {file = "ska_db_oda-14.3.0.tar.gz", hash = "sha256:b28b83204c3465901dcd0cca6a226b44cd339fb4caedd747dc226dca3fce3797"},
+    {file = "ska_db_oda-15.1.0-py3-none-any.whl", hash = "sha256:cd3700e856d3f94a3478713340a0eb4fa96ba4937c9ceb20068380e7fdeadb3c"},
+    {file = "ska_db_oda-15.1.0.tar.gz", hash = "sha256:783d5de6282cf7ceb18a7de415db4f6e0c5aae8c3c0cc12ecc153adb220c8862"},
 ]
 
 [package.dependencies]
 fastapi = {version = ">=0.115.8,<0.116.0", extras = ["standard"]}
 fire = ">=0.5.0,<0.6.0"
 psycopg = {version = ">=3.2.12,<4.0.0", extras = ["binary"]}
-psycopg-pool = ">=3.2.7,<4.0.0"
 pydantic = ">=2.9,<3.0"
 python-dateutil = ">=2.8.2,<3.0.0"
 requests = ">=2.27.1,<3.0.0"
-ska-oso-pdm = ">=26.3.0,<27.0.0"
+ska-oso-pdm = ">=27.0.0,<28.0.0"
 ska-ser-logging = ">=0.4.1,<0.5.0"
 ska-ser-skuid = ">=4.0.0,<5.0.0"
 
@@ -4147,14 +4128,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-oso-pdm"
-version = "26.3.1"
+version = "27.0.0"
 description = "SKA Project Data Model serialisation library"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_oso_pdm-26.3.1-py3-none-any.whl", hash = "sha256:b8ce8f824bc8910698f717018bc549ff5fcb874cf6fd819d6c32ef71d8ceaa67"},
-    {file = "ska_oso_pdm-26.3.1.tar.gz", hash = "sha256:8e33bdcb9d0c64a7d2bf3850b3b59874aa57aad25e5a3e021f8c649ef3f62f0b"},
+    {file = "ska_oso_pdm-27.0.0-py3-none-any.whl", hash = "sha256:bd066d29ff21be426c76d43f31bf458b8d2f8a155117ef088ac42f18c07e34b9"},
+    {file = "ska_oso_pdm-27.0.0.tar.gz", hash = "sha256:ac7955b06ca9b7c34890b20a04d5ed8f890d83b6469b5b51187878ad4b5dcaae"},
 ]
 
 [package.dependencies]
@@ -5218,4 +5199,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "4567cfb39d808c1c23d4286cdb526f2e16a51ff7baaee5ad9c1ef56f1e4f7968"
+content-hash = "6055525775f05e707b3c8da92e1bfd57ec5c2f89f403b1d7695df310a1d8aadb"
