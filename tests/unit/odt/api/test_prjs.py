@@ -7,7 +7,7 @@ from unittest import mock
 
 import pytest
 from pydantic import ValidationError
-from ska_db_oda.repository.domain import ODANotFound
+from ska_db_oda.repository.domain.errors import ODAIntegrityError, ODANotFound
 from ska_oso_pdm.project import ObservingBlock
 
 from tests.unit.conftest import ODT_BASE_API_URL
@@ -474,3 +474,40 @@ class TestProjectObsBlockGenerateSBDefinitions:
 
             assert resp.json()["detail"] == "OSError('test error')"
             assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+class TestProjectDeleteObservingBlock:
+    def test_delete_observing_block_success(self, client_with_uow_mock):
+        """
+        Check DELETE /prjs/{prj_id}/{obs_block_id} removes the OB and returns updated Project.
+        """
+        client, uow_mock = client_with_uow_mock
+        prj_id = "prj-1234"
+        obs_block_id = "ob-5678"
+        updated_project = TestDataFactory.project(prj_id=prj_id)
+        updated_project.obs_blocks = []
+        uow_mock.prjs.delete_observing_block.return_value = None
+        uow_mock.prjs.get.return_value = updated_project
+
+        resp = client.delete(f"{PRJS_API_URL}/{prj_id}/{obs_block_id}")
+        assert resp.status_code == HTTPStatus.OK
+        assert_json_is_equal(resp.text, updated_project.model_dump_json())
+        uow_mock.prjs.delete_observing_block.assert_called_once_with(
+            prj_id, obs_block_id, user=mock.ANY
+        )
+
+    def test_delete_observing_integrity_error(self, client_with_uow_mock):
+        """
+        Check DELETE /prjs/{prj_id}/not-an-ob returns 422 if the ODA method
+        raises an ODAIntegrityError.
+        """
+        client, uow_mock = client_with_uow_mock
+        prj_id = "prj-1234"
+        bad_ob_id = "not-an-ob"
+        uow_mock.prjs.delete_observing_block.side_effect = ODAIntegrityError(
+            "ob not linked to prj"
+        )
+
+        resp = client.delete(f"{PRJS_API_URL}/{prj_id}/{bad_ob_id}")
+        assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert "ob not linked to prj" in resp.json()["detail"]

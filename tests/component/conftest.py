@@ -1,4 +1,4 @@
-# pylint: ignore=redefined-outer-name
+# pylint: disable=redefined-outer-name
 import contextlib
 from enum import Enum
 from os import getenv

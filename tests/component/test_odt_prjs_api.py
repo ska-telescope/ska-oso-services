@@ -10,12 +10,14 @@ import json
 # pylint: disable=missing-timeout
 from http import HTTPStatus
 
+from ska_oso_pdm import Project
+
 from ..unit.util import TestDataFactory, assert_json_is_equal
 from . import ODT_URL
 
 
 class TestLinkingSBDefinitions:
-    """Tests of the /prjs subroutes that concern creating and linking SBDefinitions"""
+    """Tests of the /prjs subroutes that concern linked ObservingBlocks and SBDefinitions"""
 
     def test_sbd_created_and_linked_to_project(self, authrequests):
         """
@@ -84,6 +86,35 @@ class TestLinkingSBDefinitions:
         assert (
             response.json()["detail"]
             == "ob_ref in SBDefinition body does not match the request URL"
+        )
+
+    def test_delete_observing_block_success(self, authrequests):
+        # Create a project
+        prj_post_response = authrequests.post(f"{ODT_URL}/prjs")
+        assert prj_post_response.status_code == HTTPStatus.OK, prj_post_response.content
+        prj = prj_post_response.json()
+        prj_id = prj["prj_id"]
+        obs_block_id = prj["obs_blocks"][0]["obs_block_id"]
+
+        # Delete the observing block
+        delete_response = authrequests.delete(f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}")
+        assert delete_response.status_code == HTTPStatus.OK, delete_response.content
+        updated_prj = Project.model_validate_json(delete_response.content)
+        # The obs_blocks list should now not contain the deleted OB
+        assert all(ob.obs_block_id != obs_block_id for ob in updated_prj.obs_blocks)
+
+    def test_delete_observing_block_not_in_prj(self, authrequests):
+        prj_post_response = authrequests.post(f"{ODT_URL}/prjs")
+        assert prj_post_response.status_code == HTTPStatus.OK, prj_post_response.content
+        prj_id = prj_post_response.json()["prj_id"]
+        bad_ob_id = "not-an-ob"
+        delete_response = authrequests.delete(f"{ODT_URL}/prjs/{prj_id}/{bad_ob_id}")
+        assert (
+            delete_response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        ), delete_response.content
+        assert (
+            "ObservingBlock not-an-ob does not belong to Project"
+            in delete_response.json()["detail"]
         )
 
 

@@ -45,7 +45,6 @@ API_ROLES = {
 
 router = APIRouter(prefix="/prjs")
 
-
 def empty_observing_block() -> ObservingBlock:
     return ObservingBlock(obs_block_id=mint_randint_skuid(EntityType.OB), sbd_ids=[])
 
@@ -191,6 +190,33 @@ def prjs_sbds_post(
     _set_sbd_status_to_ready(sbd.sbd_id, auth.user_id, oda)
 
     return {"sbd": sbd, "prj": prj}
+
+
+@router.delete(
+    "/{identifier}/{obs_block_id}",
+    summary="Delete an ObservingBlock from a Project",
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
+)
+def prjs_delete_observing_block(
+    oda: UnitOfWork,
+    identifier: str,
+    obs_block_id: str,
+) -> Project:
+    """
+    Deletes the specified ObservingBlock from the Project, raising an error
+    if the ObservingBlock does not exist in the Project. Returns the updated Project.
+    """
+    LOGGER.debug(
+        "DELETE PRJS prj_id: %s, obs_block_id: %s",
+        identifier,
+        obs_block_id,
+    )
+    with oda as uow:
+        uow.prjs.delete_observing_block(identifier, obs_block_id)
+        uow.commit()
+    # Return the updated Project
+    with oda as uow:
+        return uow.prjs.get(identifier)
 
 
 @router.post(
