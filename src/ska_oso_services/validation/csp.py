@@ -44,7 +44,7 @@ def validate_csp(
             scan Validators to the scan_definition
     """
     if csp_context.telescope == TelescopeType.SKA_MID:
-        validators = [validate_mid_spws]
+        validators = [validate_mid_spws, validate_mid_fsps]
     else:
         validators = [validate_low_spws]
 
@@ -136,7 +136,6 @@ def validate_mid_spw(
         validate_mid_spw_centre_frequency,
         validate_continuum_spw_bandwidth,
         validate_mid_spw_window,
-        validate_mid_fsps,
     ]
 
     return validate(spw_context, validators)
@@ -220,8 +219,8 @@ def validate_continuum_spw_bandwidth(
                 level=ValidationIssueType.ERROR,
                 message=f"Bandwidth of spectral window {float(spw_bandwidth.to('MHz').value)} MHz"
                 " is outside of available bandwidth"
-                " {float(available_bandwidth.to('MHz').value)} Hz for "
-                f"{spw_context.telescope} {spw_context.array_assembly.value}",
+                f" {float(available_bandwidth.to('MHz').value)} MHz for "
+                f"{spw_context.telescope.value} {spw_context.array_assembly.value}",
             )
         ]
 
@@ -275,43 +274,55 @@ def validate_mid_spw_window(
 
 @validator
 def validate_mid_fsps(
-    spw_context: ValidationContext[CorrelationSPWConfiguration],
+    csp_context: ValidationContext[CSPConfiguration],
 ) -> list[ValidationIssue]:
     """
     validator to check that the number of fsps required is feasible for the array assembly
     """
-
-    centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
-    spw_bandwidth = calculate_continuum_spw_bandwidth(spw_context)
-
-    frequency_offset = spw_context.relevant_context[
-        "subband_frequency_slice_offset"
-    ]  # should be zero
-
-    minimum_spw_frequency = centre_frequency - 0.5 * spw_bandwidth
-    maximum_spw_frequency = centre_frequency + 0.5 * spw_bandwidth
-
-    coarse_channel_low = math.floor(
-        (minimum_spw_frequency - frequency_offset + (0.5 * mid_frequency_slice_bandwidth()))
-        / mid_frequency_slice_bandwidth()
-    )
-    coarse_channel_high = math.floor(
-        (maximum_spw_frequency - frequency_offset + (0.5 * mid_frequency_slice_bandwidth()))
-        / mid_frequency_slice_bandwidth()
-    )
-
-    n_fsps = coarse_channel_high - coarse_channel_low + 1
+    csp_config = csp_context.primary_entity
 
     available_fsps = get_subarray_specific_parameter_from_osd(
-        spw_context.telescope, spw_context.array_assembly, "number_fsps"
+        csp_context.telescope, csp_context.array_assembly, "number_fsps"
     )
+
+    n_fsps = 0
+    for subband in csp_config.midcbf.subbands:
+        frequency_offset = subband.frequency_slice_offset
+        for spw in subband.correlation_spws:
+            centre_frequency = spw.centre_frequency * u.Hz
+            spw_bandwidth = calculate_continuum_spw_bandwidth(
+                ValidationContext(primary_entity=spw, telescope=csp_context.telescope)
+            )
+
+            minimum_spw_frequency = centre_frequency - 0.5 * spw_bandwidth
+            maximum_spw_frequency = centre_frequency + 0.5 * spw_bandwidth
+
+            coarse_channel_low = math.floor(
+                (
+                    minimum_spw_frequency
+                    - frequency_offset
+                    + (0.5 * mid_frequency_slice_bandwidth())
+                )
+                / mid_frequency_slice_bandwidth()
+            )
+            coarse_channel_high = math.floor(
+                (
+                    maximum_spw_frequency
+                    - frequency_offset
+                    + (0.5 * mid_frequency_slice_bandwidth())
+                )
+                / mid_frequency_slice_bandwidth()
+            )
+
+            n_fsps += coarse_channel_high - coarse_channel_low + 1
 
     if n_fsps > available_fsps:
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
-                message="Number of FSPs required for spectral window is greater than the number"
-                f" of FSPs available for array assembly {spw_context.array_assembly}",
+                message=f"Number of FSPs required for CSP configuration is greater "
+                f"than the {available_fsps} FSPs available for array assembly "
+                f"{csp_context.array_assembly}",
             )
         ]
 
