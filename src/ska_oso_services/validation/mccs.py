@@ -21,9 +21,10 @@ from ska_oso_services.validation.model import (
 @validator
 def validate_mccs(mccs_context: ValidationContext[MCCSAllocation]) -> list[ValidationIssue]:
     """
-    :param mccs_context: a ValidationContext containing a Target to be validated
+    :param mccs_context: a ValidationContext containing a MCCS Allocation
+        to be validated
     :return: the collated ValidationIssues resulting from applying each of
-            the relevant Target Validators to the Target
+            the relevant MCCS Validators to the MCCS Allocation
     """
     validators = [
         validate_number_subarray_beams,

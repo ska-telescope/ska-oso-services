@@ -37,11 +37,10 @@ def validate_csp(
     csp_context: ValidationContext[CSPConfiguration],
 ) -> list[ValidationIssue]:
     """
-    :param csp_context: a ValidationContext containing a ScanDefinition
-        to be validated. This should also contain a relevant_context with the target
-        and csp_config for the scan
+    :param csp_context: a ValidationContext containing a CSP Configuration
+        to be validated
     :return: the collated ValidationIssues resulting from applying each of
-            scan Validators to the scan_definition
+            CSP Validators to the CSP Configuration
     """
     if csp_context.telescope == TelescopeType.SKA_MID:
         validators = [validate_mid_spws, validate_mid_fsps]
@@ -55,6 +54,13 @@ def validate_csp(
 def validate_low_spws(
     csp_context: ValidationContext[CSPConfiguration],
 ) -> list[ValidationIssue]:
+    """
+    :param csp_context: a ValidationContext containing a CSP Configuration to
+        be validated
+    :return: the collated ValidationIssues resulting from applying each of
+        SKA Low spectral window validators to the spectral windows in the
+        CSP Configuration
+    """
     lowcbf = csp_context.primary_entity.lowcbf
 
     spws_validation_results = [
@@ -77,6 +83,13 @@ def validate_low_spws(
 def validate_mid_spws(
     csp_context: ValidationContext[CSPConfiguration],
 ) -> list[ValidationIssue]:
+    """
+    :param csp_context: a ValidationContext containing a CSP Configuration to
+        be validated
+    :return: the collated ValidationIssues resulting from applying each of
+        SKA Mid spectral window validators to the spectral windows in the
+        CSP Configuration
+    """
     midcbf = csp_context.primary_entity.midcbf
 
     if midcbf.band5b_subband is None:
@@ -112,6 +125,12 @@ def validate_mid_spws(
 def validate_low_spw(
     spw_context: ValidationContext[Correlation],
 ) -> list[ValidationIssue]:
+    """
+    :param spw_context: a ValidationContext containing an SKA Low Correlation to
+        be validated
+    :return: the collated ValidationIssues resulting from applying each of
+        the SKA Low spectral window validators to a single Low spectral window
+    """
     validators = [
         validate_low_spw_centre_frequency,
         validate_continuum_spw_bandwidth,
@@ -125,6 +144,12 @@ def validate_low_spw(
 def validate_mid_spw(
     spw_context: ValidationContext[CorrelationSPWConfiguration],
 ) -> list[ValidationIssue]:
+    """
+    :param spw_context: a ValidationContext containing an SKA Mid
+        CorrelationSPWConfiguration to be validated
+    :return: the collated ValidationIssues resulting from applying each of
+        the SKA Mid spectral window validators to a single Mid spectral window
+    """
     check_relevant_context_contains(
         [
             "band_data_from_osd",
@@ -145,7 +170,12 @@ def validate_mid_spw(
 def validate_low_spw_centre_frequency(
     spw_context: ValidationContext[Correlation],
 ) -> list[ValidationIssue]:
-
+    """
+    :param spw_context: a ValidationContext containing an SKA Low
+        Correlation to be validated
+    :return: a validation error if the central frequency of the window
+        is outside the frequency range of SKA Low
+    """
     centre_frequency_hz = spw_context.primary_entity.centre_frequency * u.Hz
 
     if (
@@ -169,8 +199,10 @@ def validate_mid_spw_centre_frequency(
     spw_context: ValidationContext[CorrelationSPWConfiguration],
 ) -> list[ValidationIssue]:
     """
-    function to validate an individual MID spectral window central frequency
-
+    :param spw_context: a ValidationContext containing an SKA Mid
+        CorrelationSPWConfiguration to be validated
+    :return: a validation error if the central frequency of the window
+        is outside the frequency range of the SKA Mid frequency band
     """
     centre_frequency_hz = spw_context.primary_entity.centre_frequency
     band_data = spw_context.relevant_context["band_data_from_osd"]
@@ -201,8 +233,10 @@ def validate_continuum_spw_bandwidth(
     spw_context: ValidationContext[CorrelationSPWConfiguration] | ValidationContext[Correlation],
 ) -> list[ValidationIssue]:
     """
-    function to validate the bandwidth
-    of an individual MID spectral window
+    :param spw_context: a ValidationContext containing an SKA Mid
+        CorrelationSPWConfiguration or SKA Low Correlation to be validated
+    :return: a validation error if the bandwidth of the window
+        is outside the frequency range of the telescope or frequency band
     """
     available_bandwidth = (
         get_subarray_specific_parameter_from_osd(
@@ -231,6 +265,13 @@ def validate_continuum_spw_bandwidth(
 def validate_low_spw_window(
     spw_context: ValidationContext[Correlation],
 ) -> list[ValidationIssue]:
+    """
+    :param spw_context: a ValidationContext containing an SKA Low
+        Correlation to be validated
+    :return: a validation error if the combination of the central
+        frequency and bandwidth of the window is outside the frequency
+        range of SKA Low
+    """
     centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
     spw_bandwidth = calculate_continuum_spw_bandwidth(spw_context)
 
@@ -252,7 +293,13 @@ def validate_low_spw_window(
 def validate_mid_spw_window(
     spw_context: ValidationContext[CorrelationSPWConfiguration],
 ) -> list[ValidationIssue]:
-
+    """
+    :param spw_context: a ValidationContext containing an SKA Mid
+        CorrelationSPWConfiguration to be validated
+    :return: a validation error if the combination of the central
+        frequency and bandwidth of the window is outside the frequency
+        range of the SKA Mid frequency band
+    """
     centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
     spw_bandwidth = calculate_continuum_spw_bandwidth(spw_context)
 
@@ -277,7 +324,11 @@ def validate_mid_fsps(
     csp_context: ValidationContext[CSPConfiguration],
 ) -> list[ValidationIssue]:
     """
-    validator to check that the number of fsps required is feasible for the array assembly
+    :param csp_context: a ValidationContext containing an SKA Mid
+        CSP Configuration to be validated
+    :return: a validation error if the number of FSPs required
+        exceeds the number available for the array assembly being
+        validated against
     """
     csp_config = csp_context.primary_entity
 
@@ -333,9 +384,8 @@ def calculate_continuum_spw_bandwidth(
     spw_context: ValidationContext[CorrelationSPWConfiguration] | ValidationContext[Correlation],
 ) -> Quantity:
     """
-    private function to calculate the bandwidth of spectral windows
+    function to calculate the bandwidth of spectral windows
     """
-
     number_of_channels = spw_context.primary_entity.number_of_channels
     # this is currently always zero for both MID and LOW
     zoom_factor = spw_context.primary_entity.zoom_factor
