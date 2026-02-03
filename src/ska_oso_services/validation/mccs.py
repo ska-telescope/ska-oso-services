@@ -39,7 +39,12 @@ def validate_mccs(mccs_context: ValidationContext[MCCSAllocation]) -> list[Valid
 def validate_number_subarray_beams(
     mccs_context: ValidationContext[MCCSAllocation],
 ) -> list[ValidationIssue]:
-
+    """
+    :param mccs_context: a ValidationContext containing an MCCS Allocation to
+        be validated
+    :return: a validation error if the number of subarray beams in the allocation
+        exceeds the number permitted for the array assembly being validated against
+    """
     number_subarray_beams = len(mccs_context.primary_entity.subarray_beams)
 
     allowed_subarray_beams = get_subarray_specific_parameter_from_osd(
@@ -62,10 +67,11 @@ def validate_number_substations(
     mccs_context: ValidationContext[MCCSAllocation],
 ) -> list[ValidationIssue]:
     """
-    function to validate that the number of substations in a MCCS subarray beam does not exceed the
-    allowed value for a given array assembly
-
-    :param mccs_context: a ValidationContext containing a Target to be validated
+    :param mccs_context: a ValidationContext containing an MCCS Allocation to
+        be validated
+    :return: a validation error if the number of substations in a subarray beam
+        in the allocation exceeds the number permitted for the array assembly being
+         validated against
     """
     mccs_allocation = mccs_context.primary_entity
 
@@ -107,7 +113,13 @@ def validate_number_substations(
 def validate_number_of_pst_beams_per_scan(
     mccs_context: ValidationContext[MCCSAllocation],
 ) -> list[ValidationIssue]:
-
+    """
+    :param mccs_context: a ValidationContext containing an MCCS Allocation to
+        be validated
+    :return: a validation error if the number of PST tied array beams in a scan,
+        across all subarray beams, does not exceed the number permitted for the
+        array assembly being validated against
+    """
     check_relevant_context_contains(["targets"], mccs_context)
 
     allowed_number_pst_beams = get_subarray_specific_parameter_from_osd(
@@ -149,8 +161,10 @@ def validate_subarray_beams_per_scan_have_the_same_duration(
     mccs_context: ValidationContext[MCCSAllocation],
 ) -> list[ValidationIssue]:
     """
-    function to validate the number of PST beams per scan
-
+    :param mccs_context: a ValidationContext containing an MCCS Allocation to
+        be validated
+    :return: a validation error if the subarray beams in a scan do not
+        have the same scan duration
     """
     mccs_allocation = mccs_context.primary_entity
 
@@ -179,7 +193,12 @@ def validate_station_bandwidth(
     mccs_context: ValidationContext[MCCSAllocation],
 ) -> list[ValidationIssue]:
     """
-    function to validate that each station can provide the bandwidth being requested
+    :param mccs_context: a ValidationContext containing an MCCS Allocation to
+        be validated
+    :return: a validation error if the total bandwidth in a scan, summed over
+        all subarray beams, spectral windows and substations/apertures does
+        not exceed the allowed value for the array assembly being validated
+        against
     """
 
     check_relevant_context_contains(["csp_config"], mccs_context)
