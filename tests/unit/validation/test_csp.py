@@ -36,14 +36,14 @@ band_5b_json = """
 """
 
 
-def test_mid_csp_configuration_throws_central_frequency_error(fresh_mid_sbd_builder):
+def test_mid_csp_configuration_throws_central_frequency_error(mid_sbd_builder):
     """
     currently the Mid CSPBuilder sets the incorrect band for the
     CSP set up. This means the central frequency is incorrect for the
     set-up and so 2 errors should be triggered, one for the central frequency
     and one for the combined central frequency and bandwidth validation
     """
-    sbd = fresh_mid_sbd_builder
+    sbd = mid_sbd_builder
     input_context = ValidationContext(
         primary_entity=sbd.csp_configurations[0],
         telescope=sbd.telescope,
@@ -59,8 +59,8 @@ def test_mid_csp_configuration_throws_central_frequency_error(fresh_mid_sbd_buil
     assert result[1].message == "Spectral window is outside allowed range"
 
 
-def test_mid_telescope_csp_configuration_passes_for_valid_setup(fresh_mid_sbd_builder):
-    sbd = fresh_mid_sbd_builder
+def test_mid_telescope_csp_configuration_passes_for_valid_setup(mid_sbd_builder):
+    sbd = mid_sbd_builder
     sbd.csp_configurations[0].midcbf.frequency_band = ReceiverBand.BAND_1
 
     input_context = ValidationContext(
@@ -74,9 +74,9 @@ def test_mid_telescope_csp_configuration_passes_for_valid_setup(fresh_mid_sbd_bu
 
 
 def test_mid_telescope_csp_configuration_passes_for_valid_setup_band_5b_edition(
-    fresh_mid_sbd_builder,
+    mid_sbd_builder,
 ):
-    sbd = fresh_mid_sbd_builder
+    sbd = mid_sbd_builder
 
     sbd.csp_configurations[0] = CSPConfiguration.model_validate_json(band_5b_json)
 
@@ -90,12 +90,12 @@ def test_mid_telescope_csp_configuration_passes_for_valid_setup_band_5b_edition(
     assert result == []
 
 
-def test_mid_telescope_csp_configuration_throws_window_error(fresh_mid_sbd_builder):
+def test_mid_telescope_csp_configuration_throws_window_error(mid_sbd_builder):
     """
     This test has a valid central frequency and bandwidth, but the combination
     puts the window outside the band.
     """
-    mid_sbd = fresh_mid_sbd_builder
+    mid_sbd = mid_sbd_builder
     mid_sbd.csp_configurations[0].midcbf.frequency_band = ReceiverBand.BAND_1
     mid_sbd.csp_configurations[0].midcbf.subbands[0].correlation_spws[0].number_of_channels = 20000
 
@@ -109,8 +109,8 @@ def test_mid_telescope_csp_configuration_throws_window_error(fresh_mid_sbd_build
     assert result[0].message == "Spectral window is outside allowed range"
 
 
-def test_mid_telescope_csp_configuration_throws_bandwidth_error(fresh_mid_sbd_builder):
-    mid_sbd = fresh_mid_sbd_builder
+def test_mid_telescope_csp_configuration_throws_bandwidth_error(mid_sbd_builder):
+    mid_sbd = mid_sbd_builder
     mid_sbd.csp_configurations[0].midcbf.frequency_band = ReceiverBand.BAND_1
     mid_sbd.csp_configurations[0].midcbf.subbands[0].correlation_spws[
         0
@@ -129,8 +129,8 @@ def test_mid_telescope_csp_configuration_throws_bandwidth_error(fresh_mid_sbd_bu
     )
 
 
-def test_mid_telescope_csp_configuration_throws_fsp_error(fresh_mid_sbd_builder):
-    sbd = fresh_mid_sbd_builder
+def test_mid_telescope_csp_configuration_throws_fsp_error(mid_sbd_builder):
+    sbd = mid_sbd_builder
 
     sbd.csp_configurations[0].midcbf.frequency_band = ReceiverBand.BAND_1
 
@@ -152,8 +152,8 @@ def test_mid_telescope_csp_configuration_throws_fsp_error(fresh_mid_sbd_builder)
     )
 
 
-def test_low_telescope_csp_configuration_passes_for_valid_setup(fresh_low_sbd_builder):
-    low_sbd = fresh_low_sbd_builder
+def test_low_telescope_csp_configuration_passes_for_valid_setup(low_sbd_builder):
+    low_sbd = low_sbd_builder
     input_context = ValidationContext(
         primary_entity=low_sbd.csp_configurations[0],
         telescope=low_sbd.telescope,
@@ -164,8 +164,8 @@ def test_low_telescope_csp_configuration_passes_for_valid_setup(fresh_low_sbd_bu
     assert result == []
 
 
-def test_low_telescope_csp_configuration_throws_central_frequency_error(fresh_low_sbd_builder):
-    low_sbd = fresh_low_sbd_builder
+def test_low_telescope_csp_configuration_throws_central_frequency_error(low_sbd_builder):
+    low_sbd = low_sbd_builder
     low_sbd.csp_configurations[0].lowcbf.correlation_spws[0].centre_frequency = 100
 
     input_context = ValidationContext(
@@ -182,9 +182,9 @@ def test_low_telescope_csp_configuration_throws_central_frequency_error(fresh_lo
     assert result[1].message == "Spectral window is outside allowed range"
 
 
-def test_low_telescope_throw_bandwidth_error(fresh_low_sbd_builder):
-    low_sbd = fresh_low_sbd_builder
-    low_sbd.csp_configurations[0].lowcbf.correlation_spws[0].number_of_channels = 15000
+def test_low_telescope_throw_bandwidth_error(low_sbd_builder):
+    low_sbd = low_sbd_builder
+    low_sbd.csp_configurations[0].lowcbf.correlation_spws[0].number_of_channels = 100
     input_context = ValidationContext(
         primary_entity=low_sbd.csp_configurations[0],
         telescope=low_sbd.telescope,
@@ -194,6 +194,6 @@ def test_low_telescope_throw_bandwidth_error(fresh_low_sbd_builder):
     result = validate_csp(input_context)
     assert (
         result[0].message
-        == "Bandwidth of spectral window 81.38020833333334 MHz is outside of available bandwidth "
+        == "Bandwidth of spectral window 78.125 MHz is outside of available bandwidth "
         "75.0 MHz for ska_low AA1"
     )
