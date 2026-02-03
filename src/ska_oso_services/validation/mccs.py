@@ -147,7 +147,6 @@ def validate_number_of_pst_beams_per_scan(
             validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
-                    field="$mccs_allocation.subarray_beams[]",
                     message=f"number of PST beams {number_pst_beams} for scan {scan.index + 1} "
                     f"exceeds allowed {allowed_number_pst_beams} for "
                     f"{mccs_context.array_assembly}",
