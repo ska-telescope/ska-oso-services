@@ -16,9 +16,9 @@ from ska_oso_services.common.osdmapper import (
     get_subarray_specific_parameter_from_osd,
 )
 from ska_oso_services.common.static.constants import (
-    low_continuum_channel_width,
     low_maximum_frequency,
     low_minimum_frequency,
+    low_station_channel_width,
     mid_channel_width,
     mid_frequency_slice_bandwidth,
 )
@@ -345,7 +345,7 @@ def calculate_continuum_spw_bandwidth(
     if spw_context.telescope == TelescopeType.SKA_MID:
         channel_width = mid_channel_width()
     else:
-        channel_width = low_continuum_channel_width()
+        channel_width = low_station_channel_width()
 
     spw_bandwidth = channel_width * number_of_channels
 
