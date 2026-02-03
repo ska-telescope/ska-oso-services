@@ -304,3 +304,26 @@ class TestSBDefinitionAPI:
 
             assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
             assert response.json() == {"detail": "OSError('test error')"}
+
+
+class TestSBDefinitionDelete:
+    def test_sbds_delete_success(self, client_with_uow_mock):
+        """
+        Check DELETE /sbds/{identifier} calls uow.sbds.delete and returns 204.
+        """
+        client, uow_mock = client_with_uow_mock
+        sbd_id = "sbd-1234"
+        uow_mock.sbds.delete.return_value = None
+        resp = client.delete(f"{SBDS_API_URL}/{sbd_id}")
+        assert resp.status_code == HTTPStatus.NO_CONTENT
+        uow_mock.sbds.delete.assert_called_once_with(sbd_id)
+
+    def test_sbds_delete_not_found(self, client_with_uow_mock):
+        """
+        Check DELETE /sbds/{identifier} returns 404.
+        """
+        client, uow_mock = client_with_uow_mock
+        sbd_id = "not-a-sbd"
+        uow_mock.sbds.delete.side_effect = ODANotFound()
+        resp = client.delete(f"{SBDS_API_URL}/{sbd_id}")
+        assert resp.status_code == HTTPStatus.NOT_FOUND

@@ -169,26 +169,51 @@ def prjs_sbds_post(
 
     If no request body is passed, a default 'empty' SBDefinition will be created.
     """
+    if sbd is not None and sbd.ob_ref is not None and sbd.ob_ref != obs_block_id:
+        raise BadRequestError(detail="ob_ref in SBDefinition body does not match the request URL")
     with oda as uow:
         prj = uow.prjs.get(identifier)
-        try:
-            obs_block = next(
-                obs_block for obs_block in prj.obs_blocks if obs_block.obs_block_id == obs_block_id
-            )
-        except StopIteration:
-            # pylint: disable=raise-missing-from
+        if obs_block_id not in [ob.obs_block_id for ob in prj.obs_blocks]:
             raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
+
         sbd_to_save = sbd if sbd is not None else DEFAULT_SB_DEFINITION.model_copy(deep=True)
+        sbd_to_save.ob_ref = obs_block_id
         sbd = uow.sbds.add(sbd_to_save, user=auth.user_id)
-
-        obs_block.sbd_ids.append(sbd.sbd_id)
-        # Persist the change to the obs_block above
-        prj = uow.prjs.add(prj, user=auth.user_id)
-
         uow.commit()
+
+        # Get the project again to resolve the new child updates
+        prj = uow.prjs.get(prj.prj_id)
+
     _set_sbd_status_to_ready(sbd.sbd_id, auth.user_id, oda)
 
     return {"sbd": sbd, "prj": prj}
+
+
+@router.delete(
+    "/{identifier}/{obs_block_id}",
+    summary="Delete an ObservingBlock from a Project",
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
+)
+def prjs_delete_observing_block(
+    oda: UnitOfWork,
+    identifier: str,
+    obs_block_id: str,
+) -> Project:
+    """
+    Deletes the specified ObservingBlock from the Project, raising an error
+    if the ObservingBlock does not exist in the Project. Returns the updated Project.
+    """
+    LOGGER.debug(
+        "DELETE PRJS prj_id: %s, obs_block_id: %s",
+        identifier,
+        obs_block_id,
+    )
+    with oda as uow:
+        uow.prjs.delete_observing_block(identifier, obs_block_id)
+        uow.commit()
+    # Return the updated Project
+    with oda as uow:
+        return uow.prjs.get(identifier)
 
 
 @router.post(
@@ -224,19 +249,15 @@ def prjs_ob_generate_sbds(
             # pylint: disable=raise-missing-from
             raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
 
-        # Overwrite any existing SBDefinitions that were linked to the ObservingBlock
-        obs_block.sbd_ids = []
-
         sbds = generate_sbds(obs_block)
 
         for sbd in sbds:
             updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
             updated_sbd_ids.append(updated_sbd.sbd_id)
 
-            obs_block.sbd_ids.append(updated_sbd.sbd_id)
-
-        updated_prj = uow.prjs.add(prj, user=auth.user_id)
+        updated_prj = uow.prjs.get(prj.prj_id)
         uow.commit()
+
     for sbd_id in updated_sbd_ids:
         _set_sbd_status_to_ready(sbd_id, auth.user_id, oda)
 
@@ -263,18 +284,12 @@ def prjs_generate_sbds(
     with oda as uow:
         prj = uow.prjs.get(identifier)
         for obs_block in prj.obs_blocks:
-            # Overwrite any existing SBDefinitions that were
-            # linked to the ObservingBlock
-            obs_block.sbd_ids = []
-
             sbds = generate_sbds(obs_block)
 
             for sbd in sbds:
-                updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
+                uow.sbds.add(sbd, user=auth.user_id)
 
-                obs_block.sbd_ids.append(updated_sbd.sbd_id)
-
-        updated_prj = uow.prjs.add(prj, user=auth.user_id)
+        updated_prj = uow.prjs.get(prj.prj_id)
         uow.commit()
 
     return updated_prj

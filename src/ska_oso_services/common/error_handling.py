@@ -6,6 +6,7 @@ from typing import List, Optional
 from fastapi import HTTPException, Request
 from pydantic import ValidationError
 from ska_db_oda.repository.domain import ODAError, ODANotFound, UniqueConstraintViolation
+from ska_db_oda.repository.domain.errors import ODAIntegrityError
 from ska_ost_osd.common.error_handling import generic_exception_handler
 from starlette.responses import JSONResponse
 
@@ -92,6 +93,17 @@ async def oda_not_found_handler(request: Request, err: ODANotFound) -> JSONRespo
     """
     LOGGER.debug("NotFoundInODA for path parameters %s", request.path_params)
     return _make_json_response(ErrorResponse(status=HTTPStatus.NOT_FOUND, detail=str(err)))
+
+
+async def oda_integrity_error_handler(request: Request, err: ODAIntegrityError) -> JSONResponse:
+    """
+    A custom handler function to deal with ODAIntegrityError raised by the ODA and
+    return the correct HTTP 422 response.
+    """
+    LOGGER.debug("ODAIntegrityError for path parameters %s", request.path_params)
+    return _make_json_response(
+        ErrorResponse(status=HTTPStatus.UNPROCESSABLE_ENTITY, detail=str(err))
+    )
 
 
 async def oda_error_handler(_: Request, err: ODAError) -> JSONResponse:

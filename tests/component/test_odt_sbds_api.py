@@ -11,12 +11,7 @@ from http import HTTPStatus
 
 import pytest
 
-from ..unit.util import (
-    SBDEFINITION_WITHOUT_METADATA_JSON,
-    VALID_MID_SBDEFINITION_JSON,
-    TestDataFactory,
-    assert_json_is_equal,
-)
+from ..unit.util import VALID_MID_SBDEFINITION_JSON, TestDataFactory, assert_json_is_equal
 from . import ODT_URL
 
 
@@ -49,25 +44,36 @@ def test_sbd_validate(authrequests):
     assert result["messages"] == {}
 
 
-@pytest.mark.xfail(
-    reason="Tests fails due to unfinished status lifecycle implementation, see BTN-2925"
-)
+def test_post_without_ob_ref_fails(authrequests):
+    response = authrequests.post(
+        f"{ODT_URL}/sbds",
+        data=TestDataFactory.sbdefinition(sbd_id=None, ob_ref="not an ob").model_dump_json(),
+        headers={"Content-type": "application/json"},
+    )
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    result = response.json()
+
+    assert result["detail"] == "The referenced identifier not an ob could not be found"
+
+
 @pytest.mark.xray("XTP-34548")
-def test_sbd_post_then_get(authrequests):
+def test_sbd_post_then_get(authrequests, test_project):
     """
     Test that an entity POSTed to /sbds can then be retrieved
     with GET /sbds/{identifier}
     """
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
     post_response = authrequests.post(
         f"{ODT_URL}/sbds",
-        data=SBDEFINITION_WITHOUT_METADATA_JSON,
+        data=sbd.model_dump_json(),
         headers={"Content-type": "application/json"},
     )
 
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
-        SBDEFINITION_WITHOUT_METADATA_JSON,
+        sbd.model_dump_json(),
         exclude_paths=["root['metadata']", "root['sbd_id']"],
     )
 
@@ -79,33 +85,33 @@ def test_sbd_post_then_get(authrequests):
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     assert_json_is_equal(
         get_response.content,
-        SBDEFINITION_WITHOUT_METADATA_JSON,
+        sbd.model_dump_json(),
         exclude_paths=["root['metadata']", "root['sbd_id']"],
     )
 
 
-@pytest.mark.xfail(
-    reason="Tests fails due to unfinished status lifecycle implementation, see BTN-2925"
-)
-def test_sbd_post_then_put(authrequests):
+def test_sbd_post_then_put(authrequests, test_project):
     """
     Test that an entity POSTed to /sbds can then be updated with PUT /sbds/{identifier}
     """
+    ob_ref = test_project.obs_blocks[0].obs_block_id
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=ob_ref)
+
     post_response = authrequests.post(
         f"{ODT_URL}/sbds",
-        data=SBDEFINITION_WITHOUT_METADATA_JSON,
+        data=sbd.model_dump_json(),
         headers={"Content-type": "application/json"},
     )
 
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     assert_json_is_equal(
         post_response.content,
-        SBDEFINITION_WITHOUT_METADATA_JSON,
+        sbd.model_dump_json(),
         exclude_paths=["root['metadata']", "root['sbd_id']"],
     )
 
     sbd_id = post_response.json()["sbd_id"]
-    sbd_to_update = TestDataFactory.sbdefinition(sbd_id=sbd_id).model_dump_json()
+    sbd_to_update = TestDataFactory.sbdefinition(sbd_id=sbd_id, ob_ref=ob_ref).model_dump_json()
     put_response = authrequests.put(
         f"{ODT_URL}/sbds/{sbd_id}",
         data=sbd_to_update,
@@ -162,3 +168,34 @@ def test_sbd_put_validation_error(authrequests):
     result = response.json()
 
     assert result["detail"][0]["msg"] == "Input should be 'ska_mid', 'ska_low' or 'MeerKAT'"
+
+
+def test_sbd_delete_success(authrequests, test_project):
+    """
+    Test that DELETE /sbds/{identifier} removes the SBD and returns 204 No Content.
+    """
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
+    post_response = authrequests.post(
+        f"{ODT_URL}/sbds",
+        data=sbd.model_dump_json(),
+        headers={"Content-type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
+    sbd_id = post_response.json()["sbd_id"]
+
+    delete_response = authrequests.delete(f"{ODT_URL}/sbds/{sbd_id}")
+    assert delete_response.status_code == HTTPStatus.NO_CONTENT, delete_response.content
+
+    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
+    assert get_response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_sbd_delete_not_found(authrequests):
+    """
+    Test that DELETE /sbds/{identifier} returns 404 if SBD not found.
+    """
+    bad_sbd_id = "not-a-sbd"
+    delete_response = authrequests.delete(f"{ODT_URL}/sbds/{bad_sbd_id}")
+    assert delete_response.status_code == HTTPStatus.NOT_FOUND
+
+    assert "The requested identifier could not be found" in delete_response.json()["detail"]

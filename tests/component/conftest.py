@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import contextlib
 from enum import Enum
 from os import getenv
@@ -6,6 +7,9 @@ import pytest
 from requests import Session
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
+from ska_oso_pdm import Project
+
+from tests.component import ODT_URL
 
 AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
 
@@ -74,6 +78,16 @@ def authrequests():
     )
     req.headers.update({"Authorization": f"Bearer {token}"})
     return req
+
+
+@pytest.fixture()
+def test_project(authrequests) -> Project:
+    prj_post_response = authrequests.post(
+        f"{ODT_URL}/prjs",
+        headers={"Content-type": "application/json"},
+    )
+
+    return Project.model_validate_json(prj_post_response.content)
 
 
 # See https://developer.skao.int/projects/ska-ser-xray/en/latest/guide/pytest.html
