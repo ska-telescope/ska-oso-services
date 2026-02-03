@@ -1,27 +1,8 @@
-import importlib
-
-import pytest
-import ska_oso_pdm.builders.csp_builder as csp_builder
-import ska_oso_pdm.builders.sb_builder as sb_builders
 from ska_oso_pdm import ValidationArrayAssembly
 from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
 
 from ska_oso_services.validation.csp import validate_csp
 from ska_oso_services.validation.model import ValidationContext
-
-
-@pytest.fixture
-def fresh_mid_sbd_builder():
-    importlib.reload(sb_builders)
-    importlib.reload(csp_builder)
-    return sb_builders.MidSBDefinitionBuilder()
-
-
-@pytest.fixture
-def fresh_low_sbd_builder():
-    importlib.reload(sb_builders)
-    importlib.reload(csp_builder)
-    return sb_builders.LowSBDefinitionBuilder()
 
 
 def test_mid_csp_configuration_throws_central_frequency_error(fresh_mid_sbd_builder):
@@ -50,6 +31,20 @@ def test_mid_csp_configuration_throws_central_frequency_error(fresh_mid_sbd_buil
 def test_mid_telescope_csp_configuration_passes_for_valid_setup(fresh_mid_sbd_builder):
     sbd = fresh_mid_sbd_builder
     sbd.csp_configurations[0].midcbf.frequency_band = ReceiverBand.BAND_1
+
+    input_context = ValidationContext(
+        primary_entity=sbd.csp_configurations[0],
+        telescope=sbd.telescope,
+        array_assembly=ValidationArrayAssembly.AA1,
+    )
+
+    result = validate_csp(input_context)
+    assert result == []
+
+def test_mid_telescope_csp_configuration_passes_for_valid_setup_band_5a_edition(fresh_mid_sbd_builder):
+    sbd = fresh_mid_sbd_builder
+
+    sbd.csp_configurations[0].midcbf.frequency_band = ReceiverBand.BAND_5A
 
     input_context = ValidationContext(
         primary_entity=sbd.csp_configurations[0],
