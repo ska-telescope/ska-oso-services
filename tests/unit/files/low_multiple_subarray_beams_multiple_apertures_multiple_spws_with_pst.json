@@ -1,0 +1,340 @@
+{
+  "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
+  "sbd_id": "sbd-m36afbuk-20260203-633645749524785",
+  "telescope": "ska_low",
+  "metadata": {
+    "version": 13,
+    "created_by": "248091c7-cd6f-40c3-847b-dd15644997a0",
+    "created_on": "2026-02-03T13:50:09.059900Z",
+    "last_modified_by": "248091c7-cd6f-40c3-847b-dd15644997a0",
+    "last_modified_on": "2026-02-03T16:21:29.396560Z",
+    "pdm_version": "26.0.3"
+  },
+  "activities": {
+    "observe": {
+      "function_args": {
+        "init": {},
+        "main": {}
+      },
+      "kind": "git",
+      "repo": "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
+      "path": "git://scripts/allocate_and_observe_sb.py",
+      "branch": "master"
+    }
+  },
+  "targets": [
+    {
+      "target_id": "target-87983",
+      "name": "47 Tuc",
+      "pointing_pattern": {
+        "active": "PointedMosaicParameters",
+        "parameters": [
+          {
+            "kind": "PointedMosaicParameters",
+            "offsets": [
+              {
+                "x": 0,
+                "y": 0
+              }
+            ],
+            "units": "arcsec"
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "00:24:05.3590",
+        "dec_str": "-72:04:53.200"
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": -17.2,
+          "unit": "km / s"
+        },
+        "definition": "OPTICAL",
+        "reference_frame": "BARYCENTRIC",
+        "redshift": 0
+      },
+      "tied_array_beams": {
+        "pst_beams": [
+          {
+            "beam_id": 99005,
+            "beam_name": "1E0102-72.3",
+            "beam_coordinate": {
+              "kind": "icrs",
+              "ra_str": "01:04:01.2000",
+              "dec_str": "-72:01:52.320"
+            }
+          },
+          {
+            "beam_id": 93680,
+            "beam_name": "SMC X-1",
+            "beam_coordinate": {
+              "kind": "icrs",
+              "ra_str": "01:17:05.1457",
+              "dec_str": "-73:26:36.015"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "target_id": "target-32930",
+      "name": "NGC 346",
+      "pointing_pattern": {
+        "active": "PointedMosaicParameters",
+        "parameters": [
+          {
+            "kind": "PointedMosaicParameters",
+            "offsets": [
+              {
+                "x": 0,
+                "y": 0
+              }
+            ],
+            "units": "arcsec"
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "00:59:04.4000",
+        "dec_str": "-72:10:39.000"
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "BARYCENTRIC",
+        "redshift": 0
+      }
+    },
+    {
+      "target_id": "calibrator-14870",
+      "name": "Pictor A",
+      "pointing_pattern": {
+        "active": "PointedMosaicParameters",
+        "parameters": [
+          {
+            "kind": "PointedMosaicParameters",
+            "offsets": [
+              {
+                "x": 0,
+                "y": 0
+              }
+            ],
+            "units": "arcsec"
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "05:19:49.7229",
+        "dec_str": "-45:46:43.853"
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "BARYCENTRIC",
+        "redshift": 0.0349747
+      }
+    }
+  ],
+  "csp_configurations": [
+    {
+      "config_id": "csp-configuration-12754",
+      "name": "Config 12754",
+      "lowcbf": {
+        "do_pst": true,
+        "correlation_spws": [
+          {
+            "spw_id": 1,
+            "logical_fsp_ids": [],
+            "zoom_factor": 0,
+            "centre_frequency": 199609375,
+            "number_of_channels": 8,
+            "integration_time_ms": 849
+          }
+        ]
+      }
+    },
+    {
+      "config_id": "csp-configuration-66267",
+      "name": "Config 66267",
+      "lowcbf": {
+        "do_pst": false,
+        "correlation_spws": [
+          {
+            "spw_id": 1,
+            "logical_fsp_ids": [],
+            "zoom_factor": 0,
+            "centre_frequency": 251171875,
+            "number_of_channels": 8,
+            "integration_time_ms": 849
+          },
+          {
+            "spw_id": 2,
+            "logical_fsp_ids": [],
+            "zoom_factor": 0,
+            "centre_frequency": 199609375,
+            "number_of_channels": 8,
+            "integration_time_ms": 849
+          },
+          {
+            "spw_id": 3,
+            "logical_fsp_ids": [],
+            "zoom_factor": 0,
+            "centre_frequency": 199609375,
+            "number_of_channels": 8,
+            "integration_time_ms": 849
+          },
+          {
+            "spw_id": 4,
+            "logical_fsp_ids": [],
+            "zoom_factor": 0,
+            "centre_frequency": 199609375,
+            "number_of_channels": 8,
+            "integration_time_ms": 849
+          }
+        ]
+      }
+    }
+  ],
+  "mccs_allocation": {
+    "mccs_allocation_id": "mccs-allocation-78319",
+    "selected_subarray_definition": "AA0.5",
+    "subarray_beams": [
+      {
+        "apertures": [
+          {
+            "station_id": 345,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 345,
+            "substation_id": 2,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 345,
+            "substation_id": 3,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 350,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 350,
+            "substation_id": 2,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 350,
+            "substation_id": 3,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 352,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 431,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          }
+        ],
+        "subarray_beam_id": 1,
+        "scan_sequence": [
+          {
+            "scan_definition_id": "scan-definition-19684",
+            "scan_duration_ms": 600000,
+            "target_ref": "target-87983",
+            "csp_configuration_ref": "csp-configuration-12754",
+            "scan_intent": "Science",
+            "pointing_correction": "MAINTAIN"
+          },
+          {
+            "scan_definition_id": "scan-definition-44249",
+            "scan_duration_ms": 1000,
+            "target_ref": "calibrator-14870",
+            "csp_configuration_ref": "csp-configuration-66267",
+            "scan_intent": "Calibrator",
+            "pointing_correction": "MAINTAIN"
+          }
+        ]
+      },
+      {
+        "apertures": [
+          {
+            "station_id": 345,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 345,
+            "substation_id": 2,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 345,
+            "substation_id": 3,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 350,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 350,
+            "substation_id": 2,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 350,
+            "substation_id": 3,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 352,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 431,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          }
+        ],
+        "subarray_beam_id": 2,
+        "scan_sequence": [
+          {
+            "scan_definition_id": "scan-definition-15309",
+            "scan_duration_ms": 600000,
+            "target_ref": "target-32930",
+            "csp_configuration_ref": "csp-configuration-66267",
+            "scan_intent": "Science",
+            "pointing_correction": "MAINTAIN"
+          },
+          {
+            "scan_definition_id": "scan-definition-68093",
+            "scan_duration_ms": 1000,
+            "target_ref": "calibrator-14870",
+            "csp_configuration_ref": "csp-configuration-66267",
+            "scan_intent": "Calibrator",
+            "pointing_correction": "MAINTAIN"
+          }
+        ]
+      }
+    ]
+  }
+}
