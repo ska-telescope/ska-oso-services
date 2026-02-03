@@ -251,15 +251,14 @@ def validate_station_bandwidth(
             beam_bandwidths.append(sum(spw_bandwidths))
             beam_max_stations.append(max_number_of_substations)
 
-        max_total_bandwith = sum(beam_bandwidths) * max(beam_max_stations)
+        max_total_bandwidth = sum(beam_bandwidths) * max(beam_max_stations)
 
-        if max_total_bandwith > available_bandwidth:
+        if max_total_bandwidth > available_bandwidth:
             validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
-                    field="$.subarray_beams",
                     message=f"At least one station is using more bandwidth "
-                    f"({max_total_bandwith.to(u.MHz).value} MHz) than is "
+                    f"({max_total_bandwidth.to(u.MHz).value} MHz) than is "
                     f"available ({available_bandwidth.to(u.MHz).value} MHz)"
                     f"for array assembly {mccs_context.array_assembly}",
                 )
