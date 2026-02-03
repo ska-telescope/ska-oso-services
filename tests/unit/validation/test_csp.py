@@ -1,8 +1,39 @@
 from ska_oso_pdm import ValidationArrayAssembly
+from ska_oso_pdm.sb_definition import CSPConfiguration
 from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
 
 from ska_oso_services.validation.csp import validate_csp
 from ska_oso_services.validation.model import ValidationContext
+
+band_5b_json = """
+{
+      "config_id": "csp-configuration-12754",
+      "name": "my csp config",
+      "midcbf": {
+        "frequency_band": "5b",
+        "band5b_subband": 1,
+        "subbands": [
+          {
+            "frequency_slice_offset": {
+              "value": 0,
+              "unit": "MHz"
+            },
+            "correlation_spws": [
+              {
+                "spw_id": 1,
+                "logical_fsp_ids": [],
+                "zoom_factor": 0,
+                "centre_frequency": 11961280000.0,
+                "number_of_channels": 18600,
+                "channel_averaging_factor": 1,
+                "time_integration_factor": 1
+              }
+            ]
+          }
+        ]
+      }
+    }
+"""
 
 
 def test_mid_csp_configuration_throws_central_frequency_error(fresh_mid_sbd_builder):
@@ -41,10 +72,13 @@ def test_mid_telescope_csp_configuration_passes_for_valid_setup(fresh_mid_sbd_bu
     result = validate_csp(input_context)
     assert result == []
 
-def test_mid_telescope_csp_configuration_passes_for_valid_setup_band_5a_edition(fresh_mid_sbd_builder):
+
+def test_mid_telescope_csp_configuration_passes_for_valid_setup_band_5b_edition(
+    fresh_mid_sbd_builder,
+):
     sbd = fresh_mid_sbd_builder
 
-    sbd.csp_configurations[0].midcbf.frequency_band = ReceiverBand.BAND_5A
+    sbd.csp_configurations[0] = CSPConfiguration.model_validate_json(band_5b_json)
 
     input_context = ValidationContext(
         primary_entity=sbd.csp_configurations[0],
