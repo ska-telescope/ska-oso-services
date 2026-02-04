@@ -150,7 +150,7 @@ def ensure_review_exist_or_create(
     Ensure a review of the given kind exists for the given proposal and reviewer.
     If not, create one with status TO_DO and return its review_id.
     """
-    query = CustomQuery(prsl_id=proposal_id, kind=kind, reviewer_id=reviewer_id)
+    query = CustomQuery(prsl_fk=proposal_id, kind=kind, reviewer_id=reviewer_id)
     existing = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
     existing_rvw = existing[0] if existing else None
 
@@ -187,7 +187,7 @@ def ensure_decision_exist_or_create(uow, param, proposal_id: str) -> str:
     Ensure a decision exists for the given proposal.
     If not, create one with status TO_DO and return its decision_id.
     """
-    query = CustomQuery(prsl_id=proposal_id)
+    query = CustomQuery(prsl_fk=proposal_id)
     existing = get_latest_entity_by_id(uow.pnlds.query(query), "decision_id")
     existing_pnld = existing[0] if existing else None
 

@@ -101,3 +101,57 @@ def test_generate_science_verification_panel(authrequests):
     )
     assert resp2.status_code == HTTPStatus.OK, resp2.text
     assert resp2.json() == panel_id
+
+
+def test_put_panel_with_proposal_and_reviewers(authrequests):
+    # Create a proposal to reference in panel assignments
+    proposal_response = authrequests.post(
+        f"{PHT_URL}/prsls/create",
+        data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert proposal_response.status_code == HTTPStatus.OK, proposal_response.text
+    prsl_id = proposal_response.json()["prsl_id"]
+
+    # Create a panel to update
+    panel_id = f"panel-test-put-{uuid.uuid4().hex[:8]}"
+    panel = TestDataFactory.panel_basic(panel_id=panel_id, name="PutPanel", cycle="2024A")
+    panel_response = authrequests.post(
+        f"{PANELS_API_URL}/create",
+        data=panel.model_dump_json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert panel_response.status_code == HTTPStatus.OK, panel_response.text
+    created_panel_id = panel_response.json()
+
+    sci_reviewer = TestDataFactory.reviewer_assignment(
+        reviewer_id=f"sci-{uuid.uuid4().hex[:6]}",
+        assigned_on="2025-06-16T11:23:01Z",
+        status="Pending",
+    )
+    tech_reviewer = TestDataFactory.reviewer_assignment(
+        reviewer_id=f"tech-{uuid.uuid4().hex[:6]}",
+        assigned_on="2025-06-16T11:23:01Z",
+        status="Pending",
+    )
+    proposal_assignment = TestDataFactory.proposal_assignment(
+        prsl_id=prsl_id,
+        assigned_on="2025-05-21T09:30:00Z",
+    )
+
+    panel_update = TestDataFactory.panel_with_assignment(
+        panel_id=created_panel_id,
+        name="PutPanel Updated",
+        sci_reviewers=[sci_reviewer],
+        tech_reviewers=[tech_reviewer],
+        proposals=[proposal_assignment],
+        cycle="2024A",
+    )
+
+    put_response = authrequests.put(
+        f"{PANELS_API_URL}/{created_panel_id}",
+        data=panel_update.model_dump_json(),
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert put_response.status_code == HTTPStatus.OK, put_response.text
