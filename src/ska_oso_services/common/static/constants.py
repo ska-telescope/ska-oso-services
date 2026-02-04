@@ -1,5 +1,5 @@
 # pylint: disable=no-member
-from functools import lru_cache
+from functools import cache
 
 from astropy import units as u
 from astropy.units import Quantity
@@ -11,7 +11,7 @@ from ska_oso_services.common.osdmapper import (
 )
 
 
-@lru_cache(maxsize=None)
+@cache
 def mid_channel_width() -> Quantity:
     """
     for both AA0.5 and AA1 this list has one element this is a list for AA2 and
@@ -29,7 +29,7 @@ def mid_channel_width() -> Quantity:
     )
 
 
-@lru_cache(maxsize=None)
+@cache
 def mid_frequency_slice_bandwidth() -> Quantity:
     """
     These are CSP constants taken from the CSP source code. Common sample rate for all
@@ -41,29 +41,29 @@ def mid_frequency_slice_bandwidth() -> Quantity:
     return COMMON_SAMPLE_RATE / VCC_OVERSAMPLING_FACTOR
 
 
-@lru_cache(maxsize=None)
+@cache
 def low_minimum_frequency() -> Quantity:
     return get_low_basic_capability_parameter_from_osd("min_frequency_hz") * u.Hz
 
 
-@lru_cache(maxsize=None)
+@cache
 def low_maximum_frequency() -> Quantity:
     return get_low_basic_capability_parameter_from_osd("max_frequency_hz") * u.Hz
 
 
-@lru_cache(maxsize=None)
+@cache
 def low_station_channel_width() -> Quantity:
     return get_low_basic_capability_parameter_from_osd("coarse_channel_width_hz") * u.Hz
 
 
-@lru_cache(maxsize=None)
+@cache
 def low_continuum_channel_width() -> Quantity:
     return low_station_channel_width() / get_low_basic_capability_parameter_from_osd(
         "number_continuum_channels_per_coarse_channel"
     )
 
 
-@lru_cache(maxsize=None)
+@cache
 def low_pst_channel_width() -> Quantity:
     return 16 * low_station_channel_width() / 3456
 
