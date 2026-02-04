@@ -3,11 +3,15 @@ pytest fixtures to be used by unit tests
 """
 
 from functools import partial
+from importlib import reload
 from importlib.metadata import version
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+import ska_oso_pdm.builders.csp_builder as csp_builder
+import ska_oso_pdm.builders.mccs_builder as mccs_builder
+import ska_oso_pdm.builders.sb_builder as sb_builders
 from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from fastapi import FastAPI
@@ -15,10 +19,12 @@ from fastapi.testclient import TestClient
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token, monkeypatch_pubkeys
 from ska_db_oda.rest.fastapicontext import get_uow
+from ska_oso_pdm import SBDefinition
 
 from ska_oso_services import create_app
 from ska_oso_services.common.auth import AUDIENCE, Scope
 from ska_oso_services.pht.models.domain import PrslRole
+from tests.unit.util import load_string_from_file
 
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 APP_BASE_API_URL = f"/ska-oso-services/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
@@ -113,3 +119,38 @@ def client_get(client: TestClient, headers):  # pylint: disable=redefined-outer-
 @pytest.fixture(scope="session", autouse=True)
 def patch_pubkeys():
     monkeypatch_pubkeys()
+
+
+@pytest.fixture
+def mid_sbd_builder():
+    reload(sb_builders)
+    reload(csp_builder)
+    return sb_builders.MidSBDefinitionBuilder()
+
+
+@pytest.fixture
+def low_sbd_builder():
+    reload(sb_builders)
+    reload(csp_builder)
+    reload(mccs_builder)
+    return sb_builders.LowSBDefinitionBuilder()
+
+
+@pytest.fixture
+def low_multiple_subarray_beam():
+    path_to_test_file = Path(__file__).parents[0] / "files" / "low_multiple_subarray_beams.json"
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd
+
+
+@pytest.fixture
+def low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst():
+    path_to_test_file = (
+        Path(__file__).parents[0]
+        / "files"
+        / "low_multiple_subarray_beams_multiple_apertures_multiple_spws_with_pst.json"
+    )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd

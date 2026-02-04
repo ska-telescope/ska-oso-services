@@ -4,6 +4,7 @@ from astropy.coordinates import EarthLocation, Latitude
 from astropy.units import Quantity
 from ska_oso_pdm import Target, TelescopeType
 
+from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.validation.model import (
     ValidationContext,
     ValidationIssue,
@@ -25,15 +26,15 @@ def validate_target(target_context: ValidationContext[Target]) -> list[Validatio
     """
 
     if target_context.telescope == TelescopeType.SKA_MID:
-        validators = [validation_mid_elevation]
+        validators = [validate_mid_elevation, validate_single_target_pst_beams]
     else:
-        validators = [validate_low_elevation]
+        validators = [validate_low_elevation, validate_single_target_pst_beams]
 
     return validate(target_context, validators)
 
 
 @validator
-def validation_mid_elevation(
+def validate_mid_elevation(
     target_context: ValidationContext[Target],
 ) -> list[ValidationIssue]:
     """
@@ -72,6 +73,36 @@ def validate_low_elevation(
                 level=ValidationIssueType.WARNING,
                 message=f"Maximum elevation ({round(max_elevation.value, 2)} degrees) "
                 f"is less than 45 degrees - performance may be degraded",
+            )
+        ]
+
+    return []
+
+
+@validator
+def validate_single_target_pst_beams(
+    target_context: ValidationContext[Target],
+) -> list[ValidationIssue]:
+    """
+    :param target_context: a ValidationContext containing an SKA-Low Target
+        to be validated
+    :return: a validation error if the target doesn't rise above the horizon
+        if the target has more tied array pulsar timing beams than supported
+        by the array assembly
+    """
+    allowed_number_pst_beams = get_subarray_specific_parameter_from_osd(
+        target_context.telescope, target_context.array_assembly, "number_pst_beams"
+    )
+
+    number_pst_beams = len(target_context.primary_entity.tied_array_beams.pst_beams)
+
+    if number_pst_beams > allowed_number_pst_beams:
+        return [
+            ValidationIssue(
+                level=ValidationIssueType.ERROR,
+                message=f"Number of PST beams on target, {number_pst_beams}, "
+                f"exceeds allowed {allowed_number_pst_beams} for "
+                f"{target_context.array_assembly.value}",
             )
         ]
 

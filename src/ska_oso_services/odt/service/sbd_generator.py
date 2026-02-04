@@ -36,12 +36,9 @@ from ska_oso_services.common.calibrator_strategy import (
     lookup_observatory_calibration_strategy,
 )
 from ska_oso_services.common.calibrators import find_appropriate_calibrators
-from ska_oso_services.common.osdmapper import get_osd_data
+from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.common.sdpmapper import get_script_versions
-from ska_oso_services.common.static.constants import (
-    LOW_STATION_CHANNEL_WIDTH_MHZ,
-    MID_CHANNEL_WIDTH_KHZ,
-)
+from ska_oso_services.common.static.constants import low_station_channel_width, mid_channel_width
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_CALIBRATION_STRATEGY = "highest_elevation"
@@ -224,8 +221,7 @@ def _csp_configuration_from_science_programme(
                     Correlation(
                         spw_id=1,
                         number_of_channels=int(
-                            observation_type_details.bandwidth.to(u.Hz).value
-                            / (LOW_STATION_CHANNEL_WIDTH_MHZ * 1e6)
+                            observation_type_details.bandwidth / low_station_channel_width()
                         ),
                         centre_frequency=observation_type_details.central_frequency.to(u.Hz).value,
                         integration_time_ms=849,
@@ -250,8 +246,7 @@ def _csp_configuration_from_science_programme(
                                     observation_type_details.central_frequency.to(u.Hz).value
                                 ),
                                 number_of_channels=int(
-                                    observation_type_details.bandwidth.to(u.Hz).value
-                                    / (MID_CHANNEL_WIDTH_KHZ * 1e3)
+                                    observation_type_details.bandwidth / mid_channel_width()
                                 ),
                                 zoom_factor=0,
                                 time_integration_factor=10,
@@ -364,8 +359,9 @@ def _scan_time_ms_from_science_programme(
 
 
 def _dish_allocation(subarray: SubArrayMID, scan_sequence: list[ScanDefinition]) -> DishAllocation:
-    osd_data = get_osd_data(array_assembly=subarray.value, capabilities="mid", source="car")
-    dish_ids = osd_data["capabilities"]["mid"][subarray.value]["number_dish_ids"]
+    dish_ids = get_subarray_specific_parameter_from_osd(
+        TelescopeType.SKA_MID, subarray, "receptors"
+    )
 
     return DishAllocation(
         dish_allocation_id=_sbd_internal_id(DishAllocation),
@@ -376,9 +372,9 @@ def _dish_allocation(subarray: SubArrayMID, scan_sequence: list[ScanDefinition])
 
 
 def _mccs_allocation(subarray: SubArrayLOW, scan_sequence: list[ScanDefinition]) -> MCCSAllocation:
-    osd_data = get_osd_data(array_assembly=subarray.value, capabilities="low", source="car")
-
-    station_ids = osd_data["capabilities"]["low"][subarray.value]["number_station_ids"]
+    station_ids = get_subarray_specific_parameter_from_osd(
+        TelescopeType.SKA_LOW, subarray, "receptors"
+    )
 
     apertures = [
         Aperture(station_id=station_id, weighting_key="uniform", substation_id=1)

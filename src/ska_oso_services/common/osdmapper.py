@@ -4,8 +4,12 @@ configuration needed for the application.
 """
 
 from importlib.metadata import version
+from typing import Union
 
 from pydantic import dataclasses
+from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
+from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
+from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
 from ska_ost_osd.osd.common.error_handling import OSDModelError
 from ska_ost_osd.osd.models.models import OSDQueryParams
 from ska_ost_osd.osd.routers.api import get_osd
@@ -61,6 +65,11 @@ class Subarray:
 
 
 @dataclasses.dataclass
+class MidSubarray(Subarray):
+    allowed_channel_width_values_hz: list[int]
+
+
+@dataclasses.dataclass
 class LowSubarray(Subarray):
     number_substations: int
     number_subarray_beams: int
@@ -107,12 +116,15 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
             osd_version=OSD_VERSION,
         )
         subarrays.append(
-            Subarray(
+            MidSubarray(
                 name=array_assembly,
                 receptors=mid_response["capabilities"]["mid"][array_assembly]["number_dish_ids"],
                 available_bandwidth_hz=mid_response["capabilities"]["mid"][array_assembly][
                     "available_bandwidth_hz"
                 ],
+                allowed_channel_width_values_hz=mid_response["capabilities"]["mid"][
+                    array_assembly
+                ]["allowed_channel_width_values"],
                 number_pst_beams=mid_response["capabilities"]["mid"][array_assembly][
                     "number_pst_beams"
                 ],
@@ -181,7 +193,10 @@ def _get_low_telescope_configuration() -> LowConfiguration:
     # the following is a hack because I missed that the key in the OSD
     # should have included `_hz`
 
-    receiver_information["coarse_channel_width_hz"] = receiver_information["coarse_channel_width"]
+    additional_parameters = {
+        "coarse_channel_width_hz": receiver_information["coarse_channel_width"]
+    }
+    receiver_information = {**receiver_information, **additional_parameters}
 
     return LowConfiguration(
         frequency_band=LowFrequencyBand(**receiver_information), subarrays=subarrays
@@ -204,3 +219,84 @@ def get_osd_data(*args, **kwargs):
         raise OSDError(error)
     data = osd_data.model_dump()["result_data"] if hasattr(osd_data, "model_dump") else osd_data
     return data
+
+
+def get_low_basic_capability_parameter_from_osd(parameter: str):
+    """
+    Utility function to extract one of the SKA Low basic capabilities from the OSD
+    """
+    osd = configuration_from_osd()
+
+    telescope_osd = osd.ska_low.frequency_band
+    if not hasattr(telescope_osd, parameter):
+        raise ValueError(f"{parameter} is not available for validation for SKA Low")
+
+    return getattr(telescope_osd, parameter)
+
+
+def get_mid_frequency_band_data_from_osd(
+    obs_band: ReceiverBand, band5b_subband: Union[pdm_Band5bSubband, None] = None
+) -> Union[MidFrequencyBand, Band5bSubband]:
+    """
+    Utility function to extract SKA Mid frequency band data from the OSD
+    """
+    if obs_band != ReceiverBand.BAND_5B and band5b_subband is not None:
+        raise ValueError(f"Cannot specify and band 5b subband for band {obs_band}")
+    elif obs_band == ReceiverBand.BAND_5B and band5b_subband is None:
+        raise ValueError("Band 5b subband must be specified for band 5b observation")
+
+    osd = configuration_from_osd()
+    bands = osd.ska_mid.frequency_band
+
+    if band5b_subband is None:
+        band_info = next(band for band in bands if band.rx_id == "Band_" + obs_band.value)
+
+    else:
+        subbands_info = next(
+            band for band in bands if band.rx_id == "Band_" + obs_band.value
+        ).band5b_subbands
+        band_info = next(
+            subband for subband in subbands_info if subband.sub_band == band5b_subband.value
+        )
+
+    return band_info
+
+
+def get_subarray_specific_parameter_from_osd(
+    telescope: TelescopeType,
+    validation_array_assembly: Union[ValidationArrayAssembly, SubArrayMID, SubArrayLOW],
+    parameter: str,
+):
+    """
+    utility function to extract subarray specific parameters from the OSD
+    """
+    osd = configuration_from_osd()
+
+    if not hasattr(osd, telescope.value):
+        raise ValueError(f"Invalid telescope: {telescope.value}")
+
+    telescope_osd = getattr(osd, telescope.value)
+
+    # extracting the subarray from the OSD
+    subarray = next(
+        (
+            subarray
+            for subarray in telescope_osd.subarrays
+            if subarray.name == validation_array_assembly.value
+        ),
+        None,
+    )
+
+    if not subarray:
+        raise ValueError(
+            f"Invalid validation array assembly {validation_array_assembly} "
+            f"for {telescope.value}"
+        )
+
+    if not hasattr(subarray, parameter):
+        raise ValueError(
+            f"{parameter} is not available for validation for "
+            f"{telescope.value} array assembly {validation_array_assembly.value}"
+        )
+
+    return getattr(subarray, parameter)

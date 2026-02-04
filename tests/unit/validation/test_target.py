@@ -1,19 +1,26 @@
 import pytest
-from ska_oso_pdm import ICRSCoordinates, TelescopeType
+from ska_oso_pdm import ICRSCoordinates, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.builders.target_builder import LowTargetBuilder, MidTargetBuilder
 
 from ska_oso_services.validation.model import ValidationContext, ValidationIssueType
 from ska_oso_services.validation.target import (
     validate_low_elevation,
+    validate_mid_elevation,
+    validate_single_target_pst_beams,
     validate_target,
-    validation_mid_elevation,
 )
 from tests.unit.validation import LMC_TARGET
 
 
 @pytest.mark.parametrize("telescope", [TelescopeType.SKA_MID, TelescopeType.SKA_LOW])
 def test_full_target_validation_for_valid_target(telescope):
-    result = validate_target(ValidationContext(primary_entity=LMC_TARGET, telescope=telescope))
+    result = validate_target(
+        ValidationContext(
+            primary_entity=LMC_TARGET,
+            telescope=telescope,
+            array_assembly=ValidationArrayAssembly.AA05,
+        )
+    )
     assert result == []
 
 
@@ -27,7 +34,7 @@ def test_mid_target_below_min_elevation():
         ),
         telescope=TelescopeType.SKA_MID,
     )
-    result = validation_mid_elevation(input_context)
+    result = validate_mid_elevation(input_context)
     assert result[0].message == "Source never rises above 15 degrees"
 
 
@@ -62,3 +69,18 @@ def test_low_target_below_min_elevation():
         "- performance may be degraded"
     )
     assert result[0].level == ValidationIssueType.WARNING
+
+
+def test_target_with_pst_beams(
+    low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst,
+):
+    sbd = low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst
+
+    input_context = ValidationContext(
+        primary_entity=sbd.targets[0],
+        telescope=TelescopeType.SKA_LOW,
+        array_assembly=ValidationArrayAssembly.AA05,
+    )
+
+    result = validate_single_target_pst_beams(input_context)
+    assert result[0].message == "Number of PST beams on target, 2, exceeds allowed 1 for AA0.5"
