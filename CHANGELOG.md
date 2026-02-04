@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+
+12.1.0
+************
 * [BUGFIX] Pass scan validation if no SPWs are defined on a CSP configuration
 * Improved handling of the linking of Project -> OBs -> SBDs in the /prjs APIs, given the new database tables
 * Add DELETE `/prjs/{prj_id}/{obs_block_id}` and DELETE `/sbds/{sbd_id}` APIs
