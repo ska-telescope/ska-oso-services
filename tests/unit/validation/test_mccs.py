@@ -107,7 +107,7 @@ def test_validate_mccs_fails_for_multiple_pst_beams_for_aa05_and_passes_for_aa2(
 
     result = validate_mccs(input_context)
     assert len(result) == 1
-    assert result[0].message == "number of PST beams 2 for scan 1 exceeds allowed 1 for AA0.5"
+    assert result[0].message == "Number of PST beams 2 for scan 1 exceeds allowed 1 for AA0.5"
 
     input_context.array_assembly = ValidationArrayAssembly.AA2
     result = validate_mccs(input_context)
@@ -139,7 +139,7 @@ def test_validate_number_substations(low_sbd_builder):
     assert len(result) == 1
     assert (
         result[0].message
-        == "max number of substations 1 in subarray beam 1 exceeds allowed 0 for AA0.5"
+        == "Maximum number of substations 1 in subarray beam 1 exceeds allowed 0 for AA0.5"
     )
 
     input_context.array_assembly = ValidationArrayAssembly.AA1
@@ -161,7 +161,7 @@ def test_validate_mccs_fails_for_multiple_subarray_beams(low_multiple_subarray_b
     result = validate_mccs(input_context)
 
     assert len(result) == 1
-    assert result[0].message == "number of subarray beams 2 exceeds allowed 1 for AA0.5"
+    assert result[0].message == "Number of subarray beams 2 exceeds allowed 1 for AA0.5"
 
     input_context.array_assembly = ValidationArrayAssembly.AA1
     result = validate_mccs(input_context)
@@ -229,5 +229,5 @@ def test_validate_station_bandwidth_fails_for_invalid_setup(
     assert len(result) == 1
     assert (
         result[0].message == "At least one station is using more bandwidth (918.75 MHz) "
-        "than is available (150.0 MHz)for array assembly AA2"
+        "than is available (150.0 MHz) for array assembly AA2"
     )

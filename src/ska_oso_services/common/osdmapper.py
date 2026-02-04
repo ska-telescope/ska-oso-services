@@ -241,9 +241,9 @@ def get_mid_frequency_band_data_from_osd(
     Utility function to extract SKA Mid frequency band data from the OSD
     """
     if obs_band != ReceiverBand.BAND_5B and band5b_subband is not None:
-        raise ValueError(f"cannot specify and band 5b subband for band {obs_band}")
+        raise ValueError(f"Cannot specify and band 5b subband for band {obs_band}")
     elif obs_band == ReceiverBand.BAND_5B and band5b_subband is None:
-        raise ValueError("band 5b subband must be specified for band 5b observation")
+        raise ValueError("Band 5b subband must be specified for band 5b observation")
 
     osd = configuration_from_osd()
     bands = osd.ska_mid.frequency_band
@@ -273,7 +273,7 @@ def get_subarray_specific_parameter_from_osd(
     osd = configuration_from_osd()
 
     if not hasattr(osd, telescope.value):
-        raise ValueError(f"invalid telescope: {telescope.value}")
+        raise ValueError(f"Invalid telescope: {telescope.value}")
 
     telescope_osd = getattr(osd, telescope.value)
 

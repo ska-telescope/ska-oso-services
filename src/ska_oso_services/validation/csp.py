@@ -220,8 +220,8 @@ def validate_mid_spw_centre_frequency(
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
                 message=f"Centre frequency of "
-                f"spectral window {centre_frequency_hz} Hz"
-                f" is outside of {band_id}",
+                f"spectral window {centre_frequency_hz} Hz "
+                f"is outside of {band_id}",
             )
         ]
 
@@ -251,9 +251,9 @@ def validate_continuum_spw_bandwidth(
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
-                message=f"Bandwidth of spectral window {float(spw_bandwidth.to('MHz').value)} MHz"
-                " is outside of available bandwidth"
-                f" {float(available_bandwidth.to('MHz').value)} MHz for "
+                message=f"Bandwidth of spectral window {float(spw_bandwidth.to('MHz').value)} MHz "
+                "is outside of available bandwidth "
+                f"{float(available_bandwidth.to('MHz').value)} MHz for "
                 f"{spw_context.telescope.value} {spw_context.array_assembly.value}",
             )
         ]
