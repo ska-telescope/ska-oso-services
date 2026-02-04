@@ -193,8 +193,10 @@ def _get_low_telescope_configuration() -> LowConfiguration:
     # the following is a hack because I missed that the key in the OSD
     # should have included `_hz`
 
-    tmp_dict = {"coarse_channel_width_hz": receiver_information["coarse_channel_width"]}
-    receiver_information = {**receiver_information, **tmp_dict}
+    additional_parameters = {
+        "coarse_channel_width_hz": receiver_information["coarse_channel_width"]
+    }
+    receiver_information = {**receiver_information, **additional_parameters}
 
     return LowConfiguration(
         frequency_band=LowFrequencyBand(**receiver_information), subarrays=subarrays
@@ -224,17 +226,20 @@ def get_low_basic_capability_parameter_from_osd(parameter: str):
     Utility function to extract one of the SKA Low basic capabilities from the OSD
     """
     osd = configuration_from_osd()
-    telescope_osd = osd.ska_low.frequency_band.__dict__
 
-    if parameter not in telescope_osd.keys():
-        raise ValueError("parameter specified is not available for validation")
+    telescope_osd = osd.ska_low.frequency_band
+    if not hasattr(telescope_osd, parameter):
+        raise ValueError(f"{parameter} is not available for validation for SKA Low")
 
-    return telescope_osd[parameter]
+    return getattr(telescope_osd, parameter)
 
 
 def get_mid_frequency_band_data_from_osd(
     obs_band: ReceiverBand, band5b_subband: Union[pdm_Band5bSubband, None] = None
 ) -> Union[MidFrequencyBand, Band5bSubband]:
+    """
+    Utility function to extract SKA Mid frequency band data from the OSD
+    """
     if obs_band != ReceiverBand.BAND_5B and band5b_subband is not None:
         raise ValueError(f"cannot specify and band 5b subband for band {obs_band}")
     elif obs_band == ReceiverBand.BAND_5B and band5b_subband is None:
@@ -265,25 +270,33 @@ def get_subarray_specific_parameter_from_osd(
     """
     utility function to extract subarray specific parameters from the OSD
     """
-    osd = configuration_from_osd().__dict__
-    if telescope.value not in osd.keys():
+    osd = configuration_from_osd()
+
+    if not hasattr(osd, telescope.value):
         raise ValueError(f"invalid telescope: {telescope.value}")
 
-    telescope_osd = osd[telescope.value]
+    telescope_osd = getattr(osd, telescope.value)
 
     # extracting the subarray from the OSD
     subarray = next(
-        subarray
-        for subarray in telescope_osd.subarrays
-        if subarray.name == validation_array_assembly.value
+        (
+            subarray
+            for subarray in telescope_osd.subarrays
+            if subarray.name == validation_array_assembly.value
+        ),
+        None,
     )
 
     if not subarray:
-        raise ValueError("invalid validation array assembly for specified telescope")
-    # turning it into dictionary
+        raise ValueError(
+            f"Invalid validation array assembly {validation_array_assembly} "
+            f"for {telescope.value}"
+        )
 
-    dict_subarray = subarray.__dict__
-    if parameter not in dict_subarray.keys():
-        raise ValueError("parameter specified is not available for validation")
+    if not hasattr(subarray, parameter):
+        raise ValueError(
+            f"{parameter} is not available for validation for "
+            f"{telescope.value} array assembly {validation_array_assembly.value}"
+        )
 
-    return dict_subarray[parameter]
+    return getattr(subarray, parameter)
