@@ -6,12 +6,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+* Added caching to improve validate SBDefinition performance
 
 12.1.0
 ************
 * [BUGFIX] Pass scan validation if no SPWs are defined on a CSP configuration
 * Improved handling of the linking of Project -> OBs -> SBDs in the /prjs APIs, given the new database tables
-* Add DELETE `/prjs/{prj_id}/{obs_block_id}` and DELETE `/sbds/{sbd_id}` APIs
+* Added DELETE `/prjs/{prj_id}/{obs_block_id}` and DELETE `/sbds/{sbd_id}` APIs
 * [BUGFIX] fix bug in `PUT /oso/api/v12/pht/panels/{panel_id}` endpoint due to wrong database column query
 * Added further SBD validation for CSP Configurations and Targets for both Mid and Low, and MCCS
 

@@ -3,6 +3,7 @@ This module calls the OSD and converts the relevant parts into the
 configuration needed for the application.
 """
 
+from functools import cache
 from importlib.metadata import version
 from typing import Union
 
@@ -90,6 +91,7 @@ class Configuration(AppModel):
     ska_low: LowConfiguration
 
 
+@cache
 def configuration_from_osd() -> Configuration:
     """
     Calls the OSD and converts the response into a Configuration
@@ -203,6 +205,7 @@ def _get_low_telescope_configuration() -> LowConfiguration:
     )
 
 
+@cache
 def get_osd_data(*args, **kwargs):
     """
     Wrapper function for `get_osd` that fetches osd data
