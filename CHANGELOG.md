@@ -8,6 +8,7 @@ Unreleased
 ************
 * Added caching to improve validate SBDefinition performance
 * Add `GET /prjs/{prj_id}/status` and `GET /sbds/{sbd_id}/status`
+* Add the `prj_status` to the return value of the `/odt/prsls/project-view` API
 
 12.1.0
 ************
