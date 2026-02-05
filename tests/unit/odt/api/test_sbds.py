@@ -82,6 +82,31 @@ class TestSBDefinitionAPI:
             assert detail["detail"] == "ValueError('test', 'error')"
             assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
+    def test_sbds_status_get_existing_sbd(self, client_with_uow_mock):
+        """
+        Check the sbds_status_get method returns the expected Status and status code
+        """
+        client, uow_mock = client_with_uow_mock
+        status = {"entity_id": "sbd-1234", "status": "READY"}
+        uow_mock.status.get_current_status.return_value = status
+
+        response = client.get(f"{SBDS_API_URL}/sbd-1234/status")
+
+        assert response.json() == status
+        assert response.status_code == HTTPStatus.OK
+
+    def test_sbds_status_get_not_found_sbd(self, client_with_uow_mock):
+        """
+        Check the sbds_status_get method returns the Not Found error when identifier not in ODA
+        """
+        client, uow_mock = client_with_uow_mock
+        uow_mock.status.get_current_status.side_effect = ODANotFound(identifier="sbd-1234")
+
+        response = client.get(f"{SBDS_API_URL}/sbd-1234/status")
+
+        assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_validate_valid_sbd(self, mock_validate, client):
         """

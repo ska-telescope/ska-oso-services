@@ -8,6 +8,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 from ska_aaa_authhelpers import AuthContext, Role
+from ska_db_oda.repository.status import Status
 from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.entity_status_history import ProjectStatus
@@ -63,6 +64,21 @@ def prjs_get(identifier: str, oda: UnitOfWork) -> Project:
     LOGGER.debug("GET PRJS prj_id: %s", identifier)
     with oda as uow:
         return uow.prjs.get(identifier)
+
+
+@router.get(
+    "/{identifier}/status",
+    summary="Get Project status by identifier",
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})],
+)
+def prjs_status_get(identifier: str, oda: UnitOfWork) -> Status:
+    """
+    Retrieves the current Status of the Project with the given identifier
+    from the underlying data store, if available.
+    """
+    LOGGER.debug("GET PRJS status prj_id: %s", identifier)
+    with oda as uow:
+        return uow.status.get_current_status(entity_id=identifier)
 
 
 @router.post("/", summary="Create a new Project")

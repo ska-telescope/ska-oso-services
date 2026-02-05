@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ************
 * Added caching to improve validate SBDefinition performance
+* Add `GET /prjs/{prj_id}/status` and `GET /sbds/{sbd_id}/status`
 
 12.1.0
 ************
