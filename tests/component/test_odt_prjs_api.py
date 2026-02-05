@@ -10,7 +10,7 @@ import json
 # pylint: disable=missing-timeout
 from http import HTTPStatus
 
-from ska_oso_pdm import Project
+from ska_oso_pdm import Project, SBDefinition
 
 from ..unit.util import TestDataFactory, assert_json_is_equal
 from . import ODT_URL
@@ -250,26 +250,35 @@ class TestProjectAPI:
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
         assert response.json()["detail"] == "The requested identifier 123 could not be found."
 
-    def test_mark_project_ready(self, authrequests) -> dict:
+    def test_mark_project_ready(
+        self, test_sbd: SBDefinition, test_project: Project, authrequests
+    ) -> dict:
         """
-        Test we can set a project to status=READY
+        Test we can set a project to status=Ready
         """
-
-        resp = authrequests.post(f"{ODT_URL}/prjs")
-        resp.raise_for_status()
-        prj_id = resp.json()["prj_id"]
-
+        prj_id = test_project.prj_id
         ready_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/ready")
         ready_response.raise_for_status()
-        payload = ready_response.json()
-        assert payload["entity_id"] == prj_id
-        assert payload["status"] == "READY"
+        payload1 = ready_response.json()
+        assert payload1["entity_id"] == prj_id
+        assert payload1["status"] == "Ready"
 
-    def test_mark_project_repeated_calls_idempotent(self, authrequests):
+        # And the SBD as well?
+        sbd_response = authrequests.get(f"{ODT_URL}/sbds/{test_sbd.sbd_id}/status")
+        sbd_response.raise_for_status()
+        payload2 = sbd_response.json()
+        assert payload2["entity_id"] == test_sbd.sbd_id
+        assert payload2["status"] == "Ready"
+
+        return payload1
+
+    def test_mark_project_repeated_calls_idempotent(
+        self, test_sbd: SBDefinition, test_project: Project, authrequests
+    ):
         """
         Test that repeatedly setting the project to status=Ready just makes it Ready.
         """
-        first_result = self.test_mark_project_ready(authrequests)
+        first_result = self.test_mark_project_ready(test_sbd, test_project, authrequests)
         url = "{}/prjs/{}/status/ready".format(ODT_URL, first_result["entity_id"])
         resp = authrequests.put(url)
         resp.raise_for_status()
@@ -281,13 +290,15 @@ class TestProjectAPI:
         # BUT we do record that this status was updated again.
         assert second_result["as_of"] > first_result["as_of"]
 
-    def test_mark_project_back_to_draft(self, authrequests):
+    def test_mark_project_back_to_draft(
+        self, test_sbd: SBDefinition, test_project: Project, authrequests
+    ):
         """
         Test that the Project status can be changed back to Draft.
         """
-        prj_id = self.test_mark_project_ready(authrequests)["entity_id"]
+        prj_id = self.test_mark_project_ready(test_sbd, test_project, authrequests)["entity_id"]
 
         draft_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/draft")
         draft_response.raise_for_status()
         assert draft_response.json()["entity_id"] == prj_id
-        assert draft_response.json()["status"] == "DRAFT"
+        assert draft_response.json()["status"] == "Draft"
