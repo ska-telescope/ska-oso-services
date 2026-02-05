@@ -6,12 +6,11 @@ to a deployment of ska-oso-services in the same cluster
 """
 
 # pylint: disable=missing-timeout
-import json
 from http import HTTPStatus
 
 import pytest
 
-from ..unit.util import VALID_MID_SBDEFINITION_JSON, TestDataFactory, assert_json_is_equal
+from ..unit.util import TestDataFactory, assert_json_is_equal
 from . import ODT_URL
 
 
@@ -25,23 +24,6 @@ def test_sbd_create(authrequests):
     assert response.status_code == HTTPStatus.OK
 
     assert response.json()["interface"] == "https://schema.skao.int/ska-oso-pdm-sbd/0.1"
-
-
-def test_sbd_validate(authrequests):
-    """
-    Test that the POST /sbds/validate path receives the request
-    and returns the correct response
-    """
-
-    response = authrequests.post(
-        f"{ODT_URL}/sbds/validate",
-        data=VALID_MID_SBDEFINITION_JSON,
-        headers={"Content-type": "application/json"},
-    )
-
-    result = json.loads(response.content)
-    assert result["valid"]
-    assert result["messages"] == {}
 
 
 def test_post_without_ob_ref_fails(authrequests):

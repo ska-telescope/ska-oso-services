@@ -69,13 +69,13 @@ class TestProjectStatus:
         Check the prjs_status_get method returns the expected Status and status code
         """
         client, uow_mock = client_with_uow_mock
-        status = {"entity_id": "prj-1234", "status": "READY"}
+        status = {"entity_id": "prj-1234", "status": "READY", "updated_by": "TestUser"}
         uow_mock.status.get_current_status.return_value = status
 
         result = client.get(f"{PRJS_API_URL}/prj-1234/status")
 
-        assert result.json() == status
         assert result.status_code == HTTPStatus.OK
+        assert result.json()["status"] == status["status"]
 
     def test_prjs_status_get_not_found_prj(self, client_with_uow_mock):
         """

@@ -47,22 +47,6 @@ def sbds_create() -> SBDefinition:
     return SBDefinition()
 
 
-@router.post(
-    "/validate",
-    summary="Validate an SBD",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
-)
-def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
-    """
-    Validates the SchedulingBlockDefinition in the request body against the
-    component definition (eg required fields, allowed ranges) and more
-    complex business logic in the controller method.
-    """
-    validation_resp = validate(sbd)
-
-    return validation_resp
-
-
 @router.get(
     "/{identifier}",
     summary="Get SBD by identifier",
