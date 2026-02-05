@@ -252,7 +252,7 @@ class TestProjectAPI:
 
     def test_mark_project_ready(self, authrequests) -> dict:
         """
-        Test we can set a project to status=READY
+        Test we can set a project to status=Ready
         """
 
         resp = authrequests.post(f"{ODT_URL}/prjs")
@@ -263,7 +263,8 @@ class TestProjectAPI:
         ready_response.raise_for_status()
         payload = ready_response.json()
         assert payload["entity_id"] == prj_id
-        assert payload["status"] == "READY"
+        assert payload["status"] == "Ready"
+        return payload
 
     def test_mark_project_repeated_calls_idempotent(self, authrequests):
         """
@@ -290,4 +291,4 @@ class TestProjectAPI:
         draft_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/draft")
         draft_response.raise_for_status()
         assert draft_response.json()["entity_id"] == prj_id
-        assert draft_response.json()["status"] == "DRAFT"
+        assert draft_response.json()["status"] == "Draft"
