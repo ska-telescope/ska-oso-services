@@ -147,7 +147,7 @@ def test_mid_telescope_csp_configuration_throws_fsp_error(mid_sbd_builder):
     result = validate_csp(input_context)
     assert (
         result[0].message
-        == "Number of FSPs required for CSP configuration is greater than the 8 FSPs "
+        == "Number of FSPs required for CSP configuration, 10, is greater than the 8 FSPs "
         "available for array assembly AA1"
     )
 

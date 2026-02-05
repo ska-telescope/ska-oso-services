@@ -372,9 +372,9 @@ def validate_mid_fsps(
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
                 field="$.midcbf",
-                message=f"Number of FSPs required for CSP configuration is greater "
-                f"than the {available_fsps} FSPs available for array assembly "
-                f"{csp_context.array_assembly}",
+                message=f"Number of FSPs required for CSP configuration, {n_fsps}, "
+                f"is greater than the {available_fsps} FSPs available for "
+                f"array assembly {csp_context.array_assembly}",
             )
         ]
 
