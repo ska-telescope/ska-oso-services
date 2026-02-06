@@ -8,7 +8,6 @@ from unittest import mock
 import pytest
 from ska_db_oda.repository.domain import ODANotFound
 
-from ska_oso_services.common.model import ValidationResponse
 from tests.unit.conftest import ODT_BASE_API_URL
 from tests.unit.util import (
     SBDEFINITION_WITHOUT_ID_JSON,
@@ -82,40 +81,30 @@ class TestSBDefinitionAPI:
             assert detail["detail"] == "ValueError('test', 'error')"
             assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
-    @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
-    def test_validate_valid_sbd(self, mock_validate, client):
+    def test_sbds_status_get_existing_sbd(self, client_with_uow_mock):
         """
-        Check the sbds_validate handles a valid return value from the
-        validation layer and creates the correct response
+        Check the sbds_status_get method returns the expected Status and status code
         """
-        mock_validate.return_value = {}
-        response = client.post(
-            f"{SBDS_API_URL}/validate",
-            data=VALID_MID_SBDEFINITION_JSON,
-            headers={"Content-type": "application/json"},
-        )
+        client, uow_mock = client_with_uow_mock
+        status = {"entity_id": "sbd-1234", "status": "READY", "updated_by": "TestUser"}
+        uow_mock.status.get_current_status.return_value = status
 
-        assert response.json() == {"valid": True, "messages": {}}
+        response = client.get(f"{SBDS_API_URL}/sbd-1234/status")
+
         assert response.status_code == HTTPStatus.OK
+        assert response.json()["status"] == status["status"]
 
-    @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
-    def test_validate_invalid_sbd(self, mock_validate, client):
+    def test_sbds_status_get_not_found_sbd(self, client_with_uow_mock):
         """
-        Check the sbds_validate handles a valid return value from the
-        validation layer and creates the correct response
+        Check the sbds_status_get method returns the Not Found error when identifier not in ODA
         """
-        mock_validate.return_value = {"validation_error": "some validation error message"}
+        client, uow_mock = client_with_uow_mock
+        uow_mock.status.get_current_status.side_effect = ODANotFound(identifier="sbd-1234")
 
-        response = client.post(
-            f"{SBDS_API_URL}/validate",
-            data=VALID_MID_SBDEFINITION_JSON,
-            headers={"Content-type": "application/json"},
-        )
-        assert response.status_code == HTTPStatus.OK
-        expected = ValidationResponse(
-            valid=False, messages={"validation_error": "some validation error message"}
-        )
-        assert response.json() == expected.model_dump(mode="json")
+        response = client.get(f"{SBDS_API_URL}/sbd-1234/status")
+
+        assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
+        assert response.status_code == HTTPStatus.NOT_FOUND
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
     def test_sbds_post_success(self, mock_validate, client_with_uow_mock):

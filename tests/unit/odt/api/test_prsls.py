@@ -106,6 +106,7 @@ class TestProposalAndProjectView:
         project = TestDataFactory.project()
         project.prsl_ref = proposal.prsl_id
         uow_mock.prjs.query.return_value = [project]
+        uow_mock.status.get_current_status.return_value = mock.Mock(status="READY")
 
         resp = client.get(
             f"{PRSLS_API_URL}/project-view",
@@ -122,6 +123,7 @@ class TestProposalAndProjectView:
                 prj_version=1,
                 prsl_id=proposal.prsl_id,
                 title=project.name,
+                prj_status="READY",
                 prj_last_modified_by=project.metadata.last_modified_by,
                 prj_last_modified_on=project.metadata.last_modified_on,
                 prj_created_by=project.metadata.created_by,
@@ -136,6 +138,7 @@ class TestProposalAndProjectView:
 
         project = TestDataFactory.project()
         uow_mock.prjs.query.return_value = [project]
+        uow_mock.status.get_current_status.return_value = mock.Mock(status="READY")
 
         resp = client.get(
             f"{PRSLS_API_URL}/project-view",
@@ -152,6 +155,7 @@ class TestProposalAndProjectView:
                 prj_version=1,
                 prsl_id=None,
                 title=project.name,
+                prj_status="READY",
                 prj_last_modified_by=project.metadata.last_modified_by,
                 prj_last_modified_on=project.metadata.last_modified_on,
                 prj_created_by=project.metadata.created_by,
@@ -171,6 +175,7 @@ class TestProposalAndProjectView:
         project_v2 = copy.deepcopy(project_v1)
         project_v2.metadata.version = 2
         uow_mock.prjs.query.return_value = [project_v1, project_v2]
+        uow_mock.status.get_current_status.return_value = mock.Mock(status="READY")
 
         resp = client.get(
             f"{PRSLS_API_URL}/project-view",
@@ -187,6 +192,7 @@ class TestProposalAndProjectView:
                 prj_version=2,
                 prsl_id=None,
                 title=project_v2.name,
+                prj_status="READY",
                 prj_last_modified_by=project_v2.metadata.last_modified_by,
                 prj_last_modified_on=project_v2.metadata.last_modified_on,
                 prj_created_by=project_v2.metadata.created_by,
@@ -212,6 +218,7 @@ class TestProposalAndProjectView:
         project = TestDataFactory.project()
         project.prsl_ref = proposal_with_prj.prsl_id
         uow_mock.prjs.query.return_value = [project]
+        uow_mock.status.get_current_status.return_value = mock.Mock(status="READY")
 
         resp = client.get(
             f"{PRSLS_API_URL}/project-view",
@@ -228,6 +235,7 @@ class TestProposalAndProjectView:
                 prj_version=1,
                 prsl_id=proposal_with_prj.prsl_id,
                 title=project.name,
+                prj_status="READY",
                 prj_last_modified_by=project.metadata.last_modified_by,
                 prj_last_modified_on=project.metadata.last_modified_on,
                 prj_created_by=project.metadata.created_by,

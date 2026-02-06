@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ************
 * Added caching to improve validate SBDefinition performance
+* Add `GET /prjs/{prj_id}/status` and `GET /sbds/{sbd_id}/status`
+* Add the `prj_status` to the return value of the `/odt/prsls/project-view` API
+* [BREAKING] Delete the unused `/sbds/validate` API in favour of the validation service `/validate/sbds`
 
 12.1.0
 ************

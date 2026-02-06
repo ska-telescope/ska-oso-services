@@ -62,6 +62,34 @@ class TestProjectGet:
             assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+class TestProjectStatus:
+
+    def test_prjs_status_get_existing_prj(self, client_with_uow_mock):
+        """
+        Check the prjs_status_get method returns the expected Status and status code
+        """
+        client, uow_mock = client_with_uow_mock
+        status = {"entity_id": "prj-1234", "status": "READY", "updated_by": "TestUser"}
+        uow_mock.status.get_current_status.return_value = status
+
+        result = client.get(f"{PRJS_API_URL}/prj-1234/status")
+
+        assert result.status_code == HTTPStatus.OK
+        assert result.json()["status"] == status["status"]
+
+    def test_prjs_status_get_not_found_prj(self, client_with_uow_mock):
+        """
+        Check the prjs_status_get method returns the Not Found error when identifier not in ODA
+        """
+        client, uow_mock = client_with_uow_mock
+        uow_mock.status.get_current_status.side_effect = ODANotFound(identifier="prj-1234")
+
+        result = client.get(f"{PRJS_API_URL}/prj-1234/status")
+
+        assert result.json()["detail"] == "The requested identifier prj-1234 could not be found."
+        assert result.status_code == HTTPStatus.NOT_FOUND
+
+
 class TestProjectPost:
 
     def test_prjs_post_success(self, client_with_uow_mock):

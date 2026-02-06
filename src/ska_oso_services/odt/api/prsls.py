@@ -43,6 +43,7 @@ class ProposalProjectDetails(AppModel):
     prsl_version: int | None = None
     prj_id: str | None = None
     prj_version: int | None = None
+    prj_status: str | None = None
     title: str | None = None
     prj_created_on: AwareDatetime | None = None
     prj_created_by: str | None = None
@@ -119,6 +120,7 @@ def prj_details(
                 prj_version=project.metadata.version,
                 prsl_id=project.prsl_ref,
                 title=project.name,
+                prj_status=uow.status.get_current_status(entity_id=project.prj_id).status,
                 prj_created_by=project.metadata.created_by,
                 prj_created_on=project.metadata.created_on,
                 prj_last_modified_by=project.metadata.last_modified_by,

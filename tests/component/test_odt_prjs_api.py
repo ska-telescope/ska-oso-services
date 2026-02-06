@@ -203,6 +203,31 @@ class TestProjectAPI:
         )
         assert put_response.json()["metadata"]["version"] == 2
 
+    def test_prj_status_get(self, authrequests):
+        """
+        Test that GET /prjs/{identifier}/status returns a current Status
+        for an existing Project.
+        """
+        post_response = authrequests.post(f"{ODT_URL}/prjs")
+        assert post_response.status_code == HTTPStatus.OK, post_response.content
+
+        prj_id = post_response.json()["prj_id"]
+        status_response = authrequests.get(f"{ODT_URL}/prjs/{prj_id}/status")
+
+        assert status_response.status_code == HTTPStatus.OK, status_response.content
+        assert status_response.json()["status"] == "Draft"
+
+    def test_prj_status_get_not_found(self, authrequests):
+        """
+        Test that the GET /prjs/{identifier}/status path returns
+        404 when the Project is not found in the ODA
+        """
+
+        response = authrequests.get(f"{ODT_URL}/prjs/123/status")
+
+        assert response.status_code == HTTPStatus.NOT_FOUND, response.content
+        assert response.json()["detail"] == "The requested identifier 123 could not be found."
+
     def test_prj_get_not_found(self, authrequests):
         """
         Test that the GET /prjs/{identifier} path returns

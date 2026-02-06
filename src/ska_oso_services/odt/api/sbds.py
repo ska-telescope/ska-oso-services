@@ -10,6 +10,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
 from ska_aaa_authhelpers import AuthContext, Role
+from ska_db_oda.repository.status import Status
 from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
@@ -46,22 +47,6 @@ def sbds_create() -> SBDefinition:
     return SBDefinition()
 
 
-@router.post(
-    "/validate",
-    summary="Validate an SBD",
-    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE})],
-)
-def sbds_validate(sbd: SBDefinition) -> ValidationResponse:
-    """
-    Validates the SchedulingBlockDefinition in the request body against the
-    component definition (eg required fields, allowed ranges) and more
-    complex business logic in the controller method.
-    """
-    validation_resp = validate(sbd)
-
-    return validation_resp
-
-
 @router.get(
     "/{identifier}",
     summary="Get SBD by identifier",
@@ -79,6 +64,24 @@ def sbds_get(
     with oda as uow:
         sbd = uow.sbds.get(identifier)
     return sbd
+
+
+@router.get(
+    "/{identifier}/status",
+    summary="Get SBD status by identifier",
+    dependencies=[Permissions(roles=API_ROLES, scopes={Scope.ODT_READ, Scope.ODT_READWRITE})],
+)
+def sbds_status_get(
+    identifier: str,
+    oda: UnitOfWork,
+) -> Status:
+    """
+    Retrieves the current Status of the SchedulingBlockDefinition with the given identifier
+    from the underlying data store, if available.
+    """
+    LOGGER.debug("GET SBD status sbd_id: %s", identifier)
+    with oda as uow:
+        return uow.status.get_current_status(entity_id=identifier)
 
 
 @router.post(
