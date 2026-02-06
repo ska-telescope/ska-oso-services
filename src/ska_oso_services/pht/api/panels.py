@@ -14,6 +14,7 @@ from ska_oso_services.common.error_handling import UnprocessableEntityError
 from ska_oso_services.pht.models.domain import PrslRole
 from ska_oso_services.pht.models.schemas import PanelAssignResponse, PanelBatchCreateResult
 from ska_oso_services.pht.service.panel_operations import (
+    _to_prsl_id,
     assign_to_existing_panel,
     build_assignment_response,
     build_sv_panel_proposals,
@@ -21,6 +22,7 @@ from ska_oso_services.pht.service.panel_operations import (
     ensure_review_exist_or_create,
     ensure_submitted_proposals_under_review,
     group_proposals_by_science_category,
+    set_removed_proposals_to_submitted,
 )
 from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
 from ska_oso_services.pht.utils.pht_helper import (
@@ -370,91 +372,175 @@ def update_panel(
     ],
 ) -> Panel:
     """
-    Takes the incoming panel payload and creates the technical review.
+    Updates a panel and ensures:
+    - A proposal that already belongs to a different panel is prevented from being assigned
+    - Removed proposals are set back to SUBMITTED (if not in an other panel)
+    - Newly added proposals are set to UNDER REVIEW
+    - Reviews/Decisions exist for all active proposals
 
-    Assumption: Only one technical reviewer for a panel for now. Hence,
-    only one technical review for each proposal in a panel is needed.
-    Note: In the future, if needed, check for new proposals added to the panel
-    and handle the status accordingly. This could be due to conflicts and
-    proposals being moved around.
     """
     logger.debug("PUT panel")
-
-    # Ensure ID match
+    # ------------------------------------------------------------
+    # 1. Validate panel ID consistency
+    # ------------------------------------------------------------
     if param.panel_id != panel_id:
-        logger.warning(
-            "Panel ID mismatch: Panel ID=%s in path, body ID=%s",
-            panel_id,
-            param.panel_id,
-        )
         raise UnprocessableEntityError(detail="Panel ID in path and body do not match.")
 
     validate_duplicates(param.sci_reviewers, "reviewer_id")
-    # TODO: check for any new proposal added and handle status appropriately here
-    # This will be situations where the Admin re-assignes proposals due to
-    # conflicts or something else.
 
     with oda.uow() as uow:
-        proposal_ids = [
-            proposal if isinstance(proposal, str) else getattr(proposal, "prsl_id")
-            for proposal in (param.proposals or [])
-        ]
+
+        # --------------------------------------------------------
+        # 2. Determine previous vs. new proposals
+        # --------------------------------------------------------
+        persisted_panel = uow.panels.get(panel_id)
+
+        previous_proposal_ids: set[str] = {
+            pid for pid in (_to_prsl_id(x) for x in (persisted_panel.proposals or [])) if pid
+        }
+
+        new_proposal_ids: set[str] = {
+            pid for pid in (_to_prsl_id(x) for x in (param.proposals or [])) if pid
+        }
+
+        removed: set[str] = previous_proposal_ids - new_proposal_ids
+
+        logger.debug(
+            "Panel update: previous=%s new=%s removed=%s",
+            previous_proposal_ids,
+            new_proposal_ids,
+            removed,
+        )
+
+        # --------------------------------------------------------
+        # 3. Load all panels once
+        # --------------------------------------------------------
+        all_panels = list(uow.panels.query(CustomQuery()))
+
+        # --------------------------------------------------------
+        # 4. VALIDATION — ensure newly added proposals are not in
+        #    another panel
+        # --------------------------------------------------------
+        for prsl_id in new_proposal_ids:
+
+            if prsl_id in previous_proposal_ids:
+                continue  # already in this panel, skip
+
+            for p in all_panels:
+                if not p.proposals:
+                    continue
+
+                existing_ids = {pid for pid in (_to_prsl_id(x) for x in p.proposals) if pid}
+
+                if prsl_id in existing_ids and p.panel_id != panel_id:
+                    raise UnprocessableEntityError(
+                        detail=(
+                            f"Submission '{prsl_id}' is already assigned to "
+                            f"panel '{p.panel_id}'. A submission can only "
+                            f"belong to one panel."
+                        )
+                    )
+
+        # --------------------------------------------------------
+        # 5. REMOVED PROPOSAL PROTECTION
+        #    Only revert removed proposals to SUBMITTED if they are
+        #    NOT in any other panel.
+        # --------------------------------------------------------
+        safe_removed = set()
+
+        for prsl_id in removed:
+            still_in_other_panel = False
+
+            for p in all_panels:
+                if not p.proposals:
+                    continue
+
+                existing_ids = {pid for pid in (_to_prsl_id(x) for x in p.proposals) if pid}
+
+                if prsl_id in existing_ids and p.panel_id != panel_id:
+                    still_in_other_panel = True
+                    break
+
+            if still_in_other_panel:
+                logger.debug(
+                    "Skipping revert of proposal %s → submitted; " "still assigned to panel %s",
+                    prsl_id,
+                    p.panel_id,
+                )
+            else:
+                safe_removed.add(prsl_id)
+
+        # Only revert SAFE removals
+        if safe_removed:
+            set_removed_proposals_to_submitted(uow, auth, safe_removed)
+
+        # --------------------------------------------------------
+        # 6. Persist the updated panel
+        # --------------------------------------------------------
+        panel = uow.panels.add(param)
+
         updated_review_ids: list[str] = []
-        updated_decison_ids: list[str] = []
+        updated_decision_ids: list[str] = []
 
-        # Panel Decision for every proposal in the panel
-        for prsl_id in proposal_ids:
+        # --------------------------------------------------------
+        # 7. Ensure decisions for newly added proposals
+        # --------------------------------------------------------
+        for prsl_id in new_proposal_ids:
             pnld_id = ensure_decision_exist_or_create(uow, param, prsl_id)
-            updated_decison_ids.append(pnld_id)
+            updated_decision_ids.append(pnld_id)
 
-        # Technical Review for every (technical reviewer × proposal) pair
+        # --------------------------------------------------------
+        # 8. Ensure Technical reviews
+        # --------------------------------------------------------
         if param.tech_reviewers:
             for tech in param.tech_reviewers:
-                tech_reviewer_id = tech.reviewer_id
-                for prsl_id in proposal_ids:
-                    rvw_ids = ensure_review_exist_or_create(
+                for prsl_id in new_proposal_ids:
+                    rid = ensure_review_exist_or_create(
                         uow,
                         param,
                         kind="Technical Review",
-                        reviewer_id=tech_reviewer_id,
+                        reviewer_id=tech.reviewer_id,
                         proposal_id=prsl_id,
                     )
-                    updated_review_ids.append(rvw_ids)
+                    updated_review_ids.append(rid)
 
-        # Science Reviews for every (science reviewer × proposal) pair
+        # --------------------------------------------------------
+        # 9. Ensure Science reviews
+        # --------------------------------------------------------
         if param.sci_reviewers:
             for sci in param.sci_reviewers:
-                sci_reviewer_id = sci.reviewer_id
-                for prsl_id in proposal_ids:
-                    rvw_ids = ensure_review_exist_or_create(
+                for prsl_id in new_proposal_ids:
+                    rid = ensure_review_exist_or_create(
                         uow,
                         param,
                         kind="Science Review",
-                        reviewer_id=sci_reviewer_id,
+                        reviewer_id=sci.reviewer_id,
                         proposal_id=prsl_id,
                     )
-                    updated_review_ids.append(rvw_ids)
-        # TODO: check if proposal is added to another panel
-        # A proposal should only be in one panel
-        # for prsl_id in proposal_ids:
-        #     query_param = CustomQuery(prsl_id=prsl_id)
-        #     assigned_proposal =
-        # get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
-        #     existing_panel = assigned_proposal[0] if assigned_proposal else None
+                    updated_review_ids.append(rid)
 
-        #     if existing_panel and existing_panel.panel_id != panel_id:
-        #         raise UnprocessableEntityError(
-        #             detail=f"Proposal '{prsl_id}' is already
-        # assigned to panel '{existing_panel.panel_id}'."
-        #         )
+        # --------------------------------------------------------
+        # 10. Mark new proposals as UNDER REVIEW
+        # --------------------------------------------------------
+        if new_proposal_ids:
+            ensure_submitted_proposals_under_review(
+                uow,
+                auth,
+                (p for p in new_proposal_ids),
+            )
 
-        # Persist the panel
-        panel = uow.panels.add(param)
-        # update proposal status to under review
-        ensure_submitted_proposals_under_review(uow, auth, (r for r in proposal_ids))
-
+        # --------------------------------------------------------
+        # 11. Commit
+        # --------------------------------------------------------
         uow.commit()
-    logger.info("Panel %s updated; reviews updated=%d", panel.panel_id, len(updated_review_ids))
+
+    logger.info(
+        "Panel %s updated; reviews updated=%d decisions updated=%d",
+        panel.panel_id,
+        len(updated_review_ids),
+        len(updated_decision_ids),
+    )
+
     return panel
 
 
