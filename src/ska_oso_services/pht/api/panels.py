@@ -465,7 +465,7 @@ def update_panel(
 
             if still_in_other_panel:
                 logger.debug(
-                    "Skipping revert of proposal %s → submitted; " "still assigned to panel %s",
+                    "Skipping revert of proposal %s → submitted; still assigned to panel %s",
                     prsl_id,
                     p.panel_id,
                 )
