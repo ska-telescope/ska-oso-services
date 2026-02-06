@@ -11,6 +11,7 @@ Unreleased
 * Add the `prj_status` to the return value of the `/odt/prsls/project-view` API
 * [BREAKING] Delete the unused `/sbds/validate` API in favour of the validation service `/validate/sbds`
 * [BUGFIX] Return CORS headers on errors
+* Changes to `PUT /pht/panels/{panel_id}` to enforce proposal–panel exclusivity and correct proposal status transitions.
 
 12.1.0
 ************

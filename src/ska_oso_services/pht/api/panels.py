@@ -376,7 +376,9 @@ def update_panel(
     - A proposal that already belongs to a different panel is prevented from being assigned
     - Removed proposals are set back to SUBMITTED (if not in an other panel)
     - Newly added proposals are set to UNDER REVIEW
-    - Reviews/Decisions exist for all active proposals
+    - Reviews/Decisions exist for all proposals in the panel (create if doesn't exist)
+    (Assumption: Only one technical reviewer for a panel for now. Hence,
+    only one technical review for each proposal in a panel is needed.)
 
     """
     logger.debug("PUT panel")
