@@ -249,3 +249,45 @@ class TestProjectAPI:
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
         assert response.json()["detail"] == "The requested identifier 123 could not be found."
+
+    def test_mark_project_ready(self, authrequests) -> dict:
+        """
+        Test we can set a project to status=READY
+        """
+
+        resp = authrequests.post(f"{ODT_URL}/prjs")
+        resp.raise_for_status()
+        prj_id = resp.json()["prj_id"]
+
+        ready_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/ready")
+        ready_response.raise_for_status()
+        payload = ready_response.json()
+        assert payload["entity_id"] == prj_id
+        assert payload["status"] == "READY"
+
+    def test_mark_project_repeated_calls_idempotent(self, authrequests):
+        """
+        Test that repeatedly setting the project to status=Ready just makes it Ready.
+        """
+        first_result = self.test_mark_project_ready(authrequests)
+        url = "{}/prjs/{}/status/ready".format(ODT_URL, first_result["entity_id"])
+        resp = authrequests.put(url)
+        resp.raise_for_status()
+        second_result = resp.json()
+        # This is pseudo-idempotent, re-setting to the same status is harmless.
+        assert first_result["status"] == second_result["status"]
+        assert first_result["entity_id"] == second_result["entity_id"]
+        assert first_result["updated_by"] == second_result["updated_by"]
+        # BUT we do record that this status was updated again.
+        assert second_result["as_of"] > first_result["as_of"]
+
+    def test_mark_project_back_to_draft(self, authrequests):
+        """
+        Test that the Project status can be changed back to Draft.
+        """
+        prj_id = self.test_mark_project_ready(authrequests)["entity_id"]
+
+        draft_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/draft")
+        draft_response.raise_for_status()
+        assert draft_response.json()["entity_id"] == prj_id
+        assert draft_response.json()["status"] == "DRAFT"

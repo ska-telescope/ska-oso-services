@@ -11,7 +11,6 @@ from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.repository.status import Status
 from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm import TelescopeType
-from ska_oso_pdm.entity_status_history import ProjectStatus
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 from ska_ser_skuid.tools.entity_types import EntityType
@@ -120,7 +119,6 @@ def prjs_post(
     with oda as uow:
         updated_prj = uow.prjs.add(prj, user=auth.user_id)
         uow.commit()
-    _set_prj_status_to_ready(updated_prj.prj_id, auth.user_id, oda)
     return updated_prj
 
 
@@ -311,12 +309,43 @@ def prjs_generate_sbds(
     return updated_prj
 
 
-def _set_prj_status_to_ready(prj_id: str, user: str, oda: UnitOfWork):
+@router.put(
+    "/{prj_id}/status/draft",
+    summary="Mark Project as Draft",
+    description="Updates the lifecycle status of the Project to DRAFT.",
+)
+def prjs_put_status_draft(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    prj_id: str,
+    oda: UnitOfWork,
+) -> Status:
+    LOGGER.debug("PUT PRJS prjs_put_status_draft prj_id: %s", prj_id)
     with oda as uow:
-        # The status lifecycle isn't fully in place as of PI28, we set the default
-        # status to READY as this is required to be executed in the OET UI
-        uow.status.update_status(
-            entity_id=prj_id,
-            status=ProjectStatus.READY,
-            updated_by=user,
-        )
+        uow.status.mark_project_draft(project_id=prj_id, updated_by=auth.user_id)
+        uow.commit()
+    with oda as uow:
+        return uow.status.get_current_status(prj_id)
+
+
+@router.put(
+    "/{prj_id}/status/ready",
+    summary="Mark Project as Ready",
+    description="Updates the lifecycle status of the Project to READY.",
+)
+def prjs_put_status_ready(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    prj_id: str,
+    oda: UnitOfWork,
+) -> Status:
+    LOGGER.debug("prjs_put_status_ready identifier: %s", prj_id)
+    with oda as uow:
+        uow.status.mark_project_ready(project_id=prj_id, updated_by=auth.user_id)
+        uow.commit()
+    with oda as uow:
+        return uow.status.get_current_status(prj_id)
