@@ -48,10 +48,10 @@ RUN python -m pip --require-virtualenv install --no-deps -e .
 
 USER ${APP_USER}
 
-CMD ["fastapi", \
-    "run", \
-    "src/ska_oso_services/app.py", \
+CMD ["uvicorn", \
+    "ska_oso_services.app:main", \
+    "--host", "0.0.0.0", \
+    "--port", "5000", \
     # Trust TLS headers set by nginx ingress:
-    "--proxy-headers", \
-    "--port", "5000" \
+    "--proxy-headers" \
 ]
