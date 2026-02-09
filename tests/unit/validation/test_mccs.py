@@ -1,7 +1,7 @@
 from astropy import units as u
 from ska_oso_pdm import ValidationArrayAssembly
 from ska_oso_pdm._shared import TiedArrayBeams
-from ska_oso_pdm.builders import populate_scan_sequences
+from ska_oso_pdm.builders import LowSBDefinitionBuilder, populate_scan_sequences
 from ska_oso_pdm.sb_definition.mccs.mccs_allocation import SubarrayBeamConfiguration
 
 from ska_oso_services.validation.mccs import validate_mccs
@@ -77,8 +77,8 @@ substation_json = """
 """
 
 
-def test_validate_mccs_passes_for_simple_mccs_allocation(low_sbd_builder):
-    sbd = low_sbd_builder
+def test_validate_mccs_passes_for_simple_mccs_allocation():
+    sbd = LowSBDefinitionBuilder()
     sbd = populate_scan_sequences(sbd, [6000000])
 
     input_context = ValidationContext(
@@ -92,8 +92,8 @@ def test_validate_mccs_passes_for_simple_mccs_allocation(low_sbd_builder):
     assert result == []
 
 
-def test_validate_mccs_fails_for_multiple_pst_beams_for_aa05_and_passes_for_aa2(low_sbd_builder):
-    sbd = low_sbd_builder
+def test_validate_mccs_fails_for_multiple_pst_beams_for_aa05_and_passes_for_aa2():
+    sbd = LowSBDefinitionBuilder()
     sbd = populate_scan_sequences(sbd, [6000000])
 
     sbd.targets[0].tied_array_beams = TiedArrayBeams.model_validate_json(pst_beam_json)
@@ -114,8 +114,8 @@ def test_validate_mccs_fails_for_multiple_pst_beams_for_aa05_and_passes_for_aa2(
     assert result == []
 
 
-def test_validate_number_substations(low_sbd_builder):
-    sbd = low_sbd_builder
+def test_validate_number_substations():
+    sbd = LowSBDefinitionBuilder()
 
     # building an SBD for the test - bit hacky
     sbd.mccs_allocation.subarray_beams[0] = SubarrayBeamConfiguration.model_validate_json(
