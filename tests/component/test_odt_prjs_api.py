@@ -302,3 +302,41 @@ class TestProjectAPI:
         draft_response.raise_for_status()
         assert draft_response.json()["entity_id"] == prj_id
         assert draft_response.json()["status"] == "Draft"
+
+    def test_mark_project_ready_without_sbd_fails(self, authrequests):
+        """
+        Test that marking a project as ready fails when it has no scheduling blocks
+        """
+        # Create a project (auto-creates with empty obs_blocks/sbd_ids)
+        prj_post_response = authrequests.post(
+            f"{ODT_URL}/prjs",
+            headers={"Content-type": "application/json"},
+        )
+        assert prj_post_response.status_code == HTTPStatus.OK
+        prj_id = prj_post_response.json()["prj_id"]
+
+        # Attempt to mark as ready without adding any SBDs
+        ready_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/ready")
+
+        assert ready_response.status_code == HTTPStatus.BAD_REQUEST
+        assert "no scheduling blocks" in ready_response.json()["detail"]
+        assert prj_id in ready_response.json()["detail"]
+
+    def test_mark_project_draft_without_sbd_fails(self, authrequests):
+        """
+        Test that marking a project as draft fails when it has no scheduling blocks
+        """
+        # Create a project (auto-creates with empty obs_blocks/sbd_ids)
+        prj_post_response = authrequests.post(
+            f"{ODT_URL}/prjs",
+            headers={"Content-type": "application/json"},
+        )
+        assert prj_post_response.status_code == HTTPStatus.OK
+        prj_id = prj_post_response.json()["prj_id"]
+
+        # Attempt to mark as draft without adding any SBDs
+        draft_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/draft")
+
+        assert draft_response.status_code == HTTPStatus.BAD_REQUEST
+        assert "no scheduling blocks" in draft_response.json()["detail"]
+        assert prj_id in draft_response.json()["detail"]

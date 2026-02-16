@@ -50,6 +50,28 @@ def empty_observing_block() -> ObservingBlock:
     return ObservingBlock(obs_block_id=mint_randint_skuid(EntityType.OB), sbd_ids=[])
 
 
+def _validate_project_has_scheduling_blocks(project: Project) -> None:
+    """
+    Validates that a project has at least one scheduling block (SBDefinition).
+
+    Args:
+        project: The Project to validate
+
+    Raises:
+        BadRequestError: If the project has no scheduling blocks
+    """
+    has_scheduling_blocks = any(bool(ob.sbd_ids) for ob in project.obs_blocks)
+
+    if not has_scheduling_blocks:
+        raise BadRequestError(
+            detail=(
+                f"Cannot set status for '{project.prj_id}' because it has no "
+                "scheduling blocks. At least one ObservingBlock must have "
+                "associated SBDefinitions."
+            )
+        )
+
+
 @router.get(
     "/{identifier}",
     summary="Get Project by identifier",
@@ -323,6 +345,11 @@ def prjs_put_status_draft(
     oda: UnitOfWork,
 ) -> Status:
     LOGGER.debug("PUT PRJS prjs_put_status_draft prj_id: %s", prj_id)
+    # Validate project has scheduling blocks before changing status
+    with oda as uow:
+        prj = uow.prjs.get(prj_id)
+        _validate_project_has_scheduling_blocks(prj)
+
     with oda as uow:
         uow.status.mark_project_draft(project_id=prj_id, updated_by=auth.user_id)
         uow.commit()
@@ -344,6 +371,10 @@ def prjs_put_status_ready(
     oda: UnitOfWork,
 ) -> Status:
     LOGGER.debug("prjs_put_status_ready identifier: %s", prj_id)
+    with oda as uow:
+        prj = uow.prjs.get(prj_id)
+        _validate_project_has_scheduling_blocks(prj)
+
     with oda as uow:
         uow.status.mark_project_ready(project_id=prj_id, updated_by=auth.user_id)
         uow.commit()
