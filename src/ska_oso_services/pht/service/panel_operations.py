@@ -125,6 +125,40 @@ def assign_to_existing_panel(
     return persisted, len(to_add_assignments), to_add_ids
 
 
+def _to_prsl_id(item: object) -> str | None:
+    """Return prsl_id from str / model / dict; else None."""
+    if item is None:
+        return None
+    if isinstance(item, str):
+        return item.strip()
+    # e.g., Pydantic model or domain object
+    if hasattr(item, "prsl_id"):
+        return str(getattr(item, "prsl_id")).strip()
+    # JSON dict case
+    if isinstance(item, dict) and "prsl_id" in item:
+        return str(item["prsl_id"]).strip()
+    return None
+
+
+def set_removed_proposals_to_submitted(uow, auth, removed_ids: set[str]) -> None:
+    """
+    For each proposal removed from a panel, set status back to SUBMITTED
+    """
+    for raw in removed_ids:
+        prsl_id = _to_prsl_id(raw)
+        if not prsl_id:
+            continue
+
+        try:
+            proposal = uow.prsls.get(prsl_id)
+        except ODANotFound:
+            raise BadRequestError(f"Submission '{prsl_id}' does not exist")
+
+        if proposal.status != ProposalStatus.SUBMITTED:
+            proposal.status = ProposalStatus.SUBMITTED
+            uow.prsls.add(proposal, auth.user_id)
+
+
 def ensure_submitted_proposals_under_review(uow, auth, prsl_ids: Iterable[str]) -> None:
     seen: set[str] = set()
     for raw in prsl_ids:

@@ -885,3 +885,264 @@ class TestPanelsAssignmentsAPI:
         mock_ensure.assert_not_called()
         mock_build_resp.assert_called_once()
         assert mock_build_resp.call_args[0][0] == {}
+
+
+class TestPanelsUpdateStatusTransitions:
+    # 1) ADD PROPOSAL -> UNDER REVIEW
+    @mock.patch(f"{MODULE}.ensure_decision_exist_or_create", autospec=True)
+    @mock.patch(f"{MODULE}.set_removed_proposals_to_submitted", autospec=True)
+    @mock.patch(f"{MODULE}.ensure_submitted_proposals_under_review", autospec=True)
+    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
+    def test_update_panel_adds_new_proposal_marks_under_review(
+        self,
+        mock_uow,
+        mock_validate,
+        mock_ensure_under_review,
+        mock_set_removed,
+        mock_ensure_decision,
+        client,
+    ):
+        """
+        When a new proposal is added:
+        - endpoint succeeds (200)
+        - no revert to submitted
+        - ensure_submitted_proposals_under_review is called with the new id
+        - decisions are ensured
+        """
+        uow = mock.MagicMock()
+        mock_uow.return_value.__enter__.return_value = uow
+
+        # Persisted: only p1
+        persisted = TestDataFactory.panel_with_assignment(
+            panel_id="panel-xyz",
+            name="Cosmology",
+            proposals=[
+                TestDataFactory.proposal_assignment(
+                    "p1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                )
+            ],
+        )
+        uow.panels.get.return_value = persisted
+
+        # Incoming adds p2
+        incoming = TestDataFactory.panel_with_assignment(
+            panel_id="panel-xyz",
+            name="Cosmology",
+            proposals=[
+                TestDataFactory.proposal_assignment(
+                    "p1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                ),
+                TestDataFactory.proposal_assignment(
+                    "p2", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+                ),
+            ],
+        )
+
+        # System knows only about this panel (no conflicts)
+        uow.panels.query.return_value = [persisted]
+        uow.panels.add.side_effect = lambda p: p
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{incoming.panel_id}",
+            data=incoming.model_dump_json(),
+            headers=HEADERS,
+        )
+        assert resp.status_code == HTTPStatus.OK, resp.text
+        assert_json_is_equal(resp.text, incoming.model_dump_json())
+
+        mock_set_removed.assert_not_called()
+
+        # ensure_submitted_proposals_under_review should include "p2"
+        args, _ = mock_ensure_under_review.call_args
+        ids_iter = args[2]
+        ids = set(list(ids_iter))
+        assert "p2" in ids
+
+        assert mock_ensure_decision.call_count >= 1
+        uow.commit.assert_called_once()
+
+    # 2) REMOVE PROPOSAL (NOT in any other panel) -> SUBMITTED
+    @mock.patch(f"{MODULE}.set_removed_proposals_to_submitted", autospec=True)
+    @mock.patch(f"{MODULE}.ensure_submitted_proposals_under_review", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
+    def test_update_panel_removes_proposal_reverts_to_submitted_if_nowhere_else(
+        self, mock_uow, mock_ensure_under_review, mock_set_removed, client
+    ):
+        """
+        Removing a proposal that does not appear in any other panel
+        must revert its status to SUBMITTED.
+        """
+        uow = mock.MagicMock()
+        mock_uow.return_value.__enter__.return_value = uow
+
+        # Persisted: {p1, p2}
+        persisted = TestDataFactory.panel_with_assignment(
+            panel_id="panel-abc",
+            name="Cosmology",
+            proposals=[
+                TestDataFactory.proposal_assignment(
+                    "p1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                ),
+                TestDataFactory.proposal_assignment(
+                    "p2", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+                ),
+            ],
+        )
+        uow.panels.get.return_value = persisted
+
+        # Incoming removes p2 -> {p1}
+        incoming = TestDataFactory.panel_with_assignment(
+            panel_id="panel-abc",
+            name="Cosmology",
+            proposals=[
+                TestDataFactory.proposal_assignment(
+                    "p1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                )
+            ],
+        )
+
+        # Only this panel exists in system (so p2 is nowhere else)
+        uow.panels.query.return_value = [persisted]
+        uow.panels.add.side_effect = lambda p: p
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{incoming.panel_id}",
+            data=incoming.model_dump_json(),
+            headers=HEADERS,
+        )
+        assert resp.status_code == HTTPStatus.OK, resp.text
+
+        mock_set_removed.assert_called_once()
+        args, _ = mock_set_removed.call_args
+        removed_ids = args[2]
+        removed_ids = set(removed_ids) if not isinstance(removed_ids, set) else removed_ids
+        assert removed_ids == {"p2"}
+
+        # ensure_submitted_proposals_under_review should NOT include p2
+        if mock_ensure_under_review.call_args:
+            ids_under_review = set(list(mock_ensure_under_review.call_args[0][2]))
+            assert "p2" not in ids_under_review
+
+        uow.commit.assert_called_once()
+
+    # 3) ADD PROPOSAL that already belongs to another panel -> 422
+    @mock.patch(f"{MODULE}.set_removed_proposals_to_submitted", autospec=True)
+    @mock.patch(f"{MODULE}.ensure_submitted_proposals_under_review", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
+    def test_update_panel_add_proposal_in_other_panel_raises_422(
+        self, mock_uow, mock_ensure_under_review, mock_set_removed, client
+    ):
+        """
+        Adding a proposal that is already assigned to a different panel
+        must fail with 422 and perform no writes.
+        """
+        uow = mock.MagicMock()
+        mock_uow.return_value.__enter__.return_value = uow
+
+        # Persisted current panel: empty
+        persisted = TestDataFactory.panel_with_assignment(
+            panel_id="panel-a",
+            name="Cosmology",
+            proposals=[],
+        )
+        uow.panels.get.return_value = persisted
+
+        # Incoming tries to add pX
+        incoming = TestDataFactory.panel_with_assignment(
+            panel_id="panel-a",
+            name="Cosmology",
+            proposals=[
+                TestDataFactory.proposal_assignment(
+                    "pX", assigned_on=datetime(2025, 1, 10, tzinfo=timezone.utc)
+                )
+            ],
+        )
+
+        # Another panel already has pX
+        other = TestDataFactory.panel_with_assignment(
+            panel_id="panel-b",
+            name="Stars",
+            proposals=[
+                TestDataFactory.proposal_assignment(
+                    "pX", assigned_on=datetime(2025, 1, 5, tzinfo=timezone.utc)
+                )
+            ],
+        )
+        uow.panels.query.return_value = [persisted, other]
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{incoming.panel_id}",
+            data=incoming.model_dump_json(),
+            headers=HEADERS,
+        )
+        assert resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert "already assigned" in resp.text.lower()
+
+        uow.panels.add.assert_not_called()
+        uow.commit.assert_not_called()
+        mock_set_removed.assert_not_called()
+        mock_ensure_under_review.assert_not_called()
+
+    # 4) REMOVE PROPOSAL that still belongs to another panel -> NO REVERT
+    @mock.patch(f"{MODULE}.set_removed_proposals_to_submitted", autospec=True)
+    @mock.patch(f"{MODULE}.ensure_submitted_proposals_under_review", autospec=True)
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
+    def test_update_panel_remove_proposal_present_elsewhere_does_not_revert(
+        self, mock_uow, mock_ensure_under_review, mock_set_removed, client
+    ):
+        """
+        Removing a proposal that still appears in a different panel
+        should NOT revert it to SUBMITTED.
+        """
+        uow = mock.MagicMock()
+        mock_uow.return_value.__enter__.return_value = uow
+
+        # Persisted had p1
+        persisted = TestDataFactory.panel_with_assignment(
+            panel_id="panel-c",
+            name="Cosmology",
+            proposals=[
+                TestDataFactory.proposal_assignment(
+                    "p1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                )
+            ],
+        )
+        uow.panels.get.return_value = persisted
+
+        # Incoming removes p1 -> {}
+        incoming = TestDataFactory.panel_with_assignment(
+            panel_id="panel-c",
+            name="Cosmology",
+            proposals=[],
+        )
+
+        # Another panel still has p1
+        other = TestDataFactory.panel_with_assignment(
+            panel_id="panel-d",
+            name="Stars",
+            proposals=[
+                TestDataFactory.proposal_assignment(
+                    "p1", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+                )
+            ],
+        )
+        uow.panels.query.return_value = [persisted, other]
+        uow.panels.add.side_effect = lambda p: p
+
+        resp = client.put(
+            f"{PANELS_API_URL}/{incoming.panel_id}",
+            data=incoming.model_dump_json(),
+            headers=HEADERS,
+        )
+        assert resp.status_code == HTTPStatus.OK, resp.text
+
+        # No revert should happen for p1
+        mock_set_removed.assert_not_called()
+
+        # If ensure_submitted_proposals_under_review is called, it must not contain "p1"
+        if mock_ensure_under_review.call_args:
+            ids = set(list(mock_ensure_under_review.call_args[0][2]))
+            assert "p1" not in ids
+
+        uow.commit.assert_called_once()
