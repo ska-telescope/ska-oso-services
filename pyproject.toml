@@ -1,26 +1,59 @@
-[tool.poetry]
+[project]
 name = "ska-oso-services"
 version = "12.1.0"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
-authors = ["Team Buttons", "Stargazers Team"]
-license = "BSD-3-Clause"
+authors = [
+    { name = "Team Buttons" },
+    { name = "Stargazers Team" }
+]
+license = { text = "BSD-3-Clause" }
 readme = "README.md"
-repository = "https://gitlab.com/ska-telescope/oso/ska-oso-services"
-documentation = "https://developer.skao.int/projects/ska-oso-services/en/latest/index.html"
+requires-python = ">=3.10,<4.0"
 keywords = ["SKA OSO"]
-packages = [
-    { include = "ska_oso_services", from = "src" }
-]
-include = [
-    { path = 'tests' }
-]
 classifiers = [
     'Development Status :: 2 - Pre-Alpha',
     'Intended Audience :: Developers',
     'License :: OSI Approved :: BSD License',
     'Natural Language :: English',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+]
+dependencies = [
+    "python-dateutil>=2.8.2",
+    "ska-ser-logging>=0.4.1",
+    # PDM dependency is pulled in via the ODA rather than being explicitly set here
+    # If updating this, also remember to update the Helm dependency in the umbrella chart
+    "ska-db-oda>=15.2.0",
+    "pydantic>=2.9",
+    "fastapi[standard]>=0.115.8",
+    "astroquery==0.4.9",
+    "ska-ost-osd==5.2.0",
+    "ska-telmodel>=1.24.3",
+    "aiosmtplib>=4.0.1",
+    "boto3>=1.38.13",
+    "ska-aaa-authhelpers>=1.2.0",
+    # Need to pin as otherwise pip cannot resolve the dependencies in the tests.
+    # This dependency comes through the osd > telmodel, so reasses when updating those.
+    "argcomplete>=1.9.4",
+    "msal>=1.33.0",
+    "astroplan>=0.10.1",
+    "matplotlib>=3.10.7",
+    "numpy<2.4",
+    "ska-ser-skuid>=4.1.0",
+]
+
+[project.urls]
+repository = "https://gitlab.com/ska-telescope/oso/ska-oso-services"
+documentation = "https://developer.skao.int/projects/ska-oso-services/en/latest/index.html"
+
+[tool.poetry]
+packages = [
+    { include = "ska_oso_services", from = "src" }
+]
+include = [
+    { path = 'tests' }
 ]
 
 [[tool.poetry.source]]
@@ -59,30 +92,6 @@ name = "gitlab-ska-ser-xray"
 url = "https://gitlab.com/api/v4/projects/39434823/packages/pypi/simple"
 priority = "explicit"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-python-dateutil = "^2.8.2"
-ska-ser-logging = "^0.4.1"
-# PDM dependency is pulled in via the ODA rather than being explicitly set here
-# If updating this, also remember to update the Helm dependency in the umbrella chart
-ska-db-oda = "^15.2.0"
-pydantic = "^2.9"
-fastapi = {extras = ["standard"], version = "^0.115.8"}
-astroquery = "0.4.9"
-ska-ost-osd = "5.2.0"
-ska-telmodel = "^1.24.3"
-aiosmtplib = "^4.0.1"
-boto3 = "^1.38.13"
-ska-aaa-authhelpers = "^1.2.0"
-# Need to pin as otherwise pip cannot resolve the dependencies in the tests.
-# This dependency comes through the osd > telmodel, so reasses when updating those.
-argcomplete = "^1.9.4"
-msal = "^1.33.0"
-astroplan = "^0.10.1"
-matplotlib = "^3.10.7"
-numpy = "<2.4"
-ska-ser-skuid = "^4.1.0"
-
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
 pytest-cov = "^5.0.0"
@@ -109,6 +118,7 @@ ska-ser-sphinx-theme = "^0.2.1"
 mistune = "^2"
 # Required to be installed for the autodocs for the version check
 ska-ost-osd = "^5.0.0"
+tomli = "^2.4.0"
 
 
 [tool.coverage.run]

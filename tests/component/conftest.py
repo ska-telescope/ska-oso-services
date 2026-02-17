@@ -7,9 +7,11 @@ import pytest
 from requests import Session
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
-from ska_oso_pdm import Project
+from ska_oso_pdm import Project, SBDefinition
 
 from tests.component import ODT_URL
+
+from ..unit.util import TestDataFactory
 
 AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
 
@@ -80,7 +82,7 @@ def authrequests():
     return req
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_project(authrequests) -> Project:
     prj_post_response = authrequests.post(
         f"{ODT_URL}/prjs",
@@ -88,6 +90,18 @@ def test_project(authrequests) -> Project:
     )
 
     return Project.model_validate_json(prj_post_response.content)
+
+
+@pytest.fixture
+def test_sbd(test_project, authrequests) -> SBDefinition:
+    ob_ref = test_project.obs_blocks[0].obs_block_id
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=ob_ref)
+    sbd_post_response = authrequests.post(
+        f"{ODT_URL}/sbds",
+        data=sbd.model_dump_json(),
+        headers={"Content-type": "application/json"},
+    )
+    return SBDefinition.model_validate_json(sbd_post_response.content)
 
 
 # See https://developer.skao.int/projects/ska-ser-xray/en/latest/guide/pytest.html
