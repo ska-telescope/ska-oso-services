@@ -22,7 +22,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
-from ska_oso_services.common.osdmapper import get_osd_data
+from ska_oso_services.common.osdmapper import get_osd_data, get_osd_cycles
 from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
@@ -52,6 +52,31 @@ from ska_oso_services.pht.utils.pht_helper import generate_entity_id, get_latest
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
+
+
+
+@router.get(
+    "/osd/cycles",
+    summary="Retrieve OSD data for all available cycles",
+)
+def get_all_osd_cycles() -> OsdDataModel:
+    """
+    This queries the OSD data for all available cycles.
+
+    This data is made available for the PHT UI.
+
+    Returns:
+        OsdDataModel: The OSD data validated against the defined schema.
+
+    """
+    logger.debug("GET OSD data for all cycles")
+    data = get_osd_cycles()
+    if type(data) is tuple and len(data) == 2:
+        # Error happened at OSD
+        detail = data[0]["detail"]
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=detail)
+
+    return data
 
 
 @router.get(
