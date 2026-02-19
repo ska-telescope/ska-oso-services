@@ -22,7 +22,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
-from ska_oso_services.common.osdmapper import get_osd_data, get_osd_cycles
+from ska_oso_services.common.osdmapper import get_osd_cycles, get_osd_data
 from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
@@ -52,7 +52,6 @@ from ska_oso_services.pht.utils.pht_helper import generate_entity_id, get_latest
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
-
 
 
 @router.get(
