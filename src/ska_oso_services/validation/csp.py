@@ -69,7 +69,8 @@ def validate_low_spws(
         for issue in validate_low_spw(
             ValidationContext(
                 primary_entity=spw,
-                source_jsonpath=f"$.lowcbf.correlation_spws[{index}]",
+                source_jsonpath=f"$.lowcbf.correlation_spws.{index}",
+                relevant_context={"spw_index": index},
                 telescope=csp_context.telescope,
                 array_assembly=csp_context.array_assembly,
             )
@@ -107,10 +108,11 @@ def validate_mid_spws(
         for issue in validate_mid_spw(
             ValidationContext(
                 primary_entity=spw,
-                source_jsonpath=f"$.midcbf.subbands[0].correlation_spws[{index}]",
+                source_jsonpath=f"$.midcbf.subbands.0.correlation_spws.{index}",
                 relevant_context={
                     "band_data_from_osd": band_data,
                     "subband_frequency_slice_offset": midcbf.subbands[0].frequency_slice_offset,
+                    "spw_index": index,
                 },
                 telescope=csp_context.telescope,
                 array_assembly=csp_context.array_assembly,
@@ -131,6 +133,8 @@ def validate_low_spw(
     :return: the collated ValidationIssues resulting from applying each of
         the SKA Low spectral window validators to a single Low spectral window
     """
+    check_relevant_context_contains(["spw_index"], spw_context)
+
     validators = [
         validate_low_spw_centre_frequency,
         validate_continuum_spw_bandwidth,
@@ -151,9 +155,7 @@ def validate_mid_spw(
         the SKA Mid spectral window validators to a single Mid spectral window
     """
     check_relevant_context_contains(
-        [
-            "band_data_from_osd",
-        ],
+        ["band_data_from_osd", "spw_index"],
         spw_context,
     )
 
@@ -177,6 +179,7 @@ def validate_low_spw_centre_frequency(
         is outside the frequency range of SKA Low
     """
     centre_frequency_hz = spw_context.primary_entity.centre_frequency * u.Hz
+    spw_index = spw_context.relevant_context["spw_index"]
 
     if (
         centre_frequency_hz < low_minimum_frequency()
@@ -186,7 +189,7 @@ def validate_low_spw_centre_frequency(
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
                 message=f"Centre frequency of "
-                f"spectral window {centre_frequency_hz}"
+                f"spectral window {spw_index + 1}, {centre_frequency_hz},"
                 f" is outside of the telescope capabilities",
             )
         ]
@@ -206,6 +209,8 @@ def validate_mid_spw_centre_frequency(
     """
     centre_frequency_hz = spw_context.primary_entity.centre_frequency
     band_data = spw_context.relevant_context["band_data_from_osd"]
+    spw_index = spw_context.relevant_context["spw_index"]
+
     if (
         centre_frequency_hz > band_data.max_frequency_hz
         or centre_frequency_hz < band_data.min_frequency_hz
@@ -220,7 +225,7 @@ def validate_mid_spw_centre_frequency(
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
                 message=f"Centre frequency of "
-                f"spectral window {centre_frequency_hz} Hz "
+                f"spectral window {spw_index + 1}, {centre_frequency_hz} Hz, "
                 f"is outside of {band_id}",
             )
         ]
@@ -238,6 +243,8 @@ def validate_continuum_spw_bandwidth(
     :return: a validation error if the bandwidth of the window
         is outside the frequency range of the telescope or frequency band
     """
+    spw_index = spw_context.relevant_context["spw_index"]
+
     available_bandwidth = (
         get_subarray_specific_parameter_from_osd(
             spw_context.telescope, spw_context.array_assembly, "available_bandwidth_hz"
@@ -251,8 +258,9 @@ def validate_continuum_spw_bandwidth(
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
-                message=f"Bandwidth of spectral window {float(spw_bandwidth.to('MHz').value)} MHz "
-                "is outside of available bandwidth "
+                message=f"Bandwidth of spectral window {spw_index + 1}, "
+                f"{float(spw_bandwidth.to('MHz').value)} MHz, is outside "
+                f"of available bandwidth "
                 f"{float(available_bandwidth.to('MHz').value)} MHz for "
                 f"{spw_context.telescope.value} {spw_context.array_assembly.value}",
             )
@@ -274,6 +282,7 @@ def validate_low_spw_window(
     """
     centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
     spw_bandwidth = calculate_continuum_spw_bandwidth(spw_context)
+    spw_index = spw_context.relevant_context["spw_index"]
 
     if (centre_frequency + 0.5 * spw_bandwidth) > low_maximum_frequency() or (
         centre_frequency - 0.5 * spw_bandwidth
@@ -282,7 +291,7 @@ def validate_low_spw_window(
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
-                message="Spectral window is outside allowed range",
+                message=f"Spectral window {spw_index + 1} is outside allowed range",
             )
         ]
 
@@ -304,6 +313,7 @@ def validate_mid_spw_window(
     spw_bandwidth = calculate_continuum_spw_bandwidth(spw_context)
 
     band_data = spw_context.relevant_context["band_data_from_osd"]
+    spw_index = spw_context.relevant_context["spw_index"]
 
     if (centre_frequency + 0.5 * spw_bandwidth) > band_data.max_frequency_hz * u.Hz or (
         centre_frequency - 0.5 * spw_bandwidth
@@ -312,7 +322,7 @@ def validate_mid_spw_window(
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
-                message="Spectral window is outside allowed range",
+                message=f"Spectral window {spw_index + 1} is outside allowed range",
             )
         ]
 
