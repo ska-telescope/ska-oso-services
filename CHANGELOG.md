@@ -4,7 +4,7 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+13.1.0
 ************
 * [BUGFIX] Fixes `validate_mccs` bug where scan validation returned after first error
 * Updates the validation error messages
