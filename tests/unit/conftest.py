@@ -3,15 +3,11 @@ pytest fixtures to be used by unit tests
 """
 
 from functools import partial
-from importlib import reload
 from importlib.metadata import version
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-import ska_oso_pdm.builders.csp_builder as csp_builder
-import ska_oso_pdm.builders.mccs_builder as mccs_builder
-import ska_oso_pdm.builders.sb_builder as sb_builders
 from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from fastapi import FastAPI
@@ -119,21 +115,6 @@ def client_get(client: TestClient, headers):  # pylint: disable=redefined-outer-
 @pytest.fixture(scope="session", autouse=True)
 def patch_pubkeys():
     monkeypatch_pubkeys()
-
-
-@pytest.fixture
-def mid_sbd_builder():
-    reload(sb_builders)
-    reload(csp_builder)
-    return sb_builders.MidSBDefinitionBuilder()
-
-
-@pytest.fixture
-def low_sbd_builder():
-    reload(sb_builders)
-    reload(csp_builder)
-    reload(mccs_builder)
-    return sb_builders.LowSBDefinitionBuilder()
 
 
 @pytest.fixture
