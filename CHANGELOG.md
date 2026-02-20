@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+* [BUGFIX] Fixes `validate_mccs` bug where scan validation returned after first error
+* Updates the validation error messages
+* Updates ODA v15.3.0-rc.3 and PDM v27.1.1
+
+13.0.0
+************
 * Added caching to improve validate SBDefinition performance
 * Add `GET /prjs/{prj_id}/status` and `GET /sbds/{sbd_id}/status`
 * Adds `PUT /prjs/{prj_id}/status/ready` and `PUT /prjs/{prj_id}/status/draft`
@@ -13,9 +19,6 @@ Unreleased
 * Changes to `PUT /pht/panels/{panel_id}` to enforce proposal–panel exclusivity and correct proposal status transitions.
 * [BREAKING] Delete the unused `/sbds/validate` API in favour of the validation service `/validate/sbds`
 * [BUGFIX] Return CORS headers on errors
-* [BUGFIX] Fixes `validate_mccs` bug where scan validation returned after first error
-* Updates the validation error messages
-* Updates ODA v15.3.0-rc.3 and PDM v27.1.1
 
 12.1.0
 ************
