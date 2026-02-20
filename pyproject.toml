@@ -1,6 +1,6 @@
 [project]
 name = "ska-oso-services"
-version = "13.1.0"
+version = "13.1.1"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
 authors = [
     { name = "Team Buttons" },
