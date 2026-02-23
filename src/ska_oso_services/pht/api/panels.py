@@ -264,7 +264,7 @@ def auto_create_panel(
     - Returns a summary of all newly created panels: {created_count, created_names}.
 
     Auto creates panels:
-    - Create a single panel called 'Science Verification'.
+    - Create 1 panel called 'Science Verification'.
     - Create panels for PANEL_NAME_POOL, which is the science categories
         (to be pulled in from OSD when available)
     - Then return a summary:
@@ -289,9 +289,8 @@ def auto_create_panel(
                 name=SV_NAME,
                 cycle="SKAO_2027_1",  # keep if this is a business rule for SV
             )
-            created = uow.panels.add(sv_panel, auth.user_id)
-            uow.commit()
-            logger.info("Science Verification panel created (panel_id=%s)", created.panel_id)
+            uow.panels.add(sv_panel, auth.user_id)
+            logger.info("Science Verification panel created (panel_id=%s)", sv_panel.panel_id)
             created_names.append(SV_NAME)
 
         # --- Science category panels ---
