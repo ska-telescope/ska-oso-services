@@ -85,22 +85,18 @@ def test_generate_category_panels_multiple(authrequests):
 
 
 def test_generate_science_verification_panel(authrequests):
-    resp = authrequests.post(
-        f"{PANELS_API_URL}/generate",
-        params={"param": "Science Verification"},
-    )
+    resp = authrequests.post(f"{PANELS_API_URL}/generate")
     assert resp.status_code == HTTPStatus.OK, resp.text
-    panel_id = resp.json()
-    assert isinstance(panel_id, str), "Expected a single panel_id string for SV"
-    assert panel_id.startswith("panel-")
+    body = resp.json()
+    assert body["created_count"] == 1
+    assert body["created_names"] == ["Science Verification"]
 
     # Calling again should return the existing panel_id (no new creation)
-    resp2 = authrequests.post(
-        f"{PANELS_API_URL}/generate",
-        params={"param": "Science Verification"},
-    )
+    resp2 = authrequests.post(f"{PANELS_API_URL}/generate")
     assert resp2.status_code == HTTPStatus.OK, resp2.text
-    assert resp2.json() == panel_id
+    body2 = resp2.json()
+    assert body2["created_count"] == 0
+    assert body2["created_names"] == []
 
 
 def test_put_panel_with_proposal_and_reviewers(authrequests):
