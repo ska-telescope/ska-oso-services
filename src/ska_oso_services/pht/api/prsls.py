@@ -1,3 +1,4 @@
+import copy
 import logging
 from http import HTTPStatus
 from typing import Annotated
@@ -58,24 +59,27 @@ router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
     "/osd/cycles",
     summary="Retrieve OSD data for all available cycles",
 )
-def get_all_osd_cycles() -> OsdDataModel:
+def get_all_osd_cycles() -> list[OsdDataModel]:
     """
     This queries the OSD data for all available cycles.
 
     This data is made available for the PHT UI.
 
     Returns:
-        OsdDataModel: The OSD data validated against the defined schema.
+        list[OsdDataModel]: a list of the OSD data for all cycles validated against the defined schema.
 
     """
     logger.debug("GET OSD data for all cycles")
-    data = get_osd_cycles()
-    if type(data) is tuple and len(data) == 2:
-        # Error happened at OSD
-        detail = data[0]["detail"]
-        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=detail)
+    cycle_list = get_osd_cycles()
 
-    return data
+    cycle_data = []
+
+    for cycle in cycle_list.get("cycles", []):
+        logger.debug("Cycle: %s", cycle)
+        data = get_osd_data(cycle_id=cycle, source="car")
+        cycle_data.append(copy.deepcopy(data))
+
+    return cycle_data
 
 
 @router.get(
