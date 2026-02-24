@@ -495,7 +495,7 @@ class TestPanelsAPI:
 
 
 class TestPanelsGenerateAPI:
-    # SV: No existing SV panel -> create & return new id
+    # No existing SV panel -> create & return new id
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     def test_generate_sv_creates_when_missing(self, mock_get_latest, mock_uow, client):
@@ -538,32 +538,42 @@ class TestPanelsGenerateAPI:
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
-    # SV: Existing -> return existing id, no writes
+    # SV & Science Categories are all missing -> create panels for SV + all categories
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
-    def test_generate_sv_returns_existing_noop(self, mock_get_latest, mock_uow, client):
+    def test_generate_creates_sv_and_all_categories_when_missing(
+        self, mock_get_latest, mock_uow, client
+    ):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
-        # SV exists, and ALL category panels exist → no creation
-        mock_get_latest.side_effect = [
-            [SimpleNamespace(panel_id="panel-existing-sv")]
-        ] + [  # SV panel exists
-            [SimpleNamespace(panel_id=f"panel-{name}")]  # each category exists
-            for name in panels_api.PANEL_NAME_POOL
+        # SV missing, every category missing
+        mock_get_latest.side_effect = [[]] * (1 + len(panels_api.PANEL_NAME_POOL))
+
+        # Panels.add will be called for SV + each category.
+        uow.panels.add.side_effect = [
+            SimpleNamespace(panel_id=f"panel-{i}", name=name)
+            for i, name in enumerate([panels_api.SV_NAME, *panels_api.PANEL_NAME_POOL], start=1)
         ]
 
         resp = client.post(f"{PANELS_API_URL}/generate")
+        assert resp.status_code == HTTPStatus.OK, resp.content
 
-        assert resp.json() == {
-            "created_count": 0,
-            "created_names": [],
-        }
+        body = resp.json()
+        expected_names = [panels_api.SV_NAME, *panels_api.PANEL_NAME_POOL]
 
-        uow.panels.add.assert_not_called()
-        uow.commit.assert_not_called()
+        assert body["created_count"] == len(expected_names)
+        assert set(body["created_names"]) == set(expected_names)
 
-    # Category: Creates only missing panels from PANEL_NAME_POOL
+        # Ensure we created exactly SV + all categories
+        assert uow.panels.add.call_count == len(expected_names)
+        created_names = [call.args[0].name for call in uow.panels.add.call_args_list]
+        assert set(created_names) == set(expected_names)
+
+        uow.panels.add.assert_called()
+        uow.commit.assert_called_once()
+
+    # Missing Category: Creates only missing panels from PANEL_NAME_POOL
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     def test_generate_categories_creates_missing_only(
@@ -579,7 +589,6 @@ class TestPanelsGenerateAPI:
             raising=True,
         )
 
-        # IMPORTANT: First call is ALWAYS for SV.
         # SV exists -> do NOT create.
         # Then per-category: Cosmology exists, Stars missing, Transients missing.
         mock_get_latest.side_effect = [
@@ -606,7 +615,7 @@ class TestPanelsGenerateAPI:
     # SV & Category: All exist -> no creation, no commit
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
-    def test_generate_categories_all_exist_noop(
+    def test_generate_sv_categories_all_exist_noop(
         self, mock_get_latest, mock_uow, client, monkeypatch
     ):
         uow = mock.MagicMock()
@@ -629,7 +638,6 @@ class TestPanelsGenerateAPI:
         resp = client.post(f"{PANELS_API_URL}/generate")
         assert resp.status_code == HTTPStatus.OK
 
-        # NEW batch-style response
         body = resp.json()
         assert body["created_count"] == 0
         assert body["created_names"] == []
@@ -637,10 +645,10 @@ class TestPanelsGenerateAPI:
         uow.panels.add.assert_not_called()
         uow.commit.assert_not_called()
 
-    # SV: Case-insensitive + trim
+    # Case-insensitive + trim
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
-    def test_generate_sv_case_insensitive_and_trim(self, mock_get_latest, mock_uow, client):
+    def test_generate_case_insensitive_and_trim(self, mock_get_latest, mock_uow, client):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
@@ -662,13 +670,12 @@ class TestPanelsGenerateAPI:
 
         assert resp.status_code == HTTPStatus.OK, resp.content
 
-        # New batch result response format
         assert resp.json() == {
             "created_count": 1,
             "created_names": ["Science Verification"],
         }
 
-        # Exactly one creation: the SV panel
+        # 1 created: the SV panel
         uow.panels.add.assert_called_once()
         created_panel = uow.panels.add.call_args[0][0]
         assert created_panel.name == panels_api.SV_NAME
