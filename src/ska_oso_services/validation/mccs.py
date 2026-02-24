@@ -55,7 +55,7 @@ def validate_number_subarray_beams(
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
-                message=f"Number of subarray beams {number_subarray_beams} "
+                message=f"Number of subarray beams ({number_subarray_beams}) "
                 f"exceeds allowed {allowed_subarray_beams} for {mccs_context.array_assembly}",
             )
         ]
@@ -97,8 +97,8 @@ def validate_number_substations(
             validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
-                    field=f"$mccs_allocation.subarray_beams[{subarray_beam.subarray_beam_id - 1}]",
-                    message=f"Maximum number of substations {total_number_of_substations} "
+                    field=f".subarray_beams.{subarray_beam.subarray_beam_id - 1}",
+                    message=f"Maximum number of substations ({total_number_of_substations}) "
                     f"in subarray beam {subarray_beam.subarray_beam_id} exceeds allowed "
                     f"{allowed_number_of_substations} for {mccs_context.array_assembly}",
                 )
@@ -147,7 +147,8 @@ def validate_number_of_pst_beams_per_scan(
             validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
-                    message=f"Number of PST beams {number_pst_beams} for scan {scan.index + 1} "
+                    field=".subarray_beams.0.scan_sequence",
+                    message=f"Number of PST beams ({number_pst_beams}) for scan {scan.index + 1} "
                     f"exceeds allowed {allowed_number_pst_beams} for "
                     f"{mccs_context.array_assembly}",
                 )
@@ -180,6 +181,7 @@ def validate_subarray_beams_per_scan_have_the_same_duration(
             validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
+                    field=".subarray_beams.0.scan_sequence",
                     message=f"The scan durations for scan {scan.index + 1} "
                     "are not equal for all subarray beams",
                 )
@@ -239,7 +241,6 @@ def validate_station_bandwidth(
                 calculate_continuum_spw_bandwidth(
                     ValidationContext(
                         primary_entity=spw,
-                        source_jsonpath=f"$.subarray_beams[{beam.beam.subarray_beam_id - 1}]",
                         telescope=mccs_context.telescope,
                         array_assembly=mccs_context.array_assembly,
                     )
@@ -257,14 +258,15 @@ def validate_station_bandwidth(
             validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
-                    message=f"At least one station is using more bandwidth "
-                    f"({max_total_bandwidth.to(u.MHz).value} MHz) than is "
+                    field=".subarray_beams.0.scan_sequence",
+                    message=f"At least one station in scan {scan.index + 1} is using more "
+                    f"bandwidth ({max_total_bandwidth.to(u.MHz).value} MHz) than is "
                     f"available ({available_bandwidth.to(u.MHz).value} MHz) "
                     f"for array assembly {mccs_context.array_assembly}",
                 )
             )
 
-        return validation_issues
+    return validation_issues
 
 
 @dataclasses.dataclass(frozen=True)

@@ -4,14 +4,26 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+13.1.1
+************
+* Further updates to the validation error messages
+
+13.1.0
+************
+* [BUGFIX] Fixes `validate_mccs` bug where scan validation returned after first error
+* Updates the validation error messages
+* Updates ODA v15.3.0-rc.3 and PDM v27.1.1
+
+13.0.0
 ************
 * Added caching to improve validate SBDefinition performance
 * Add `GET /prjs/{prj_id}/status` and `GET /sbds/{sbd_id}/status`
+* Adds `PUT /prjs/{prj_id}/status/ready` and `PUT /prjs/{prj_id}/status/draft`
 * Add the `prj_status` to the return value of the `/odt/prsls/project-view` API
+* Changes to `PUT /pht/panels/{panel_id}` to enforce proposal–panel exclusivity and correct proposal status transitions.
 * [BREAKING] Delete the unused `/sbds/validate` API in favour of the validation service `/validate/sbds`
 * [BUGFIX] Return CORS headers on errors
-* Changes to `PUT /pht/panels/{panel_id}` to enforce proposal–panel exclusivity and correct proposal status transitions.
+* Updated `/pht/panels/generate` to generate both SV and proposals panels
 
 12.1.0
 ************
@@ -27,7 +39,7 @@ Unreleased
 
 11.4.0
 **********
-* Updated /configuration end point to return all the basic capabilities in the OSD for Low 
+* Updated /configuration end point to return all the basic capabilities in the OSD for Low
 
 11.3.0
 **********
@@ -73,7 +85,7 @@ Unreleased
 * Changes the SDP TMData source Helm configuration key from `ska-oso-services.rest.sdp.tmdata` to `global.oso.sdp_tmdata`
 * Updates SBD generation from Project to handle additional script parameters
 * Improvements to target catalog error handling and logging
-* Update the target catalog lookup response to return a PDM object with an extra `equatorial`/`galactic` deprecated field from the old response. 
+* Update the target catalog lookup response to return a PDM object with an extra `equatorial`/`galactic` deprecated field from the old response.
   This means the change is backwards compatible, giving chance for users to update to migrate to use the Target object.
   * Adds visibility plot endpoint to common
   * Updates panel assignment to also create reviews and decisions
@@ -100,8 +112,8 @@ Unreleased
 
 8.0.0
 ***********
-* [BREAKING] Update to ODA v12.0.0 which deploys Postgres via the operators. This involves some updates to the global Helm values used by the chart. 
-* Adds API for retrieving SDP script versions and script parameters 
+* [BREAKING] Update to ODA v12.0.0 which deploys Postgres via the operators. This involves some updates to the global Helm values used by the chart.
+* Adds API for retrieving SDP script versions and script parameters
 * [BREAKING] Update error handlers to all return same format details
 
 7.0.0
@@ -149,7 +161,7 @@ Unreleased
 
 4.0.3
 ***********
-* Updates ODA version to 11.5.1 
+* Updates ODA version to 11.5.1
 
 4.0.2
 ***********
@@ -198,7 +210,7 @@ Unreleased
 * Added GET `/pht/proposal-access/user/{prsl_id}` for pht
 * Added PUT `/pht/proposal-access/user/{access_id}` for pht
 * Adds module_view page and diagrams to documentation
-* Adds the functionality to create permission when a proposal is created 
+* Adds the functionality to create permission when a proposal is created
 * Adds the functionality to check permission when a user gets a proposal by user_id from auth and prsl_id
 * Adds the functionality to check permission when a user submit/update a proposal
 
@@ -209,12 +221,12 @@ Unreleased
 
 2.0.2
 ***********
-* NOTE: Due to a pipeline concurrency issue, this release wrongly includes BREAKING changes compared to 2.0.0 (namely PHT endpoint AAA). Please do not use this release, 
+* NOTE: Due to a pipeline concurrency issue, this release wrongly includes BREAKING changes compared to 2.0.0 (namely PHT endpoint AAA). Please do not use this release,
   and instead use 2.0.3
 
 2.0.1
 ***********
-* NOTE: Due to a pipeline concurrency issue, this release wrongly includes BREAKING changes compared to 2.0.0 (namely PHT endpoint AAA). Please do not use this release, 
+* NOTE: Due to a pipeline concurrency issue, this release wrongly includes BREAKING changes compared to 2.0.0 (namely PHT endpoint AAA). Please do not use this release,
   and instead use 2.0.3
 
 2.0.0
@@ -239,17 +251,17 @@ Unreleased
 * Added documentation for proposal endpoints
 * Updated docker base images to ska-build-python v0.3.1 and ska-python v0.2.3 and regenerated poetry.lock
 * Added PHT GET endpoint to retrieve osd data by cycle
-* Added a POST `/odt/prsls/{prsl_id}/generateProject` API endpoint 
+* Added a POST `/odt/prsls/{prsl_id}/generateProject` API endpoint
 * Added a GET API endpoint `/report` to retrieve needed data for admin PHT dashboard
 * Added a API endpoints to create, retrieve and update `panels` for the PHT
 * Added a API endpoints to create, retrieve and update `reviews` for the PHT
 * Added a API endpoints to create, retrieve and update `panel decision` for the PHT
-* Added API `/odt/prjs/{prj_id}/generateSBDefinitions` & `/odt/prjs/{prj_id}/{obs_block_id}/generateSBDefinitions` 
+* Added API `/odt/prjs/{prj_id}/generateSBDefinitions` & `/odt/prjs/{prj_id}/{obs_block_id}/generateSBDefinitions`
   endpoints to generates SBDefinitions from Projects
 * Added a GET `/reviews/{panel_id}` endpoint to retrieve all the reviews for a particular panel
 
 1.1.0
-****** 
+******
 * Added all pht endpoints:
   - Updated the ska-oso-oda version to v8.0.0
   - POST endpoint to create a proposal
@@ -260,7 +272,7 @@ Unreleased
   - POST Email and pdfs endpoints to send emails and generate signed urls for upload, download and delete actions.
 
 1.0.1
-****** 
+******
 * Add 'api://' prefix to the audience used by AAA
 
 1.0.0
@@ -297,7 +309,7 @@ Unreleased
 * The redshift is now set if the source is found via NED
 * Test file renamed to test_coordinates.py so that tests will run
 * More tests were added for e.g. source in NED and not SIMBAD, as well as source not found at all
-* [BREAKING]: No source found returns a 404 error 
+* [BREAKING]: No source found returns a 404 error
 
 0.4.0
 *****

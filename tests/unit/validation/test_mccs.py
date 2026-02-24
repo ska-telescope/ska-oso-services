@@ -1,7 +1,7 @@
 from astropy import units as u
 from ska_oso_pdm import ValidationArrayAssembly
 from ska_oso_pdm._shared import TiedArrayBeams
-from ska_oso_pdm.builders import populate_scan_sequences
+from ska_oso_pdm.builders import LowSBDefinitionBuilder, populate_scan_sequences
 from ska_oso_pdm.sb_definition.mccs.mccs_allocation import SubarrayBeamConfiguration
 
 from ska_oso_services.validation.mccs import validate_mccs
@@ -77,8 +77,8 @@ substation_json = """
 """
 
 
-def test_validate_mccs_passes_for_simple_mccs_allocation(low_sbd_builder):
-    sbd = low_sbd_builder
+def test_validate_mccs_passes_for_simple_mccs_allocation():
+    sbd = LowSBDefinitionBuilder()
     sbd = populate_scan_sequences(sbd, [6000000])
 
     input_context = ValidationContext(
@@ -92,8 +92,8 @@ def test_validate_mccs_passes_for_simple_mccs_allocation(low_sbd_builder):
     assert result == []
 
 
-def test_validate_mccs_fails_for_multiple_pst_beams_for_aa05_and_passes_for_aa2(low_sbd_builder):
-    sbd = low_sbd_builder
+def test_validate_mccs_fails_for_multiple_pst_beams_for_aa05_and_passes_for_aa2():
+    sbd = LowSBDefinitionBuilder()
     sbd = populate_scan_sequences(sbd, [6000000])
 
     sbd.targets[0].tied_array_beams = TiedArrayBeams.model_validate_json(pst_beam_json)
@@ -107,15 +107,15 @@ def test_validate_mccs_fails_for_multiple_pst_beams_for_aa05_and_passes_for_aa2(
 
     result = validate_mccs(input_context)
     assert len(result) == 1
-    assert result[0].message == "Number of PST beams 2 for scan 1 exceeds allowed 1 for AA0.5"
+    assert result[0].message == "Number of PST beams (2) for scan 1 exceeds allowed 1 for AA0.5"
 
     input_context.array_assembly = ValidationArrayAssembly.AA2
     result = validate_mccs(input_context)
     assert result == []
 
 
-def test_validate_number_substations(low_sbd_builder):
-    sbd = low_sbd_builder
+def test_validate_number_substations():
+    sbd = LowSBDefinitionBuilder()
 
     # building an SBD for the test - bit hacky
     sbd.mccs_allocation.subarray_beams[0] = SubarrayBeamConfiguration.model_validate_json(
@@ -139,7 +139,7 @@ def test_validate_number_substations(low_sbd_builder):
     assert len(result) == 1
     assert (
         result[0].message
-        == "Maximum number of substations 1 in subarray beam 1 exceeds allowed 0 for AA0.5"
+        == "Maximum number of substations (1) in subarray beam 1 exceeds allowed 0 for AA0.5"
     )
 
     input_context.array_assembly = ValidationArrayAssembly.AA1
@@ -161,7 +161,7 @@ def test_validate_mccs_fails_for_multiple_subarray_beams(low_multiple_subarray_b
     result = validate_mccs(input_context)
 
     assert len(result) == 1
-    assert result[0].message == "Number of subarray beams 2 exceeds allowed 1 for AA0.5"
+    assert result[0].message == "Number of subarray beams (2) exceeds allowed 1 for AA0.5"
 
     input_context.array_assembly = ValidationArrayAssembly.AA1
     result = validate_mccs(input_context)
@@ -226,8 +226,8 @@ def test_validate_station_bandwidth_fails_for_invalid_setup(
     )
 
     result = validate_mccs(input_context)
-    assert len(result) == 1
+    assert len(result) == 2
     assert (
-        result[0].message == "At least one station is using more bandwidth (918.75 MHz) "
+        result[0].message == "At least one station in scan 1 is using more bandwidth (918.75 MHz) "
         "than is available (150.0 MHz) for array assembly AA2"
     )

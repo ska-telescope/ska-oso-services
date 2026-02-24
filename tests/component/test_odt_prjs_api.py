@@ -10,7 +10,7 @@ import json
 # pylint: disable=missing-timeout
 from http import HTTPStatus
 
-from ska_oso_pdm import Project
+from ska_oso_pdm import Project, SBDefinition
 
 from ..unit.util import TestDataFactory, assert_json_is_equal
 from . import ODT_URL
@@ -249,3 +249,94 @@ class TestProjectAPI:
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
         assert response.json()["detail"] == "The requested identifier 123 could not be found."
+
+    def test_mark_project_ready(
+        self, test_sbd: SBDefinition, test_project: Project, authrequests
+    ) -> dict:
+        """
+        Test we can set a project to status=Ready
+        """
+        prj_id = test_project.prj_id
+        ready_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/ready")
+        ready_response.raise_for_status()
+        payload1 = ready_response.json()
+        assert payload1["entity_id"] == prj_id
+        assert payload1["status"] == "Ready"
+
+        # And the SBD as well?
+        sbd_response = authrequests.get(f"{ODT_URL}/sbds/{test_sbd.sbd_id}/status")
+        sbd_response.raise_for_status()
+        payload2 = sbd_response.json()
+        assert payload2["entity_id"] == test_sbd.sbd_id
+        assert payload2["status"] == "Ready"
+
+        return payload1
+
+    def test_mark_project_repeated_calls_idempotent(
+        self, test_sbd: SBDefinition, test_project: Project, authrequests
+    ):
+        """
+        Test that repeatedly setting the project to status=Ready just makes it Ready.
+        """
+        first_result = self.test_mark_project_ready(test_sbd, test_project, authrequests)
+        url = "{}/prjs/{}/status/ready".format(ODT_URL, first_result["entity_id"])
+        resp = authrequests.put(url)
+        resp.raise_for_status()
+        second_result = resp.json()
+        # This is pseudo-idempotent, re-setting to the same status is harmless.
+        assert first_result["status"] == second_result["status"]
+        assert first_result["entity_id"] == second_result["entity_id"]
+        assert first_result["updated_by"] == second_result["updated_by"]
+        # BUT we do record that this status was updated again.
+        assert second_result["as_of"] > first_result["as_of"]
+
+    def test_mark_project_back_to_draft(
+        self, test_sbd: SBDefinition, test_project: Project, authrequests
+    ):
+        """
+        Test that the Project status can be changed back to Draft.
+        """
+        prj_id = self.test_mark_project_ready(test_sbd, test_project, authrequests)["entity_id"]
+
+        draft_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/draft")
+        draft_response.raise_for_status()
+        assert draft_response.json()["entity_id"] == prj_id
+        assert draft_response.json()["status"] == "Draft"
+
+    def test_mark_project_ready_without_sbd_fails(self, authrequests):
+        """
+        Test that marking a project as ready fails when it has no scheduling blocks
+        """
+        # Create a project (auto-creates with empty obs_blocks/sbd_ids)
+        prj_post_response = authrequests.post(
+            f"{ODT_URL}/prjs",
+            headers={"Content-type": "application/json"},
+        )
+        assert prj_post_response.status_code == HTTPStatus.OK
+        prj_id = prj_post_response.json()["prj_id"]
+
+        # Attempt to mark as ready without adding any SBDs
+        ready_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/ready")
+
+        assert ready_response.status_code == HTTPStatus.BAD_REQUEST
+        assert "no scheduling blocks" in ready_response.json()["detail"]
+        assert prj_id in ready_response.json()["detail"]
+
+    def test_mark_project_draft_without_sbd_fails(self, authrequests):
+        """
+        Test that marking a project as draft fails when it has no scheduling blocks
+        """
+        # Create a project (auto-creates with empty obs_blocks/sbd_ids)
+        prj_post_response = authrequests.post(
+            f"{ODT_URL}/prjs",
+            headers={"Content-type": "application/json"},
+        )
+        assert prj_post_response.status_code == HTTPStatus.OK
+        prj_id = prj_post_response.json()["prj_id"]
+
+        # Attempt to mark as draft without adding any SBDs
+        draft_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/draft")
+
+        assert draft_response.status_code == HTTPStatus.BAD_REQUEST
+        assert "no scheduling blocks" in draft_response.json()["detail"]
+        assert prj_id in draft_response.json()["detail"]
