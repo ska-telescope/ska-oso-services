@@ -22,7 +22,6 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
-from ska_oso_services.odt.api.sbds import _set_sbd_status_to_ready
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
@@ -220,8 +219,6 @@ def prjs_sbds_post(
         # Get the project again to resolve the new child updates
         prj = uow.prjs.get(prj.prj_id)
 
-    _set_sbd_status_to_ready(sbd.sbd_id, auth.user_id, oda)
-
     return {"sbd": sbd, "prj": prj}
 
 
@@ -293,9 +290,6 @@ def prjs_ob_generate_sbds(
 
         updated_prj = uow.prjs.get(prj.prj_id)
         uow.commit()
-
-    for sbd_id in updated_sbd_ids:
-        _set_sbd_status_to_ready(sbd_id, auth.user_id, oda)
 
     return updated_prj
 
