@@ -51,11 +51,9 @@ def test_get_list_panels_for_user(authrequests):
         assert panel_id in returned_ids, f"Missing panel {panel_id}"
 
 
-def test_generate_category_panels_multiple(authrequests):
-    resp = authrequests.post(
-        f"{PANELS_API_URL}/generate",
-        params={"param": "Galaxy"},
-    )
+def test_generate_panels(authrequests):
+    # First call: may create some or none (depends on suite state)
+    resp = authrequests.post(f"{PANELS_API_URL}/generate")
     assert resp.status_code == HTTPStatus.OK, resp.text
 
     data = resp.json()
@@ -74,33 +72,11 @@ def test_generate_category_panels_multiple(authrequests):
     assert created_count >= 0
 
     # Calling again should create nothing new
-    resp2 = authrequests.post(
-        f"{PANELS_API_URL}/generate",
-        params={"param": "Galaxy"},
-    )
+    resp2 = authrequests.post(f"{PANELS_API_URL}/generate")
     assert resp2.status_code == HTTPStatus.OK, resp2.text
     data2 = resp2.json()
     assert data2["created_count"] == 0
     assert data2["created_names"] == []
-
-
-def test_generate_science_verification_panel(authrequests):
-    resp = authrequests.post(
-        f"{PANELS_API_URL}/generate",
-        params={"param": "Science Verification"},
-    )
-    assert resp.status_code == HTTPStatus.OK, resp.text
-    panel_id = resp.json()
-    assert isinstance(panel_id, str), "Expected a single panel_id string for SV"
-    assert panel_id.startswith("panel-")
-
-    # Calling again should return the existing panel_id (no new creation)
-    resp2 = authrequests.post(
-        f"{PANELS_API_URL}/generate",
-        params={"param": "Science Verification"},
-    )
-    assert resp2.status_code == HTTPStatus.OK, resp2.text
-    assert resp2.json() == panel_id
 
 
 def test_put_panel_with_proposal_and_reviewers(authrequests):

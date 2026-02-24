@@ -247,7 +247,6 @@ def auto_assign_to_panel(
     response_model=Union[str, PanelBatchCreateResult],
 )
 def auto_create_panel(
-    param: str,
     auth: Annotated[
         AuthContext,
         Permissions(
@@ -257,20 +256,18 @@ def auto_create_panel(
     ],
 ) -> Union[str, PanelBatchCreateResult]:
     """
-    Creates panels based on the request.
+    Creates a list of panels for both Science Verification and Science Categories.
 
-    - If the request refers to the Science Verification panel (SV_NAME),
-      return its panel_id.
-      If it doesn't exist, create it and return the new panel_id (str).
-    - Otherwise, ensure all science-category panels in PANEL_NAME_POOL exist.
-      Create any missing ones, and return a summary:
-      {created_count, created_names}.
+    - Ensure 1 Science Verification panel exists; if not, create it.
+    - Ensure all science-category panels in PANEL_NAME_POOL exist.
+      Create any missing ones,
+    - Returns a summary of all newly created panels: {created_count, created_names}.
 
     Auto creates panels:
-    - If science verification (SV), create a single panel called
-      'Science Verification'.
-    - Else: Create panels for PANEL_NAME_POOL, which is the science categories
-        (to be pulled in from OSD when available) and return a summary:
+    - Create 1 panel called 'Science Verification'.
+    - Create panels for PANEL_NAME_POOL, which is the science categories
+        (to be pulled in from OSD when available)
+    - Then return a summary:
         {created_count, created_names}..
     Note: We will need to use cycle (Match the cycle in the
         proposal to the panel) here to detrrmine the appropriate panel to
@@ -279,30 +276,24 @@ def auto_create_panel(
         can span across cycles.
     """
 
-    name_raw = (param or "").strip()
-
     with oda.uow() as uow:
-        # --- Science Verification panel path ---
-        if SV_NAME.casefold() in name_raw.casefold():
-            existing = get_latest_entity_by_id(
-                uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id"
-            )
-            if existing:
-                return existing[0].panel_id  # already exists
 
+        created_names: list[str] = []
+
+        # --- Science Verification panel ---
+        # check if SV panel exist, create if not
+        existing = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id")
+        if not existing:
             sv_panel = Panel(
                 panel_id=generate_entity_id("panel"),
                 name=SV_NAME,
                 cycle="SKAO_2027_1",  # keep if this is a business rule for SV
             )
-            created = uow.panels.add(sv_panel, auth.user_id)
-            uow.commit()
-            logger.info("Science Verification panel created (panel_id=%s)", created.panel_id)
-            return created.panel_id
+            uow.panels.add(sv_panel, auth.user_id)
+            logger.info("Science Verification panel created (panel_id=%s)", sv_panel.panel_id)
+            created_names.append(SV_NAME)
 
-        # --- Science category panels path ---
-        created_names: list[str] = []
-
+        # --- Science category panels ---
         for panel_name in PANEL_NAME_POOL:
             existing = get_latest_entity_by_id(
                 uow.panels.query(CustomQuery(name=panel_name)), "panel_id"
@@ -331,6 +322,7 @@ def auto_create_panel(
         else:
             logger.info("No panels created; all already existed.")
 
+        # return the combined list of created panel names and count
         return PanelBatchCreateResult(
             created_count=len(created_names),
             created_names=created_names,

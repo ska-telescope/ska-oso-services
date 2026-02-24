@@ -23,6 +23,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 * Changes to `PUT /pht/panels/{panel_id}` to enforce proposal–panel exclusivity and correct proposal status transitions.
 * [BREAKING] Delete the unused `/sbds/validate` API in favour of the validation service `/validate/sbds`
 * [BUGFIX] Return CORS headers on errors
+* Updated `/pht/panels/generate` to generate both SV and proposals panels
 
 12.1.0
 ************
