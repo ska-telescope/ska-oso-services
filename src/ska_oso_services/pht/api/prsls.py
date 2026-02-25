@@ -66,7 +66,7 @@ def get_all_osd_cycles() -> list[OsdDataModel]:
     This data is made available for the PHT UI.
 
     Returns:
-        list[OsdDataModel]: a list of the OSD data for all cycles validated against the defined schema.
+        list[OsdDataModel]: a list of the OSD data for all cycles.
 
     """
     logger.debug("GET OSD data for all cycles")
