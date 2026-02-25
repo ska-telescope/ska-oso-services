@@ -4,6 +4,10 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+************
+* Adds `PUT /sbds/{sbd_id}/status/ready` and `PUT /sbds/{sbd_id}/status/draft`
+
 13.1.1
 ************
 * Further updates to the validation error messages
