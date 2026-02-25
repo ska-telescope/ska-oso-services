@@ -123,7 +123,6 @@ def sbds_post(
     with oda as uow:
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
         uow.commit()
-    _set_sbd_status_to_ready(updated_sbd.sbd_id, auth.user_id, oda)
     return updated_sbd
 
 
@@ -187,6 +186,56 @@ def sbds_delete(
         uow.sbds.delete(identifier)
         uow.commit()
     return Response(status_code=204)
+
+
+@router.put(
+    "/{identifier}/status/draft",
+    summary="Mark SB as Draft",
+    description="Updates the lifecycle status of the SB to DRAFT.",
+)
+def sbds_put_status_draft(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    sbd_id: str,
+    oda: UnitOfWork,
+) -> Status:
+    LOGGER.debug("PUT SBD sbds_put_status_draft sbd_id: %s", sbd_id)
+    with oda as uow:
+        sbd = uow.sbds.get(sbd_id)
+        validate(sbd)
+
+    with oda as uow:
+        uow.status.update_status(entity_id=sbd_id, status=SBDStatus.DRAFT, updated_by=auth.user_id)
+        uow.commit()
+    with oda as uow:
+        return uow.status.get_current_status(sbd_id)
+
+
+@router.put(
+    "/{identifier}/status/ready",
+    summary="Mark SB as Ready",
+    description="Updates the lifecycle status of the SB to READY.",
+)
+def sbds_put_status_ready(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    sbd_id: str,
+    oda: UnitOfWork,
+) -> Status:
+    LOGGER.debug("PUT SBD sbds_put_status_ready sbd_id: %s", sbd_id)
+    with oda as uow:
+        sbd = uow.sbds.get(sbd_id)
+        validate(sbd)
+
+    with oda as uow:
+        uow.status.update_status(entity_id=sbd_id, status=SBDStatus.READY, updated_by=auth.user_id)
+        uow.commit()
+    with oda as uow:
+        return uow.status.get_current_status(sbd_id)
 
 
 def validate(sbd: SBDefinition) -> ValidationResponse:

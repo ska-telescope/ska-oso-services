@@ -92,6 +92,25 @@ def test_sbd_status_get(authrequests, test_project):
     assert status_response.json()["status"] == "Draft"
 
 
+def test_sbd_status_update(authrequests, test_project):
+    """
+    Test that PUT /sbds/{identifier}/status updates the status of the SBD.
+    """
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
+    post_response = authrequests.post(
+        f"{ODT_URL}/sbds",
+        data=sbd.model_dump_json(),
+        headers={"Content-type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
+
+    sbd_id = post_response.json()["sbd_id"]
+    put_response = authrequests.put(f"{ODT_URL}/sbds/{sbd_id}/status")
+
+    assert put_response.status_code == HTTPStatus.OK, put_response.content
+    assert put_response.json()["status"] == "Ready"
+
+
 def test_sbd_post_then_put(authrequests, test_project):
     """
     Test that an entity POSTed to /sbds can then be updated with PUT /sbds/{identifier}
