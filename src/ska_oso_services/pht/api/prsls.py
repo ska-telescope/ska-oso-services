@@ -72,6 +72,16 @@ def get_all_osd_cycles() -> list[OsdDataModel]:
     logger.debug("GET OSD data for all cycles")
     cycle_list = get_osd_cycles()
 
+    if isinstance(cycle_list, tuple) and len(cycle_list) == 2:
+        err, _ = cycle_list
+        if isinstance(err, dict):
+            detail = err.get("detail") or err.get("message") or str(err)
+        elif isinstance(err, Exception):
+            detail = str(err) or err.__class__.__name__
+        else:
+            detail = str(err)
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=detail)
+
     cycle_data = []
 
     for cycle in cycle_list.get("cycles", []):

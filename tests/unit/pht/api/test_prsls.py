@@ -2,6 +2,7 @@
 Unit tests for ska_oso_pht_services.api
 """
 
+import copy
 import logging
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -82,6 +83,107 @@ class TestListAccess:
 
 
 class TestOSD:
+    mock_osd_data_cycle_1 = {
+        "observatory_policy": {
+            "cycle_number": 1,
+            "cycle_description": "Science Verification",
+            "cycle_information": {
+                "cycle_id": "SKAO_2027_1",
+                "proposal_open": "20260327T12:00:00.000Z",
+                "proposal_close": "20260512T15:00:00.000z",
+            },
+            "cycle_policies": {"normal_max_hours": 100.0},
+            "telescope_capabilities": {"Mid": "AA2", "Low": "AA2"},
+        },
+        "capabilities": {
+            "mid": {
+                "basic_capabilities": {
+                    "dish_elevation_limit_deg": 15.0,
+                    "receiver_information": [
+                        {
+                            "rx_id": "Band_1",
+                            "min_frequency_hz": 350000000.0,
+                            "max_frequency_hz": 1050000000.0,
+                        },
+                        {
+                            "rx_id": "Band_2",
+                            "min_frequency_hz": 950000000.0,
+                            "max_frequency_hz": 1760000000.0,
+                        },
+                        {
+                            "rx_id": "Band_3",
+                            "min_frequency_hz": 1650000000.0,
+                            "max_frequency_hz": 3050000000.0,
+                        },
+                        {
+                            "rx_id": "Band_4",
+                            "min_frequency_hz": 2800000000.0,
+                            "max_frequency_hz": 5180000000.0,
+                        },
+                        {
+                            "rx_id": "Band_5a",
+                            "min_frequency_hz": 4600000000.0,
+                            "max_frequency_hz": 8500000000.0,
+                        },
+                        {
+                            "rx_id": "Band_5b",
+                            "min_frequency_hz": 8300000000.0,
+                            "max_frequency_hz": 15400000000.0,
+                        },
+                    ],
+                },
+                "AA2": {
+                    "allowed_channel_count_range_max": [1],
+                    "allowed_channel_count_range_min": [2],
+                    "allowed_channel_width_values": [3],
+                    "available_receivers": [
+                        "Band_1",
+                        "Band_2",
+                        "Band_5a",
+                        "Band_5b",
+                    ],
+                    "number_ska_dishes": 64,
+                    "number_meerkat_dishes": 4,
+                    "number_meerkatplus_dishes": 0,
+                    "max_baseline_km": 110.0,
+                    "available_bandwidth_hz": 800000000,
+                    "number_channels": 14880,
+                    "cbf_modes": ["correlation", "pst", "pss"],
+                    "number_zoom_windows": 16,
+                    "number_zoom_channels": 14880,
+                    "number_pss_beams": 384,
+                    "number_pst_beams": 6,
+                    "ps_beam_bandwidth_hz": 800000000.0,
+                    "number_fsps": 4,
+                },
+            },
+            "low": {
+                "basic_capabilities": {
+                    "min_frequency_hz": 50000000.0,
+                    "max_frequency_hz": 350000000.0,
+                },
+                "AA2": {
+                    "number_stations": 64,
+                    "number_substations": 720,
+                    "number_beams": 8,
+                    "max_baseline_km": 40.0,
+                    "available_bandwidth_hz": 150000000.0,
+                    "channel_width_hz": 5400,
+                    "cbf_modes": ["vis", "pst", "pss"],
+                    "number_zoom_windows": 16,
+                    "number_zoom_channels": 1800,
+                    "number_pss_beams": 30,
+                    "number_pst_beams": 4,
+                    "number_vlbi_beams": 0,
+                    "ps_beam_bandwidth_hz": 118000000.0,
+                    "number_fsps": 10,
+                },
+            },
+        },
+    }
+    mock_osd_data_cycle_2 = copy.deepcopy(mock_osd_data_cycle_1)
+    mock_osd_data_cycle_2["observatory_policy"]["cycle_number"] = 10000
+
     @mock.patch(f"{PRSL_MODULE}.get_osd_data")
     def test_get_osd_data_fail(self, mock_get_osd, client):
         mock_get_osd.return_value = ({"detail": "some error"}, None)
@@ -94,105 +196,7 @@ class TestOSD:
 
     @mock.patch(f"{PRSL_MODULE}.get_osd_data")
     def test_get_osd_data_success(self, mock_get_osd, client):
-        expected = {
-            "observatory_policy": {
-                "cycle_number": 1,
-                "cycle_description": "Science Verification",
-                "cycle_information": {
-                    "cycle_id": "SKAO_2027_1",
-                    "proposal_open": "20260327T12:00:00.000Z",
-                    "proposal_close": "20260512T15:00:00.000z",
-                },
-                "cycle_policies": {"normal_max_hours": 100.0},
-                "telescope_capabilities": {"Mid": "AA2", "Low": "AA2"},
-            },
-            "capabilities": {
-                "mid": {
-                    "basic_capabilities": {
-                        "dish_elevation_limit_deg": 15.0,
-                        "receiver_information": [
-                            {
-                                "rx_id": "Band_1",
-                                "min_frequency_hz": 350000000.0,
-                                "max_frequency_hz": 1050000000.0,
-                            },
-                            {
-                                "rx_id": "Band_2",
-                                "min_frequency_hz": 950000000.0,
-                                "max_frequency_hz": 1760000000.0,
-                            },
-                            {
-                                "rx_id": "Band_3",
-                                "min_frequency_hz": 1650000000.0,
-                                "max_frequency_hz": 3050000000.0,
-                            },
-                            {
-                                "rx_id": "Band_4",
-                                "min_frequency_hz": 2800000000.0,
-                                "max_frequency_hz": 5180000000.0,
-                            },
-                            {
-                                "rx_id": "Band_5a",
-                                "min_frequency_hz": 4600000000.0,
-                                "max_frequency_hz": 8500000000.0,
-                            },
-                            {
-                                "rx_id": "Band_5b",
-                                "min_frequency_hz": 8300000000.0,
-                                "max_frequency_hz": 15400000000.0,
-                            },
-                        ],
-                    },
-                    "AA2": {
-                        "allowed_channel_count_range_max": [1],
-                        "allowed_channel_count_range_min": [2],
-                        "allowed_channel_width_values": [3],
-                        "available_receivers": [
-                            "Band_1",
-                            "Band_2",
-                            "Band_5a",
-                            "Band_5b",
-                        ],
-                        "number_ska_dishes": 64,
-                        "number_meerkat_dishes": 4,
-                        "number_meerkatplus_dishes": 0,
-                        "max_baseline_km": 110.0,
-                        "available_bandwidth_hz": 800000000,
-                        "number_channels": 14880,
-                        "cbf_modes": ["correlation", "pst", "pss"],
-                        "number_zoom_windows": 16,
-                        "number_zoom_channels": 14880,
-                        "number_pss_beams": 384,
-                        "number_pst_beams": 6,
-                        "ps_beam_bandwidth_hz": 800000000.0,
-                        "number_fsps": 4,
-                    },
-                },
-                "low": {
-                    "basic_capabilities": {
-                        "min_frequency_hz": 50000000.0,
-                        "max_frequency_hz": 350000000.0,
-                    },
-                    "AA2": {
-                        "number_stations": 64,
-                        "number_substations": 720,
-                        "number_beams": 8,
-                        "max_baseline_km": 40.0,
-                        "available_bandwidth_hz": 150000000.0,
-                        "channel_width_hz": 5400,
-                        "cbf_modes": ["vis", "pst", "pss"],
-                        "number_zoom_windows": 16,
-                        "number_zoom_channels": 1800,
-                        "number_pss_beams": 30,
-                        "number_pst_beams": 4,
-                        "number_vlbi_beams": 0,
-                        "ps_beam_bandwidth_hz": 118000000.0,
-                        "number_fsps": 10,
-                    },
-                },
-            },
-        }
-
+        expected = self.mock_osd_data_cycle_1
         mock_get_osd.return_value = expected
         cycle = 1
         response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
@@ -201,6 +205,38 @@ class TestOSD:
         res = response.json()
         assert res["observatory_policy"]["cycle_number"] == 1
         assert res["observatory_policy"]["cycle_information"]["cycle_id"] == "SKAO_2027_1"
+
+    @mock.patch(f"{PRSL_MODULE}.get_osd_cycles")
+    def test_get_osd_cycles_fail(self, mock_get_osd, client):
+        mock_get_osd.return_value = ({"detail": "some error"}, None)
+        response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/cycles")
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        res = response.json()
+        assert {"detail": "some error"} == res
+
+    @mock.patch(f"{PRSL_MODULE}.get_osd_data")
+    @mock.patch(f"{PRSL_MODULE}.get_osd_cycles")
+    def test_get_osd_cycles_success(self, mock_get_osd_cycles, mock_get_osd_data, client):
+
+        mock_get_osd_cycles.return_value = {"cycles": [1, 10000]}
+
+        mock_get_osd_data.side_effect = [
+            self.mock_osd_data_cycle_1,
+            self.mock_osd_data_cycle_2,
+        ]
+
+        response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/cycles")
+
+        assert response.status_code == HTTPStatus.OK
+        data = response.json()
+
+        assert isinstance(data, list)
+        assert len(data) == 2
+        assert data[0]["observatory_policy"]["cycle_number"] == 1
+        assert data[1]["observatory_policy"]["cycle_number"] == 10000
+
+        assert mock_get_osd_data.call_count == 2
 
 
 class TestProposalAPI:

@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 13.1.1
 ************
 * Further updates to the validation error messages
+* Updates to `POST /panels/generate` to generate both SV panel and Science Category panels
+* Added `GET /prsls/osd/cycles` 
 
 13.1.0
 ************
