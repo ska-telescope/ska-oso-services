@@ -29,7 +29,7 @@ dependencies = [
     "pydantic>=2.9",
     "fastapi[standard]>=0.115.8",
     "astroquery==0.4.9",
-    "ska-ost-osd==5.2.0",
+    "ska-ost-osd==5.2.1",
     "ska-telmodel>=1.24.3",
     "aiosmtplib>=4.0.1",
     "boto3>=1.38.13",

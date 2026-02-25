@@ -13,7 +13,7 @@ from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubb
 from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
 from ska_ost_osd.osd.common.error_handling import OSDModelError
 from ska_ost_osd.osd.models.models import OSDQueryParams
-from ska_ost_osd.osd.routers.api import get_osd
+from ska_ost_osd.osd.routers.api import get_cycle_list, get_osd
 
 from ska_oso_services.common.error_handling import OSDError
 from ska_oso_services.common.model import AppModel
@@ -203,6 +203,23 @@ def _get_low_telescope_configuration() -> LowConfiguration:
     return LowConfiguration(
         frequency_band=LowFrequencyBand(**receiver_information), subarrays=subarrays
     )
+
+
+@cache
+def get_osd_cycles():
+    """
+    Wrapper function for `get_cycle_list` that fetches osd data
+
+    This function calls `get_cycle_list`,
+    and returns the result data. If `get_cycle_list` raises an `OSDModelError` or
+    `ValueError`, this function wraps and raises it as an `OSDError`
+    """
+    try:
+        osd_data = get_cycle_list()
+    except (OSDModelError, ValueError) as error:
+        raise OSDError(error)
+    data = osd_data.model_dump()["result_data"] if hasattr(osd_data, "model_dump") else osd_data
+    return data
 
 
 @cache

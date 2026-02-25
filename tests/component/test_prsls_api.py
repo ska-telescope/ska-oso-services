@@ -32,6 +32,15 @@ def test_get_osd_data_success(authrequests):
     assert res["observatory_policy"]["cycle_information"]["cycle_id"] == "SKAO_2027_1"
 
 
+def test_get_osd_cycles_success(authrequests):
+    response = authrequests.get(f"{PHT_URL}/prsls/osd/cycles")
+    assert response.status_code == HTTPStatus.OK
+
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) > 0  # ensures OSD is reachable and cycles are returned
+
+
 def test_create_and_get_proposal(authrequests):
     """
     Integration test for the POST /prsls/create endpoint
