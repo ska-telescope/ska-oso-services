@@ -6,9 +6,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+* Adds `PUT /sbds/{sbd_id}/status/ready` and `PUT /sbds/{sbd_id}/status/draft`
 * Updates to `POST /panels/generate` to generate both SV panel and Science Category panels
-* Added `GET /prsls/osd/cycles` 
 * Updated OSD to v5.2.1
+* Added `GET /prsls/osd/cycles` 
 
 13.1.1
 ************

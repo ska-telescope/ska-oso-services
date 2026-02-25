@@ -7,6 +7,7 @@ from unittest import mock
 
 import pytest
 from ska_db_oda.repository.domain import ODANotFound
+from ska_oso_pdm.entity_status_history import SBDStatus
 
 from tests.unit.conftest import ODT_BASE_API_URL
 from tests.unit.util import (
@@ -293,6 +294,70 @@ class TestSBDefinitionAPI:
 
             assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
             assert response.json() == {"detail": "OSError('test error')"}
+
+
+class TestSBDefinitionStatusUpdate:
+    def test_sbds_status_set_ready(self, client_with_uow_mock):
+        """
+        Check that PUT /sbds/{identifier}/status/ready calls update_status with READY
+        and returns the updated Status.
+        """
+        client, uow_mock = client_with_uow_mock
+        status = {"entity_id": "sbd-1234", "status": "Ready", "updated_by": "TestUser"}
+        uow_mock.status.get_current_status.return_value = status
+
+        response = client.put(f"{SBDS_API_URL}/sbd-1234/status/ready")
+
+        assert response.status_code == HTTPStatus.OK
+        uow_mock.status.update_status.assert_called_once_with(
+            entity_id="sbd-1234",
+            status=SBDStatus.READY,
+            updated_by=mock.ANY,
+        )
+        assert response.json()["status"] == "Ready"
+
+    def test_sbds_status_set_ready_not_found(self, client_with_uow_mock):
+        """
+        Check that PUT /sbds/{identifier}/status/ready returns 404 when identifier not in ODA.
+        """
+        client, uow_mock = client_with_uow_mock
+        uow_mock.status.update_status.side_effect = ODANotFound(identifier="sbd-1234")
+
+        response = client.put(f"{SBDS_API_URL}/sbd-1234/status/ready")
+
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
+
+    def test_sbds_status_set_draft(self, client_with_uow_mock):
+        """
+        Check that PUT /sbds/{identifier}/status/draft calls update_status with DRAFT
+        and returns the updated Status.
+        """
+        client, uow_mock = client_with_uow_mock
+        status = {"entity_id": "sbd-1234", "status": "Draft", "updated_by": "TestUser"}
+        uow_mock.status.get_current_status.return_value = status
+
+        response = client.put(f"{SBDS_API_URL}/sbd-1234/status/draft")
+
+        assert response.status_code == HTTPStatus.OK
+        uow_mock.status.update_status.assert_called_once_with(
+            entity_id="sbd-1234",
+            status=SBDStatus.DRAFT,
+            updated_by=mock.ANY,
+        )
+        assert response.json()["status"] == "Draft"
+
+    def test_sbds_status_set_draft_not_found(self, client_with_uow_mock):
+        """
+        Check that PUT /sbds/{identifier}/status/draft returns 404 when identifier not in ODA.
+        """
+        client, uow_mock = client_with_uow_mock
+        uow_mock.status.update_status.side_effect = ODANotFound(identifier="sbd-1234")
+
+        response = client.put(f"{SBDS_API_URL}/sbd-1234/status/draft")
+
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
 
 
 class TestSBDefinitionDelete:

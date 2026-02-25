@@ -123,7 +123,7 @@ def sbds_post(
     with oda as uow:
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
         uow.commit()
-    _set_sbd_status_to_ready(updated_sbd.sbd_id, auth.user_id, oda)
+
     return updated_sbd
 
 
@@ -200,12 +200,53 @@ def validate(sbd: SBDefinition) -> ValidationResponse:
     return ValidationResponse(valid=valid, messages=validate_result)
 
 
-def _set_sbd_status_to_ready(sbd_id: str, user: str, oda: UnitOfWork):
+@router.put(
+    "/{identifier}/status/ready",
+    summary="Set SBD status to Ready",
+)
+def sbds_status_set_ready(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    identifier: str,
+    oda: UnitOfWork,
+) -> Status:
+    """
+    Sets the status of the SchedulingBlockDefinition with the given identifier to Ready.
+    Returns the updated Status.
+    """
+    LOGGER.debug("PUT SBD status ready sbd_id: %s", identifier)
     with oda as uow:
-        # The status lifecycle isn't fully in place as of PI28, we set the default
-        # status to READY as this is required to be executed in the OET UI
         uow.status.update_status(
-            entity_id=sbd_id,
+            entity_id=identifier,
             status=SBDStatus.READY,
-            updated_by=user,
+            updated_by=auth.user_id,
         )
+        return uow.status.get_current_status(entity_id=identifier)
+
+
+@router.put(
+    "/{identifier}/status/draft",
+    summary="Set SBD status to Draft",
+)
+def sbds_status_set_draft(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    identifier: str,
+    oda: UnitOfWork,
+) -> Status:
+    """
+    Sets the status of the SchedulingBlockDefinition with the given identifier to Draft.
+    Returns the updated Status.
+    """
+    LOGGER.debug("PUT SBD status draft sbd_id: %s", identifier)
+    with oda as uow:
+        uow.status.update_status(
+            entity_id=identifier,
+            status=SBDStatus.DRAFT,
+            updated_by=auth.user_id,
+        )
+        return uow.status.get_current_status(entity_id=identifier)
