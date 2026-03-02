@@ -9,6 +9,7 @@ to a deployment of ska-oso-services in the same cluster
 from http import HTTPStatus
 
 import pytest
+from ska_ser_skuid import EntityType, mint_skuid
 
 from ..unit.util import TestDataFactory, assert_json_is_equal
 from . import ODT_URL
@@ -27,16 +28,17 @@ def test_sbd_create(authrequests):
 
 
 def test_post_without_ob_ref_fails(authrequests):
+    ob_not_in_db = mint_skuid(EntityType.OB)
     response = authrequests.post(
         f"{ODT_URL}/sbds",
-        data=TestDataFactory.sbdefinition(sbd_id=None, ob_ref="not an ob").model_dump_json(),
+        data=TestDataFactory.sbdefinition(sbd_id=None, ob_ref=ob_not_in_db).model_dump_json(),
         headers={"Content-type": "application/json"},
     )
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     result = response.json()
 
-    assert result["detail"] == "The referenced identifier not an ob could not be found"
+    assert result["detail"] == f"The referenced identifier {ob_not_in_db} could not be found"
 
 
 @pytest.mark.xray("XTP-34548")
@@ -135,11 +137,13 @@ def test_sbd_get_not_found(authrequests):
     Test that the GET /sbds/{identifier} path returns
     404 when the SBD is not found in the ODA
     """
+    id_not_in_db = mint_skuid(EntityType.SBD)
+    response = authrequests.get(f"{ODT_URL}/sbds/{id_not_in_db}")
 
-    response = authrequests.get(f"{ODT_URL}/sbds/123")
-
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json()["detail"] == "The requested identifier 123 could not be found."
+    assert response.status_code == HTTPStatus.NOT_FOUND, response.content
+    assert (
+        response.json()["detail"] == f"The requested identifier {id_not_in_db} could not be found."
+    )
 
 
 def test_sbd_put_not_found(authrequests):
@@ -147,11 +151,13 @@ def test_sbd_put_not_found(authrequests):
     Test that the GET /sbds/{identifier} path returns
     404 when the SBD is not found in the ODA
     """
-
-    response = authrequests.get(f"{ODT_URL}/sbds/123")
+    id_not_in_db = mint_skuid(EntityType.SBD)
+    response = authrequests.get(f"{ODT_URL}/sbds/{id_not_in_db}")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json()["detail"] == "The requested identifier 123 could not be found."
+    assert (
+        response.json()["detail"] == f"The requested identifier {id_not_in_db} could not be found."
+    )
 
 
 def test_sbd_put_validation_error(authrequests):
@@ -161,7 +167,7 @@ def test_sbd_put_validation_error(authrequests):
     """
 
     response = authrequests.put(
-        f"{ODT_URL}/sbds/sbd-mvp01-20200325-00001",
+        f"{ODT_URL}/sbds/sbd-tcomp01test",
         data="""{"telescope": "not_a_telescope"}""",
         headers={"Content-type": "application/json"},
     )
@@ -196,7 +202,7 @@ def test_sbd_delete_not_found(authrequests):
     """
     Test that DELETE /sbds/{identifier} returns 404 if SBD not found.
     """
-    bad_sbd_id = "not-a-sbd"
+    bad_sbd_id = mint_skuid(EntityType.SBD)
     delete_response = authrequests.delete(f"{ODT_URL}/sbds/{bad_sbd_id}")
     assert delete_response.status_code == HTTPStatus.NOT_FOUND
 

@@ -20,9 +20,8 @@ def test_get_list_panels_for_user(authrequests):
     created_ids = []
 
     # Create 2 panels with unique panel_ids
-    for i in range(2):
-        panel_id = f"panel-test-{uuid.uuid4().hex[:8]}"
-        panel = TestDataFactory.panel_basic(panel_id=panel_id, name=f"Star{i + 1}", cycle="2024A")
+    for _ in range(2):
+        panel = TestDataFactory.panel_basic(cycle="2024A")
         panel_json = panel.model_dump_json()
 
         response = authrequests.post(
@@ -90,8 +89,7 @@ def test_put_panel_with_proposal_and_reviewers(authrequests):
     prsl_id = proposal_response.json()["prsl_id"]
 
     # Create a panel to update
-    panel_id = f"panel-test-put-{uuid.uuid4().hex[:8]}"
-    panel = TestDataFactory.panel_basic(panel_id=panel_id, name="PutPanel", cycle="2024A")
+    panel = TestDataFactory.panel_basic(cycle="2024A")
     panel_response = authrequests.post(
         f"{PANELS_API_URL}/create",
         data=panel.model_dump_json(),
@@ -117,7 +115,6 @@ def test_put_panel_with_proposal_and_reviewers(authrequests):
 
     panel_update = TestDataFactory.panel_with_assignment(
         panel_id=created_panel_id,
-        name="PutPanel Updated",
         sci_reviewers=[sci_reviewer],
         tech_reviewers=[tech_reviewer],
         proposals=[proposal_assignment],

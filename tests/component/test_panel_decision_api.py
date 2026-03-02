@@ -7,14 +7,13 @@ to a deployment of ska-oso-services in the same cluster
 
 # pylint: disable=missing-timeout
 import json
-import uuid
 from http import HTTPStatus
 
-from ..unit.util import VALID_NEW_PROPOSAL, VALID_PANEL_DECISION, TestDataFactory
+from ..unit.util import TestDataFactory
 from . import PHT_URL
 
 
-def test_create_and_get_panel_decision(authrequests):
+def test_create_and_get_panel_decision(authrequests, test_panel_id):
     """
     Integration test for the POST /panel/decision/ endpoint
     and GET /panel/decision/{decision_id}.
@@ -30,7 +29,9 @@ def test_create_and_get_panel_decision(authrequests):
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     prsl_id = post_response.json()["prsl_id"]
 
-    panel_decision_json = TestDataFactory.panel_decision(prsl_id=prsl_id).model_dump_json()
+    panel_decision_json = TestDataFactory.panel_decision(
+        prsl_id=prsl_id, panel_id=test_panel_id
+    ).model_dump_json()
     # POST using JSON string
     post_response = authrequests.post(
         f"{PHT_URL}/panel/decision/create",
@@ -58,7 +59,7 @@ def test_create_and_get_panel_decision(authrequests):
     assert actual_payload == expected_payload
 
 
-def test_panel_decision_create_then_put(authrequests):
+def test_panel_decision_create_then_put(authrequests, test_panel_id):
     """
     Test that an entity POSTed to /panel-decision/create
     can then be updated with PUT /panel-decision/{identifier},
@@ -75,9 +76,10 @@ def test_panel_decision_create_then_put(authrequests):
     prsl_id = post_response.json()["prsl_id"]
 
     # POST a new proposal
+    decision = TestDataFactory.panel_decision(prsl_id=prsl_id, panel_id=test_panel_id)
     post_response = authrequests.post(
         f"{PHT_URL}/panel/decision/create",
-        data=TestDataFactory.panel_decision(prsl_id=prsl_id).model_dump_json(),
+        data=decision.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
 
@@ -85,8 +87,7 @@ def test_panel_decision_create_then_put(authrequests):
 
     # The POST endpoint returns only the decision_idas a string
     returned_decision_id = post_response.json()
-    expected_decision_id = json.loads(VALID_PANEL_DECISION)["decision_id"]
-    assert returned_decision_id == expected_decision_id
+    assert returned_decision_id == decision.decision_id
 
     # GET proposal to fetch latest state
     get_response = authrequests.get(f"{PHT_URL}/panel/decision/{returned_decision_id}")
@@ -109,27 +110,21 @@ def test_panel_decision_create_then_put(authrequests):
     assert put_response.json()["metadata"]["version"] == initial_version + 1
 
 
-def test_panel_decision_put_decided_updates_proposal(authrequests):
+def test_panel_decision_put_decided_updates_proposal(authrequests, test_panel_id):
     # create a new proposal
-    data = json.loads(VALID_NEW_PROPOSAL)
-    data["prsl_id"] = f"{data.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
-
     post_prsl_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
-        data=json.dumps(data),
+        data=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
 
     prsl_id = post_prsl_response.json()["prsl_id"]
 
     # create a new decision with prsl_id
-    data_decision = json.loads(VALID_PANEL_DECISION)
-    data_decision["prsl_id"] = prsl_id
-    data_decision["decision_id"] = "test-put-decided-updates-proposal"
-
+    decision = TestDataFactory.panel_decision(prsl_id=prsl_id, panel_id=test_panel_id)
     post_decision_response = authrequests.post(
         f"{PHT_URL}/panel/decision/create",
-        data=json.dumps(data_decision),
+        data=decision.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
 
@@ -139,8 +134,6 @@ def test_panel_decision_put_decided_updates_proposal(authrequests):
     get_decision_response = authrequests.get(f"{PHT_URL}/panel/decision/{decision_id}")
 
     originaldecision = get_decision_response.json()
-
-    print(originaldecision)
 
     initial_version = originaldecision["metadata"]["version"]
 
@@ -166,35 +159,27 @@ def test_panel_decision_put_decided_updates_proposal(authrequests):
     assert get_proposal_after_updated.json()["status"] == "accepted"
 
 
-def test_panel_decision_put_not_decided_not_updating_proposal(authrequests):
+def test_panel_decision_put_not_decided_not_updating_proposal(authrequests, test_panel_id):
     # create a new proposal
-    data_proposal = json.loads(VALID_NEW_PROPOSAL)
-    data_proposal["prsl_id"] = (
-        f"{data_proposal.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
-    )
-
+    proposal = TestDataFactory.proposal()
     post_prsl_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
-        data=json.dumps(data_proposal),
+        data=proposal.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
 
     prsl_id = post_prsl_response.json()["prsl_id"]
 
     # create a new decision with prsl_id
-    data_decision = json.loads(VALID_PANEL_DECISION)
-    data_decision["prsl_id"] = prsl_id
-    data_decision["decision_id"] = "test-put-not-decided-not-updating-proposal"
+    decision = TestDataFactory.panel_decision(prsl_id=prsl_id, panel_id=test_panel_id)
 
     post_decision_response = authrequests.post(
         f"{PHT_URL}/panel/decision/create",
-        data=json.dumps(data_decision),
+        data=decision.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
 
     decision_id = post_decision_response.json()
-
-    print(decision_id)
 
     # GET decision to fetch latest state
     get_decision_response = authrequests.get(f"{PHT_URL}/panel/decision/{decision_id}")
@@ -222,10 +207,10 @@ def test_panel_decision_put_not_decided_not_updating_proposal(authrequests):
     get_proposal_after_updated = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
 
     # Confirm proposal status not updated
-    assert get_proposal_after_updated.json()["status"] == data_proposal["status"]
+    assert get_proposal_after_updated.json()["status"] == proposal.status
 
 
-def test_get_list_panel_decision_for_user(authrequests):
+def test_get_list_panel_decision_for_user(authrequests, test_panel_id):
     """
     Integration test:
     - Create multiple reviews
@@ -246,13 +231,11 @@ def test_get_list_panel_decision_for_user(authrequests):
         )
         assert post_response.status_code == HTTPStatus.OK, post_response.text
         prsl_id = post_response.json()["prsl_id"]
-        decision_id = f"pnld-test-{uuid.uuid4().hex[:8]}"
-        proposal = TestDataFactory.panel_decision(decision_id=decision_id, prsl_id=prsl_id)
-        proposal_json = proposal.model_dump_json()
+        panel_decision = TestDataFactory.panel_decision(prsl_id=prsl_id, panel_id=test_panel_id)
 
         response = authrequests.post(
             f"{PHT_URL}/panel/decision/create",
-            data=proposal_json,
+            data=panel_decision.model_dump_json(),
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == HTTPStatus.OK, response.content

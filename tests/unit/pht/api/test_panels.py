@@ -24,11 +24,11 @@ class TestPanelsUpdateAPI:
         If body.panel_id != path panel_id -> 422.
         """
         body_panel = TestDataFactory.panel(
-            panel_id="panel-ABC",
+            panel_id="pnl-tabc",
             name="Cosmology",
         )
 
-        path_id = "panel-XYZ"
+        path_id = "pnl-txyz"
 
         resp = client.put(
             f"{PANELS_API_URL}/{path_id}",
@@ -48,7 +48,7 @@ class TestPanelsUpdateAPI:
         uow_mock = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow_mock
 
-        panel_id = "panel-test-123"
+        panel_id = "pnl-123"
         panel_obj = TestDataFactory.panel(
             panel_id=panel_id,
             name="Stargazers",
@@ -92,13 +92,13 @@ class TestPanelsUpdateAPI:
 
         assigned_on = datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc)
 
-        tech = TestDataFactory.reviewer_assignment(reviewer_id="rev-001", assigned_on=assigned_on)
+        tech = TestDataFactory.reviewer_assignment(reviewer_id="rvw-001", assigned_on=assigned_on)
         prop_assign = TestDataFactory.proposal_assignment(
-            prsl_id="prsl-001", assigned_on=assigned_on
+            prsl_id="prp-001", assigned_on=assigned_on
         )
 
         panel_body = TestDataFactory.panel_with_assignment(
-            panel_id="panel-123",
+            panel_id="pnl-123",
             name="Cosmology",
             sci_reviewers=[],
             tech_reviewers=[tech],
@@ -121,8 +121,8 @@ class TestPanelsUpdateAPI:
         # One technical review created
         uow.rvws.add.assert_called_once()
         created_review = uow.rvws.add.call_args[0][0]
-        assert getattr(created_review, "prsl_id", None) == "prsl-001"
-        assert getattr(created_review, "reviewer_id", None) == "rev-001"
+        assert getattr(created_review, "prsl_id", None) == "prp-001"
+        assert getattr(created_review, "reviewer_id", None) == "rvw-001"
 
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
@@ -153,9 +153,9 @@ class TestPanelsUpdateAPI:
 
         assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
         tech = TestDataFactory.reviewer_assignment(reviewer_id="rev-001", assigned_on=assigned_on)
-        prop = TestDataFactory.proposal_assignment(prsl_id="prsl-001", assigned_on=assigned_on)
+        prop = TestDataFactory.proposal_assignment(prsl_id="prp-t001test", assigned_on=assigned_on)
         panel_body = TestDataFactory.panel_with_assignment(
-            panel_id="panel-123",
+            panel_id="pnl-t123",
             name="Cosmology",
             sci_reviewers=[],
             tech_reviewers=[tech],
@@ -196,16 +196,16 @@ class TestPanelsUpdateAPI:
         mock_uow().__enter__.return_value = uow
 
         existing_decision_ref = SimpleNamespace(
-            panel_id="panel-existing",
+            panel_id="pnl-texist",
             decision_id="pnld-001",
             cycle="science verification",
-            prsl_id="prsl-001",
+            prsl_id="prp-t001test",
             metadata=SimpleNamespace(version=1),
         )
         mock_get_latest_ops.return_value = [existing_decision_ref]
 
         panel_body = TestDataFactory.panel_with_assignment(
-            panel_id="panel-existing",
+            panel_id="pnl-texist",
             name="Cosmology",
         )
 
@@ -253,9 +253,9 @@ class TestPanelsUpdateAPI:
         sci = TestDataFactory.reviewer_assignment(
             reviewer_id="rev-sci-001", assigned_on=assigned_on
         )
-        prop = TestDataFactory.proposal_assignment(prsl_id="prsl-001", assigned_on=assigned_on)
+        prop = TestDataFactory.proposal_assignment(prsl_id="prp-t001test", assigned_on=assigned_on)
         panel_body = TestDataFactory.panel_with_assignment(
-            panel_id="panel-123",
+            panel_id="pnl-t123",
             name="Cosmology",
             sci_reviewers=[sci],
             tech_reviewers=[],
@@ -276,7 +276,7 @@ class TestPanelsUpdateAPI:
 
         created = uow.pnlds.add.call_args[0][0]
         assert created.decision_id == "pnld-0001"
-        assert created.prsl_id == "prsl-001"
+        assert created.prsl_id == "prp-t001test"
         assert mock_gen_id_ops.call_count == 2
 
         uow.panels.add.assert_called_once()
@@ -309,9 +309,9 @@ class TestPanelsUpdateAPI:
         sci = TestDataFactory.reviewer_assignment(
             reviewer_id="rev-sci-001", assigned_on=assigned_on
         )
-        prop = TestDataFactory.proposal_assignment(prsl_id="prsl-001", assigned_on=assigned_on)
+        prop = TestDataFactory.proposal_assignment(prsl_id="prp-t001test", assigned_on=assigned_on)
         panel_body = TestDataFactory.panel_with_assignment(
-            panel_id="panel-123",
+            panel_id="pnl-t123",
             name="Cosmology",
             sci_reviewers=[sci],
             tech_reviewers=[],
@@ -331,7 +331,7 @@ class TestPanelsUpdateAPI:
 
         created = uow.rvws.add.call_args[0][0]
         assert created.review_id == "rvs-sci-0001"
-        assert created.prsl_id == "prsl-001"
+        assert created.prsl_id == "prp-t001test"
         assert created.reviewer_id == "rev-sci-001"
 
         uow.panels.add.assert_called_once()
@@ -350,7 +350,6 @@ class TestPanelsUpdateAPI:
     def test_update_panel_skips_creating_science_review_if_already_exists_v1(
         self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
     ):
-
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
         mock_gen_id_ops.return_value = "pnld-123"
@@ -368,9 +367,9 @@ class TestPanelsUpdateAPI:
         sci = TestDataFactory.reviewer_assignment(
             reviewer_id="rev-sci-001", assigned_on=assigned_on
         )
-        prop = TestDataFactory.proposal_assignment(prsl_id="prsl-001", assigned_on=assigned_on)
+        prop = TestDataFactory.proposal_assignment(prsl_id="prp-t001test", assigned_on=assigned_on)
         panel_body = TestDataFactory.panel_with_assignment(
-            panel_id="panel-123",
+            panel_id="pnl-t123",
             name="Cosmology",
             sci_reviewers=[sci],
             tech_reviewers=[],
@@ -400,8 +399,8 @@ class TestPanelsUpdateAPI:
         uow_mock = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow_mock
 
-        body_panel_id = "panel-body-abc"
-        path_panel_id = "panel-path-xyz"
+        body_panel_id = "pnl-tbody"
+        path_panel_id = "pnl-tpath"
         panel_obj = TestDataFactory.panel(
             panel_id=body_panel_id,
             name="Mismatch",
@@ -424,7 +423,7 @@ class TestPanelsAPI:
     @mock.patch(f"{MODULE}.oda.uow")
     def test_panels_post_success(self, mock_uow, client):
         panel = TestDataFactory.panel_basic(
-            panel_id=f"panel-test-{uuid.uuid4().hex[:8]}", name="Galaxy"
+            panel_id=f"pnl-test-{uuid.uuid4().hex[:8]}", name="Galaxy"
         )
 
         uow_mock = mock.MagicMock()
@@ -442,9 +441,7 @@ class TestPanelsAPI:
 
     @mock.patch(f"{MODULE}.oda.uow")
     def test_panels_post_duplicate_name(self, mock_uow, client):
-        panel = TestDataFactory.panel_basic(
-            name="dup name", panel_id="panel-dup-name-20250616-00001"
-        )
+        panel = TestDataFactory.panel_basic(name="dup name", panel_id="pnl-tdupname")
 
         uow_mock = mock.MagicMock()
         uow_mock.panels.add.side_effect = UniqueConstraintViolation("You name is duplicated")
@@ -630,9 +627,9 @@ class TestPanelsGenerateAPI:
         )
 
         mock_get_latest.side_effect = [
-            [SimpleNamespace(panel_id="panel-existing-sv")],  # SV exists
-            [SimpleNamespace(panel_id="panel-cosmology")],  # Cosmology exists
-            [SimpleNamespace(panel_id="panel-stars")],  # Stars exist
+            [SimpleNamespace(panel_id="pnl-tsv")],  # SV exists
+            [SimpleNamespace(panel_id="pnl-tcosmology")],  # Cosmology exists
+            [SimpleNamespace(panel_id="pnl-tstars")],  # Stars exist
         ]
 
         resp = client.post(f"{PANELS_API_URL}/generate")
@@ -659,7 +656,7 @@ class TestPanelsGenerateAPI:
 
         # Mock return for SV creation
         uow.panels.add.return_value = SimpleNamespace(
-            panel_id="panel-sv-new",
+            panel_id="pnl-tsvnew",
             name="Science Verification",
         )
 
@@ -702,14 +699,14 @@ class TestPanelsAssignmentsAPI:
         # 2) existing SV panel lookup
         mock_get_latest.side_effect = [
             [],  # no submitted proposals
-            [SimpleNamespace(panel_id="panel-sv", sci_reviewers=[], tech_reviewers=[])],
+            [SimpleNamespace(panel_id="pnl-tsv", sci_reviewers=[], tech_reviewers=[])],
         ]
 
         resp = client.post(
             f"{PANELS_API_URL}/assignments", params={"param": "Science Verification"}
         )
         assert resp.status_code == HTTPStatus.OK, resp.text
-        assert resp.json() == "panel-sv"
+        assert resp.json() == "pnl-tsv"
 
         # No commits, no status updates
         uow.panels.add.assert_not_called()
@@ -742,19 +739,19 @@ class TestPanelsAssignmentsAPI:
         mock_uow.return_value.__enter__.return_value = uow
 
         # Two submitted proposals
-        proposal1 = SimpleNamespace(prsl_id="p1")
-        proposal2 = SimpleNamespace(prsl_id="p2")
+        proposal1 = SimpleNamespace(prsl_id="prp-tp1")
+        proposal2 = SimpleNamespace(prsl_id="prp-tp2")
         submitted_refs = [proposal1, proposal2]
 
         mock_get_latest.side_effect = [
             submitted_refs,
-            [SimpleNamespace(panel_id="panel-sv")],
+            [SimpleNamespace(panel_id="pnl-tsv")],
         ]
 
         reviewer_id = REVIEWERS["sci_reviewers"][0]["id"]
 
         sv_panel = TestDataFactory.panel_with_assignment(
-            panel_id="panel-sv",
+            panel_id="pnl-tsv",
             name="Science Verification",
             sci_reviewers=[
                 {
@@ -797,7 +794,7 @@ class TestPanelsAssignmentsAPI:
 
         mock_build_resp.return_value = [
             {
-                "panel_id": "panel-sv",
+                "panel_id": "pnl-tsv",
                 "name": "Science Verification",
                 "proposals_added": 1,
                 "total_proposals_after": 2,
@@ -818,7 +815,7 @@ class TestPanelsAssignmentsAPI:
         assert mock_ensure_status.call_count == 1
         args, _ = mock_ensure_status.call_args
         ids_iter = args[2]
-        assert set(list(ids_iter)) == {"p2"}
+        assert set(list(ids_iter)) == {"prp-tp2"}
 
         mock_build_resp.assert_called_once()
         passed_map = mock_build_resp.call_args[0][0]
@@ -856,7 +853,7 @@ class TestPanelsAssignmentsAPI:
         # 3) lookup "Stars" panel
         mock_get_latest.side_effect = [
             [SimpleNamespace(prsl_id="c1"), SimpleNamespace(prsl_id="s1")],  # SUBMITTED
-            [SimpleNamespace(panel_id="panel-cosmo")],  # Cosmology exists
+            [SimpleNamespace(panel_id="pnl-tcosmo")],  # Cosmology exists
             [],  # Stars missing
         ]
 
@@ -866,7 +863,7 @@ class TestPanelsAssignmentsAPI:
         }
 
         cosmo_panel = SimpleNamespace(
-            panel_id="panel-cosmo",
+            panel_id="pnl-tcosmo",
             name="Cosmology",
             proposals=[],
             sci_reviewers=["keep-sci"],
@@ -878,7 +875,7 @@ class TestPanelsAssignmentsAPI:
 
         mock_build_resp.return_value = [
             {
-                "panel_id": "panel-cosmo",
+                "panel_id": "pnl-tcosmo",
                 "name": "Cosmology",
                 "proposals_added": 1,
                 "total_proposals_after": 1,
@@ -987,7 +984,7 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "p1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
                 )
             ],
         )
@@ -999,10 +996,10 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "p1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
                 ),
                 TestDataFactory.proposal_assignment(
-                    "p2", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+                    "prp-tp2", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
                 ),
             ],
         )
@@ -1021,11 +1018,11 @@ class TestPanelsUpdateStatusTransitions:
 
         mock_set_removed.assert_not_called()
 
-        # ensure_submitted_proposals_under_review should include "p2"
+        # ensure_submitted_proposals_under_review should include "prp-tp2"
         args, _ = mock_ensure_under_review.call_args
         ids_iter = args[2]
         ids = set(list(ids_iter))
-        assert "p2" in ids
+        assert "prp-tp2" in ids
 
         assert mock_ensure_decision.call_count >= 1
         uow.commit.assert_called_once()
@@ -1050,10 +1047,10 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "p1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
                 ),
                 TestDataFactory.proposal_assignment(
-                    "p2", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+                    "prp-tp2", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
                 ),
             ],
         )
@@ -1065,7 +1062,7 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "p1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
                 )
             ],
         )
@@ -1085,12 +1082,12 @@ class TestPanelsUpdateStatusTransitions:
         args, _ = mock_set_removed.call_args
         removed_ids = args[2]
         removed_ids = set(removed_ids) if not isinstance(removed_ids, set) else removed_ids
-        assert removed_ids == {"p2"}
+        assert removed_ids == {"prp-tp2"}
 
         # ensure_submitted_proposals_under_review should NOT include p2
         if mock_ensure_under_review.call_args:
             ids_under_review = set(list(mock_ensure_under_review.call_args[0][2]))
-            assert "p2" not in ids_under_review
+            assert "prp-tp2" not in ids_under_review
 
         uow.commit.assert_called_once()
 
@@ -1172,7 +1169,7 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "p1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
                 )
             ],
         )
@@ -1191,7 +1188,7 @@ class TestPanelsUpdateStatusTransitions:
             name="Stars",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "p1", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
                 )
             ],
         )
@@ -1208,9 +1205,9 @@ class TestPanelsUpdateStatusTransitions:
         # No revert should happen for p1
         mock_set_removed.assert_not_called()
 
-        # If ensure_submitted_proposals_under_review is called, it must not contain "p1"
+        # If ensure_submitted_proposals_under_review is called, it must not contain "prp-tp1"
         if mock_ensure_under_review.call_args:
             ids = set(list(mock_ensure_under_review.call_args[0][2]))
-            assert "p1" not in ids
+            assert "prp-tp1" not in ids
 
         uow.commit.assert_called_once()

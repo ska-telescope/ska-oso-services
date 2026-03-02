@@ -6,12 +6,12 @@ to a deployment of ska-oso-services in the same cluster
 """
 
 import json
-import uuid
 from http import HTTPStatus
 
 from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
+from ska_ser_skuid import EntityType, mint_skuid
 
-from ..unit.util import VALID_COMPLETE_PROPOSAL, VALID_NEW_PROPOSAL, TestDataFactory
+from ..unit.util import TestDataFactory
 from . import PHT_URL
 
 PANELS_API_URL = f"{PHT_URL}/panels"
@@ -51,7 +51,7 @@ def test_create_and_get_proposal(authrequests):
     # POST using JSON string
     post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
-        data=VALID_NEW_PROPOSAL,
+        data=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -64,7 +64,7 @@ def test_create_and_get_proposal(authrequests):
     actual_payload = get_response.json()
 
     # Prepare expected payload from input
-    expected_payload = json.loads(VALID_NEW_PROPOSAL)
+    expected_payload = json.loads(TestDataFactory.proposal().model_dump_json())
 
     # Strip dynamic fields
     for obj in (actual_payload, expected_payload):
@@ -83,14 +83,10 @@ def test_proposal_create_then_put(authrequests):
     and verify metadata.version increments.
     """
 
-    # Make payload unique
-    data = json.loads(VALID_NEW_PROPOSAL)
-    data["prsl_id"] = f"{data.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
-
     # Create proposal
     post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
-        data=json.dumps(data),
+        data=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
@@ -123,15 +119,10 @@ def test_proposal_create_then_put_submit(authrequests):
     then PUT /prsls/{identifier} using complete submit proposal
     and verify metadata.version increments.
     """
-
-    # Make payload unique
-    data = json.loads(VALID_NEW_PROPOSAL)
-    data["prsl_id"] = f"{data.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
-
     # Create proposal
     post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
-        data=json.dumps(data),
+        data=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
@@ -143,12 +134,11 @@ def test_proposal_create_then_put_submit(authrequests):
     v1 = get_v1.json()["metadata"]["version"]
 
     # Use a completed proposal with submitted status and PUT back
-    updated_complete_submit_proposal = json.loads(VALID_COMPLETE_PROPOSAL)
-    updated_complete_submit_proposal["prsl_id"] = prsl_id
+    updated_complete_submit_proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id)
 
     put_resp = authrequests.put(
         f"{PHT_URL}/prsls/{prsl_id}",
-        data=json.dumps(updated_complete_submit_proposal),
+        data=updated_complete_submit_proposal.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert put_resp.status_code == HTTPStatus.OK, put_resp.content
@@ -168,15 +158,10 @@ def test_proposal_create_then_put_update_forbidden(authrequests):
     then PUT /prsls/{identifier} to update proposal
     verify return forbidden and version increment does not occur
     """
-
-    # Make payload unique
-    data = json.loads(VALID_NEW_PROPOSAL)
-    data["prsl_id"] = f"{data.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
-
     # Create proposal
     post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
-        data=json.dumps(data),
+        data=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
@@ -227,15 +212,10 @@ def test_proposal_create_then_put_submit_forbidden(authrequests):
     then PUT /prsls/{identifier}
     verify return forbidden and version increment does not occur
     """
-
-    # Make payload unique
-    data = json.loads(VALID_NEW_PROPOSAL)
-    data["prsl_id"] = f"{data.get('prsl_id', 'prsl-test')}-{uuid.uuid4().hex[:6]}"
-
     # Create proposal
     post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
-        data=json.dumps(data),
+        data=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
@@ -261,12 +241,11 @@ def test_proposal_create_then_put_submit_forbidden(authrequests):
         headers={"Content-Type": "application/json"},
     )
 
-    updated_complete_submit_proposal = json.loads(VALID_COMPLETE_PROPOSAL)
-    updated_complete_submit_proposal["prsl_id"] = prsl_id
+    updated_complete_submit_proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id)
 
     put_resp = authrequests.put(
         f"{PHT_URL}/prsls/{prsl_id}",
-        data=json.dumps(updated_complete_submit_proposal),
+        data=updated_complete_submit_proposal.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert put_resp.status_code == HTTPStatus.FORBIDDEN
@@ -289,8 +268,7 @@ def test_get_proposals_batch(authrequests):
 
     # Create 3 proposals with unique prsl_ids
     for _ in range(3):
-        prsl_id = f"prsl-test-{uuid.uuid4().hex[:8]}"
-        proposal = TestDataFactory.proposal(prsl_id=prsl_id)
+        proposal = TestDataFactory.proposal()
         proposal_json = proposal.model_dump_json()
 
         response = authrequests.post(
@@ -321,7 +299,7 @@ def test_get_proposals_batch(authrequests):
 
 
 def test_get_reviews_for_panel_with_wrong_id(authrequests):
-    prsl_id = "wrong id"
+    prsl_id = mint_skuid(EntityType.PRP)
     response = authrequests.get(f"{PHT_URL}/prsls/reviews/{prsl_id}")
     assert response.status_code == HTTPStatus.OK
     res = response.json()
@@ -329,29 +307,24 @@ def test_get_reviews_for_panel_with_wrong_id(authrequests):
 
 
 def test_get_reviews_for_panel_with_valid_id(authrequests):
-    proposal = TestDataFactory.complete_proposal(prsl_id=None)
+    proposal = TestDataFactory.complete_proposal()
     response = authrequests.post(
         f"{PHT_URL}/prsls/create",
-        data=proposal.json(),
+        data=proposal.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     prsl_id = response.json()["prsl_id"]
     assert response.status_code == HTTPStatus.OK
 
-    panel_id = "panel-test-20250717-00001"
-    panel = TestDataFactory.panel_basic(panel_id=panel_id, name="New name")
-    data = panel.json()
+    panel_id = mint_skuid(EntityType.PNL)
+    panel = TestDataFactory.panel_basic(panel_id=panel_id)
     response = authrequests.post(
         f"{PANELS_API_URL}/create",
-        data=data,
+        data=panel.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
-    assert response.status_code == HTTPStatus.OK
-    review = [
-        TestDataFactory.reviews(
-            prsl_id=prsl_id,
-        )
-    ]
+    assert response.status_code == HTTPStatus.OK, response.content
+    review = [TestDataFactory.reviews(prsl_id=prsl_id, panel_id=panel_id)]
     response = authrequests.post(
         f"{PHT_URL}/reviews/create",
         data=review[0].json(),
@@ -380,8 +353,7 @@ def test_get_proposals_by_status(authrequests):
 
     # Create proposals with the target status to test
     for _ in range(3):
-        prsl_id = f"prsl-pending-{uuid.uuid4().hex[:8]}"
-        proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id, status=status_to_test)
+        proposal = TestDataFactory.complete_proposal(status=status_to_test)
         proposal_json = proposal.model_dump_json()
 
         response = authrequests.post(
@@ -390,11 +362,11 @@ def test_get_proposals_by_status(authrequests):
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == HTTPStatus.OK, response.content
-        created_ids_with_target_status.append(prsl_id)
+        created_ids_with_target_status.append(proposal.prsl_id)
 
     # Create proposals with different statuses additionally
     for status in ["draft", "rejected"]:
-        prsl_id = f"prsl-{status}-{uuid.uuid4().hex[:8]}"
+        prsl_id = mint_skuid(EntityType.PRP)
         proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id, status=status)
         proposal_json = proposal.model_dump_json()
 

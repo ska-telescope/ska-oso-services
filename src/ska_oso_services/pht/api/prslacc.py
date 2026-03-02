@@ -7,6 +7,7 @@ from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal import ProposalAccess, ProposalRole
+from ska_ser_skuid import int_skuid
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -90,7 +91,7 @@ def get_access_by_prsl_id(
 
     with oda.uow() as uow:
         query_param_pi = CustomQuery(
-            prsl_fk=prsl_id,
+            prsl_fk=int_skuid(prsl_id).uid,
             user_id=auth.user_id,
             role=ProposalRole.PrincipalInvestigator,
         )
@@ -105,7 +106,7 @@ def get_access_by_prsl_id(
                 )
             )
 
-        query_param = CustomQuery(prsl_fk=prsl_id)
+        query_param = CustomQuery(prsl_fk=int_skuid(prsl_id).uid)
         proposal_access = get_latest_entity_by_id(uow.prslacc.query(query_param), "access_id")
 
     if not proposal_access:
@@ -129,7 +130,6 @@ def update_access(
         ),
     ],
 ) -> ProposalAccess:
-
     try:
         with oda.uow() as uow:
             updated_prsl = uow.prslacc.add(access, auth.user_id)

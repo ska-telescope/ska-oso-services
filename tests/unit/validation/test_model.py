@@ -37,7 +37,6 @@ def test_validate_combines_results():
 
 
 def test_decorator_checks_type():
-
     expected_error_msg = (
         "Validator function must accept a single ValidationContext "
         "and return a list[ValidationIssue]"
@@ -69,7 +68,6 @@ def test_decorator_checks_type():
 
 
 def test_decorator_appends_source():
-
     test_source_jsonpath = "$.some.input.path"
 
     input_context = ValidationContext(
@@ -90,7 +88,6 @@ def test_decorator_appends_source():
 
 
 def test_check_relevant_context_contains():
-
     input_context = ValidationContext(
         relevant_context={"first_context": "some context"},
         primary_entity=MidSBDefinitionBuilder(),

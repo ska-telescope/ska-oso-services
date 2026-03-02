@@ -37,7 +37,6 @@ def test_project_from_proposal_without_groups(mock_randint):
 
     # Check the first observing block contents
     first_obs_block = project.obs_blocks[0]
-    assert first_obs_block.obs_block_id == "obs-block-12345"
     assert len(first_obs_block.science_programmes) == 1
     first_ob_science_programme = first_obs_block.science_programmes[0]
 

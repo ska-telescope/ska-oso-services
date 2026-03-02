@@ -4181,14 +4181,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-db-oda"
-version = "15.3.0rc3"
+version = "16.0.0"
 description = "SKA Database OSO Data Archive"
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main"]
 files = [
-    {file = "ska_db_oda-15.3.0rc3-py3-none-any.whl", hash = "sha256:0b88af404ccfb74a157981031f84c1035a6382cb87352d461622e6ab714a3b5c"},
-    {file = "ska_db_oda-15.3.0rc3.tar.gz", hash = "sha256:f6f9c0ef356d34ad64ae327b61501d42a70d77ec05a3a40896857d5a4de774c9"},
+    {file = "ska_db_oda-16.0.0-py3-none-any.whl", hash = "sha256:fc80f0edb12e614417408fe7846c1c080b4a433e56f0b04e65869d47bcf61176"},
+    {file = "ska_db_oda-16.0.0.tar.gz", hash = "sha256:5853080bcad5e06811100dd3ab4c9a8caf1fab82bb04d5295bd22601dc8f9be8"},
 ]
 
 [package.dependencies]
@@ -4200,7 +4200,7 @@ python-dateutil = ">=2.8.2,<3.0.0"
 requests = ">=2.27.1,<3.0.0"
 ska-oso-pdm = ">=27.1.1,<28.0.0"
 ska-ser-logging = ">=0.4.1,<0.5.0"
-ska-ser-skuid = ">=4.0.0,<5.0.0"
+ska-ser-skuid = ">=5.0.0,<6.0.0"
 
 [package.source]
 type = "legacy"
@@ -4273,14 +4273,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-ser-skuid"
-version = "4.1.0"
-description = "Library that generates ID's for the SKA project"
+version = "5.0.0"
+description = "Library that generates IDs for the SKA project"
 optional = false
 python-versions = ">=3.10,<4"
 groups = ["main"]
 files = [
-    {file = "ska_ser_skuid-4.1.0-py3-none-any.whl", hash = "sha256:611e5fcb3eb974b685db653340f1421705544b1b5dcef2ecbbb03d3a99a963f1"},
-    {file = "ska_ser_skuid-4.1.0.tar.gz", hash = "sha256:5b2027f39bdcb1c65100f6d0f22ba7f48244a7ba8d580ef1f97551fd94c3375a"},
+    {file = "ska_ser_skuid-5.0.0-py3-none-any.whl", hash = "sha256:8990ae161759e43c5d57bdd7d8ce702597664ac5da9fc61ba2b75e30d02ec53d"},
+    {file = "ska_ser_skuid-5.0.0.tar.gz", hash = "sha256:3109ece9fb5120b505aed30dae0a1ccc0d1b56b29efc9cfbd88b6089b48d5008"},
 ]
 
 [package.dependencies]
@@ -5279,4 +5279,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "a91409b2b21617e3efd0ff1b56cef695b86dea358d47a5f718179df1c966d666"
+content-hash = "69b978b3eff1867c1f2f3a88eeaba889ae42417ddd204fbf1d128d64a3aa7428"

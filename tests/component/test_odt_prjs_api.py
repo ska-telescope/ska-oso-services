@@ -11,6 +11,7 @@ import json
 from http import HTTPStatus
 
 from ska_oso_pdm import Project, SBDefinition
+from ska_ser_skuid import EntityType, mint_skuid
 
 from ..unit.util import TestDataFactory, assert_json_is_equal
 from . import ODT_URL
@@ -52,16 +53,17 @@ class TestLinkingSBDefinitions:
         assert get_prj_response.json()["obs_blocks"][0]["sbd_ids"][0] == sbd_id
 
     def test_project_not_found_raises_error(self, authrequests):
-        prj_id = "not-a-prj"
+        prj_id_not_in_db = mint_skuid(EntityType.PRJ)
         response = authrequests.post(
-            f"{ODT_URL}/prjs/{prj_id}/ob-123/sbds",
+            f"{ODT_URL}/prjs/{prj_id_not_in_db}/ob-t0001test/sbds",
             data=json.dumps({"telescope": "ska_mid"}),
             headers={"Content-type": "application/json"},
         )
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
         assert (
-            response.json()["detail"] == f"The requested identifier {prj_id} could not be found."
+            response.json()["detail"]
+            == f"The requested identifier {prj_id_not_in_db} could not be found."
         )
 
     def test_ob_not_in_project_raises_error(self, authrequests, test_project):
@@ -223,10 +225,13 @@ class TestProjectAPI:
         404 when the Project is not found in the ODA
         """
 
-        response = authrequests.get(f"{ODT_URL}/prjs/123/status")
+        response = authrequests.get(f"{ODT_URL}/prjs/prj-t0001test/status")
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
-        assert response.json()["detail"] == "The requested identifier 123 could not be found."
+        assert (
+            response.json()["detail"]
+            == "The requested identifier prj-t0001test could not be found."
+        )
 
     def test_prj_get_not_found(self, authrequests):
         """
@@ -234,10 +239,13 @@ class TestProjectAPI:
         404 when the Project is not found in the ODA
         """
 
-        response = authrequests.get(f"{ODT_URL}/prjs/123")
+        response = authrequests.get(f"{ODT_URL}/prjs/prj-t0001test")
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
-        assert response.json()["detail"] == "The requested identifier 123 could not be found."
+        assert (
+            response.json()["detail"]
+            == "The requested identifier prj-t0001test could not be found."
+        )
 
     def test_prj_put_not_found(self, authrequests):
         """
@@ -245,10 +253,13 @@ class TestProjectAPI:
         404 when the Project is not found in the ODA
         """
 
-        response = authrequests.get(f"{ODT_URL}/prjs/123")
+        response = authrequests.get(f"{ODT_URL}/prjs/prj-t0001test")
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
-        assert response.json()["detail"] == "The requested identifier 123 could not be found."
+        assert (
+            response.json()["detail"]
+            == "The requested identifier prj-t0001test could not be found."
+        )
 
     def test_mark_project_ready(
         self, test_sbd: SBDefinition, test_project: Project, authrequests

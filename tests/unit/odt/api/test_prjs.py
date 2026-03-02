@@ -17,7 +17,6 @@ PRJS_API_URL = f"{ODT_BASE_API_URL}/prjs"
 
 
 class TestProjectGet:
-
     def test_prjs_get_existing_prj(self, client_with_uow_mock):
         """
         Check the prjs_get method returns the expected Project and status code
@@ -63,7 +62,6 @@ class TestProjectGet:
 
 
 class TestProjectStatus:
-
     def test_prjs_status_get_existing_prj(self, client_with_uow_mock):
         """
         Check the prjs_status_get method returns the expected Status and status code
@@ -91,7 +89,6 @@ class TestProjectStatus:
 
 
 class TestProjectPost:
-
     def test_prjs_post_success(self, client_with_uow_mock):
         """
         Check the prjs_post method returns the expected response
@@ -222,7 +219,6 @@ class TestProjectPost:
 
 
 class TestProjectPut:
-
     def test_prjs_put_success(self, client_with_uow_mock):
         """
         Check the prjs_put method returns the expected response
@@ -326,7 +322,6 @@ class TestProjectPut:
 
 
 class TestProjectAddSBDefinition:
-
     def test_prjs_post_sbd_prj_id_not_found(self, client_with_uow_mock):
         """ """
         client, uow_mock = client_with_uow_mock
@@ -391,7 +386,6 @@ class TestProjectAddSBDefinition:
 
 
 class TestProjectGenerateSBDefinitions:
-
     @mock.patch("ska_oso_services.odt.api.prjs.generate_sbds")
     def test_prjs_post_generate_sbd_success(self, mock_generate_sbds, client_with_uow_mock):
         client, uow_mock = client_with_uow_mock
@@ -443,7 +437,6 @@ class TestProjectGenerateSBDefinitions:
 
 
 class TestProjectObsBlockGenerateSBDefinitions:
-
     @mock.patch("ska_oso_services.odt.api.prjs.generate_sbds")
     def test_prjs_post_ob_generate_sbd_success(self, mock_generate_sbds, client_with_uow_mock):
         client, uow_mock = client_with_uow_mock

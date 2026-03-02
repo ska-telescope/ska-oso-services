@@ -45,7 +45,6 @@ def test_to_pdm_target_can_handle_filtered_table(dummy_calibrator_table):
 
 def test_to_pdm_target_can_handle_empty_table(dummy_calibrator_table):
     with pytest.raises(ValueError, match="No calibrators found that match the criteria."):
-
         filtered_table = dummy_calibrator_table[
             dummy_calibrator_table["Flux Density @ 200MHz"] > 4000.0 * u.Unit("Jy")
         ]

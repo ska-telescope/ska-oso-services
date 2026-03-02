@@ -25,7 +25,7 @@ def _to_iso_z(value):
 
 
 def _replace_investigators(proposal_info_obj, inv_objs):
-    """Return a copy of `proposal_info_obj` with 'investigators'"""  # noqa: E501
+    """Return a copy of `proposal_info_obj` with 'investigators'"""
     return proposal_info_obj.model_copy(update={"investigators": inv_objs})
 
 
@@ -182,12 +182,12 @@ class TestProposalReportJoins:
     def test_join_proposals_panels_reviews_decisions(self, mock_get_pi_office_location):
         mock_get_pi_office_location.return_value = "Test Office A"
 
-        proposal1 = TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00001")
-        proposal2 = TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00002")
+        proposal1 = TestDataFactory.complete_proposal(prsl_id="prp-tjoin01test")
+        proposal2 = TestDataFactory.complete_proposal(prsl_id="prp-tjoin02test")
 
         panel = TestDataFactory.panel(
             reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
-            panel_id="panel-test-20250616-00001",
+            panel_id="pnl-tjoin01test",
             prsl_id_1=proposal1.prsl_id,
             prsl_id_2=proposal2.prsl_id,
         )
@@ -197,7 +197,7 @@ class TestProposalReportJoins:
         reviews = TestDataFactory.reviews(
             prsl_id=proposal1.prsl_id,
             reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
-            review_id="rvw-mvp01-20220923-00001",
+            review_id="rvw-tjoin01test",
         )
 
         rows = join_proposals_panels_reviews_decisions(

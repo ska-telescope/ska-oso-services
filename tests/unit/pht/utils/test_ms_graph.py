@@ -15,7 +15,6 @@ MODULE = "ska_oso_services.pht.utils.ms_graph"
 
 
 class TestExtractTokenDetails:
-
     @mock.patch(f"{MODULE}.jwt.decode")
     def test_success_prefers_given_family_and_preferred_username(self, mock_decode):
         mock_decode.return_value = {

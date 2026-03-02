@@ -24,7 +24,6 @@ from tests.unit.util import (
     PAYLOAD_CONNECT_FAIL,
     PAYLOAD_GENERIC_FAIL,
     PAYLOAD_SUCCESS,
-    VALID_NEW_PROPOSAL,
     TestDataFactory,
     assert_json_is_equal,
 )
@@ -56,14 +55,14 @@ class TestListAccess:
         ]
         uow.prslacc.query.return_value = rows_init
         mock_latest.return_value = [
-            TestDataFactory.proposal_access(access_id="a2", user_id=user_id, prsl_id="prsl-b"),
-            TestDataFactory.proposal_access(access_id="a1", user_id=user_id, prsl_id="prsl-a"),
-            TestDataFactory.proposal_access(access_id="a3", user_id=user_id, prsl_id="prsl-a"),
+            TestDataFactory.proposal_access(access_id="a2", user_id=user_id, prsl_id="prp-tb"),
+            TestDataFactory.proposal_access(access_id="a1", user_id=user_id, prsl_id="prp-ta"),
+            TestDataFactory.proposal_access(access_id="a3", user_id=user_id, prsl_id="prp-ta"),
         ]
 
         response = ps.list_accessible_proposal_ids(uow, user_id)
 
-        assert response == ["prsl-a", "prsl-b"]
+        assert response == ["prp-ta", "prp-tb"]
 
         mock_cq.assert_called_once_with(user_id=user_id)
         uow.prslacc.query.assert_called_once_with(q)
@@ -218,7 +217,6 @@ class TestOSD:
     @mock.patch(f"{PRSL_MODULE}.get_osd_data")
     @mock.patch(f"{PRSL_MODULE}.get_osd_cycles")
     def test_get_osd_cycles_success(self, mock_get_osd_cycles, mock_get_osd_data, client):
-
         mock_get_osd_cycles.return_value = {"cycles": [1, 10000]}
 
         mock_get_osd_data.side_effect = [
@@ -240,7 +238,6 @@ class TestOSD:
 
 
 class TestProposalAPI:
-
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
     def test_create_proposal(self, mock_oda, client):
         """
@@ -255,7 +252,7 @@ class TestProposalAPI:
 
         response = client.post(
             f"{PROPOSAL_API_URL}/create",
-            data=VALID_NEW_PROPOSAL,
+            data=proposal_obj.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
@@ -275,7 +272,7 @@ class TestProposalAPI:
 
         response = client.post(
             f"{PROPOSAL_API_URL}/create",
-            data=VALID_NEW_PROPOSAL,
+            data=TestDataFactory.proposal().model_dump_json(),
             headers={"Content-Type": "application/json"},
         )
 
@@ -292,7 +289,7 @@ class TestProposalAPI:
         """
         Ensure KeyError during get() raises NotFoundError.
         """
-        proposal_id = "prsl-missing-9999"
+        proposal_id = "prp-tm2ss2ng"
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.get.side_effect = KeyError(proposal_id)
@@ -391,7 +388,7 @@ class TestGetProposalReview:
         uow_mock.rvws.query.return_value = []
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        prsl_id = "wrong id"
+        prsl_id = "prp-twrng2d"
         response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
 
         assert response.status_code == HTTPStatus.OK
@@ -402,12 +399,12 @@ class TestGetProposalReview:
         """
         Test reviews for a proposal with a valid ID returns the expected reviews.
         """
-        review_objs = [TestDataFactory.reviews(prsl_id="my proposal")]
+        review_objs = [TestDataFactory.reviews(prsl_id="prp-tmyprp2")]
         uow_mock = mock.MagicMock()
         uow_mock.rvws.query.return_value = review_objs
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        prsl_id = "my proposal"
+        prsl_id = "prp-tmyprp2"
         response = client.get(f"{PROPOSAL_API_URL}/reviews/{prsl_id}")
         assert response.status_code == HTTPStatus.OK
 
@@ -625,9 +622,9 @@ class TestPutProposalAPI:
 class TestProposalBatch:
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposals_batch_all_found(self, mock_oda, client):
-        proposal1 = TestDataFactory.proposal(prsl_id="prsl-ska-00001")
-        proposal2 = TestDataFactory.proposal(prsl_id="prsl-ska-00002")
-        prsl_map = {"prsl-ska-00001": proposal1, "prsl-ska-00002": proposal2}
+        proposal1 = TestDataFactory.proposal(prsl_id="prp-tska-00001")
+        proposal2 = TestDataFactory.proposal(prsl_id="prp-tska-00002")
+        prsl_map = {"prp-tska-00001": proposal1, "prp-tska-00002": proposal2}
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.get.side_effect = prsl_map.get
@@ -635,19 +632,19 @@ class TestProposalBatch:
 
         response = client.post(
             f"{PROPOSAL_API_URL}/batch",
-            json={"prsl_ids": ["prsl-ska-00001", "prsl-ska-00002"]},
+            json={"prsl_ids": ["prp-tska-00001", "prp-tska-00002"]},
         )
 
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
         assert len(data) == 2
-        assert {obj["prsl_id"] for obj in data} == {"prsl-ska-00001", "prsl-ska-00002"}
+        assert {obj["prsl_id"] for obj in data} == {"prp-tska-00001", "prp-tska-00002"}
 
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposals_batch_partial_found(self, mock_oda, client):
-        proposal1 = TestDataFactory.proposal(prsl_id="prsl-ska-00001")
-        prsl_map = {"prsl-ska-00001": proposal1}
+        proposal1 = TestDataFactory.proposal(prsl_id="prp-tska-00001")
+        prsl_map = {"prp-tska-00001": proposal1}
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.get.side_effect = prsl_map.get
@@ -655,12 +652,12 @@ class TestProposalBatch:
 
         response = client.post(
             f"{PROPOSAL_API_URL}/batch",
-            json={"prsl_ids": ["prsl-ska-00001", "prsl-ska-00004"]},
+            json={"prsl_ids": ["prp-tska-00001", "prp-tska-00004"]},
         )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["prsl_id"] == "prsl-ska-00001"
+        assert data[0]["prsl_id"] == "prp-tska-00001"
 
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposals_batch_none_found(self, mock_oda, client):
@@ -883,8 +880,8 @@ class TestGetProposalsByStatus:
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_review_chair_only_under_review(self, mock_uow, mock_latest, mock_panel_ids):
-        p_ur_a = TestDataFactory.complete_proposal(prsl_id="prsl-a", status="under review")
-        p_ur_b = TestDataFactory.complete_proposal(prsl_id="prsl-b", status="under review")
+        p_ur_a = TestDataFactory.complete_proposal(prsl_id="prp-ta", status="under review")
+        p_ur_b = TestDataFactory.complete_proposal(prsl_id="prp-tb", status="under review")
 
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
@@ -895,7 +892,7 @@ class TestGetProposalsByStatus:
         mock_latest.side_effect = lambda rows, key: rows or []
 
         # Panel contains both proposals
-        mock_panel_ids.return_value = {"prsl-a", "prsl-b"}
+        mock_panel_ids.return_value = {"prp-ta", "prp-tb"}
 
         auth = SimpleNamespace(
             user_id="chair-1",
@@ -905,7 +902,7 @@ class TestGetProposalsByStatus:
 
         result = get_proposals_by_status(auth=auth)
 
-        assert [p.prsl_id for p in result] == ["prsl-a", "prsl-b"]
+        assert [p.prsl_id for p in result] == ["prp-ta", "prp-tb"]
 
         calls = uow.prsls.query.call_args_list
         assert len(calls) == 1
@@ -921,8 +918,8 @@ class TestGetProposalsByStatus:
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_admin_behaves_like_privileged(self, mock_uow, mock_latest):
-        p_1st = TestDataFactory.complete_proposal(prsl_id="prsl-x", status="under review")
-        p_sub = TestDataFactory.complete_proposal(prsl_id="prsl-y", status="submitted")
+        p_1st = TestDataFactory.complete_proposal(prsl_id="prp-tx", status="under review")
+        p_sub = TestDataFactory.complete_proposal(prsl_id="prp-ty", status="submitted")
 
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
@@ -940,7 +937,7 @@ class TestGetProposalsByStatus:
         )
 
         result = get_proposals_by_status(auth=auth)
-        assert [p.prsl_id for p in result] == ["prsl-x", "prsl-y"]
+        assert [p.prsl_id for p in result] == ["prp-tx", "prp-ty"]
 
         calls = uow.prsls.query.call_args_list
         assert len(calls) == 2

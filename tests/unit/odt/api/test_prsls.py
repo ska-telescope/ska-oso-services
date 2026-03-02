@@ -20,7 +20,6 @@ PRSLS_API_URL = f"{ODT_BASE_API_URL}/prsls"
 
 
 class TestProjectCreationFromProposal:
-
     @mock.patch("ska_oso_services.odt.api.prsls.generate_project")
     def test_project_from_proposal_success(self, mock_generate_project, client_with_uow_mock):
         """ """
@@ -72,7 +71,6 @@ class TestProjectCreationFromProposal:
 
 
 class TestProposalAndProjectView:
-
     def test_proposal_without_project_returned_successfully(self, client_with_uow_mock):
         client, uow_mock = client_with_uow_mock
         proposal = TestDataFactory.complete_proposal(status=ProposalStatus.SUBMITTED)
@@ -211,7 +209,6 @@ class TestProposalAndProjectView:
     def test_does_not_return_draft_proposals(self, client_with_uow_mock):
         client, uow_mock = client_with_uow_mock
         proposal_with_prj = TestDataFactory.complete_proposal(status=ProposalStatus.SUBMITTED)
-        proposal_with_prj.prsl_id = "prp-test-id"
         proposal_draft = TestDataFactory.proposal()
         uow_mock.prsls.query.return_value = [proposal_with_prj, proposal_draft]
 

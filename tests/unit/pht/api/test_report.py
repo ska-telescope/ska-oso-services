@@ -13,7 +13,7 @@ HEADERS = {"Content-type": "application/json"}
 class TestReportsAPI:
     @mock.patch("ska_oso_services.pht.api.report.oda.uow", autospec=True)
     def test_get_report_success(self, mock_uow, client):
-        mock_proposals = [TestDataFactory.complete_proposal(prsl_id="prsl-mvp01-20220923-00001")]
+        mock_proposals = [TestDataFactory.complete_proposal(prsl_id="prp-trep01test")]
         mock_panels = [
             TestDataFactory.panel(
                 prsl_id_1=mock_proposals[0].prsl_id,
@@ -24,7 +24,7 @@ class TestReportsAPI:
             TestDataFactory.reviews(
                 prsl_id=mock_proposals[0].prsl_id,
                 reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
-                review_id="rvw-mvp01-20220923-00001",
+                review_id="rvw-trep01test",
             )
         ]
         mock_decisions = [TestDataFactory.panel_decision(prsl_id=mock_proposals[0].prsl_id)]
@@ -48,7 +48,7 @@ class TestReportsAPI:
                 "ska_oso_services.pht.api.report.get_latest_entity_by_id"
             ) as mock_get_latest,
             mock.patch(
-                "ska_oso_services.pht.api.report.join_proposals_panels_reviews_decisions"  # noqa: E501
+                "ska_oso_services.pht.api.report.join_proposals_panels_reviews_decisions"
             ) as mock_join,
         ):
             mock_get_latest.side_effect = [
