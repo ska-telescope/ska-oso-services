@@ -7,6 +7,7 @@ from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
+from ska_ser_skuid import EntityType, mint_skuid
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -25,11 +26,7 @@ from ska_oso_services.pht.service.panel_operations import (
     set_removed_proposals_to_submitted,
 )
 from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
-from ska_oso_services.pht.utils.pht_helper import (
-    generate_entity_id,
-    get_latest_entity_by_id,
-    validate_duplicates,
-)
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, validate_duplicates
 
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 
@@ -285,7 +282,7 @@ def auto_create_panel(
         existing = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id")
         if not existing:
             sv_panel = Panel(
-                panel_id=generate_entity_id("panel"),
+                panel_id=mint_skuid(EntityType.PNL),
                 name=SV_NAME,
                 cycle="SKAO_2027_1",  # keep if this is a business rule for SV
             )
@@ -303,7 +300,7 @@ def auto_create_panel(
                 continue  # already present
 
             new_panel = Panel(
-                panel_id=generate_entity_id("panel"),
+                panel_id=mint_skuid(EntityType.PNL),
                 name=panel_name,
                 # add cycle here if non-SV panels also require it:
                 # cycle="SKAO_2027_1",

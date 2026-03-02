@@ -12,11 +12,11 @@ from ska_oso_pdm.proposal_management.review import (
     ScienceReview,
     TechnicalReview,
 )
-from ska_ser_skuid import int_skuid
+from ska_ser_skuid import EntityType, int_skuid, mint_skuid
 
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.models.schemas import PanelAssignResponse
-from ska_oso_services.pht.utils.pht_helper import generate_entity_id, get_latest_entity_by_id
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +205,7 @@ def ensure_review_exist_or_create(
 
     new_review = PanelReview(
         panel_id=param.panel_id,
-        review_id=generate_entity_id("rvw-tec" if kind == "Technical Review" else "rvw-sci"),
+        review_id=mint_skuid(EntityType.RVW),
         reviewer_id=reviewer_id,
         cycle=param.cycle,
         prsl_id=proposal_id,
@@ -236,7 +236,7 @@ def ensure_decision_exist_or_create(uow, param, proposal_id: str) -> str:
 
     new_review = PanelDecision(
         panel_id=param.panel_id,
-        decision_id=generate_entity_id("pnld"),
+        decision_id=mint_skuid(EntityType.PNLD),
         cycle=param.cycle,
         prsl_id=proposal_id,
     )

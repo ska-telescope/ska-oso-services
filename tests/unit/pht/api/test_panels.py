@@ -69,11 +69,11 @@ class TestPanelsUpdateAPI:
         uow_mock.commit.assert_called_once()
 
     @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
-    @mock.patch(f"{MODULE}.generate_entity_id", autospec=True)
+    @mock.patch(f"{MODULE}.mint_skuid", autospec=True)
     @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_creates_technical_review_when_missing(
-        self, mock_uow, mock_get_latest, mock_gen_id, mock_validate, client
+        self, mock_uow, mock_get_latest, mock_mint_skuid, mock_validate, client
     ):
         """
         With a technical reviewer and no existing technical review
@@ -88,7 +88,7 @@ class TestPanelsUpdateAPI:
         # No existing technical review
         mock_get_latest.return_value = []
 
-        mock_gen_id.return_value = "rvs-tec-0001"
+        mock_mint_skuid.return_value = "rvs-tec-0001"
 
         assigned_on = datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc)
 
@@ -128,7 +128,7 @@ class TestPanelsUpdateAPI:
         uow.commit.assert_called_once()
 
     @mock.patch(
-        "ska_oso_services.pht.service.panel_operations.generate_entity_id",
+        "ska_oso_services.pht.service.panel_operations.mint_skuid",
         autospec=True,
     )
     @mock.patch(
@@ -138,11 +138,11 @@ class TestPanelsUpdateAPI:
     @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_skips_creating_tech_review_if_already_exists_v1(
-        self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
+        self, mock_uow, mock_validate, mock_get_latest_ops, mock_mint_skuid, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
-        mock_gen_id_ops.return_value = "pnld-123"
+        mock_mint_skuid.return_value = "pnld-123"
 
         existing_ref = SimpleNamespace(
             review_id="rvw-existing",
@@ -175,12 +175,12 @@ class TestPanelsUpdateAPI:
         mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
         uow.pnlds.add.assert_called_once()
-        mock_gen_id_ops.assert_called_once()
+        mock_mint_skuid.assert_called_once()
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
     @mock.patch(
-        "ska_oso_services.pht.service.panel_operations.generate_entity_id",
+        "ska_oso_services.pht.service.panel_operations.mint_skuid",
         autospec=True,
     )
     @mock.patch(
@@ -190,7 +190,7 @@ class TestPanelsUpdateAPI:
     @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_skips_creating_decision_if_already_exists(
-        self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
+        self, mock_uow, mock_validate, mock_get_latest_ops, mock_mint_skuid, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
@@ -222,12 +222,12 @@ class TestPanelsUpdateAPI:
         mock_validate.assert_called_once()
         uow.pnlds.add.assert_not_called()
         uow.rvws.add.assert_not_called()
-        mock_gen_id_ops.assert_not_called()
+        mock_mint_skuid.assert_not_called()
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
     @mock.patch(
-        "ska_oso_services.pht.service.panel_operations.generate_entity_id",
+        "ska_oso_services.pht.service.panel_operations.mint_skuid",
         autospec=True,
     )
     @mock.patch(
@@ -237,14 +237,14 @@ class TestPanelsUpdateAPI:
     @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_creates_decision_and_science_review_when_missing(
-        self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
+        self, mock_uow, mock_validate, mock_get_latest_ops, mock_mint_skuid, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
 
         mock_get_latest_ops.return_value = []
 
-        mock_gen_id_ops.return_value = "pnld-0001"
+        mock_mint_skuid.return_value = "pnld-0001"
 
         uow.pnlds.add.side_effect = lambda r: r
         uow.panels.add.side_effect = lambda p: p
@@ -277,13 +277,13 @@ class TestPanelsUpdateAPI:
         created = uow.pnlds.add.call_args[0][0]
         assert created.decision_id == "pnld-0001"
         assert created.prsl_id == "prp-t001test"
-        assert mock_gen_id_ops.call_count == 2
+        assert mock_mint_skuid.call_count == 2
 
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
     @mock.patch(
-        "ska_oso_services.pht.service.panel_operations.generate_entity_id",
+        "ska_oso_services.pht.service.panel_operations.mint_skuid",
         autospec=True,
     )
     @mock.patch(
@@ -293,14 +293,14 @@ class TestPanelsUpdateAPI:
     @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_creates_science_review_when_missing(
-        self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
+        self, mock_uow, mock_validate, mock_get_latest_ops, mock_mint_skuid, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
 
         mock_get_latest_ops.return_value = []
 
-        mock_gen_id_ops.return_value = "rvs-sci-0001"
+        mock_mint_skuid.return_value = "rvs-sci-0001"
 
         uow.rvws.add.side_effect = lambda r: r
         uow.panels.add.side_effect = lambda p: p
@@ -338,7 +338,7 @@ class TestPanelsUpdateAPI:
         uow.commit.assert_called_once()
 
     @mock.patch(
-        "ska_oso_services.pht.service.panel_operations.generate_entity_id",
+        "ska_oso_services.pht.service.panel_operations.mint_skuid",
         autospec=True,
     )
     @mock.patch(
@@ -348,11 +348,11 @@ class TestPanelsUpdateAPI:
     @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_skips_creating_science_review_if_already_exists_v1(
-        self, mock_uow, mock_validate, mock_get_latest_ops, mock_gen_id_ops, client
+        self, mock_uow, mock_validate, mock_get_latest_ops, mock_mint_skuid, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
-        mock_gen_id_ops.return_value = "pnld-123"
+        mock_mint_skuid.return_value = "pnld-123"
 
         existing_ref = SimpleNamespace(
             review_id="rvw-existing-sci",
@@ -387,7 +387,7 @@ class TestPanelsUpdateAPI:
         mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
         uow.pnlds.add.assert_called_once()
-        mock_gen_id_ops.assert_called_once()
+        mock_mint_skuid.assert_called_once()
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
