@@ -1,5 +1,4 @@
 import logging
-import uuid
 from typing import Annotated
 
 from fastapi import APIRouter
@@ -7,7 +6,7 @@ from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal import ProposalAccess, ProposalRole
-from ska_ser_skuid import int_skuid
+from ska_ser_skuid import EntityType, int_skuid, mint_skuid
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -41,8 +40,10 @@ def post_create_access(
     """
     logger.debug("Creating a new proposal access")
     try:
-        rand_part = uuid.uuid4().hex[:6]
-        prslacc_create.access_id = f"prslacc-{rand_part}-{prslacc_create.user_id[:7]}"
+        # proposal access table is a temp measure without a skuid
+        # type. For now just hack this with a string replace, as
+        # we just need a unique string
+        prslacc_create.access_id = mint_skuid(EntityType.PRP).replace("prp", "acs")
         with oda.uow() as uow:
             persisted_prslacc = uow.prslacc.add(prslacc_create, auth.user_id)
             uow.commit()

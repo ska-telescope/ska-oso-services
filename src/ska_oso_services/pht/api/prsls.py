@@ -154,8 +154,9 @@ def create_proposal(
             # Create permissions
             create_prslacc = ProposalAccess(
                 # proposal access table is a temp measure without a skuid
-                # type. For now just use a prp ID
-                access_id=mint_skuid(EntityType.PRP),
+                # type. For now just hack this with a string replace, as
+                # we just need a unique string
+                access_id=mint_skuid(EntityType.PRP).replace("prp", "acs"),
                 prsl_id=created_prsl.prsl_id,
                 user_id=auth.user_id,
                 role=ProposalRole.PrincipalInvestigator,
