@@ -23,7 +23,6 @@ def test_observatory_calibrator_strategy_lookup_highest_elevation():
 
 
 def test_observatory_calibrator_strategy_lookup_not_found():
-
     with pytest.raises(
         ValueError,
         match="Observatory Calibration Strategy with calibration_strategy_id "

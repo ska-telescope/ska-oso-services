@@ -15,7 +15,7 @@ from ska_oso_services.common.auth import AUDIENCE, Permissions, Scope
 from ska_oso_services.pht.api import panel_decision as api
 from src.ska_oso_services.pht.models.domain import PrslRole
 from tests.unit.conftest import PHT_BASE_API_URL
-from tests.unit.util import VALID_PANEL_DECISION, TestDataFactory, assert_json_is_equal
+from tests.unit.util import TestDataFactory, assert_json_is_equal
 
 PANEL_DECISION_API_URL = f"{PHT_BASE_API_URL}/panel/decision"
 SEC_OBJ = api.get_panel_decisions_for_user.__annotations__["auth"].__metadata__[0]
@@ -43,7 +43,7 @@ class Testpanel_decisionAPI:
 
         response = client.post(
             f"{PANEL_DECISION_API_URL}/create",
-            data=VALID_PANEL_DECISION,
+            data=TestDataFactory.panel_decision().model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
@@ -63,7 +63,7 @@ class Testpanel_decisionAPI:
 
         response = client.post(
             f"{PANEL_DECISION_API_URL}/create",
-            data=VALID_PANEL_DECISION,
+            data=TestDataFactory.panel_decision().model_dump_json(),
             headers={"Content-Type": "application/json"},
         )
 
@@ -76,7 +76,7 @@ class Testpanel_decisionAPI:
         """
         Ensure ODANotFound during get() raises NotFoundError (404).
         """
-        decision_id = "prsl-missing-9999"
+        decision_id = "prp-tmissing-9999"
 
         uow_mock = mock.MagicMock()
         uow_mock.pnlds.get.side_effect = ODANotFound(identifier=decision_id)
@@ -107,7 +107,6 @@ class Testpanel_decisionAPI:
 
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_get_panel_decision_list_success_by_group(self, mock_uow, client_get):
-
         uow = mock.MagicMock()
         uow.pnlds.query.return_value = []
         mock_uow.return_value.__enter__.return_value = uow

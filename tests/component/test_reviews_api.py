@@ -7,14 +7,13 @@ to a deployment of ska-oso-services in the same cluster
 
 # pylint: disable=missing-timeout
 import json
-import uuid
 from http import HTTPStatus
 
-from ..unit.util import VALID_REVIEW, TestDataFactory
+from ..unit.util import TestDataFactory
 from . import PHT_URL
 
 
-def test_create_and_get_review(authrequests):
+def test_create_and_get_review(authrequests, test_panel_id, test_proposal):
     """
     Integration test for the POST /reviews/create endpoint
     and GET /reviews/{review_id}.
@@ -22,9 +21,10 @@ def test_create_and_get_review(authrequests):
     """
 
     # POST using JSON string
+    review = TestDataFactory.reviews(panel_id=test_panel_id, prsl_id=test_proposal.prsl_id)
     post_response = authrequests.post(
         f"{PHT_URL}/reviews/create",
-        data=VALID_REVIEW,
+        data=review.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -37,7 +37,7 @@ def test_create_and_get_review(authrequests):
     actual_payload = get_response.json()
 
     # Prepare expected payload from input
-    expected_payload = json.loads(VALID_REVIEW)
+    expected_payload = json.loads(review.model_dump_json())
 
     # Strip dynamic fields
     for obj in (actual_payload, expected_payload):
@@ -48,7 +48,7 @@ def test_create_and_get_review(authrequests):
     assert actual_payload == expected_payload
 
 
-def test_review_create_then_put(authrequests):
+def test_review_create_then_put(authrequests, test_panel_id, test_proposal):
     """
     Test that an entity POSTed to /reviews/create
     can then be updated with PUT /reviews/{identifier},
@@ -56,9 +56,11 @@ def test_review_create_then_put(authrequests):
     """
 
     # POST a new proposal
+    review = TestDataFactory.reviews(panel_id=test_panel_id, prsl_id=test_proposal.prsl_id)
+    review_id = review.review_id
     post_response = authrequests.post(
         f"{PHT_URL}/reviews/create",
-        data=VALID_REVIEW,
+        data=review.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
 
@@ -66,8 +68,7 @@ def test_review_create_then_put(authrequests):
 
     # The POST endpoint returns only the review_id as a string
     returned_review_id = post_response.json()
-    expected_review_id = json.loads(VALID_REVIEW)["review_id"]
-    assert returned_review_id == expected_review_id
+    assert returned_review_id == review_id
 
     # GET proposal to fetch latest state
     get_response = authrequests.get(f"{PHT_URL}/reviews/{returned_review_id}")
@@ -90,7 +91,7 @@ def test_review_create_then_put(authrequests):
     assert put_response.json()["metadata"]["version"] == initial_version + 1
 
 
-def test_get_list_reviews_for_user(authrequests):
+def test_get_list_reviews_for_user(authrequests, test_panel_id):
     """
     Integration test:
     - Create multiple reviews
@@ -113,7 +114,9 @@ def test_get_list_reviews_for_user(authrequests):
         prsl_id = post_response.json()["prsl_id"]
 
         review = TestDataFactory.reviews(
-            review_id=f"rvw-test-{uuid.uuid4().hex[:8]}", prsl_id=prsl_id, reviewer_id="test_user"
+            prsl_id=prsl_id,
+            panel_id=test_panel_id,
+            reviewer_id="test_user",
         )
         review_json = review.model_dump_json()
 

@@ -203,7 +203,7 @@ class TestSBDefinitionAPI:
         uow_mock.sbds.get.return_value = test_sbd
 
         response = client.put(
-            f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
+            f"{SBDS_API_URL}/sbd-t0001test",
             data=VALID_MID_SBDEFINITION_JSON,
             headers={"Content-type": "application/json"},
         )
@@ -239,7 +239,7 @@ class TestSBDefinitionAPI:
         mock_validate.return_value = {"validation_errors": "some validation error"}
 
         response = client.put(
-            f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
+            f"{SBDS_API_URL}/sbd-t0001test",
             data=VALID_MID_SBDEFINITION_JSON,
             headers={"Content-type": "application/json"},
         )
@@ -260,10 +260,10 @@ class TestSBDefinitionAPI:
         """
         mock_validate.return_value = {}
         client, uow_mock = client_with_uow_mock
-        uow_mock.sbds.get.side_effect = ODANotFound(identifier="sbd-mvp01-20200325-00001")
+        uow_mock.sbds.get.side_effect = ODANotFound(identifier="sbd-t0001test")
 
         response = client.put(
-            f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
+            f"{SBDS_API_URL}/sbd-t0001test",
             data=VALID_MID_SBDEFINITION_JSON,
             headers={"Content-type": "application/json"},
         )
@@ -271,7 +271,7 @@ class TestSBDefinitionAPI:
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert (
             response.json()["detail"]
-            == "The requested identifier sbd-mvp01-20200325-00001 could not be found."
+            == "The requested identifier sbd-t0001test could not be found."
         )
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbd")
@@ -287,7 +287,7 @@ class TestSBDefinitionAPI:
 
         with pytest.raises(IOError):
             response = client.put(
-                f"{SBDS_API_URL}/sbd-mvp01-20200325-00001",
+                f"{SBDS_API_URL}/sbd-t0001test",
                 data=VALID_MID_SBDEFINITION_JSON,
                 headers={"Content-type": "application/json"},
             )

@@ -13,6 +13,7 @@ from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalPermissions, 
 from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
+from ska_ser_skuid import EntityType, int_skuid, mint_skuid
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from ska_oso_services.common import oda
@@ -48,7 +49,7 @@ from ska_oso_services.pht.utils.ms_graph import (
     extract_profile_from_access_token,
     get_users_by_mail,
 )
-from ska_oso_services.pht.utils.pht_helper import generate_entity_id, get_latest_entity_by_id
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +153,10 @@ def create_proposal(
             created_prsl = uow.prsls.add(proposal, auth.user_id)
             # Create permissions
             create_prslacc = ProposalAccess(
-                access_id=generate_entity_id("prslacc"),
+                # proposal access table is a temp measure without a skuid
+                # type. For now just hack this with a string replace, as
+                # we just need a unique string
+                access_id=mint_skuid(EntityType.PRP).replace("prp", "acs"),
                 prsl_id=created_prsl.prsl_id,
                 user_id=auth.user_id,
                 role=ProposalRole.PrincipalInvestigator,
@@ -212,7 +216,6 @@ def get_proposals_by_status(
         return []
 
     def _latest_by_status(uow, status) -> list["Proposal"]:
-
         return (
             get_latest_entity_by_id(uow.prsls.query(CustomQuery(status=status)), "prsl_id") or []
         )
@@ -389,7 +392,7 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
     """
     logger.debug("GET reviews for a prsl_id: %s", prsl_id)
     with oda.uow() as uow:
-        query = CustomQuery(prsl_fk=prsl_id)
+        query = CustomQuery(prsl_fk=int_skuid(prsl_id).uid)
         reviews = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
 
     return reviews

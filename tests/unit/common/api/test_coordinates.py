@@ -19,7 +19,6 @@ TEST_TARGET_WITH_VELOCITY = Target(
 
 
 class TestCoordinates:
-
     @mock.patch("ska_oso_services.common.api.coordinates.get_coordinates")
     def test_success_equatorial(self, mock_get_coordinates, client):
         mock_get_coordinates.return_value = TEST_TARGET_WITH_VELOCITY

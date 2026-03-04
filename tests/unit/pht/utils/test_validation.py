@@ -33,7 +33,8 @@ def test_validate_proposal_target_with_no_sensitivity():
     expected = {
         "result": False,
         "validation_errors": [
-            "Target wrong has no valid sensitivity/integration time results or is not linked to an observation"  # noqa: E501
+            "Target wrong has no valid sensitivity/integration time "
+            "results or is not linked to an observation"
         ],
     }
     assert expected == res

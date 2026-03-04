@@ -13,13 +13,12 @@ from fastapi import status
 from ska_db_oda.repository.domain import ODANotFound
 
 from tests.unit.conftest import PHT_BASE_API_URL
-from tests.unit.util import VALID_REVIEW, TestDataFactory, assert_json_is_equal
+from tests.unit.util import TestDataFactory, assert_json_is_equal
 
 REVIEWS_API_URL = f"{PHT_BASE_API_URL}/reviews"
 
 
 class TestReviewCreateAPI:
-
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_create_review_creates_new_success(self, mock_oda, client):
         """
@@ -34,7 +33,7 @@ class TestReviewCreateAPI:
 
         resp = client.post(
             f"{REVIEWS_API_URL}/create",
-            data=VALID_REVIEW,
+            data=review_obj.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
@@ -62,7 +61,7 @@ class TestReviewCreateAPI:
 
         resp = client.post(
             f"{REVIEWS_API_URL}/create",
-            data=VALID_REVIEW,
+            data=TestDataFactory.reviews().model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
@@ -92,7 +91,7 @@ class TestReviewCreateAPI:
 
         resp = client.post(
             f"{REVIEWS_API_URL}/create",
-            data=VALID_REVIEW,
+            data=created.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
@@ -113,7 +112,7 @@ class TestReviewCreateAPI:
 
         resp = client.post(
             f"{REVIEWS_API_URL}/create",
-            data=VALID_REVIEW,
+            data=TestDataFactory.reviews().model_dump_json(),
             headers={"Content-Type": "application/json"},
         )
 
@@ -128,13 +127,12 @@ class TestReviewCreateAPI:
 
 
 class TestGetReviewAPI:
-
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_get_review_not_found(self, mock_oda, client):
         """
         Ensure ODANotFound during get() raises NotFoundError (404).
         """
-        review_id = "prsl-missing-9999"
+        review_id = "prp-tmissing-9999"
 
         uow_mock = mock.MagicMock()
         uow_mock.rvws.get.side_effect = ODANotFound(identifier=review_id)

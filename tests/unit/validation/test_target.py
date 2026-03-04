@@ -39,7 +39,6 @@ def test_mid_target_below_min_elevation():
 
 
 def test_low_target_below_horizon():
-
     input_context = ValidationContext(
         primary_entity=LowTargetBuilder(
             name="JVAS 1938+666",

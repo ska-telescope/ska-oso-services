@@ -5,6 +5,7 @@ Utility functions to be used in tests
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from random import randint
 from types import SimpleNamespace
 
 from deepdiff import DeepDiff
@@ -16,8 +17,7 @@ from ska_oso_pdm.proposal.proposal_access import ProposalAccess
 from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel, ProposalAssignment, ReviewerAssignment
 from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
-from ska_ser_skuid.tools.entity_types import EntityType
-from ska_ser_skuid.tools.generate import mint_randint_skuid
+from ska_ser_skuid import EntityType, mint_skuid
 
 CUR_DIR = Path(__file__).parent
 
@@ -53,9 +53,9 @@ def load_string_from_file(filename: str, directory: str = "files") -> str:
 class TestDataFactory:
     @staticmethod
     def sbdefinition(
-        sbd_id: SBDefinitionID | None = "sbd-mvp01-20200325-00001",
+        sbd_id: SBDefinitionID | None = "sbd-t0001test",
         version: int = 1,
-        ob_ref: str = "ob-mvp01-20200325-00001",
+        ob_ref: str = "ob-t0001test",
         created_on: datetime = datetime.fromisoformat("2022-03-28T15:43:53.971548+00:00"),
         without_metadata: bool = False,
     ) -> SBDefinition:
@@ -75,7 +75,7 @@ class TestDataFactory:
 
     @staticmethod
     def lowsbdefinition(
-        sbd_id: SBDefinitionID = "sbd-mvp01-20200325-00001",
+        sbd_id: SBDefinitionID = "sbd-t0002test",
         version: int = 1,
         created_on: datetime = datetime.fromisoformat("2022-03-28T15:43:53.971548+00:00"),
         without_metadata: bool = False,
@@ -94,10 +94,9 @@ class TestDataFactory:
 
     @staticmethod
     def project(
-        prj_id: str | None = "prj-mvp01-20220923-00001",
+        prj_id: str | None = "prj-t0001test",
         version: int = 1,
     ) -> Project:
-
         data = load_string_from_file("project.json")
         prj = Project.model_validate_json(data)
 
@@ -105,17 +104,16 @@ class TestDataFactory:
         prj.metadata.version = version
 
         for ob in prj.obs_blocks:
-            ob.obs_block_id = mint_randint_skuid(entity_type=EntityType.OB)
+            ob.obs_block_id = mint_skuid(entity_type=EntityType.OB)
 
         return prj
 
     @staticmethod
     def project_with_two_mid_observation_groups(
-        prj_id: str | None = "prj-mvp01-20220923-00001",
+        prj_id: str | None = "prj-t0002test",
         version: int = 1,
-        prsl_ref: str | None = "prsl-t0001-20250715-00002",
+        prsl_ref: str | None = "prp-t0002test",
     ) -> Project:
-
         data = load_string_from_file("project_with_mid_observation_set.json")
         prj = Project.model_validate_json(data)
 
@@ -125,17 +123,16 @@ class TestDataFactory:
         prj.prsl_ref = prsl_ref
 
         for ob in prj.obs_blocks:
-            ob.obs_block_id = mint_randint_skuid(entity_type=EntityType.OB)
+            ob.obs_block_id = mint_skuid(entity_type=EntityType.OB)
 
         return prj
 
     @staticmethod
     def project_with_two_low_targets(
-        prj_id: str | None = "prj-mvp01-20220923-00001",
+        prj_id: str | None = "prj-t0003test",
         version: int = 1,
-        prsl_ref: str | None = "prsl-t0001-20250715-00002",
+        prsl_ref: str | None = "prp-t0003test",
     ) -> Project:
-
         data = load_string_from_file("project_with_low_observation_set.json")
         prj = Project.model_validate_json(data)
 
@@ -145,20 +142,29 @@ class TestDataFactory:
         prj.prsl_ref = prsl_ref
 
         for ob in prj.obs_blocks:
-            ob.obs_block_id = mint_randint_skuid(entity_type=EntityType.OB)
+            ob.obs_block_id = mint_skuid(entity_type=EntityType.OB)
 
         return prj
 
     @staticmethod
     def reviews(
-        panel_id: str = "panel-test-20250717-00001",
-        review_id: str = "rvw-mvp01-20220923-00001",
-        prsl_id: str = "prsl-mvp01-20220923-00001",
+        panel_id: str | None = None,
+        review_id: str | None = None,
+        prsl_id: str | None = None,
         reviewer_id="string",
     ) -> PanelReview:
         """
         Load a valid proposal review object from file and override review_id,
         """
+
+        if review_id is None:
+            review_id = mint_skuid(EntityType.RVW)
+
+        if prsl_id is None:
+            prsl_id = mint_skuid(EntityType.PRP)
+
+        if panel_id is None:
+            panel_id = mint_skuid(EntityType.PNL)
 
         data = load_string_from_file("panel_review.json")
         review = PanelReview.model_validate_json(data)
@@ -171,8 +177,9 @@ class TestDataFactory:
 
     @staticmethod
     def panel_decision(
-        decision_id: str = "pnld-mvp01-20220923-00001",
-        prsl_id: str = "prsl-mvp01-20220923-00001",
+        decision_id: str | None = None,
+        prsl_id: str | None = None,
+        panel_id: str | None = None,
         status: str = "In Progress",
         recommendation: str = None,
     ) -> PanelDecision:
@@ -180,29 +187,49 @@ class TestDataFactory:
         Load a valid proposal panel decision object from file and override decision_id,
         """
 
+        if decision_id is None:
+            decision_id = mint_skuid(EntityType.PNLD)
+
+        if prsl_id is None:
+            prsl_id = mint_skuid(EntityType.PRP)
+
+        if panel_id is None:
+            panel_id = mint_skuid(EntityType.PNL)
+
         data = load_string_from_file("panel_decision.json")
         decision = PanelDecision.model_validate_json(data)
         decision.decision_id = decision_id
         decision.prsl_id = prsl_id
+        decision.panel_id = panel_id
         decision.status = status
         decision.recommendation = recommendation
 
         return decision
 
     @staticmethod
-    def proposal(prsl_id: str = "prsl-mvp01-20220923-00001") -> Proposal:
+    def proposal(prsl_id: str | None = None) -> Proposal:
         """
         Load a valid Proposal object from file and override prsl_id,
         """
 
         data = load_string_from_file("create_proposal.json")
         proposal = Proposal.model_validate_json(data)
+        if prsl_id is None:
+            prsl_id = mint_skuid(EntityType.PRP)
         proposal.prsl_id = prsl_id
 
         return proposal
 
     @staticmethod
-    def panel_basic(panel_id: str = None, name: str = None, cycle: str = None) -> Panel:
+    def panel_basic(
+        panel_id: str | None = None, name: str | None = None, cycle: str = "TestCycle"
+    ) -> Panel:
+        if panel_id is None:
+            panel_id = mint_skuid(EntityType.PNL)
+
+        if name is None:
+            name = f"Panel {randint(1000, 9999)}"
+
         data = {
             "panel_id": panel_id,
             "cycle": cycle,
@@ -236,7 +263,8 @@ class TestDataFactory:
 
     @staticmethod
     def proposal_assignment(
-        prsl_id: str = "prsl-001", assigned_on: datetime | str = "2025-05-21T09:30:00Z"
+        prsl_id: str = "prp-t0011test",
+        assigned_on: datetime | str = "2025-05-21T09:30:00Z",
     ) -> dict:
         if isinstance(assigned_on, datetime):
             assigned_on_str = assigned_on.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -251,12 +279,14 @@ class TestDataFactory:
 
     @staticmethod
     def panel(
-        panel_id: str = "panel-test-20250616-00002",
-        name: str = "Stargazers",
-        reviewer_id="rev-001",
-        prsl_id_1="prsl-mvp01-20220923-00001",
-        prsl_id_2="prsl-mvp01-20220923-00002",
+        panel_id: str = "pnl-t0002test",
+        name: str = None,
+        reviewer_id="rev-t0001test",
+        prsl_id_1="prp-t0006test",
+        prsl_id_2="prp-t0007test",
     ) -> Panel:
+        if name is None:
+            name = f"Panel {randint(1000, 9999)}"
         data = {
             "panel_id": "panel-Galactic-2025.2",
             "name": name,
@@ -286,14 +316,18 @@ class TestDataFactory:
 
     @staticmethod
     def panel_with_assignment(
-        panel_id: str = "panel-test-20250616-00002",
-        name: str = "Stargazers",
+        panel_id: str = "pnl-t0003test",
+        name: str | None = None,
         sci_reviewers: list | None = None,
         tech_reviewers: list | None = None,
         proposals: list | None = None,
         cycle: str | None = None,
         expiry_date: str | None = None,
     ) -> "Panel":
+
+        if name is None:
+            name = f"Panel {randint(1000, 9999)}"
+
         data = {
             "panel_id": panel_id,
             "name": name,
@@ -310,20 +344,24 @@ class TestDataFactory:
         return panel
 
     @staticmethod
-    def complete_proposal(prsl_id: str = "prsl-mvp01-20220923-00001", status="draft") -> Proposal:
+    def complete_proposal(prsl_id: str | None = None, status="draft") -> Proposal:
         filename = "complete_proposal.json"
         data = load_string_from_file(filename)
         prsl = Proposal.model_validate_json(data)
+
+        if prsl_id is None:
+            prsl_id = mint_skuid(EntityType.PRP)
+
         prsl.prsl_id = prsl_id
         prsl.status = status
         return prsl
 
     @staticmethod
     def proposal_report(
-        prsl_id: str = "prsl-mvp01-20220923-00001",
-        panel_id: str = "panel-test-20250616-00001",
-        reviewer_id: str = "rev-001",
-        review_id: str = "rvw-mvp01-20220923-00001",
+        prsl_id: str = "prp-t0009test",
+        panel_id: str = "pnl-t0004test",
+        reviewer_id: str = "rev-t0002test",
+        review_id: str = "rvw-t0002test",
     ):
         data = {
             "prsl_id": prsl_id,
@@ -344,9 +382,9 @@ class TestDataFactory:
 
     @staticmethod
     def proposal_access(
-        access_id: str = "prsl-mvp01-20220923-00001",
-        prsl_id: str = "panel-test-20250616-00001",
-        user_id: str = "rev-001",
+        access_id: str = "prpacc-t0001test",
+        prsl_id: str = "prp-t0010test",
+        user_id: str = "usr-t0001test",
         role: str = "Principal Investigator",
         permissions: list[str] = None,
     ) -> ProposalAccess:
@@ -392,10 +430,6 @@ SBDEFINITION_WITHOUT_METADATA_JSON = TestDataFactory.sbdefinition(
 VALID_PROJECT_WITHOUT_ID_JSON = TestDataFactory.project(prj_id=None).model_dump_json()
 
 # proposal entry
-VALID_NEW_PROPOSAL = TestDataFactory.proposal().model_dump_json()
-VALID_COMPLETE_PROPOSAL = TestDataFactory.complete_proposal().model_dump_json()
-VALID_REVIEW = TestDataFactory.reviews().model_dump_json()
-VALID_PANEL_DECISION = TestDataFactory.panel_decision().model_dump_json()
 PAYLOAD_SUCCESS = TestDataFactory.email_payload()
 PAYLOAD_CONNECT_FAIL = TestDataFactory.email_payload("connectfail@example.com", "PRSL999")
 PAYLOAD_BAD_TO = TestDataFactory.email_payload("badto@example.com", "PRSLBAD")

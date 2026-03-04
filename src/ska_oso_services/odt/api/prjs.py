@@ -13,8 +13,7 @@ from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
-from ska_ser_skuid.tools.entity_types import EntityType
-from ska_ser_skuid.tools.generate import mint_randint_skuid
+from ska_ser_skuid import EntityType, mint_skuid
 
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import (
@@ -46,7 +45,7 @@ router = APIRouter(prefix="/prjs")
 
 
 def empty_observing_block() -> ObservingBlock:
-    return ObservingBlock(obs_block_id=mint_randint_skuid(EntityType.OB), sbd_ids=[])
+    return ObservingBlock(obs_block_id=mint_skuid(EntityType.OB), sbd_ids=[])
 
 
 def _validate_project_has_scheduling_blocks(project: Project) -> None:

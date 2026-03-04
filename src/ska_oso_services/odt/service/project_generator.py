@@ -1,10 +1,10 @@
 from collections import defaultdict
-from random import randint
 
 from ska_oso_pdm import Project, Proposal
 from ska_oso_pdm.project import ObservingBlock, Purpose, ScienceProgramme
 from ska_oso_pdm.proposal import ObservationSets
 from ska_oso_pdm.proposal.info import ObservationInfo
+from ska_ser_skuid import EntityType, mint_skuid
 
 
 def generate_project(proposal: Proposal) -> Project:
@@ -40,10 +40,9 @@ def generate_project(proposal: Proposal) -> Project:
             science_programme_from_observation_set(observation_set, proposal.observation_info)
             for observation_set in observation_set_group
         ]
-        index = randint(10000, 99999)
         observing_blocks.append(
             ObservingBlock(
-                obs_block_id=f"obs-block-{index}",
+                obs_block_id=mint_skuid(EntityType.OB),
                 name=f"Observing Block {index}",
                 science_programmes=science_programmes,
             )

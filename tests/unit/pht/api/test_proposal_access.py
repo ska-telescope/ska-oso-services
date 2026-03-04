@@ -78,8 +78,8 @@ class TestProposalAccessAPI:
         Returns list of proposal access filter by User ID
         """
         proposal_access = [
-            TestDataFactory.proposal_access(access_id="access_id1", prsl_id="prsl1"),
-            TestDataFactory.proposal_access(access_id="access_id2", prsl_id="prsl2"),
+            TestDataFactory.proposal_access(access_id="access_id1", prsl_id="prp-t1"),
+            TestDataFactory.proposal_access(access_id="access_id2", prsl_id="prp-t2"),
         ]
 
         uow_mock = mock.MagicMock()
@@ -98,7 +98,7 @@ class TestProposalAccessAPI:
         """
         Returns list of proposal access filter by Proposal ID
         """
-        MOCK_PRSL_ID = "prsl1"
+        MOCK_PRSL_ID = "prp-t1"
         proposal_access = [
             TestDataFactory.proposal_access(
                 access_id="access_id1",
@@ -131,7 +131,7 @@ class TestProposalAccessAPI:
         Returns forbidden error when user is not PI of a proposal
         """
 
-        MOCK_PRSL_ID = "prsl1"
+        MOCK_PRSL_ID = "prp-t1"
         proposal_access = [
             TestDataFactory.proposal_access(
                 access_id="access_id1", prsl_id=MOCK_PRSL_ID, role="Co-Investigator"

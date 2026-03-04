@@ -213,7 +213,6 @@ def test_validate_station_bandwidth(
 def test_validate_station_bandwidth_fails_for_invalid_setup(
     low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst,
 ):
-
     sbd = low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst
     for spw in sbd.csp_configurations[1].lowcbf.correlation_spws:
         spw.number_of_channels = 96

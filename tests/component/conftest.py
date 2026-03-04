@@ -7,11 +7,12 @@ import pytest
 from requests import Session
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
-from ska_oso_pdm import Project, SBDefinition
+from ska_oso_pdm import Project, Proposal, SBDefinition
 
 from tests.component import ODT_URL
 
 from ..unit.util import TestDataFactory
+from . import PHT_URL
 
 AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
 
@@ -102,6 +103,28 @@ def test_sbd(test_project, authrequests) -> SBDefinition:
         headers={"Content-type": "application/json"},
     )
     return SBDefinition.model_validate_json(sbd_post_response.content)
+
+
+@pytest.fixture
+def test_proposal(authrequests) -> Proposal:
+    post_response = authrequests.post(
+        f"{PHT_URL}/prsls/create",
+        data=TestDataFactory.proposal().model_dump_json(),
+        headers={"Content-type": "application/json"},
+    )
+    return Proposal.model_validate_json(post_response.content)
+
+
+@pytest.fixture
+def test_panel_id(authrequests) -> str:
+    response = authrequests.post(
+        f"{PHT_URL}/panels/create",
+        data=TestDataFactory.panel_basic().model_dump_json(),
+        headers={"Content-Type": "application/json"},
+    )
+
+    # API just returns the ID
+    return response.json()
 
 
 # See https://developer.skao.int/projects/ska-ser-xray/en/latest/guide/pytest.html

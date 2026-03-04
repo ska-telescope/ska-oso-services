@@ -6,6 +6,7 @@ from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
 from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm import PanelReview
+from ska_ser_skuid import int_skuid
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -40,10 +41,9 @@ def create_review(
     logger.debug("POST REVIEW create")
 
     try:
-
         with oda.uow() as uow:
             query_param = CustomQuery(
-                prsl_fk=reviews.prsl_id,
+                prsl_fk=int_skuid(reviews.prsl_id).uid,
                 kind=reviews.review_type.kind,
                 reviewer_id=reviews.reviewer_id,
             )

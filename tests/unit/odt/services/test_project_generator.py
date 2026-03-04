@@ -1,5 +1,3 @@
-from unittest import mock
-
 from ska_oso_pdm import CalibrationStrategy
 from ska_oso_pdm.project import Purpose
 
@@ -7,8 +5,7 @@ from ska_oso_services.odt.service.project_generator import generate_project
 from tests.unit.util import TestDataFactory
 
 
-@mock.patch("ska_oso_services.odt.service.project_generator.randint")
-def test_project_from_proposal_without_groups(mock_randint):
+def test_project_from_proposal_without_groups():
     """
     The input Proposal has two observation sets that are not linked via groups.
     The first has two targets and the second has one target, and they both use
@@ -17,8 +14,6 @@ def test_project_from_proposal_without_groups(mock_randint):
     This test then checks that the Project is created with two Observing Blocks
     with the correct data from the Proposal
     """
-    mock_randint.return_value = 12345
-
     proposal = TestDataFactory.complete_proposal()
 
     # this might need to be removed if/when Stargazer add calibration_strategy to the
@@ -37,7 +32,6 @@ def test_project_from_proposal_without_groups(mock_randint):
 
     # Check the first observing block contents
     first_obs_block = project.obs_blocks[0]
-    assert first_obs_block.obs_block_id == "obs-block-12345"
     assert len(first_obs_block.science_programmes) == 1
     first_ob_science_programme = first_obs_block.science_programmes[0]
 

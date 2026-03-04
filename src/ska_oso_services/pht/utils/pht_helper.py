@@ -3,24 +3,9 @@ This module contains functions to transform and update proposal data
 for submission and creation processes.
 """
 
-import uuid
 from typing import Any, Optional
 
 from ska_oso_services.common.error_handling import DuplicateError
-
-
-def generate_entity_id(entity_name: str) -> str:
-    """
-    Generate a unique ID for an entity with the given prefix.
-
-    Args:
-        entity_name (str): The name/prefix for the entity, e.g., "panel", "prsl".
-
-    Returns:
-        str: A unique ID in the format "<entity_name>-<uuid-part>".
-    """
-    # TODO: Remove this once the uuid generator by Brendan works!
-    return f"{entity_name.lower()}-skao-{uuid.uuid4().hex[:9]}"
 
 
 def _get_attr_or_key(obj, key, default=None):
