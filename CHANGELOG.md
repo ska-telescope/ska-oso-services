@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
-* Update to ODA v16.0.0 with ADR-129 SKUIDs
+* Update to ODA v17.0.1 with ADR-129 SKUIDs
 
 13.2.0
 ************

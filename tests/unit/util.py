@@ -228,7 +228,7 @@ class TestDataFactory:
             panel_id = mint_skuid(EntityType.PNL)
 
         if name is None:
-            name = f"Panel {randint(100, 999)}"
+            name = f"Panel {randint(1000, 9999)}"
 
         data = {
             "panel_id": panel_id,
@@ -286,7 +286,7 @@ class TestDataFactory:
         prsl_id_2="prp-t0007test",
     ) -> Panel:
         if name is None:
-            name = f"Panel {randint(100, 999)}"
+            name = f"Panel {randint(1000, 9999)}"
         data = {
             "panel_id": "panel-Galactic-2025.2",
             "name": name,
@@ -326,7 +326,7 @@ class TestDataFactory:
     ) -> "Panel":
 
         if name is None:
-            name = f"Panel {randint(100, 999)}"
+            name = f"Panel {randint(1000, 9999)}"
 
         data = {
             "panel_id": panel_id,
