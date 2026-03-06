@@ -209,10 +209,10 @@ def test_sbd_delete_not_found(authrequests):
     assert "The requested identifier could not be found" in delete_response.json()["detail"]
 
 
-def test_sbd_status_set_ready(authrequests, test_project):
+def test_sbd_status_set_ready_then_draft(authrequests, test_project):
     """
-    Test that PUT /sbds/{identifier}/status/ready sets the SBD status to Ready
-    and returns the updated Status.
+    Test SBD status updates by first checking the initial status is Draft,
+    then setting it to Ready, then back to Draft
     """
     sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
     post_response = authrequests.post(
@@ -223,27 +223,25 @@ def test_sbd_status_set_ready(authrequests, test_project):
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     sbd_id = post_response.json()["sbd_id"]
 
-    response = authrequests.put(f"{ODT_URL}/sbds/{sbd_id}/status/ready")
+    # Assert the initial status is Draft
+    status_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}/status")
+    assert status_response.status_code == HTTPStatus.OK, status_response.content
+    assert status_response.json()["status"] == "Draft"
 
+    # Set the status to Ready and check it was updated in the database
+    response = authrequests.put(f"{ODT_URL}/sbds/{sbd_id}/status/ready")
     assert response.status_code == HTTPStatus.OK, response.content
     assert response.json()["status"] == "Ready"
 
+    status_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}/status")
+    assert status_response.status_code == HTTPStatus.OK, status_response.content
+    assert status_response.json()["status"] == "Ready"
 
-def test_sbd_status_set_draft(authrequests, test_project):
-    """
-    Test that PUT /sbds/{identifier}/status/draft sets the SBD status to Draft
-    and returns the updated Status.
-    """
-    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
-    post_response = authrequests.post(
-        f"{ODT_URL}/sbds",
-        data=sbd.model_dump_json(),
-        headers={"Content-type": "application/json"},
-    )
-    assert post_response.status_code == HTTPStatus.OK, post_response.content
-    sbd_id = post_response.json()["sbd_id"]
-
+    # Set the status back to Draft and check it was updated in the database
     response = authrequests.put(f"{ODT_URL}/sbds/{sbd_id}/status/draft")
-
     assert response.status_code == HTTPStatus.OK, response.content
     assert response.json()["status"] == "Draft"
+
+    status_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}/status")
+    assert status_response.status_code == HTTPStatus.OK, status_response.content
+    assert status_response.json()["status"] == "Draft"
