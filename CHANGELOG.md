@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+
+14.0.1
+************
 * Fixes bug where SBD status updates were not being committed
 
 14.0.0
