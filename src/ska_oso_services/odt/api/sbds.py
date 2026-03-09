@@ -223,6 +223,7 @@ def sbds_status_set_ready(
             status=SBDStatus.READY,
             updated_by=auth.user_id,
         )
+        uow.commit()
         return uow.status.get_current_status(entity_id=identifier)
 
 
@@ -249,4 +250,5 @@ def sbds_status_set_draft(
             status=SBDStatus.DRAFT,
             updated_by=auth.user_id,
         )
+        uow.commit()
         return uow.status.get_current_status(entity_id=identifier)
