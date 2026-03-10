@@ -1,6 +1,6 @@
 """
 This module provides functions to retrieve SDP script versions and parameters
-from TMData. It uses the ska_telmodel library to access TMData and fetch the
+from TMData. It uses the ska_telmodel_client library to access TMData and fetch the
 required information.
 """
 
