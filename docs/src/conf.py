@@ -50,7 +50,8 @@ autodoc_mock_imports = [
     "matplotlib",
     "jwt",
     "msal",
-    "ska_ser_skuid"
+    "ska_ser_skuid",
+    "ska_telmodel_client"
 ]
 
 # -- General configuration ------------------------------------------------
