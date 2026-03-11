@@ -1,13 +1,13 @@
 """
 This module provides functions to retrieve SDP script versions and parameters
-from TMData. It uses the ska_telmodel library to access TMData and fetch the
+from TMData. It uses the ska_telmodel_client library to access TMData and fetch the
 required information.
 """
 
 import os
 from typing import Any
 
-from ska_telmodel.data import TMData
+from ska_telmodel_client import TMData
 
 
 def get_tmdata() -> TMData:
