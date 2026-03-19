@@ -192,14 +192,6 @@ def _get_low_telescope_configuration() -> LowConfiguration:
 
     receiver_information = low_response["capabilities"]["low"]["basic_capabilities"]
 
-    # the following is a hack because I missed that the key in the OSD
-    # should have included `_hz`
-
-    additional_parameters = {
-        "coarse_channel_width_hz": receiver_information["coarse_channel_width"]
-    }
-    receiver_information = {**receiver_information, **additional_parameters}
-
     return LowConfiguration(
         frequency_band=LowFrequencyBand(**receiver_information), subarrays=subarrays
     )
