@@ -40,7 +40,7 @@ dependencies = [
     "astroplan>=0.10.1",
     "matplotlib>=3.10.7",
     "numpy<2.4",
-    "ska-ost-osd (>=6.0.1,<7.0.0)",
+    "ska-ost-osd (>=6.0.1+dev.c4636d850,<7.0.0)",
 ]
 
 [project.urls]
@@ -120,6 +120,9 @@ ska-ost-osd = "^6.0.1"
 tomli = "^2.4.0"
 
 
+
+[tool.poetry.dependencies]
+ska-ost-osd = {source = "gitlab-ska-ost-osd"}
 [tool.coverage.run]
 parallel = true
 branch = true
