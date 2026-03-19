@@ -29,7 +29,6 @@ dependencies = [
     "pydantic>=2.9",
     "fastapi[standard]>=0.115.8",
     "astroquery==0.4.9",
-    "ska-ost-osd==6.0.1",
     "ska-telmodel-client>=1.30.0",
     "aiosmtplib>=4.0.1",
     "boto3>=1.38.13",
@@ -41,6 +40,7 @@ dependencies = [
     "astroplan>=0.10.1",
     "matplotlib>=3.10.7",
     "numpy<2.4",
+    "ska-ost-osd (>=6.0.1,<7.0.0)",
 ]
 
 [project.urls]
