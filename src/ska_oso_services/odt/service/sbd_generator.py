@@ -284,11 +284,15 @@ def _sdp_configuration_from_data_product_sdp(
 
     @convert_parameter.register
     def _(value: u.quantity.Quantity) -> float:
-        return value.value
+        return float(value.value)  # cast to a float incase the value is a np.float64
 
     @convert_parameter.register
     def _(value: Weighting) -> str:
-        return f"{value.weighting} {value.robust}" if value.robust is not None else value.weighting
+        return (
+            f"{value.weighting} {value.robust}"
+            if value.robust is not None
+            else value.weighting.value
+        )
 
     if (
         dp_sdp.script_parameters.kind is not ProductType.CONTINUUM
