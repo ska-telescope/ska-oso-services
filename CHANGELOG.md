@@ -4,7 +4,7 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+14.0.2
 ************
 * [BUGFIX] Handles change from `coarse_channel_width` to `coarse_channel_width_hz` in OSD
 
