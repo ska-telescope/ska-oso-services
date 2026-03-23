@@ -86,14 +86,12 @@ def test_get_telescope_observing_constraint_returns_constraints():
     )
     assert value == 10.0
 
+
 def test_get_telescope_observing_constraint_returns_constraints_for_low():
-    value = get_telescope_observing_constraint(
-        TelescopeType.SKA_LOW, "sun_avoidance_angle_deg"
-    )
+    value = get_telescope_observing_constraint(TelescopeType.SKA_LOW, "sun_avoidance_angle_deg")
     assert value == 30.0
+
 
 def test_get_telescope_observing_constraint_fails_for_invalid_parameter():
     with pytest.raises(ValueError):
-        get_telescope_observing_constraint(
-            TelescopeType.SKA_LOW, "not_a_parameter"
-        )
+        get_telescope_observing_constraint(TelescopeType.SKA_LOW, "not_a_parameter")
