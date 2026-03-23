@@ -219,6 +219,22 @@ def get_osd_data(*args, **kwargs):
     return data
 
 
+def get_telescope_observing_constraint(telescope: TelescopeType, parameter: str):
+    """
+    Utility function to extract an observing constraint from the OSD
+    """
+    osd = configuration_from_osd()
+    if telescope == TelescopeType.SKA_MID:
+        constraints = osd.ska_mid.constraints
+    else:
+        constraints = osd.ska_low.constraints
+
+    if not hasattr(constraints, parameter):
+        raise ValueError(f"{parameter} is not a valid observing constraint for {telescope.value}")
+
+    return getattr(constraints, parameter)
+
+
 def get_low_basic_capability_parameter_from_osd(parameter: str):
     """
     Utility function to extract one of the SKA Low basic capabilities from the OSD
