@@ -35,7 +35,7 @@ def test_mid_target_below_min_elevation():
         telescope=TelescopeType.SKA_MID,
     )
     result = validate_mid_elevation(input_context)
-    assert result[0].message == "Source never rises above 15 degrees"
+    assert result[0].message == "Source never rises above 15.0 degrees"
 
 
 def test_low_target_below_horizon():
@@ -64,7 +64,7 @@ def test_low_target_below_min_elevation():
 
     assert len(result) == 1
     assert (
-        result[0].message == "Maximum elevation (44.74 degrees) is less than 45 degrees "
+        result[0].message == "Maximum elevation (44.74 degrees) is less than 45.0 degrees "
         "- performance may be degraded"
     )
     assert result[0].level == ValidationIssueType.WARNING
