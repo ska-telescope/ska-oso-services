@@ -76,13 +76,24 @@ class LowSubarray(Subarray):
     number_subarray_beams: int
 
 
+@dataclasses.dataclass
+class Constraints:
+    sun_avoidance_angle_deg: float
+    moon_avoidance_angle_deg: float
+    jupiter_avoidance_angle_deg: float
+    min_elevation_deg: float
+    max_elevation_deg: float
+
+
 class MidConfiguration(AppModel):
     frequency_band: list[MidFrequencyBand]
+    constraints: Constraints
     subarrays: list[Subarray]
 
 
 class LowConfiguration(AppModel):
     frequency_band: LowFrequencyBand
+    constraints: Constraints
     subarrays: list[LowSubarray]
 
 
@@ -110,36 +121,22 @@ def configuration_from_osd() -> Configuration:
 
 def _get_mid_telescope_configuration() -> MidConfiguration:
     subarrays = []
+
+    mid_response = get_osd_data(capabilities="mid", source=OSD_SOURCE, osd_version=OSD_VERSION)[
+        "capabilities"
+    ]["mid"]
+
     for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + MID_ARRAY_ASSEMBLIES:
-        mid_response = get_osd_data(
-            array_assembly=array_assembly,
-            capabilities="mid",
-            source=OSD_SOURCE,
-            osd_version=OSD_VERSION,
-        )
         subarrays.append(
             MidSubarray(
                 name=array_assembly,
-                receptors=mid_response["capabilities"]["mid"][array_assembly]["number_dish_ids"],
-                available_bandwidth_hz=mid_response["capabilities"]["mid"][array_assembly][
-                    "available_bandwidth_hz"
-                ],
-                allowed_channel_width_values_hz=mid_response["capabilities"]["mid"][
-                    array_assembly
-                ]["allowed_channel_width_values"],
-                number_pst_beams=mid_response["capabilities"]["mid"][array_assembly][
-                    "number_pst_beams"
-                ],
-                number_fsps=mid_response["capabilities"]["mid"][array_assembly]["number_fsps"],
+                receptors=mid_response[array_assembly]["number_dish_ids"],
+                **mid_response[array_assembly],
             )
         )
 
-    # Receiver information is the same for each array assembly, as such we use the
-    # last fetched response to populate this information.
-
-    receiver_information = mid_response["capabilities"]["mid"]["basic_capabilities"][
-        "receiver_information"
-    ]
+    receiver_information = mid_response["basic_capabilities"]["receiver_information"]
+    constraints = mid_response["constraints"]
 
     def frequency_band_from_receiver_information_for_band(receiver_information):
         band5b_subbands = (
@@ -155,45 +152,34 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
             frequency_band_from_receiver_information_for_band(receiver_info)
             for receiver_info in receiver_information
         ],
+        constraints=Constraints(**constraints),
         subarrays=subarrays,
     )
 
 
 def _get_low_telescope_configuration() -> LowConfiguration:
     subarrays = []
+
+    low_response = get_osd_data(capabilities="low", source=OSD_SOURCE, osd_version=OSD_VERSION)[
+        "capabilities"
+    ]["low"]
+
     for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + LOW_ARRAY_ASSEMBLIES:
-        low_response = get_osd_data(
-            array_assembly=array_assembly,
-            capabilities="low",
-            source=OSD_SOURCE,
-            osd_version=OSD_VERSION,
-        )
         subarrays.append(
             LowSubarray(
                 name=array_assembly,
-                receptors=low_response["capabilities"]["low"][array_assembly][
-                    "number_station_ids"
-                ],
-                available_bandwidth_hz=low_response["capabilities"]["low"][array_assembly][
-                    "available_bandwidth_hz"
-                ],
-                number_pst_beams=low_response["capabilities"]["low"][array_assembly][
-                    "number_pst_beams"
-                ],
-                number_fsps=low_response["capabilities"]["low"][array_assembly]["number_fsps"],
-                number_substations=low_response["capabilities"]["low"][array_assembly][
-                    "number_substations"
-                ],
-                number_subarray_beams=low_response["capabilities"]["low"][array_assembly][
-                    "number_beams"
-                ],
+                receptors=low_response[array_assembly]["number_station_ids"],
+                **low_response[array_assembly],
             )
         )
 
-    receiver_information = low_response["capabilities"]["low"]["basic_capabilities"]
+    receiver_information = low_response["basic_capabilities"]
+    constraints = low_response["constraints"]
 
     return LowConfiguration(
-        frequency_band=LowFrequencyBand(**receiver_information), subarrays=subarrays
+        frequency_band=LowFrequencyBand(**receiver_information),
+        constraints=Constraints(**constraints),
+        subarrays=subarrays,
     )
 
 
