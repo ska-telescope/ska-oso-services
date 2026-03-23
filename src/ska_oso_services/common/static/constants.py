@@ -2,13 +2,37 @@
 from functools import cache
 
 from astropy import units as u
+from astropy.coordinates import Latitude
 from astropy.units import Quantity
 from ska_oso_pdm import TelescopeType, ValidationArrayAssembly
 
 from ska_oso_services.common.osdmapper import (
     get_low_basic_capability_parameter_from_osd,
     get_subarray_specific_parameter_from_osd,
+    get_telescope_observing_constraint,
 )
+
+
+@cache
+def mid_minimum_elevation() -> Quantity:
+    """
+    SKA Mid Telescope limit
+    """
+    mid_min_elevation = get_telescope_observing_constraint(
+        TelescopeType.SKA_MID, "min_elevation_degree"
+    )
+    return Latitude(mid_min_elevation, unit="degrees")
+
+
+@cache
+def low_minimum_elevation() -> Quantity:
+    """
+    SKA Low Telescope limit
+    """
+    low_min_elevation = get_telescope_observing_constraint(
+        TelescopeType.SKA_LOW, "min_elevation_degree"
+    )
+    return Latitude(low_min_elevation, unit="degrees")
 
 
 @cache
