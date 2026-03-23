@@ -5,7 +5,9 @@ from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
 
 from ska_oso_services.common.osdmapper import (
     Band5bSubband,
+    Constraints,
     MidFrequencyBand,
+    configuration_from_osd,
     get_low_basic_capability_parameter_from_osd,
     get_mid_frequency_band_data_from_osd,
     get_subarray_specific_parameter_from_osd,
@@ -69,3 +71,9 @@ def test_get_subarray_specific_parameter_passes_for_valid_inputs():
         TelescopeType.SKA_LOW, SubArrayLOW.AA2_ALL, "number_pst_beams"
     )
     assert value == 4
+
+
+def test_configuration_from_osd_returns_constraints():
+    value = configuration_from_osd()
+    assert type(value.ska_low.constraints) is Constraints
+    assert type(value.ska_mid.constraints) is Constraints
