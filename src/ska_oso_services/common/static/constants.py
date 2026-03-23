@@ -19,9 +19,9 @@ def mid_minimum_elevation() -> Quantity:
     SKA Mid Telescope limit
     """
     mid_min_elevation = get_telescope_observing_constraint(
-        TelescopeType.SKA_MID, "min_elevation_deg"
+        TelescopeType.SKA_MID, "min_elevation_degree"
     )
-    return Latitude(mid_min_elevation, unit="degree")
+    return Latitude(mid_min_elevation, unit="degrees")
 
 
 @cache
@@ -30,9 +30,9 @@ def low_minimum_elevation() -> Quantity:
     SKA Low Telescope limit
     """
     low_min_elevation = get_telescope_observing_constraint(
-        TelescopeType.SKA_LOW, "min_elevation_deg"
+        TelescopeType.SKA_LOW, "min_elevation_degree"
     )
-    return Latitude(low_min_elevation, unit="degree")
+    return Latitude(low_min_elevation, unit="degrees")
 
 
 @cache

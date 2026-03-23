@@ -49,7 +49,7 @@ def validate_mid_elevation(
     if max_elevation < mid_minimum_elevation():
         return [
             ValidationIssue(
-                message=f"Source never rises above {mid_minimum_elevation().to('degree').value} "
+                message=f"Source never rises above {mid_minimum_elevation().to("degrees").value} "
                 "degrees"
             )
         ]
@@ -78,7 +78,7 @@ def validate_low_elevation(
             ValidationIssue(
                 level=ValidationIssueType.WARNING,
                 message=f"Maximum elevation ({round(max_elevation.value, 2)} degrees) "
-                f"is less than {low_minimum_elevation().to('degree').value} degrees "
+                f"is less than {low_minimum_elevation().to('degrees').value} degrees "
                 "- performance may be degraded",
             )
         ]
