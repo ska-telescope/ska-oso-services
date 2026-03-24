@@ -10,6 +10,52 @@
     "last_modified_on": "2026-02-03T15:26:50.406331Z",
     "pdm_version": "26.0.3"
   },
+    "observing_constraints": {
+    "sun_separation": {
+      "min": {
+        "value": 30.0,
+        "unit": "arcmin"
+      }
+    },
+    "moon_separation": {
+      "min": {
+        "value": 45.0,
+        "unit": "arcsec"
+      }
+    },
+    "jupiter_separation": {
+      "min": {
+        "value": 12.0,
+        "unit": "deg"
+      }
+    },
+    "altitude": {
+      "min": {
+        "value": 0.5,
+        "unit": "rad"
+      },
+      "max": {
+        "value": 80.0,
+        "unit": "deg"
+      }
+    },
+    "lst": {
+      "start": {
+        "value": 1.0,
+        "unit": "hourangle"
+      },
+      "end": {
+        "value": 3.14159,
+        "unit": "rad"
+      }
+    },
+    "minimum_receptors": 16,
+    "required_receptors": [
+      "S8-1",
+      "S9-2",
+      "S10-3"
+    ]
+  },
   "activities": {
     "observe": {
       "function_args": {
