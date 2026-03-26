@@ -7,7 +7,7 @@ from functools import cache
 from importlib.metadata import version
 from typing import Union
 
-from pydantic import dataclasses
+from pydantic import AliasChoices, BaseModel, Field, dataclasses
 from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
 from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
@@ -56,21 +56,20 @@ class LowFrequencyBand(FrequencyBand):
     number_zoom_channels_per_coarse_channel: int
 
 
-@dataclasses.dataclass
-class Subarray:
+class Subarray(BaseModel):
     name: str
-    receptors: list[str | int]
+    receptors: list[str | int] = Field(
+        validation_alias=AliasChoices("number_dish_ids", "number_station_ids")
+    )
     available_bandwidth_hz: float
     number_pst_beams: int
     number_fsps: int
 
 
-@dataclasses.dataclass
 class MidSubarray(Subarray):
     allowed_channel_width_values_hz: list[int]
 
 
-@dataclasses.dataclass
 class LowSubarray(Subarray):
     number_substations: int
     number_subarray_beams: int
@@ -130,7 +129,6 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
         subarrays.append(
             MidSubarray(
                 name=array_assembly,
-                receptors=mid_response[array_assembly]["number_dish_ids"],
                 **mid_response[array_assembly],
             )
         )
@@ -168,7 +166,6 @@ def _get_low_telescope_configuration() -> LowConfiguration:
         subarrays.append(
             LowSubarray(
                 name=array_assembly,
-                receptors=low_response[array_assembly]["number_station_ids"],
                 **low_response[array_assembly],
             )
         )
