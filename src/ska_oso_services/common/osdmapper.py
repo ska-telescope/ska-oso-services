@@ -119,19 +119,18 @@ def configuration_from_osd() -> Configuration:
 
 
 def _get_mid_telescope_configuration() -> MidConfiguration:
-    subarrays = []
 
     mid_response = get_osd_data(capabilities="mid", source=OSD_SOURCE, osd_version=OSD_VERSION)[
         "capabilities"
     ]["mid"]
 
-    for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + MID_ARRAY_ASSEMBLIES:
-        subarrays.append(
-            MidSubarray(
-                name=array_assembly,
-                **mid_response[array_assembly],
-            )
+    subarrays = [
+        MidSubarray(
+            name=array_assembly,
+            **mid_response[array_assembly],
         )
+        for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + MID_ARRAY_ASSEMBLIES
+    ]
 
     receiver_information = mid_response["basic_capabilities"]["receiver_information"]
     constraints = mid_response["constraints"]
@@ -156,19 +155,18 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
 
 
 def _get_low_telescope_configuration() -> LowConfiguration:
-    subarrays = []
 
     low_response = get_osd_data(capabilities="low", source=OSD_SOURCE, osd_version=OSD_VERSION)[
         "capabilities"
     ]["low"]
 
-    for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + LOW_ARRAY_ASSEMBLIES:
-        subarrays.append(
-            LowSubarray(
-                name=array_assembly,
-                **low_response[array_assembly],
-            )
+    subarrays = [
+        LowSubarray(
+            name=array_assembly,
+            **low_response[array_assembly],
         )
+        for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + LOW_ARRAY_ASSEMBLIES
+    ]
 
     receiver_information = low_response["basic_capabilities"]
     constraints = low_response["constraints"]
