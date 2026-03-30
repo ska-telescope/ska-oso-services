@@ -3,8 +3,10 @@ These functions map to the API paths, with the returned value being the API resp
 """
 
 import logging
+from datetime import datetime, timedelta
 from typing import Annotated, Optional
 
+from astropy.time import Time
 from fastapi import APIRouter
 from pydantic import BaseModel
 from ska_aaa_authhelpers import AuthContext, Role
@@ -21,6 +23,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.odt.service.calibrator_sweep_sbd_generator import generate_cal_sweep_sbd
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
@@ -286,6 +289,71 @@ def prjs_ob_generate_sbds(
         for sbd in sbds:
             updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
             updated_sbd_ids.append(updated_sbd.sbd_id)
+
+        updated_prj = uow.prjs.get(prj.prj_id)
+        uow.commit()
+
+    return updated_prj
+
+
+class CalibratorSweepInputs(BaseModel):
+    obs_start: datetime
+    duration_min: float
+    primary_dwell_min: float = 5
+    secondary_dwell_min: float | None = 5
+    interleave_primary: bool = False
+    coarse_channel_start: int = 206
+    coarse_channel_bandwidth: int = 96
+    with_pst: bool = False
+    stations: list[str] | None = None
+
+
+@router.post(
+    "/{identifier}/{obs_block_id}/generateCalibratorSweepSBDefinitions",
+    summary="Generate SBDefinitions for an ObservingBlock within a Project",
+    description="",
+)
+def prjs_ob_generate_sbds_cal_sweep(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    oda: UnitOfWork,
+    identifier: str,
+    obs_block_id: str,
+    input: CalibratorSweepInputs,
+) -> Project:
+    LOGGER.debug(
+        "POST PRJS generate SBDefinitions for prj_id: %s and obs_block_id: %s",
+        identifier,
+        obs_block_id,
+    )
+    updated_sbd_ids = []
+    with oda as uow:
+        prj = uow.prjs.get(identifier)
+        try:
+            obs_block = next(
+                obs_block for obs_block in prj.obs_blocks if obs_block.obs_block_id == obs_block_id
+            )
+        except StopIteration:
+            # pylint: disable=raise-missing-from
+            raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
+
+        sbd = generate_cal_sweep_sbd(
+            obs_start=Time(input.obs_start),
+            duration=timedelta(minutes=input.duration_min),
+            primary_dwell=timedelta(minutes=input.primary_dwell_min),
+            secondary_dwell=timedelta(minutes=input.secondary_dwell_min),
+            interleave_primary=input.interleave_primary,
+            coarse_channel_start=input.coarse_channel_start,
+            coarse_channel_bandwidth=input.coarse_channel_bandwidth,
+            with_pst=input.with_pst,
+        )
+
+        sbd.ob_ref = obs_block.obs_block_id
+
+        updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
+        updated_sbd_ids.append(updated_sbd.sbd_id)
 
         updated_prj = uow.prjs.get(prj.prj_id)
         uow.commit()
