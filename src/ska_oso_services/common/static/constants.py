@@ -2,7 +2,7 @@
 from functools import cache
 
 from astropy import units as u
-from astropy.coordinates import Latitude
+from astropy.coordinates import EarthLocation, Latitude
 from astropy.units import Quantity
 from ska_oso_pdm import TelescopeType, ValidationArrayAssembly
 
@@ -11,6 +11,9 @@ from ska_oso_services.common.osdmapper import (
     get_subarray_specific_parameter_from_osd,
     get_telescope_observing_constraint,
 )
+
+LOW_LOCATION = EarthLocation.of_site("SKA Low")
+MID_LOCATION = EarthLocation.of_site("SKA Mid")
 
 
 @cache
