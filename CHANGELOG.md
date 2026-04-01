@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 14.1.0
 **********
 * Updated to OSD v6
+* Updated to ODA v17.3.0
 * Updated `/configuration` response to return observing constraints
 
 14.0.2
