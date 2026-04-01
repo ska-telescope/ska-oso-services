@@ -4290,14 +4290,14 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-ost-osd"
-version = "6.0.4"
+version = "6.0.2"
 description = "Simplest form OSD consists of configuration files that are required by OSO tools."
 optional = false
 python-versions = ">=3.10,<4.0"
 groups = ["main", "docs"]
 files = [
-    {file = "ska_ost_osd-6.0.4-py3-none-any.whl", hash = "sha256:4362d34be3250d4d58608a98285cb171e591bb10c16f89beec6fa36a610ccf80"},
-    {file = "ska_ost_osd-6.0.4.tar.gz", hash = "sha256:d5b9d0b80f0187ea5503d3a9004bbcf28d25c344ecd1ff68cca7acc6416c9d2f"},
+    {file = "ska_ost_osd-6.0.2-py3-none-any.whl", hash = "sha256:244b86a12523008da1e985c9e26ffae3608f9c879e2e1e66bd642cee549cf9b0"},
+    {file = "ska_ost_osd-6.0.2.tar.gz", hash = "sha256:4126b612b5b952a2e8882e5466baf16b12567bcbd87107e717e41ef2fbe012e4"},
 ]
 
 [package.dependencies]
@@ -5360,4 +5360,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "87672b662d552812d4092b5ada6d0fa62cb680fc054318300a92bfc5b08ce09a"
+content-hash = "adcba104b59bcac021505a670bad0a7adbda52cc15030e941544b119f86e5c24"
