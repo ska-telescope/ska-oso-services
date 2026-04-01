@@ -8,6 +8,7 @@ from unittest import mock
 import pytest
 from pydantic import ValidationError
 from ska_db_oda.repository.domain.errors import ODAIntegrityError, ODANotFound
+from ska_oso_pdm import ICRSCoordinates, Target
 from ska_oso_pdm.project import ObservingBlock
 
 from tests.unit.conftest import ODT_BASE_API_URL
@@ -616,3 +617,138 @@ class TestCalibratorSweepSBDefinition:
 
             assert resp.json()["detail"] == "OSError('test error')"
             assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+class TestFrequencySweepSBDefinition:
+    FREQ_SWEEP_INPUT = {
+        "target_name": None,
+        "ra_str": "12:30:00",
+        "dec_str": "-30:00:00",
+        "target_dwell_min": 5,
+        "coarse_channel_start": 64,
+        "coarse_channel_end": 448,
+        "coarse_channel_bandwidth": 96,
+        "mode": "VIS",
+        "stations": None,
+    }
+
+    @mock.patch("ska_oso_services.odt.api.prjs.generate_frequency_sweep")
+    def test_frequency_sweep_generate_success_ra_dec(self, mock_generate, client_with_uow_mock):
+        client, uow_mock = client_with_uow_mock
+        project = TestDataFactory.project()
+        obs_block_id = "ob-1"
+        project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
+        sbd = TestDataFactory.lowsbdefinition(without_metadata=True)
+        uow_mock.prjs.get.return_value = project
+        uow_mock.sbds.add.return_value = sbd
+        mock_generate.return_value = sbd
+
+        resp = client.post(
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}"
+            "/generateFrequencySweepSBDefinition",
+            json=self.FREQ_SWEEP_INPUT,
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        mock_generate.assert_called_once()
+        args, kwargs = mock_generate.call_args
+        assert args == ()
+        target = kwargs["target"]
+        assert isinstance(target, Target)
+        assert isinstance(target.reference_coordinate, ICRSCoordinates)
+        assert target.reference_coordinate.ra_str == self.FREQ_SWEEP_INPUT["ra_str"]
+        assert target.reference_coordinate.dec_str == self.FREQ_SWEEP_INPUT["dec_str"]
+
+        uow_mock.sbds.add.assert_called_once()
+        saved_sbd, _ = uow_mock.sbds.add.call_args
+        assert saved_sbd[0].ob_ref == obs_block_id
+
+    @mock.patch("ska_oso_services.odt.api.prjs.get_coordinates")
+    @mock.patch("ska_oso_services.odt.api.prjs.generate_frequency_sweep")
+    def test_frequency_sweep_generate_success_target_name_lookup(
+        self, mock_generate, mock_get_coordinates, client_with_uow_mock
+    ):
+        client, uow_mock = client_with_uow_mock
+        project = TestDataFactory.project()
+        obs_block_id = "ob-1"
+        project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
+        sbd = TestDataFactory.lowsbdefinition(without_metadata=True)
+        uow_mock.prjs.get.return_value = project
+        uow_mock.sbds.add.return_value = sbd
+        mock_generate.return_value = sbd
+
+        resolved_target = Target(
+            target_id="target-123",
+            name="M83",
+            reference_coordinate=ICRSCoordinates(ra_str="13:37:00", dec_str="-29:51:56"),
+        )
+        mock_get_coordinates.return_value = resolved_target
+
+        payload = {
+            **self.FREQ_SWEEP_INPUT,
+            "target_name": "M83",
+            "ra_str": None,
+            "dec_str": None,
+        }
+
+        resp = client.post(
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}"
+            "/generateFrequencySweepSBDefinition",
+            json=payload,
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        mock_get_coordinates.assert_called_once_with("M83")
+        assert mock_generate.call_args.kwargs["target"] == resolved_target
+
+    def test_frequency_sweep_prj_not_found(self, client_with_uow_mock):
+        prj_id = "prj-999"
+        client, uow_mock = client_with_uow_mock
+        uow_mock.prjs.get.side_effect = ODANotFound(identifier=prj_id)
+
+        resp = client.post(
+            f"{PRJS_API_URL}/{prj_id}/ob-1/generateFrequencySweepSBDefinition",
+            json=self.FREQ_SWEEP_INPUT,
+        )
+
+        assert resp.status_code == HTTPStatus.NOT_FOUND
+        assert resp.json()["detail"] == f"The requested identifier {prj_id} could not be found."
+
+    def test_frequency_sweep_obs_block_not_found(self, client_with_uow_mock):
+        client, uow_mock = client_with_uow_mock
+        project = TestDataFactory.project()
+        project.obs_blocks = []
+        uow_mock.prjs.get.return_value = project
+
+        resp = client.post(
+            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001"
+            "/generateFrequencySweepSBDefinition",
+            json=self.FREQ_SWEEP_INPUT,
+        )
+
+        assert resp.status_code == HTTPStatus.NOT_FOUND
+        assert resp.json()["detail"] == "Observing Block 'obs-block-00001' not found in Project"
+
+    def test_frequency_sweep_requires_target_name_or_ra_dec(self, client_with_uow_mock):
+        client, uow_mock = client_with_uow_mock
+        project = TestDataFactory.project()
+        project.obs_blocks = [ObservingBlock(obs_block_id="ob-1")]
+        uow_mock.prjs.get.return_value = project
+
+        payload = {
+            **self.FREQ_SWEEP_INPUT,
+            "target_name": None,
+            "ra_str": None,
+            "dec_str": None,
+        }
+        resp = client.post(
+            f"{PRJS_API_URL}/{project.prj_id}/ob-1/generateFrequencySweepSBDefinition",
+            json=payload,
+        )
+
+        assert resp.status_code == HTTPStatus.BAD_REQUEST
+        assert (
+            resp.json()["detail"]
+            == "Provide either target_name for catalog lookup, or both ra_str "
+            "and dec for manual target coordinates."
+        )
