@@ -69,7 +69,7 @@
   ],
   "dish_allocations": {
     "dish_allocation_id": "dish-allocation-12345",
-    "dish_ids": ["SKA001", "SKA036", "SKA063", "SKA077"],
+    "dish_ids": ["SKA001", "SKA036", "SKA077", "SKA100"],
     "selected_subarray_definition": "AA0.5",
     "scan_sequence": [{
       "scan_definition_id": "scan-definition-12345",
