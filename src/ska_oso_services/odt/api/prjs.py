@@ -12,18 +12,20 @@ from pydantic import BaseModel, Field
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.repository.status import Status
 from ska_db_oda.rest.fastapicontext import UnitOfWork
-from ska_oso_pdm import TelescopeType
+from ska_oso_pdm import ICRSCoordinates, Target, TelescopeType
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 from ska_ser_skuid import EntityType, mint_skuid
 
 from ska_oso_services.common.auth import Permissions, Scope
+from ska_oso_services.common.coordinateslookup import get_coordinates
 from ska_oso_services.common.error_handling import (
     BadRequestError,
     NotFoundError,
     UnprocessableEntityError,
 )
 from ska_oso_services.odt.service.calibrator_sweep_sbd_generator import generate_cal_sweep_sbd
+from ska_oso_services.odt.service.frequency_sweep_calibrator import generate_frequency_sweep
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
@@ -100,6 +102,76 @@ class CalibratorSweepInputs(BaseModel):
         default=None,
         description="Optional list of station IDs to use in. Will default to AA0.5 stations"
         " in the generation if not given.",
+    )
+
+
+class FrequencySweepInputs(BaseModel):
+    """Input parameters for frequency sweep SBDefinition generation."""
+
+    target_name: str | None = Field(
+        default=None,
+        description="Optional target name.",
+    )
+    ra_str: str | None = Field(
+        default=None,
+        description="Right ascension string (e.g. '12:30:00').",
+    )
+    dec_str: str | None = Field(
+        default=None,
+        description="Declination string (e.g. '-30:00:00').",
+    )
+    target_dwell_min: float = Field(
+        default=5.0,
+        gt=0,
+        description="Target dwell time in minutes.",
+    )
+    coarse_channel_start: int = Field(
+        default=64,
+        ge=0,
+        le=511,
+        description="Start coarse channel.",
+    )
+    coarse_channel_end: int = Field(
+        default=448,
+        ge=1,
+        le=512,
+        description="End coarse channel.",
+    )
+    coarse_channel_bandwidth: int = Field(
+        default=96,
+        gt=0,
+        le=512,
+        description="Coarse channel bandwidth.",
+    )
+    mode: str = Field(
+        default="VIS",
+        description="Mode to use for generation (e.g. 'VIS' or 'PST').",
+    )
+    stations: list[str] | None = Field(
+        default=None,
+        description="Optional list of station IDs.",
+    )
+
+
+def _resolve_frequency_sweep_target(inputs: FrequencySweepInputs) -> Target:
+    """Resolve the target for frequency-sweep generation from API inputs."""
+    if inputs.target_name:
+        return get_coordinates(inputs.target_name)
+
+    if inputs.ra_str is not None and inputs.dec_str is not None:
+        return Target(
+            name=inputs.target_name or "frequency-sweep-target",
+            reference_coordinate=ICRSCoordinates(
+                ra_str=inputs.ra_str,
+                dec_str=inputs.dec_str,
+            ),
+        )
+
+    raise BadRequestError(
+        detail=(
+            "Provide either target_name for catalog lookup, or both ra_str "
+            "and dec for manual target coordinates."
+        )
     )
 
 
@@ -380,6 +452,65 @@ def prjs_ob_generate_sbds_cal_sweep(
 
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
         updated_sbd_ids.append(updated_sbd.sbd_id)
+
+        updated_prj = uow.prjs.get(prj.prj_id)
+        uow.commit()
+
+    return updated_prj
+
+
+@router.post(
+    "/{identifier}/{obs_block_id}/generateFrequencySweepSBDefinition",
+    summary="Generate a frequency sweep SBDefinition for an ObservingBlock",
+    description=(
+        "Generates a single SBDefinition for the Low Commissioning frequency "
+        "sweep use case. The generated SBDefinition is persisted in the ODA "
+        "and linked to the specified ObservingBlock within the Project."
+    ),
+)
+def prjs_ob_generate_sbds_frequency_sweep(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    oda: UnitOfWork,
+    identifier: str,
+    obs_block_id: str,
+    inputs: FrequencySweepInputs,
+) -> Project:
+    """
+    Generate a frequency sweep SBDefinition and store it in the given
+    ObservingBlock within a Project.
+    """
+    LOGGER.debug(
+        "POST PRJS generate Frequency Sweep SBDefinition for prj_id: %s and obs_block_id: %s",
+        identifier,
+        obs_block_id,
+    )
+    with oda as uow:
+        prj = uow.prjs.get(identifier)
+        try:
+            obs_block = next(
+                obs_block for obs_block in prj.obs_blocks if obs_block.obs_block_id == obs_block_id
+            )
+        except StopIteration:
+            # pylint: disable=raise-missing-from
+            raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
+
+        target = _resolve_frequency_sweep_target(inputs)
+
+        sbd = generate_frequency_sweep(
+            target=target,
+            target_dwell=timedelta(minutes=inputs.target_dwell_min),
+            coarse_channel_start=inputs.coarse_channel_start,
+            coarse_channel_end=inputs.coarse_channel_end,
+            coarse_channel_bandwidth=inputs.coarse_channel_bandwidth,
+            mode=inputs.mode,
+            stations=inputs.stations,
+        )
+
+        sbd.ob_ref = obs_block.obs_block_id
+        uow.sbds.add(sbd, user=auth.user_id)
 
         updated_prj = uow.prjs.get(prj.prj_id)
         uow.commit()

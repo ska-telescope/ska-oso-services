@@ -109,8 +109,49 @@ def test_cal_sweep_sbd_generated_from_project_obs_block(authrequests):
         "with_pst": False,
     }
     generate_response = authrequests.post(
-        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}" "/generateCalibratorSweepSBDefinition",
+        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/generateCalibratorSweepSBDefinition",
         json=cal_sweep_input,
+    )
+
+    assert generate_response.status_code == HTTPStatus.OK, generate_response.text
+    project = Project.model_validate_json(generate_response.text)
+
+    # Check that one SBDefinition was created
+    assert len(project.obs_blocks[0].sbd_ids) >= 1
+
+    # Check the SBDefinition exists in the ODA
+    sbd_id = project.obs_blocks[0].sbd_ids[-1]
+    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
+    assert get_response.status_code == HTTPStatus.OK
+
+
+def test_frequency_sweep_sbd_generated_from_project_obs_block(authrequests):
+    # First need to add a Project to generate from
+    project = TestDataFactory.project_with_two_low_targets(prj_id=None, prsl_ref=None)
+    post_response = authrequests.post(
+        f"{ODT_URL}/prjs",
+        data=project.model_dump_json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK, post_response.text
+    prj_id = post_response.json()["prj_id"]
+    obs_block_id = post_response.json()["obs_blocks"][0]["obs_block_id"]
+
+    # Generate a frequency sweep SBDefinition
+    frequency_sweep_input = {
+        "target_name": None,
+        "ra_str": "12:30:00",
+        "dec_str": "-30:00:00",
+        "target_dwell_min": 5,
+        "coarse_channel_start": 64,
+        "coarse_channel_end": 448,
+        "coarse_channel_bandwidth": 96,
+        "mode": "VIS",
+        "stations": None,
+    }
+    generate_response = authrequests.post(
+        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/generateFrequencySweepSBDefinition",
+        json=frequency_sweep_input,
     )
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text
