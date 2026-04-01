@@ -4,6 +4,11 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+************
+* Adds a new POST /{prj_id}/{ob_id}/generateCalibratorSweepSBDefinition endpoint that generates
+  an SBD with a dynamic number of targets/scans based on the expected time of execution.
+
 14.0.2
 ************
 * [BUGFIX] Handles change from `coarse_channel_width` to `coarse_channel_width_hz` in OSD

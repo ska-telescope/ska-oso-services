@@ -1,0 +1,221 @@
+"""
+Calibrator sweep SBDefinition generation with a dynamic number of scans (based
+on the requested total duration and scan time) of targets that are visible
+at the expected start time.
+
+This is a Low Commissioning use case and the first examples of SBDefinition generation
+from parameters other than a Proposal ScienceProgramme. Eventually we expect the inputs
+to this to evolve into more standard observatory use cases.
+
+The expected start time and picking of targets based on that is more of a scheduler task
+and will eventually be removed, but this is what is needed during commissioning currently.
+"""
+
+# pylint: disable=no-member
+import logging
+from datetime import timedelta
+
+import astropy.units as u
+from astropy.table import Row
+from astropy.time import Time
+from ska_oso_pdm import Beam, ICRSCoordinates, SBDefinition, Target, TiedArrayBeams
+from ska_oso_pdm.builders import LowSBDefinitionBuilder, MCCSAllocationBuilder
+from ska_oso_pdm.builders.utils import csp_configuration_id, scan_definition_id, target_id
+from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
+from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration
+from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
+
+from ska_oso_services.odt.service.commissioning.script_utils import pick_targets
+
+LOGGER = logging.getLogger(__name__)
+
+CHANNEL_WIDTH_HZ = 781.25e3
+
+
+def generate_cal_sweep_sbd(
+    obs_start: Time,
+    duration: timedelta,
+    primary_dwell: timedelta,
+    secondary_dwell: timedelta | None = None,
+    interleave_primary: bool = False,
+    coarse_channel_start: int = 206,
+    coarse_channel_bandwidth: int = 96,
+    with_pst: bool = False,
+    stations: list[int] | None = None,
+) -> SBDefinition:
+    """
+    Generate a calibrator sweep SBDefinition.
+
+    Builds a Low SBDefinition with a single CSP configuration and single subarray beam
+    and a scan. Targets are chosen by what is visible at the start time and are added to
+    the scan sequence for the subarray beam
+    """
+    mccs_allocation = (
+        MCCSAllocationBuilder() if stations is None else MCCSAllocationBuilder(stations=stations)
+    )
+    sbd = LowSBDefinitionBuilder(
+        mccs_allocation=mccs_allocation, targets=[], csp_configurations=[]
+    )
+
+    csp_configuration = CSPConfiguration(
+        config_id=csp_configuration_id(),
+        name=f"Channel start {coarse_channel_start} BW {coarse_channel_bandwidth}",
+        lowcbf=LowCBFConfiguration(
+            do_pst=with_pst,
+            correlation_spws=[
+                Correlation(
+                    spw_id=1,
+                    number_of_channels=coarse_channel_bandwidth,
+                    centre_frequency=CHANNEL_WIDTH_HZ
+                    * (coarse_channel_start - 0.5 + coarse_channel_bandwidth / 2.0),
+                    integration_time_ms=849,
+                    logical_fsp_ids=[],
+                    zoom_factor=0,
+                )
+            ],
+        ),
+    )
+
+    sbd.csp_configurations.append(csp_configuration)
+
+    pick_targets_and_add_scans(
+        sbd=sbd,
+        start_time=obs_start,
+        duration=duration,
+        primary_dwell=primary_dwell,
+        secondary_dwell=secondary_dwell,
+        interleave_primary=interleave_primary,
+        with_pst=with_pst,
+        coarse_channel_start=coarse_channel_start,
+    )
+
+    return sbd
+
+
+def pick_targets_and_add_scans(
+    sbd: SBDefinition,
+    start_time: Time,
+    duration: timedelta,
+    primary_dwell: timedelta,
+    secondary_dwell: timedelta,
+    interleave_primary: bool,
+    with_pst: bool,
+    coarse_channel_start: int,
+) -> SBDefinition:
+    """
+    Fill an SBDefinition's scan sequence with calibrator/pulsar targets
+    and returns the mutated SBD
+
+    Iterates from *start_time* until the (*duration*) is met.
+    At each step the brightest currently-visible target is chosen
+    as the primary, with dimmer visible targets used as secondaries.
+    """
+    end_time = Time(start_time + duration)
+
+    num_stations = len(sbd.mccs_allocation.subarray_beams[0].apertures)
+    while True:
+        total_sbd_time = total_scans_time_for_sbd(sbd)
+        # Check if after all the scans that are built up so far,
+        # there is enough time for at least one more
+        current_expected_end_time = start_time + total_sbd_time
+
+        if (current_expected_end_time + primary_dwell) > end_time:
+            return sbd
+
+        mode = "PST" if with_pst else "VIS"
+        targets = pick_targets(
+            coarse_channel_start=coarse_channel_start,
+            mode=mode,
+            obs_time=current_expected_end_time,
+        )
+
+        if targets.primary is None:
+            LOGGER.debug(
+                "No more targets available. SBD will run for %s",
+                total_sbd_time,
+            )
+            return sbd
+
+        primary_target = pdm_target_from_aiv_target(targets.primary, with_pst, num_stations)
+        sbd.targets.append(primary_target)
+
+        _add_scan_for_target(sbd=sbd, target=primary_target, duration=primary_dwell)
+        total_sbd_time += primary_dwell
+
+        if secondary_dwell is None:
+            continue
+
+        for secondary in targets.secondary or []:
+            if (total_sbd_time + secondary_dwell) > duration:
+                return sbd
+
+            secondary_target = pdm_target_from_aiv_target(secondary, with_pst, num_stations)
+            sbd.targets.append(secondary_target)
+            _add_scan_for_target(sbd=sbd, target=secondary_target, duration=secondary_dwell)
+            total_sbd_time += secondary_dwell
+
+            if interleave_primary:
+                _add_scan_for_target(sbd=sbd, target=primary_target, duration=primary_dwell)
+                total_sbd_time += primary_dwell
+
+    return sbd
+
+
+def _add_scan_for_target(sbd: SBDefinition, target: Target, duration: timedelta) -> SBDefinition:
+    csp_configuration = sbd.csp_configurations[0]
+
+    scan = ScanDefinition(
+        scan_definition_id=scan_definition_id(),
+        target_ref=target.target_id,
+        csp_configuration_ref=csp_configuration.config_id,
+        scan_duration_ms=duration,
+    )
+
+    sbd.mccs_allocation.subarray_beams[0].scan_sequence.append(scan)
+    return sbd
+
+
+def pdm_target_from_aiv_target(
+    aiv_target: Row, with_pst: bool, num_stations: int | None = None
+) -> Target:
+    """
+    Convert an astropy table row from the AIV catalogue to a PDM
+    :class:`Target`.
+
+    :return: A PDM Target with ICRS coordinates.
+    """
+
+    reference_coordinate = ICRSCoordinates(
+        ra_str=aiv_target["coords"].ra.to_string(u.hour, sep=":"),
+        dec_str=aiv_target["coords"].dec.to_string(u.degree, sep=":"),
+    )
+
+    if with_pst:
+        if num_stations is None:
+            raise ValueError("num_stations must also be given to create a pst_beam")
+        pst_beams = [
+            Beam(
+                beam_id=1,
+                beam_name=aiv_target["name"],
+                beam_coordinate=reference_coordinate,
+                stn_weights=[1.0] * num_stations,
+            )
+        ]
+    else:
+        pst_beams = []
+
+    return Target(
+        target_id=target_id(),
+        name=aiv_target["name"],
+        reference_coordinate=reference_coordinate,
+        tied_array_beams=TiedArrayBeams(pst_beams=pst_beams),
+    )
+
+
+def total_scans_time_for_sbd(sbd: SBDefinition) -> timedelta:
+    return timedelta(
+        seconds=sum(
+            scan.scan_duration_ms.seconds
+            for scan in sbd.mccs_allocation.subarray_beams[0].scan_sequence
+        )
+    )
