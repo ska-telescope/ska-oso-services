@@ -3,10 +3,12 @@ These functions map to the API paths, with the returned value being the API resp
 """
 
 import logging
+from datetime import datetime, timedelta
 from typing import Annotated, Optional
 
+from astropy.time import Time
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.repository.status import Status
 from ska_db_oda.rest.fastapicontext import UnitOfWork
@@ -21,6 +23,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.odt.service.calibrator_sweep_sbd_generator import generate_cal_sweep_sbd
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
@@ -68,6 +71,36 @@ def _validate_project_has_scheduling_blocks(project: Project) -> None:
                 "associated SBDefinitions."
             )
         )
+
+
+class CalibratorSweepInputs(BaseModel):
+    """Input parameters for calibrator sweep SBDefinition generation."""
+
+    obs_start: datetime
+    duration_min: float
+    primary_dwell_min: float = 5
+    secondary_dwell_min: float | None = 5
+    interleave_primary: bool = Field(
+        default=False,
+        description=(
+            "If true, adds a scan on the primary target after every secondary target scan."
+        ),
+    )
+    coarse_channel_start: int = 206
+    coarse_channel_bandwidth: int = 96
+    with_pst: bool = Field(
+        default=False,
+        description=(
+            "If true, enable PST mode in the CSP configuration and select "
+            "targets from the bright-pulsar catalogue instead of the "
+            "calibrator catalogue."
+        ),
+    )
+    stations: list[str] | None = Field(
+        default=None,
+        description="Optional list of station IDs to use in. Will default to AA0.5 stations"
+        " in the generation if not given.",
+    )
 
 
 @router.get(
@@ -286,6 +319,67 @@ def prjs_ob_generate_sbds(
         for sbd in sbds:
             updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
             updated_sbd_ids.append(updated_sbd.sbd_id)
+
+        updated_prj = uow.prjs.get(prj.prj_id)
+        uow.commit()
+
+    return updated_prj
+
+
+@router.post(
+    "/{identifier}/{obs_block_id}/generateCalibratorSweepSBDefinition",
+    summary="Generate a calibrator sweep SBDefinition for an ObservingBlock",
+    description=(
+        "Generates a single SBDefinition for the Low Commissioning calibrator "
+        "sweep use case. The generated SBDefinition is persisted in the ODA "
+        "and linked to the specified ObservingBlock within the Project."
+    ),
+)
+def prjs_ob_generate_sbds_cal_sweep(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    oda: UnitOfWork,
+    identifier: str,
+    obs_block_id: str,
+    inputs: CalibratorSweepInputs,
+) -> Project:
+    """
+    Generate a calibrator sweep SBDefinition and store it in the given
+    ObservingBlock within a Project.
+    """
+    LOGGER.debug(
+        "POST PRJS generate Calibrator Sweep SBDefinition for prj_id: %s and obs_block_id: %s",
+        identifier,
+        obs_block_id,
+    )
+    updated_sbd_ids = []
+    with oda as uow:
+        prj = uow.prjs.get(identifier)
+        try:
+            obs_block = next(
+                obs_block for obs_block in prj.obs_blocks if obs_block.obs_block_id == obs_block_id
+            )
+        except StopIteration:
+            # pylint: disable=raise-missing-from
+            raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
+
+        sbd = generate_cal_sweep_sbd(
+            obs_start=Time(inputs.obs_start),
+            duration=timedelta(minutes=inputs.duration_min),
+            primary_dwell=timedelta(minutes=inputs.primary_dwell_min),
+            secondary_dwell=timedelta(minutes=inputs.secondary_dwell_min),
+            interleave_primary=inputs.interleave_primary,
+            coarse_channel_start=inputs.coarse_channel_start,
+            coarse_channel_bandwidth=inputs.coarse_channel_bandwidth,
+            with_pst=inputs.with_pst,
+        )
+
+        sbd.ob_ref = obs_block.obs_block_id
+
+        updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
+        updated_sbd_ids.append(updated_sbd.sbd_id)
 
         updated_prj = uow.prjs.get(prj.prj_id)
         uow.commit()
