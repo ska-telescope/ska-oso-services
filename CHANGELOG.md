@@ -4,7 +4,7 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+14.1.0
 **********
 * Updated to OSD v6
 * Updated `/configuration` response to return observing constraints
