@@ -41,6 +41,7 @@ dependencies = [
     "astroplan>=0.10.1",
     "matplotlib>=3.10.7",
     "numpy<2.4",
+    "ska-oso-pdm (==27.2.2)",
 ]
 
 [project.urls]
