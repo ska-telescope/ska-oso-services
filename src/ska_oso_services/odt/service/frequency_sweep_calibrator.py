@@ -5,8 +5,10 @@ This module provides generation of an SBDefinition for the Low Commissioning
 frequency sweep use case.
 """
 
+# pylint: disable=no-member
 from datetime import timedelta
 
+import astropy.units as u
 import numpy as np
 from ska_oso_pdm import SBDefinition, Target
 from ska_oso_pdm.builders import LowSBDefinitionBuilder, MCCSAllocationBuilder
@@ -16,7 +18,7 @@ from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 
-CHANNEL_WIDTH_HZ = 781.25e3
+from ska_oso_services.common.astro import low_coarse_channel_start_to_centre_frequency
 
 
 def generate_frequency_sweep(
@@ -70,8 +72,11 @@ def generate_frequency_sweep(
                     Correlation(
                         spw_id=1,
                         number_of_channels=int(coarse_channel_bandwidth),
-                        centre_frequency=CHANNEL_WIDTH_HZ
-                        * (int(scan_start) + 0.5 * int(coarse_channel_bandwidth) - 0.5),
+                        centre_frequency=low_coarse_channel_start_to_centre_frequency(
+                            scan_start, coarse_channel_bandwidth
+                        )
+                        .to(u.Hz)
+                        .value,
                         integration_time_ms=849,
                         logical_fsp_ids=[],
                         zoom_factor=0,

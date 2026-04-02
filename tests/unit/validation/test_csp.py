@@ -148,12 +148,19 @@ def test_mid_telescope_csp_configuration_throws_fsp_error():
 
 def test_low_telescope_csp_configuration_passes_for_valid_setup():
     sbd = LowSBDefinitionBuilder()
+    # Test the lower limit for a 75 MHz bandwidth is valid
+    sbd.csp_configurations[0].lowcbf.correlation_spws[0].centre_frequency = 87.109375 * 1e6
     input_context = ValidationContext(
         primary_entity=sbd.csp_configurations[0],
         telescope=sbd.telescope,
         array_assembly=ValidationArrayAssembly.AA1,
     )
 
+    result = validate_csp(input_context)
+    assert result == []
+
+    # Test the upper limit for a 75 MHz bandwidth is valid
+    sbd.csp_configurations[0].lowcbf.correlation_spws[0].centre_frequency = 312.109375 * 1e6
     result = validate_csp(input_context)
     assert result == []
 

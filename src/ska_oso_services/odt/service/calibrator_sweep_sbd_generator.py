@@ -25,11 +25,10 @@ from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 
+from ska_oso_services.common.astro import low_coarse_channel_start_to_centre_frequency
 from ska_oso_services.odt.service.commissioning.script_utils import pick_targets
 
 LOGGER = logging.getLogger(__name__)
-
-CHANNEL_WIDTH_HZ = 781.25e3
 
 
 def generate_cal_sweep_sbd(
@@ -66,8 +65,11 @@ def generate_cal_sweep_sbd(
                 Correlation(
                     spw_id=1,
                     number_of_channels=coarse_channel_bandwidth,
-                    centre_frequency=CHANNEL_WIDTH_HZ
-                    * (coarse_channel_start - 0.5 + coarse_channel_bandwidth / 2.0),
+                    centre_frequency=low_coarse_channel_start_to_centre_frequency(
+                        coarse_channel_start, coarse_channel_bandwidth
+                    )
+                    .to(u.Hz)
+                    .value,
                     integration_time_ms=849,
                     logical_fsp_ids=[],
                     zoom_factor=0,

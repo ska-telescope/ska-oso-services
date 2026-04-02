@@ -26,6 +26,30 @@ LOGGER = logging.getLogger(__name__)
 AstroqueryExceptions = (TimeoutError, TableParseError, RemoteServiceError)
 
 
+def _as_python_scalar(value):
+    """Convert table/array-like values to plain Python scalars where possible."""
+    if isinstance(value, (str, int, float)):
+        return value
+
+    # Numpy / masked scalar
+    if hasattr(value, "item"):
+        try:
+            return value.item()
+        except (ValueError, TypeError):
+            pass
+
+    # 1-element containers/columns
+    if hasattr(value, "__len__") and not isinstance(value, (str, bytes)):
+        try:
+            if len(value) == 1:
+                first = value[0]
+                return first.item() if hasattr(first, "item") else first
+        except (TypeError, IndexError, KeyError):
+            pass
+
+    return value
+
+
 def get_coordinates(object_name: str) -> Target:
     """
     Query celestial coordinates for a given object name in either the
@@ -81,15 +105,17 @@ def lookup_in_simbad(object_name: str) -> Target | None:
     pdm_coordinate = _sky_coord_to_pdm_icrs(coordinates)
 
     # Determine if stored information is redshift or velocity
-    rvz_type = result_table_simbad["rvz_type"]
+    rvz_type = _as_python_scalar(result_table_simbad["rvz_type"])
     match rvz_type:
         case "z":
-            radial_velocity = RadialVelocity(redshift=result_table_simbad["rvz_redshift"])
+            radial_velocity = RadialVelocity(
+                redshift=float(_as_python_scalar(result_table_simbad["rvz_redshift"]))
+            )
         case "v":
             radial_velocity = RadialVelocity(
                 quantity=(
                     u.Quantity(
-                        value=result_table_simbad["rvz_radvel"],
+                        value=float(_as_python_scalar(result_table_simbad["rvz_radvel"])),
                         unit=RadialVelocityUnits.KM_PER_SEC,
                     )
                 )
@@ -120,7 +146,9 @@ def lookup_in_ned(object_name: str) -> Target | None:
     if hasattr(result_table_ned["Redshift"], "mask") and result_table_ned["Redshift"].mask[0]:
         radial_velocity = RadialVelocity(redshift=0)
     else:
-        radial_velocity = RadialVelocity(redshift=result_table_ned["Redshift"][0])
+        radial_velocity = RadialVelocity(
+            redshift=float(_as_python_scalar(result_table_ned["Redshift"][0]))
+        )
 
     return Target(
         name=object_name,
