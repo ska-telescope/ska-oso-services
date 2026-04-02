@@ -9,6 +9,12 @@ Unreleased
 * Adds a new POST /{prj_id}/{ob_id}/generateCalibratorSweepSBDefinition endpoint that generates
   an SBD with a dynamic number of targets/scans based on the expected time of execution.
 
+14.1.0
+**********
+* Updated to OSD v6
+* Updated to ODA v17.3.0
+* Updated `/configuration` response to return observing constraints
+
 14.0.2
 ************
 * [BUGFIX] Handles change from `coarse_channel_width` to `coarse_channel_width_hz` in OSD

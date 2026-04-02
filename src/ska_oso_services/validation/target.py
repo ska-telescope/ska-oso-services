@@ -5,6 +5,7 @@ from astropy.units import Quantity
 from ska_oso_pdm import Target, TelescopeType
 
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
+from ska_oso_services.common.static.constants import low_minimum_elevation, mid_minimum_elevation
 from ska_oso_services.validation.model import (
     ValidationContext,
     ValidationIssue,
@@ -45,8 +46,13 @@ def validate_mid_elevation(
     """
     max_elevation = _find_max_elevation(target_context.primary_entity, TelescopeType.SKA_MID)
 
-    if max_elevation < Latitude(15, unit=u.deg):
-        return [ValidationIssue(message="Source never rises above 15 degrees")]
+    if max_elevation < mid_minimum_elevation():
+        return [
+            ValidationIssue(
+                message=f"Source never rises above {mid_minimum_elevation().to('degree').value} "
+                "degrees"
+            )
+        ]
 
     return []
 
@@ -67,12 +73,13 @@ def validate_low_elevation(
     if max_elevation < Latitude(0, unit=u.deg):
         return [ValidationIssue(message="Source never rises above the horizon")]
 
-    if max_elevation < Latitude(45, unit=u.deg):
+    if max_elevation < low_minimum_elevation():
         return [
             ValidationIssue(
                 level=ValidationIssueType.WARNING,
                 message=f"Maximum elevation ({round(max_elevation.value, 2)} degrees) "
-                f"is less than 45 degrees - performance may be degraded",
+                f"is less than {low_minimum_elevation().to('degree').value} degrees "
+                "- performance may be degraded",
             )
         ]
 

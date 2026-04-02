@@ -7,7 +7,7 @@ from functools import cache
 from importlib.metadata import version
 from typing import Union
 
-from pydantic import dataclasses
+from pydantic import AliasChoices, BaseModel, Field, dataclasses
 from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
 from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
@@ -56,33 +56,43 @@ class LowFrequencyBand(FrequencyBand):
     number_zoom_channels_per_coarse_channel: int
 
 
-@dataclasses.dataclass
-class Subarray:
+class Subarray(BaseModel):
     name: str
-    receptors: list[str | int]
+    receptors: list[str | int] = Field(
+        validation_alias=AliasChoices("number_dish_ids", "number_station_ids")
+    )
     available_bandwidth_hz: float
     number_pst_beams: int
     number_fsps: int
 
 
-@dataclasses.dataclass
 class MidSubarray(Subarray):
     allowed_channel_width_values_hz: list[int]
 
 
-@dataclasses.dataclass
 class LowSubarray(Subarray):
     number_substations: int
     number_subarray_beams: int
 
 
+@dataclasses.dataclass
+class Constraints:
+    sun_avoidance_angle_deg: float
+    moon_avoidance_angle_deg: float
+    jupiter_avoidance_angle_deg: float
+    min_elevation_deg: float
+    max_elevation_deg: float
+
+
 class MidConfiguration(AppModel):
     frequency_band: list[MidFrequencyBand]
+    constraints: Constraints
     subarrays: list[Subarray]
 
 
 class LowConfiguration(AppModel):
     frequency_band: LowFrequencyBand
+    constraints: Constraints
     subarrays: list[LowSubarray]
 
 
@@ -109,37 +119,21 @@ def configuration_from_osd() -> Configuration:
 
 
 def _get_mid_telescope_configuration() -> MidConfiguration:
-    subarrays = []
-    for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + MID_ARRAY_ASSEMBLIES:
-        mid_response = get_osd_data(
-            array_assembly=array_assembly,
-            capabilities="mid",
-            source=OSD_SOURCE,
-            osd_version=OSD_VERSION,
-        )
-        subarrays.append(
-            MidSubarray(
-                name=array_assembly,
-                receptors=mid_response["capabilities"]["mid"][array_assembly]["number_dish_ids"],
-                available_bandwidth_hz=mid_response["capabilities"]["mid"][array_assembly][
-                    "available_bandwidth_hz"
-                ],
-                allowed_channel_width_values_hz=mid_response["capabilities"]["mid"][
-                    array_assembly
-                ]["allowed_channel_width_values"],
-                number_pst_beams=mid_response["capabilities"]["mid"][array_assembly][
-                    "number_pst_beams"
-                ],
-                number_fsps=mid_response["capabilities"]["mid"][array_assembly]["number_fsps"],
-            )
-        )
 
-    # Receiver information is the same for each array assembly, as such we use the
-    # last fetched response to populate this information.
+    mid_response = get_osd_data(capabilities="mid", source=OSD_SOURCE, osd_version=OSD_VERSION)[
+        "capabilities"
+    ]["mid"]
 
-    receiver_information = mid_response["capabilities"]["mid"]["basic_capabilities"][
-        "receiver_information"
+    subarrays = [
+        MidSubarray(
+            name=array_assembly,
+            **mid_response[array_assembly],
+        )
+        for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + MID_ARRAY_ASSEMBLIES
     ]
+
+    receiver_information = mid_response["basic_capabilities"]["receiver_information"]
+    constraints = mid_response["constraints"]
 
     def frequency_band_from_receiver_information_for_band(receiver_information):
         band5b_subbands = (
@@ -155,45 +149,32 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
             frequency_band_from_receiver_information_for_band(receiver_info)
             for receiver_info in receiver_information
         ],
+        constraints=Constraints(**constraints),
         subarrays=subarrays,
     )
 
 
 def _get_low_telescope_configuration() -> LowConfiguration:
-    subarrays = []
-    for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + LOW_ARRAY_ASSEMBLIES:
-        low_response = get_osd_data(
-            array_assembly=array_assembly,
-            capabilities="low",
-            source=OSD_SOURCE,
-            osd_version=OSD_VERSION,
-        )
-        subarrays.append(
-            LowSubarray(
-                name=array_assembly,
-                receptors=low_response["capabilities"]["low"][array_assembly][
-                    "number_station_ids"
-                ],
-                available_bandwidth_hz=low_response["capabilities"]["low"][array_assembly][
-                    "available_bandwidth_hz"
-                ],
-                number_pst_beams=low_response["capabilities"]["low"][array_assembly][
-                    "number_pst_beams"
-                ],
-                number_fsps=low_response["capabilities"]["low"][array_assembly]["number_fsps"],
-                number_substations=low_response["capabilities"]["low"][array_assembly][
-                    "number_substations"
-                ],
-                number_subarray_beams=low_response["capabilities"]["low"][array_assembly][
-                    "number_beams"
-                ],
-            )
-        )
 
-    receiver_information = low_response["capabilities"]["low"]["basic_capabilities"]
+    low_response = get_osd_data(capabilities="low", source=OSD_SOURCE, osd_version=OSD_VERSION)[
+        "capabilities"
+    ]["low"]
+
+    subarrays = [
+        LowSubarray(
+            name=array_assembly,
+            **low_response[array_assembly],
+        )
+        for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + LOW_ARRAY_ASSEMBLIES
+    ]
+
+    receiver_information = low_response["basic_capabilities"]
+    constraints = low_response["constraints"]
 
     return LowConfiguration(
-        frequency_band=LowFrequencyBand(**receiver_information), subarrays=subarrays
+        frequency_band=LowFrequencyBand(**receiver_information),
+        constraints=Constraints(**constraints),
+        subarrays=subarrays,
     )
 
 
@@ -231,6 +212,22 @@ def get_osd_data(*args, **kwargs):
         raise OSDError(error)
     data = osd_data.model_dump()["result_data"] if hasattr(osd_data, "model_dump") else osd_data
     return data
+
+
+def get_telescope_observing_constraint(telescope: TelescopeType, parameter: str):
+    """
+    Utility function to extract an observing constraint from the OSD
+    """
+    osd = configuration_from_osd()
+    if telescope == TelescopeType.SKA_MID:
+        constraints = osd.ska_mid.constraints
+    else:
+        constraints = osd.ska_low.constraints
+
+    if not hasattr(constraints, parameter):
+        raise ValueError(f"{parameter} is not a valid observing constraint for {telescope.value}")
+
+    return getattr(constraints, parameter)
 
 
 def get_low_basic_capability_parameter_from_osd(parameter: str):
