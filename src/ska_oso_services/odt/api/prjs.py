@@ -98,7 +98,7 @@ class CalibratorSweepInputs(BaseModel):
             "calibrator catalogue."
         ),
     )
-    stations: list[str] | None = Field(
+    stations: list[int] | None = Field(
         default=None,
         description="Optional list of station IDs to use in. Will default to AA0.5 stations"
         " in the generation if not given.",
@@ -110,46 +110,32 @@ class FrequencySweepInputs(BaseModel):
 
     target_name: str | None = Field(
         default=None,
-        description="Optional target name.",
+        description="Target name to query the catalogue for. "
+        "This will take precedent over ra_str and dec_str",
     )
     ra_str: str | None = Field(
         default=None,
-        description="Right ascension string (e.g. '12:30:00').",
+        description="Right ascension of the target if not using the "
+        "target_name for a catalogue lookup",
     )
     dec_str: str | None = Field(
         default=None,
-        description="Declination string (e.g. '-30:00:00').",
+        description="Declination of the target if not using the target_name "
+        "for a catalogue lookup",
     )
-    target_dwell_min: float = Field(
-        default=5.0,
-        gt=0,
-        description="Target dwell time in minutes.",
-    )
-    coarse_channel_start: int = Field(
-        default=64,
-        ge=0,
-        le=511,
-        description="Start coarse channel.",
-    )
-    coarse_channel_end: int = Field(
-        default=448,
-        ge=1,
-        le=512,
-        description="End coarse channel.",
-    )
-    coarse_channel_bandwidth: int = Field(
-        default=96,
-        gt=0,
-        le=512,
-        description="Coarse channel bandwidth.",
-    )
+    target_dwell_min: float = 5
+    coarse_channel_start: int = 64
+    coarse_channel_end: int = 448
+    coarse_channel_bandwidth: int = 96
     mode: str = Field(
         default="VIS",
-        description="Mode to use for generation (e.g. 'VIS' or 'PST').",
+        description="Should be 'VIS' or 'PST', to indicate whether a "
+        "PST beam should be added to the observation",
     )
-    stations: list[str] | None = Field(
+    stations: list[int] | None = Field(
         default=None,
-        description="Optional list of station IDs.",
+        description="Optional list of station IDs to use in. Will default to AA0.5 stations"
+        " in the generation if not given.",
     )
 
 
