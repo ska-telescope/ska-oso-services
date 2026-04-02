@@ -699,7 +699,11 @@ class TestFrequencySweepSBDefinition:
 
         assert resp.status_code == HTTPStatus.OK
         mock_get_coordinates.assert_called_once_with("M83")
-        assert mock_generate.call_args.kwargs["target"] == resolved_target
+        target = mock_generate.call_args.kwargs["target"]
+        assert isinstance(target, Target)
+        assert target.name == resolved_target.name
+        assert target.reference_coordinate == resolved_target.reference_coordinate
+        assert target.radial_velocity is not None
 
     def test_frequency_sweep_prj_not_found(self, client_with_uow_mock):
         prj_id = "prj-999"

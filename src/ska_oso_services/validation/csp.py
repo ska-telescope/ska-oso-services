@@ -9,6 +9,10 @@ from ska_oso_pdm.sb_definition import CSPConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 from ska_oso_pdm.sb_definition.csp.midcbf import CorrelationSPWConfiguration
 
+from ska_oso_services.common.astro import (
+    low_centre_frequency_to_coarse_channel_end,
+    low_centre_frequency_to_coarse_channel_start,
+)
 from ska_oso_services.common.osdmapper import (
     Band5bSubband,
     MidFrequencyBand,
@@ -16,8 +20,8 @@ from ska_oso_services.common.osdmapper import (
     get_subarray_specific_parameter_from_osd,
 )
 from ska_oso_services.common.static.constants import (
-    low_maximum_frequency,
-    low_minimum_frequency,
+    low_max_coarse_channel,
+    low_min_coarse_channel,
     low_station_channel_width,
     mid_channel_width,
     mid_frequency_slice_bandwidth,
@@ -180,11 +184,9 @@ def validate_low_spw_centre_frequency(
     """
     centre_frequency_hz = spw_context.primary_entity.centre_frequency * u.Hz
     spw_index = spw_context.relevant_context["spw_index"]
-
-    if (
-        centre_frequency_hz < low_minimum_frequency()
-        or centre_frequency_hz > low_maximum_frequency()
-    ):
+    if (centre_frequency_hz / low_station_channel_width()) < low_min_coarse_channel() or (
+        centre_frequency_hz / low_station_channel_width()
+    ) > low_max_coarse_channel():
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
@@ -281,12 +283,17 @@ def validate_low_spw_window(
         range of SKA Low
     """
     centre_frequency = spw_context.primary_entity.centre_frequency * u.Hz
-    spw_bandwidth = calculate_continuum_spw_bandwidth(spw_context)
+
+    start_channel = low_centre_frequency_to_coarse_channel_start(
+        centre_frequency, spw_context.primary_entity.number_of_channels
+    )
+    end_channel = low_centre_frequency_to_coarse_channel_end(
+        centre_frequency, spw_context.primary_entity.number_of_channels
+    )
+
     spw_index = spw_context.relevant_context["spw_index"]
 
-    if (centre_frequency + 0.5 * spw_bandwidth) > low_maximum_frequency() or (
-        centre_frequency - 0.5 * spw_bandwidth
-    ) < low_minimum_frequency():
+    if start_channel < low_min_coarse_channel() or end_channel > low_max_coarse_channel():
 
         return [
             ValidationIssue(
