@@ -1,8 +1,10 @@
 """
-Frequency sweep SBDefinition generation.
+Frequency sweep SBDefinition generation with a dynamic number of scans (based
+on the requested start channel and bandwidth), each using a different CSP Configuration.
 
-This module provides generation of an SBDefinition for the Low Commissioning
-frequency sweep use case.
+This is a Low Commissioning use case and an example of SBDefinition generation
+from parameters other than a Proposal ScienceProgramme. Eventually we expect the inputs
+to this to evolve into more standard observatory use cases.
 """
 
 # pylint: disable=no-member
@@ -28,7 +30,7 @@ def generate_frequency_sweep(
     coarse_channel_end: int,
     coarse_channel_bandwidth: int,
     mode: str = "VIS",
-    stations: list[str] | None = None,
+    stations: list[int] | None = None,
 ) -> SBDefinition:
     """
     Generate a frequency sweep SBDefinition.
