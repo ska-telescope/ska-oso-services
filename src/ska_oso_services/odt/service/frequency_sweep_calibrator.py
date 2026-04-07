@@ -113,6 +113,7 @@ def _add_scan_for_csp_configuration(
 
     scan = ScanDefinition(
         scan_definition_id=scan_definition_id(),
+        scan_intent="Science",
         target_ref=target.target_id,
         csp_configuration_ref=csp_configuration.config_id,
         scan_duration_ms=duration,

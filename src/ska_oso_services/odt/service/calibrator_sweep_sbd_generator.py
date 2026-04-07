@@ -99,7 +99,7 @@ def pick_targets_and_add_scans(
     start_time: Time,
     duration: timedelta,
     primary_dwell: timedelta,
-    secondary_dwell: timedelta,
+    secondary_dwell: timedelta | None,
     interleave_primary: bool,
     pst_mode: bool,
     coarse_channel_start: int,
@@ -156,6 +156,8 @@ def pick_targets_and_add_scans(
             total_sbd_time += secondary_dwell
 
             if interleave_primary:
+                if (total_sbd_time + primary_dwell) > duration:
+                    return sbd
                 _add_scan_for_target(sbd=sbd, target=primary_target, duration=primary_dwell)
                 total_sbd_time += primary_dwell
 
@@ -167,6 +169,7 @@ def _add_scan_for_target(sbd: SBDefinition, target: Target, duration: timedelta)
 
     scan = ScanDefinition(
         scan_definition_id=scan_definition_id(),
+        scan_intent="Science",
         target_ref=target.target_id,
         csp_configuration_ref=csp_configuration.config_id,
         scan_duration_ms=duration,

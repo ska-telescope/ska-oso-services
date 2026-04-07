@@ -14,6 +14,7 @@ from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.repository.status import Status
 from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm import ICRSCoordinates, Target, TelescopeType
+from ska_oso_pdm.builders.utils import target_id
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 from ska_ser_skuid import EntityType, mint_skuid
@@ -146,10 +147,13 @@ class FrequencySweepInputs(BaseModel):
 def _resolve_frequency_sweep_target(inputs: FrequencySweepInputs) -> Target:
     """Resolve the target for frequency-sweep generation from API inputs."""
     if inputs.target_name:
-        return get_coordinates(inputs.target_name)
+        target = get_coordinates(inputs.target_name)
+        target.target_id = target_id()
+        return target
 
     if inputs.ra_str is not None and inputs.dec_str is not None:
         return Target(
+            target_id=target_id(),
             name=inputs.target_name or "frequency-sweep-target",
             reference_coordinate=ICRSCoordinates(
                 ra_str=inputs.ra_str,

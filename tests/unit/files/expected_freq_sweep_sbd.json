@@ -147,6 +147,7 @@
         "scan_sequence": [
           {
             "scan_definition_id": "scan-00001",
+            "scan_intent": "Science",
             "target_ref": "target-00001",
             "csp_configuration_ref": "csp-config-00001",
             "pointing_correction": "MAINTAIN",
@@ -159,6 +160,7 @@
           {
             "scan_definition_id": "scan-00002",
             "target_ref": "target-00001",
+            "scan_intent": "Science",
             "csp_configuration_ref": "csp-config-00002",
             "pointing_correction": "MAINTAIN",
             "scan_duration_ms": 300000.0,
@@ -170,6 +172,7 @@
           {
             "scan_definition_id": "scan-00003",
             "target_ref": "target-00001",
+            "scan_intent": "Science",
             "csp_configuration_ref": "csp-config-00003",
             "pointing_correction": "MAINTAIN",
             "scan_duration_ms": 300000.0,
@@ -181,6 +184,7 @@
           {
             "scan_definition_id": "scan-00004",
             "target_ref": "target-00001",
+            "scan_intent": "Science",
             "csp_configuration_ref": "csp-config-00004",
             "pointing_correction": "MAINTAIN",
             "scan_duration_ms": 300000.0,
