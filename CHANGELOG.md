@@ -8,6 +8,8 @@ Unreleased
 ************
 * Adds a new POST /{prj_id}/{ob_id}/generateCalibratorSweepSBDefinition endpoint that generates
   an SBD with a dynamic number of targets/scans based on the expected time of execution.
+* Adds a new POST /{prj_id}/{ob_id}/generateFrequencySweepSBDefinition endpoint that generates
+  an SBD with a dynamic number of CSP Configurations and scans that span the desired frequency range.
 
 14.1.1
 **********
