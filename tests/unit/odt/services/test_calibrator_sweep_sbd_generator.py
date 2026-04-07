@@ -96,7 +96,7 @@ class TestGenerateCalSweepSBD:
             interleave_primary=False,
             coarse_channel_start=206,
             coarse_channel_bandwidth=96,
-            with_pst=False,
+            pst_mode=False,
         )
 
         sbd.metadata = None
@@ -124,7 +124,7 @@ class TestGenerateCalSweepSBD:
 
     @mock.patch(f"{MODULE}.pick_targets")
     def test_pst_mode_passes_mode_to_pick_targets(self, mock_pick_targets):
-        """When with_pst=True, pick_targets should be called with mode='PST'."""
+        """When pst_mode=True, pick_targets should be called with mode='PST'."""
         mock_pick_targets.return_value = create_mock_targets()
 
         generate_cal_sweep_sbd(
@@ -132,7 +132,7 @@ class TestGenerateCalSweepSBD:
             duration=timedelta(minutes=15),
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=timedelta(minutes=5),
-            with_pst=True,
+            pst_mode=True,
         )
 
         # Every call to pick_targets should have mode="PST"
@@ -141,7 +141,7 @@ class TestGenerateCalSweepSBD:
 
     @mock.patch(f"{MODULE}.pick_targets")
     def test_pst_mode_sets_do_pst_in_csp_configuration(self, mock_pick_targets):
-        """CSP configuration should have do_pst=True when with_pst=True."""
+        """CSP configuration should have do_pst=True when pst_mode=True."""
         mock_pick_targets.return_value = create_mock_targets()
 
         sbd = generate_cal_sweep_sbd(
@@ -149,7 +149,7 @@ class TestGenerateCalSweepSBD:
             duration=timedelta(minutes=15),
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=timedelta(minutes=5),
-            with_pst=True,
+            pst_mode=True,
         )
 
         assert sbd.csp_configurations[0].lowcbf.do_pst is True

@@ -39,7 +39,7 @@ def generate_cal_sweep_sbd(
     interleave_primary: bool = False,
     coarse_channel_start: int = 206,
     coarse_channel_bandwidth: int = 96,
-    with_pst: bool = False,
+    pst_mode: bool = False,
     stations: list[int] | None = None,
 ) -> SBDefinition:
     """
@@ -60,7 +60,7 @@ def generate_cal_sweep_sbd(
         config_id=csp_configuration_id(),
         name=f"Channel start {coarse_channel_start} BW {coarse_channel_bandwidth}",
         lowcbf=LowCBFConfiguration(
-            do_pst=with_pst,
+            do_pst=pst_mode,
             correlation_spws=[
                 Correlation(
                     spw_id=1,
@@ -87,7 +87,7 @@ def generate_cal_sweep_sbd(
         primary_dwell=primary_dwell,
         secondary_dwell=secondary_dwell,
         interleave_primary=interleave_primary,
-        with_pst=with_pst,
+        pst_mode=pst_mode,
         coarse_channel_start=coarse_channel_start,
     )
 
@@ -101,7 +101,7 @@ def pick_targets_and_add_scans(
     primary_dwell: timedelta,
     secondary_dwell: timedelta,
     interleave_primary: bool,
-    with_pst: bool,
+    pst_mode: bool,
     coarse_channel_start: int,
 ) -> SBDefinition:
     """
@@ -124,10 +124,9 @@ def pick_targets_and_add_scans(
         if (current_expected_end_time + primary_dwell) > end_time:
             return sbd
 
-        mode = "PST" if with_pst else "VIS"
         targets = pick_targets(
             coarse_channel_start=coarse_channel_start,
-            mode=mode,
+            mode="PST" if pst_mode else "VIS",
             obs_time=current_expected_end_time,
         )
 
@@ -138,7 +137,7 @@ def pick_targets_and_add_scans(
             )
             return sbd
 
-        primary_target = pdm_target_from_aiv_target(targets.primary, with_pst, num_stations)
+        primary_target = pdm_target_from_aiv_target(targets.primary, pst_mode, num_stations)
         sbd.targets.append(primary_target)
 
         _add_scan_for_target(sbd=sbd, target=primary_target, duration=primary_dwell)
@@ -151,7 +150,7 @@ def pick_targets_and_add_scans(
             if (total_sbd_time + secondary_dwell) > duration:
                 return sbd
 
-            secondary_target = pdm_target_from_aiv_target(secondary, with_pst, num_stations)
+            secondary_target = pdm_target_from_aiv_target(secondary, pst_mode, num_stations)
             sbd.targets.append(secondary_target)
             _add_scan_for_target(sbd=sbd, target=secondary_target, duration=secondary_dwell)
             total_sbd_time += secondary_dwell
@@ -178,7 +177,7 @@ def _add_scan_for_target(sbd: SBDefinition, target: Target, duration: timedelta)
 
 
 def pdm_target_from_aiv_target(
-    aiv_target: Row, with_pst: bool, num_stations: int | None = None
+    aiv_target: Row, pst_mode: bool, num_stations: int | None = None
 ) -> Target:
     """
     Convert an astropy table row from the AIV catalogue to a PDM
@@ -192,7 +191,7 @@ def pdm_target_from_aiv_target(
         dec_str=aiv_target["coords"].dec.to_string(u.degree, sep=":"),
     )
 
-    if with_pst:
+    if pst_mode:
         if num_stations is None:
             raise ValueError("num_stations must also be given to create a pst_beam")
         pst_beams = [

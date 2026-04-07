@@ -12,7 +12,7 @@ from datetime import timedelta
 
 import astropy.units as u
 import numpy as np
-from ska_oso_pdm import SBDefinition, Target
+from ska_oso_pdm import Beam, SBDefinition, Target, TiedArrayBeams
 from ska_oso_pdm.builders import LowSBDefinitionBuilder, MCCSAllocationBuilder
 from ska_oso_pdm.builders.utils import csp_configuration_id as generate_csp_configuration_id
 from ska_oso_pdm.builders.utils import scan_definition_id
@@ -29,7 +29,7 @@ def generate_frequency_sweep(
     coarse_channel_start: int,
     coarse_channel_end: int,
     coarse_channel_bandwidth: int,
-    mode: str = "VIS",
+    pst_mode: bool,
     stations: list[int] | None = None,
 ) -> SBDefinition:
     """
@@ -64,12 +64,23 @@ def generate_frequency_sweep(
 
     scan_starts = np.round(scan_starts).astype(int)
 
+    if pst_mode:
+        pst_beams = [
+            Beam(
+                beam_id=1,
+                beam_name=target.name,
+                beam_coordinate=target.reference_coordinate,
+                stn_weights=[1.0] * len(sbd.mccs_allocation.subarray_beams[0].apertures),
+            )
+        ]
+        target.tied_array_beams = TiedArrayBeams(pst_beams=pst_beams)
+
     for index, scan_start in enumerate(scan_starts):
         csp_configuration = CSPConfiguration(
             config_id=generate_csp_configuration_id(),
             name=f"Scan {index} Config",
             lowcbf=LowCBFConfiguration(
-                do_pst=mode.upper() == "PST",
+                do_pst=pst_mode,
                 correlation_spws=[
                     Correlation(
                         spw_id=1,

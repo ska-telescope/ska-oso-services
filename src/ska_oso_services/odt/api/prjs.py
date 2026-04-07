@@ -4,6 +4,7 @@ These functions map to the API paths, with the returned value being the API resp
 
 import logging
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import Annotated, Optional
 
 from astropy.time import Time
@@ -75,6 +76,11 @@ def _validate_project_has_scheduling_blocks(project: Project) -> None:
         )
 
 
+class CommissioningObservingMode(str, Enum):
+    VIS = "VIS"
+    PST = "PST"
+
+
 class CalibratorSweepInputs(BaseModel):
     """Input parameters for calibrator sweep SBDefinition generation."""
 
@@ -90,13 +96,11 @@ class CalibratorSweepInputs(BaseModel):
     )
     coarse_channel_start: int = 206
     coarse_channel_bandwidth: int = 96
-    with_pst: bool = Field(
-        default=False,
-        description=(
-            "If true, enable PST mode in the CSP configuration and select "
-            "targets from the bright-pulsar catalogue instead of the "
-            "calibrator catalogue."
-        ),
+    mode: CommissioningObservingMode = Field(
+        default=CommissioningObservingMode.VIS,
+        description="Should be 'VIS' or 'PST', to indicate whether a PST beam "
+        "should be added to the observation "
+        "(and which catalogue to pick targets from).",
     )
     stations: list[int] | None = Field(
         default=None,
@@ -127,8 +131,8 @@ class FrequencySweepInputs(BaseModel):
     coarse_channel_start: int = 64
     coarse_channel_end: int = 448
     coarse_channel_bandwidth: int = 96
-    mode: str = Field(
-        default="VIS",
+    mode: CommissioningObservingMode = Field(
+        default=CommissioningObservingMode.VIS,
         description="Should be 'VIS' or 'PST', to indicate whether a "
         "PST beam should be added to the observation",
     )
@@ -431,7 +435,7 @@ def prjs_ob_generate_sbds_cal_sweep(
             interleave_primary=inputs.interleave_primary,
             coarse_channel_start=inputs.coarse_channel_start,
             coarse_channel_bandwidth=inputs.coarse_channel_bandwidth,
-            with_pst=inputs.with_pst,
+            pst_mode=inputs.mode == CommissioningObservingMode.PST,
         )
 
         sbd.ob_ref = obs_block.obs_block_id
@@ -491,7 +495,7 @@ def prjs_ob_generate_sbds_frequency_sweep(
             coarse_channel_start=inputs.coarse_channel_start,
             coarse_channel_end=inputs.coarse_channel_end,
             coarse_channel_bandwidth=inputs.coarse_channel_bandwidth,
-            mode=inputs.mode,
+            pst_mode=inputs.mode == CommissioningObservingMode.PST,
             stations=inputs.stations,
         )
 

@@ -42,7 +42,7 @@ class TestGenerateFrequencySweep:
             coarse_channel_start=64,
             coarse_channel_end=448,
             coarse_channel_bandwidth=96,
-            mode="VIS",
+            pst_mode=False,
         )
 
         sbd.metadata = None
@@ -77,7 +77,7 @@ class TestGenerateFrequencySweep:
             coarse_channel_start=64,
             coarse_channel_end=448,
             coarse_channel_bandwidth=96,
-            mode="VIS",
+            pst_mode=False,
         )
 
         assert len(sbd.targets) == 1
@@ -102,23 +102,29 @@ class TestGenerateFrequencySweep:
             coarse_channel_start=64,
             coarse_channel_end=350,
             coarse_channel_bandwidth=96,
-            mode="VIS",
+            pst_mode=False,
         )
 
         assert len(sbd.csp_configurations) == 3
         assert len(sbd.mccs_allocation.subarray_beams[0].scan_sequence) == 3
 
-    def test_sets_pst_flag_when_mode_is_pst(self):
+    def test_sets_pst_parts_when_mode_is_pst(self):
+        target = create_target()
         sbd = generate_frequency_sweep(
-            target=create_target(),
+            target=target,
             target_dwell=timedelta(minutes=5),
             coarse_channel_start=64,
             coarse_channel_end=160,
             coarse_channel_bandwidth=96,
-            mode="PST",
+            pst_mode=True,
         )
 
         assert all(csp.lowcbf.do_pst for csp in sbd.csp_configurations)
+        assert len(sbd.targets[0].tied_array_beams.pst_beams) == 1
+        assert (
+            sbd.targets[0].tied_array_beams.pst_beams[0].beam_coordinate
+            == target.reference_coordinate
+        )
 
     def test_scan_sequence_references_single_target(self):
         target = create_target()
@@ -128,7 +134,7 @@ class TestGenerateFrequencySweep:
             coarse_channel_start=64,
             coarse_channel_end=256,
             coarse_channel_bandwidth=96,
-            mode="VIS",
+            pst_mode=False,
         )
 
         for scan in sbd.mccs_allocation.subarray_beams[0].scan_sequence:
