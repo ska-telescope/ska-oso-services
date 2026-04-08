@@ -121,12 +121,3 @@ def _add_scan_for_csp_configuration(
 
     sbd.mccs_allocation.subarray_beams[0].scan_sequence.append(scan)
     return sbd
-
-
-def total_scans_time_for_sbd_with_software_slew(sbd: SBDefinition) -> timedelta:
-    return timedelta(
-        seconds=sum(
-            scan.scan_duration_ms.seconds
-            for scan in sbd.mccs_allocation.subarray_beams[0].scan_sequence
-        )
-    )

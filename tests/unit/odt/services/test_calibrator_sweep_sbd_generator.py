@@ -8,7 +8,7 @@ from astropy.table import Table
 from astropy.time import Time
 
 from ska_oso_services.odt.service.calibrator_sweep_sbd_generator import generate_cal_sweep_sbd
-from ska_oso_services.odt.service.commissioning.script_utils import Targets
+from ska_oso_services.odt.service.commissioning.generation_utils import Targets
 from tests.unit.util import assert_json_is_equal, load_string_from_file
 
 MODULE = "ska_oso_services.odt.service.calibrator_sweep_sbd_generator"

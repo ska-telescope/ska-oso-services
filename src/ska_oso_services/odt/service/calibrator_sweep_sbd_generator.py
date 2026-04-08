@@ -26,7 +26,7 @@ from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 
 from ska_oso_services.common.astro import low_coarse_channel_start_to_centre_frequency
-from ska_oso_services.odt.service.commissioning.script_utils import pick_targets
+from ska_oso_services.odt.service.commissioning.generation_utils import pick_targets
 
 LOGGER = logging.getLogger(__name__)
 

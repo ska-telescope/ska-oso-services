@@ -3,6 +3,10 @@ from astropy.units import Quantity
 from ska_oso_services.common.static.constants import low_station_channel_width
 
 
+def low_coarse_channel_to_frequency(coarse_channel: int) -> Quantity:
+    return low_station_channel_width() * coarse_channel
+
+
 def low_coarse_channel_start_to_centre_frequency(
     coarse_channel_start: int, coarse_channel_bandwidth: int
 ) -> Quantity:

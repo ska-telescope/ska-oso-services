@@ -13,32 +13,19 @@ from astropy.table import Row, Table
 from astropy.time import Time
 from astropy.units import Quantity
 
+from ska_oso_services.common.astro import low_coarse_channel_to_frequency
 from ska_oso_services.odt.service.commissioning import data
 
 logger = logging.getLogger(__name__)
 
 CBFMode = Literal["VIS", "PST"]
-COARSE_CHAN_SEP_MHZ = 400 / 512
 
 
 class Targets(NamedTuple):
-    """Cal sweep targets"""
+    """Catalogue lookup response to use for a calibrator sweep"""
 
     primary: Row | None
-    """Primary target source"""
     secondary: Table | None
-    """Secondary targets"""
-
-
-def coarse_channel_to_freq(coarse_channel: int) -> float:
-    """
-    Convert coarse channel to frequency.
-
-    :param coarse_channel: Coarse channel number.
-
-    :return: Frequency in MHz
-    """
-    return COARSE_CHAN_SEP_MHZ * coarse_channel
 
 
 def station_beam_size(
@@ -62,7 +49,8 @@ def pick_targets(
     obs_time: Time | None = None,
 ) -> Targets:
     """
-    Pick observing targets.
+    Pick all observing targets that are visible at the obs_time
+    from the catalogue, with the primary being the brightest
 
     :param coarse_channel_start: Starting coarse channel.
     :param mode: CBF mode - "VIS" or "PST". Defaults to "VIS".
@@ -100,12 +88,10 @@ def pick_targets(
     alt_idx = altitudes > alt_limit
 
     # Check solar separation
-    obs_freq_mhz = coarse_channel_to_freq(
+    obs_freq = low_coarse_channel_to_frequency(
         coarse_channel=coarse_channel_start,
-    )
-    beam_size = station_beam_size(
-        obs_freq=obs_freq_mhz * u.MHz,
-    )
+    ).to(u.MHz)
+    beam_size = station_beam_size(obs_freq=obs_freq)
     sun_gcrs = get_sun(obs_time)
     # Explicitly transform to AltAz to avoid issues with coordinate frame
     sun_altaz = sun_gcrs.transform_to(AltAz(obstime=obs_time, location=location))
