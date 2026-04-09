@@ -4,7 +4,7 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+14.1.1
 **********
 * [BUGFIX] Fixes bug where only ICRS targets could be validated
 
