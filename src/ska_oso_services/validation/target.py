@@ -26,14 +26,14 @@ def validate_target(target_context: ValidationContext[Target]) -> list[Validatio
             the relevant Target Validators to the Target
     """
 
-    if (
-        target_context.primary_entity.reference_coordinate.kind == CoordinateKind.TLE
-        or target_context.primary_entity.reference_coordinate.kind == CoordinateKind.SPECIAL
+    if target_context.primary_entity.reference_coordinate.kind in (
+        CoordinateKind.TLE,
+        CoordinateKind.SPECIAL,
     ):
         return [
             ValidationIssue(
                 level=ValidationIssueType.WARNING,
-                message=f"No validation of target visibility is currently performed",
+                message="No validation of target visibility is currently performed",
             )
         ]
 
