@@ -4,6 +4,10 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+**********
+* [BUGFIX] Fixes bug where only ICRS targets could be validated
+
 14.1.0
 **********
 * Updated to OSD v6
