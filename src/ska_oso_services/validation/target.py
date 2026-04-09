@@ -2,7 +2,7 @@
 import astropy.units as u
 from astropy.coordinates import EarthLocation, Latitude
 from astropy.units import Quantity
-from ska_oso_pdm import Target, TelescopeType
+from ska_oso_pdm import CoordinateKind, Target, TelescopeType
 
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.common.static.constants import low_minimum_elevation, mid_minimum_elevation
@@ -25,6 +25,17 @@ def validate_target(target_context: ValidationContext[Target]) -> list[Validatio
     :return: the collated ValidationIssues resulting from applying each of
             the relevant Target Validators to the Target
     """
+
+    if target_context.primary_entity.reference_coordinate.kind in (
+        CoordinateKind.TLE,
+        CoordinateKind.SPECIAL,
+    ):
+        return [
+            ValidationIssue(
+                level=ValidationIssueType.WARNING,
+                message="No validation of target visibility is currently performed",
+            )
+        ]
 
     if target_context.telescope == TelescopeType.SKA_MID:
         validators = [validate_mid_elevation, validate_single_target_pst_beams]
@@ -123,5 +134,6 @@ def _find_max_elevation(target: Target, telescope: TelescopeType) -> Latitude:
     """
     location = MID_LOCATION if telescope == TelescopeType.SKA_MID else LOW_LOCATION
     target_sky_coords = target.reference_coordinate.to_sky_coord()
+    target_sky_coords_icrs = target_sky_coords.icrs
 
-    return Quantity(90.0, u.deg) - abs(location.lat - target_sky_coords.dec)
+    return Quantity(90.0, u.deg) - abs(location.lat - target_sky_coords_icrs.dec)
