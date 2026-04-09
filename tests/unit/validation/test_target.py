@@ -9,7 +9,7 @@ from ska_oso_services.validation.target import (
     validate_single_target_pst_beams,
     validate_target,
 )
-from tests.unit.validation import GALACTIC_TARGET, LMC_TARGET
+from tests.unit.validation import GALACTIC_TARGET, LMC_TARGET, SSO_TARGET
 
 
 @pytest.mark.parametrize("telescope", [TelescopeType.SKA_MID, TelescopeType.SKA_LOW])
@@ -34,6 +34,18 @@ def test_full_target_validation_for_galactic_target(telescope):
         )
     )
     assert result == []
+
+
+@pytest.mark.parametrize("telescope", [TelescopeType.SKA_MID, TelescopeType.SKA_LOW])
+def test_full_target_validation_for_sso_target(telescope):
+    result = validate_target(
+        ValidationContext(
+            primary_entity=SSO_TARGET,
+            telescope=telescope,
+            array_assembly=ValidationArrayAssembly.AA05,
+        )
+    )
+    assert result[0].level == ValidationIssueType.WARNING
 
 
 def test_mid_target_below_min_elevation():
