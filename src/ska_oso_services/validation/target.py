@@ -134,5 +134,6 @@ def _find_max_elevation(target: Target, telescope: TelescopeType) -> Latitude:
     """
     location = MID_LOCATION if telescope == TelescopeType.SKA_MID else LOW_LOCATION
     target_sky_coords = target.reference_coordinate.to_sky_coord()
+    target_sky_coords_icrs = target_sky_coords.icrs
 
-    return Quantity(90.0, u.deg) - abs(location.lat - target_sky_coords.dec)
+    return Quantity(90.0, u.deg) - abs(location.lat - target_sky_coords_icrs.dec)
