@@ -2,7 +2,7 @@
 import astropy.units as u
 from astropy.coordinates import EarthLocation, Latitude
 from astropy.units import Quantity
-from ska_oso_pdm import Target, TelescopeType
+from ska_oso_pdm import CoordinateKind, Target, TelescopeType
 
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.common.static.constants import low_minimum_elevation, mid_minimum_elevation
@@ -25,6 +25,17 @@ def validate_target(target_context: ValidationContext[Target]) -> list[Validatio
     :return: the collated ValidationIssues resulting from applying each of
             the relevant Target Validators to the Target
     """
+
+    if (
+        target_context.primary_entity.reference_coordinate.kind == CoordinateKind.TLE
+        or target_context.primary_entity.reference_coordinate.kind == CoordinateKind.SSO
+    ):
+        return [
+            ValidationIssue(
+                level=ValidationIssueType.WARNING,
+                message=f"No can do for TLE and SSO",
+            )
+        ]
 
     if target_context.telescope == TelescopeType.SKA_MID:
         validators = [validate_mid_elevation, validate_single_target_pst_beams]
