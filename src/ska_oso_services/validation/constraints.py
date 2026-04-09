@@ -20,7 +20,7 @@ from ska_oso_services.validation.model import ValidationContext, ValidationIssue
 #     """
 
 
-def _calculate_altitude_from_hourangle(
+def calculate_altitude_from_hourangle(
     telescope: TelescopeType, target: Target, hourangle: u.Quantity
 ) -> u.Quantity:
     """
@@ -44,7 +44,7 @@ def _calculate_altitude_from_hourangle(
         np.cos(latitude_radians) * np.cos(declination_radian) * np.cos(hourangle_radian)
     )
 
-    return altitude * u.radian
+    return u.Quantity(altitude, "radian")
 
 
 
