@@ -28,12 +28,12 @@ def validate_target(target_context: ValidationContext[Target]) -> list[Validatio
 
     if (
         target_context.primary_entity.reference_coordinate.kind == CoordinateKind.TLE
-        or target_context.primary_entity.reference_coordinate.kind == CoordinateKind.SSO
+        or target_context.primary_entity.reference_coordinate.kind == CoordinateKind.SPECIAL
     ):
         return [
             ValidationIssue(
                 level=ValidationIssueType.WARNING,
-                message=f"No can do for TLE and SSO",
+                message=f"No validation of target visibility is currently performed",
             )
         ]
 
