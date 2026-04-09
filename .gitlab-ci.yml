@@ -28,7 +28,6 @@ stages:
   - scan
 
 k8s-test:
-  allow_failure: true
   variables:
     PIPELINE_TEST_DEPLOYMENT: true
 
