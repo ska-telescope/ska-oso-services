@@ -1,6 +1,7 @@
 import pytest
 from ska_oso_pdm import ICRSCoordinates, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.builders.target_builder import LowTargetBuilder, MidTargetBuilder
+from validation import ALTAZ_TARGET, GALACTIC_TARGET, LMC_TARGET, SSO_TARGET
 
 from ska_oso_services.validation.model import ValidationContext, ValidationIssueType
 from ska_oso_services.validation.target import (
@@ -9,7 +10,6 @@ from ska_oso_services.validation.target import (
     validate_single_target_pst_beams,
     validate_target,
 )
-from tests.unit.validation import GALACTIC_TARGET, LMC_TARGET, SSO_TARGET
 
 
 @pytest.mark.parametrize("telescope", [TelescopeType.SKA_MID, TelescopeType.SKA_LOW])
@@ -29,6 +29,18 @@ def test_full_target_validation_for_galactic_target(telescope):
     result = validate_target(
         ValidationContext(
             primary_entity=GALACTIC_TARGET,
+            telescope=telescope,
+            array_assembly=ValidationArrayAssembly.AA05,
+        )
+    )
+    assert result == []
+
+
+@pytest.mark.parametrize("telescope", [TelescopeType.SKA_MID, TelescopeType.SKA_LOW])
+def test_full_target_validation_for_altaz_target(telescope):
+    result = validate_target(
+        ValidationContext(
+            primary_entity=ALTAZ_TARGET,
             telescope=telescope,
             array_assembly=ValidationArrayAssembly.AA05,
         )
