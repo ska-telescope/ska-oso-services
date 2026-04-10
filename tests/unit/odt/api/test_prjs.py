@@ -543,7 +543,7 @@ class TestCalibratorSweepSBDefinition:
         "interleave_primary": False,
         "coarse_channel_start": 206,
         "coarse_channel_bandwidth": 96,
-        "with_pst": False,
+        "mode": "VIS",
     }
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_cal_sweep_sbd")
@@ -629,7 +629,6 @@ class TestFrequencySweepSBDefinition:
         "coarse_channel_end": 448,
         "coarse_channel_bandwidth": 96,
         "mode": "VIS",
-        "stations": None,
     }
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_frequency_sweep")
@@ -649,7 +648,7 @@ class TestFrequencySweepSBDefinition:
             json=self.FREQ_SWEEP_INPUT,
         )
 
-        assert resp.status_code == HTTPStatus.OK
+        assert resp.status_code == HTTPStatus.OK, resp.text
         mock_generate.assert_called_once()
         args, kwargs = mock_generate.call_args
         assert args == ()
@@ -754,5 +753,5 @@ class TestFrequencySweepSBDefinition:
         assert (
             resp.json()["detail"]
             == "Provide either target_name for catalog lookup, or both ra_str "
-            "and dec for manual target coordinates."
+            "and dec_str for manual target coordinates."
         )

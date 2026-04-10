@@ -35,12 +35,12 @@ def generate_cal_sweep_sbd(
     obs_start: Time,
     duration: timedelta,
     primary_dwell: timedelta,
-    secondary_dwell: timedelta | None = None,
-    interleave_primary: bool = False,
-    coarse_channel_start: int = 206,
-    coarse_channel_bandwidth: int = 96,
-    pst_mode: bool = False,
-    stations: list[int] | None = None,
+    secondary_dwell: timedelta | None,
+    interleave_primary: bool,
+    coarse_channel_start: int,
+    coarse_channel_bandwidth: int,
+    pst_mode: bool,
+    stations: list[int],
 ) -> SBDefinition:
     """
     Generate a calibrator sweep SBDefinition.
@@ -49,9 +49,7 @@ def generate_cal_sweep_sbd(
     and a scan. Targets are chosen by what is visible at the start time and are added to
     the scan sequence for the subarray beam
     """
-    mccs_allocation = (
-        MCCSAllocationBuilder() if stations is None else MCCSAllocationBuilder(stations=stations)
-    )
+    mccs_allocation = MCCSAllocationBuilder(stations=stations)
     sbd = LowSBDefinitionBuilder(
         mccs_allocation=mccs_allocation, targets=[], csp_configurations=[]
     )
@@ -160,8 +158,6 @@ def pick_targets_and_add_scans(
                     return sbd
                 _add_scan_for_target(sbd=sbd, target=primary_target, duration=primary_dwell)
                 total_sbd_time += primary_dwell
-
-    return sbd
 
 
 def _add_scan_for_target(sbd: SBDefinition, target: Target, duration: timedelta) -> SBDefinition:

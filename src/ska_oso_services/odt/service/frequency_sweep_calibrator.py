@@ -30,7 +30,7 @@ def generate_frequency_sweep(
     coarse_channel_end: int,
     coarse_channel_bandwidth: int,
     pst_mode: bool,
-    stations: list[int] | None = None,
+    stations: list[int] | None,
 ) -> SBDefinition:
     """
     Generate a frequency sweep SBDefinition.

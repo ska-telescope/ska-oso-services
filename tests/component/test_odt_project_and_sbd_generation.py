@@ -106,7 +106,7 @@ def test_cal_sweep_sbd_generated_from_project_obs_block(authrequests):
         "interleave_primary": False,
         "coarse_channel_start": 206,
         "coarse_channel_bandwidth": 96,
-        "with_pst": False,
+        "mode": "PST",
     }
     generate_response = authrequests.post(
         f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/generateCalibratorSweepSBDefinition",
@@ -147,7 +147,6 @@ def test_frequency_sweep_sbd_generated_from_project_obs_block(authrequests):
         "coarse_channel_end": 448,
         "coarse_channel_bandwidth": 96,
         "mode": "VIS",
-        "stations": None,
     }
     generate_response = authrequests.post(
         f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/generateFrequencySweepSBDefinition",
@@ -160,7 +159,7 @@ def test_frequency_sweep_sbd_generated_from_project_obs_block(authrequests):
     # Check that one SBDefinition was created
     assert len(project.obs_blocks[0].sbd_ids) >= 1
 
-    # Check the SBDefinition exists in the ODA
+    # Check the SBDefinition exist sbd = generate_cal_sweep_s in the ODA
     sbd_id = project.obs_blocks[0].sbd_ids[-1]
     get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
     assert get_response.status_code == HTTPStatus.OK

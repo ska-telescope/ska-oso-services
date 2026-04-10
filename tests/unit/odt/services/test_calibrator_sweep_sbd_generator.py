@@ -97,6 +97,7 @@ class TestGenerateCalSweepSBD:
             coarse_channel_start=206,
             coarse_channel_bandwidth=96,
             pst_mode=False,
+            stations=[345, 350, 352, 431],
         )
 
         sbd.metadata = None
@@ -117,6 +118,11 @@ class TestGenerateCalSweepSBD:
             duration=timedelta(minutes=30),
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=timedelta(minutes=5),
+            coarse_channel_start=206,
+            coarse_channel_bandwidth=16,
+            interleave_primary=False,
+            pst_mode=False,
+            stations=[345],
         )
 
         scans = sbd.mccs_allocation.subarray_beams[0].scan_sequence
@@ -133,6 +139,10 @@ class TestGenerateCalSweepSBD:
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=timedelta(minutes=5),
             pst_mode=True,
+            interleave_primary=False,
+            coarse_channel_start=206,
+            coarse_channel_bandwidth=16,
+            stations=[345],
         )
 
         # Every call to pick_targets should have mode="PST"
@@ -150,6 +160,10 @@ class TestGenerateCalSweepSBD:
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=timedelta(minutes=5),
             pst_mode=True,
+            interleave_primary=False,
+            coarse_channel_start=206,
+            coarse_channel_bandwidth=16,
+            stations=[345],
         )
 
         assert sbd.csp_configurations[0].lowcbf.do_pst is True
@@ -171,6 +185,10 @@ class TestInterleaveMode:
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=timedelta(minutes=5),
             interleave_primary=True,
+            coarse_channel_start=206,
+            coarse_channel_bandwidth=16,
+            pst_mode=False,
+            stations=[345],
         )
 
         scans = sbd.mccs_allocation.subarray_beams[0].scan_sequence
@@ -204,6 +222,10 @@ class TestInterleaveMode:
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=timedelta(minutes=5),
             interleave_primary=True,
+            coarse_channel_start=206,
+            coarse_channel_bandwidth=16,
+            pst_mode=False,
+            stations=[345],
         )
 
         scans = sbd.mccs_allocation.subarray_beams[0].scan_sequence
@@ -228,6 +250,11 @@ class TestEdgeCases:
             duration=timedelta(minutes=2),
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=timedelta(minutes=5),
+            coarse_channel_start=206,
+            coarse_channel_bandwidth=16,
+            interleave_primary=False,
+            pst_mode=False,
+            stations=[345],
         )
 
         scans = sbd.mccs_allocation.subarray_beams[0].scan_sequence
@@ -246,6 +273,11 @@ class TestEdgeCases:
             duration=timedelta(minutes=30),
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=timedelta(minutes=5),
+            interleave_primary=False,
+            coarse_channel_start=206,
+            pst_mode=False,
+            coarse_channel_bandwidth=16,
+            stations=[345],
         )
 
         scans = sbd.mccs_allocation.subarray_beams[0].scan_sequence
@@ -265,6 +297,11 @@ class TestEdgeCases:
             duration=timedelta(minutes=15),
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=timedelta(minutes=5),
+            interleave_primary=False,
+            coarse_channel_start=206,
+            coarse_channel_bandwidth=16,
+            pst_mode=False,
+            stations=[345],
         )
 
         scans = sbd.mccs_allocation.subarray_beams[0].scan_sequence
@@ -288,6 +325,11 @@ class TestEdgeCases:
             duration=timedelta(minutes=15),
             primary_dwell=timedelta(minutes=5),
             secondary_dwell=None,
+            interleave_primary=False,
+            coarse_channel_start=206,
+            coarse_channel_bandwidth=16,
+            pst_mode=False,
+            stations=[345],
         )
 
         scans = sbd.mccs_allocation.subarray_beams[0].scan_sequence

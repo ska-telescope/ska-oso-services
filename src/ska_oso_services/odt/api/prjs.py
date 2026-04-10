@@ -14,6 +14,7 @@ from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.repository.status import Status
 from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm import ICRSCoordinates, Target, TelescopeType
+from ska_oso_pdm.builders.mccs_builder import AA05_P1_STATIONS
 from ska_oso_pdm.builders.utils import target_id
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
@@ -103,10 +104,10 @@ class CalibratorSweepInputs(BaseModel):
         "should be added to the observation "
         "(and which catalogue to pick targets from).",
     )
-    stations: list[int] | None = Field(
-        default=None,
-        description="Optional list of station IDs to use in. Will default to AA0.5 stations"
-        " in the generation if not given.",
+    stations: list[int] = Field(
+        default_factory=lambda: list(AA05_P1_STATIONS),
+        description="List of station IDs to use in. "
+        "Will default to AA0.5 stations if not given.",
     )
 
 
@@ -137,10 +138,10 @@ class FrequencySweepInputs(BaseModel):
         description="Should be 'VIS' or 'PST', to indicate whether a "
         "PST beam should be added to the observation",
     )
-    stations: list[int] | None = Field(
-        default=None,
-        description="Optional list of station IDs to use in. Will default to AA0.5 stations"
-        " in the generation if not given.",
+    stations: list[int] = Field(
+        default_factory=lambda: list(AA05_P1_STATIONS),
+        description="List of station IDs to use in. "
+        "Will default to AA0.5 stations if not given.",
     )
 
 
@@ -164,7 +165,7 @@ def _resolve_frequency_sweep_target(inputs: FrequencySweepInputs) -> Target:
     raise BadRequestError(
         detail=(
             "Provide either target_name for catalog lookup, or both ra_str "
-            "and dec for manual target coordinates."
+            "and dec_str for manual target coordinates."
         )
     )
 
@@ -440,6 +441,7 @@ def prjs_ob_generate_sbds_cal_sweep(
             coarse_channel_start=inputs.coarse_channel_start,
             coarse_channel_bandwidth=inputs.coarse_channel_bandwidth,
             pst_mode=inputs.mode == CommissioningObservingMode.PST,
+            stations=inputs.stations,
         )
 
         sbd.ob_ref = obs_block.obs_block_id
