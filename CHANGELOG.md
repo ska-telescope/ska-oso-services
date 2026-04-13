@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+
+14.2.0
+**********
 * Adds a new POST /{prj_id}/{ob_id}/generateCalibratorSweepSBDefinition endpoint that generates
   an SBD with a dynamic number of targets/scans based on the expected time of execution.
 * Adds a new POST /{prj_id}/{ob_id}/generateFrequencySweepSBDefinition endpoint that generates
