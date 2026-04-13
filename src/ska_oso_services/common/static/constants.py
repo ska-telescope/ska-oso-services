@@ -66,13 +66,13 @@ def mid_frequency_slice_bandwidth() -> Quantity:
 
 
 @cache
-def low_minimum_frequency() -> Quantity:
-    return get_low_basic_capability_parameter_from_osd("min_frequency_hz") * u.Hz
+def low_min_coarse_channel() -> int:
+    return get_low_basic_capability_parameter_from_osd("min_coarse_channel")
 
 
 @cache
-def low_maximum_frequency() -> Quantity:
-    return get_low_basic_capability_parameter_from_osd("max_frequency_hz") * u.Hz
+def low_max_coarse_channel() -> int:
+    return get_low_basic_capability_parameter_from_osd("max_coarse_channel")
 
 
 @cache
