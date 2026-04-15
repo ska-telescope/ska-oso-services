@@ -1,4 +1,10 @@
-from ska_oso_pdm import GalacticCoordinates, ICRSCoordinates, SpecialCoordinates, Target
+from ska_oso_pdm import (
+    AltAzCoordinates,
+    GalacticCoordinates,
+    ICRSCoordinates,
+    SpecialCoordinates,
+    Target,
+)
 from ska_oso_pdm.builders.target_builder import MidTargetBuilder
 
 LMC_TARGET = MidTargetBuilder(  # use the Mid builder but really this target is valid for either
@@ -12,4 +18,10 @@ GALACTIC_TARGET = Target(
 
 SSO_TARGET = Target(
     target_id="target-23456", name="Venus", reference_coordinate=SpecialCoordinates(name="Venus")
+)
+
+ALTAZ_TARGET = Target(
+    target_id="target-45678",
+    name="altaz scan",
+    reference_coordinate=AltAzCoordinates(az=270.0, el=60.0),
 )
