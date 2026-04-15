@@ -132,6 +132,11 @@ def _find_max_elevation(target: Target, telescope: TelescopeType) -> Latitude:
     Finds the maximum elevation of the target at the telescope site, returning
     an angle elevation that's negative if the target never rises above the horizon.
     """
+
+    # if the target is an AltAz target, the elevation is fixed.
+    if target.reference_coordinate.kind == CoordinateKind.ALTAZ:
+        return Latitude(target.reference_coordinate.el, u.deg)
+
     location = MID_LOCATION if telescope == TelescopeType.SKA_MID else LOW_LOCATION
     target_sky_coords = target.reference_coordinate.to_sky_coord()
     target_sky_coords_icrs = target_sky_coords.icrs
