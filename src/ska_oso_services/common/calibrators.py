@@ -96,6 +96,7 @@ def find_appropriate_calibrators(
     # first setting the location
     match telescope:
         case TelescopeType.SKA_LOW:
+            # Todo move to the constant in oso-services!
             location = EarthLocation.of_site("SKA Low")
         case TelescopeType.SKA_MID:
             location = EarthLocation.of_site("SKA Mid")

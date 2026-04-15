@@ -97,6 +97,7 @@ def low_pst_channel_width() -> Quantity:
 
 MID_DISH_DIAMETER = Quantity(15, u.m)
 LOW_STATION_DIAMETER = Quantity(39, u.m)
+SOLAR_TO_SIDEREAL_CONVERSION_FACTOR = 1.0027
 
 
 # Not telescope constants, used for visibility plots
