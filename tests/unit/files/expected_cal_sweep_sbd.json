@@ -1,0 +1,335 @@
+{
+  "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
+  "telescope": "ska_low",
+  "activities": {
+    "observe": {
+      "function_args": {
+        "init": {
+          "kwargs": {
+            "subarray_id": 1
+          }
+        }
+      },
+      "kind": "git",
+      "repo": "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
+      "path": "git://scripts/allocate_and_observe_sb.py",
+      "branch": "master"
+    }
+  },
+  "targets": [
+    {
+      "target_id": "target-00001",
+      "name": "CalibratorA",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0.0,
+            "offset_y_arcsec": 0.0
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "8:00:00",
+        "dec_str": "-30:00:00",
+        "pm_ra": 0.0,
+        "pm_dec": 0.0,
+        "parallax": 0.0,
+        "epoch": 2000.0
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0.0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0.0
+      }
+    },
+    {
+      "target_id": "target-00002",
+      "name": "CalibratorB",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0.0,
+            "offset_y_arcsec": 0.0
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "8:40:00",
+        "dec_str": "-25:00:00",
+        "pm_ra": 0.0,
+        "pm_dec": 0.0,
+        "parallax": 0.0,
+        "epoch": 2000.0
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0.0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0.0
+      }
+    },
+    {
+      "target_id": "target-00003",
+      "name": "CalibratorC",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0.0,
+            "offset_y_arcsec": 0.0
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "9:20:00",
+        "dec_str": "-20:00:00",
+        "pm_ra": 0.0,
+        "pm_dec": 0.0,
+        "parallax": 0.0,
+        "epoch": 2000.0
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0.0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0.0
+      }
+    },
+    {
+      "target_id": "target-00004",
+      "name": "CalibratorA",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0.0,
+            "offset_y_arcsec": 0.0
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "8:00:00",
+        "dec_str": "-30:00:00",
+        "pm_ra": 0.0,
+        "pm_dec": 0.0,
+        "parallax": 0.0,
+        "epoch": 2000.0
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0.0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0.0
+      }
+    },
+    {
+      "target_id": "target-00005",
+      "name": "CalibratorB",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0.0,
+            "offset_y_arcsec": 0.0
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "8:40:00",
+        "dec_str": "-25:00:00",
+        "pm_ra": 0.0,
+        "pm_dec": 0.0,
+        "parallax": 0.0,
+        "epoch": 2000.0
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0.0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0.0
+      }
+    },
+    {
+      "target_id": "target-00006",
+      "name": "CalibratorC",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0.0,
+            "offset_y_arcsec": 0.0
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "9:20:00",
+        "dec_str": "-20:00:00",
+        "pm_ra": 0.0,
+        "pm_dec": 0.0,
+        "parallax": 0.0,
+        "epoch": 2000.0
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0.0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0.0
+      }
+    }
+  ],
+  "csp_configurations": [
+    {
+      "config_id": "csp-configuration-00001",
+      "name": "Channel start 206 BW 96",
+      "lowcbf": {
+        "do_pst": false,
+        "correlation_spws": [
+          {
+            "spw_id": 1,
+            "zoom_factor": 0,
+            "centre_frequency": 198046875.0,
+            "number_of_channels": 96,
+            "integration_time_ms": 849.0
+          }
+        ]
+      }
+    }
+  ],
+  "mccs_allocation": {
+    "selected_subarray_definition": "AA0.5",
+    "subarray_beams": [
+      {
+        "subarray_beam_id": 1,
+        "scan_sequence": [
+          {
+            "scan_definition_id": "scan-00001",
+            "target_ref": "target-00001",
+            "scan_intent": "Science",
+            "csp_configuration_ref": "csp-configuration-00001",
+            "pointing_correction": "MAINTAIN",
+            "scan_duration_ms": 300000.0,
+            "scan_duration": {
+              "value": 300.0,
+              "unit": "s"
+            }
+          },
+          {
+            "scan_definition_id": "scan-00002",
+            "target_ref": "target-00002",
+            "scan_intent": "Science",
+            "csp_configuration_ref": "csp-configuration-00001",
+            "pointing_correction": "MAINTAIN",
+            "scan_duration_ms": 300000.0,
+            "scan_duration": {
+              "value": 300.0,
+              "unit": "s"
+            }
+          },
+          {
+            "scan_definition_id": "scan-00003",
+            "target_ref": "target-00003",
+            "scan_intent": "Science",
+            "csp_configuration_ref": "csp-configuration-00001",
+            "pointing_correction": "MAINTAIN",
+            "scan_duration_ms": 300000.0,
+            "scan_duration": {
+              "value": 300.0,
+              "unit": "s"
+            }
+          },
+          {
+            "scan_definition_id": "scan-00004",
+            "target_ref": "target-00004",
+            "scan_intent": "Science",
+            "csp_configuration_ref": "csp-configuration-00001",
+            "pointing_correction": "MAINTAIN",
+            "scan_duration_ms": 300000.0,
+            "scan_duration": {
+              "value": 300.0,
+              "unit": "s"
+            }
+          },
+          {
+            "scan_definition_id": "scan-00005",
+            "target_ref": "target-00005",
+            "scan_intent": "Science",
+            "csp_configuration_ref": "csp-configuration-00001",
+            "pointing_correction": "MAINTAIN",
+            "scan_duration_ms": 300000.0,
+            "scan_duration": {
+              "value": 300.0,
+              "unit": "s"
+            }
+          },
+          {
+            "scan_definition_id": "scan-00006",
+            "target_ref": "target-00006",
+            "scan_intent": "Science",
+            "csp_configuration_ref": "csp-configuration-00001",
+            "pointing_correction": "MAINTAIN",
+            "scan_duration_ms": 300000.0,
+            "scan_duration": {
+              "value": 300.0,
+              "unit": "s"
+            }
+          }
+        ],
+        "apertures": [
+          {
+            "station_id": 345,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 350,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 352,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 431,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          }
+        ]
+      }
+    ]
+  }
+}

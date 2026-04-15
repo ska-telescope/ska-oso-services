@@ -4,6 +4,17 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+14.2.1
+************
+* [BUGFIX] Fixes bug where AltAz targets cannot be validated
+
+14.2.0
+**********
+* Adds a new POST /{prj_id}/{ob_id}/generateCalibratorSweepSBDefinition endpoint that generates
+  an SBD with a dynamic number of targets/scans based on the expected time of execution.
+* Adds a new POST /{prj_id}/{ob_id}/generateFrequencySweepSBDefinition endpoint that generates
+  an SBD with a dynamic number of CSP Configurations and scans that span the desired frequency range.
+
 14.1.1
 **********
 * [BUGFIX] Fixes bug where only ICRS targets could be validated

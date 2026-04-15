@@ -1,7 +1,12 @@
 import pytest
-from ska_oso_pdm import ICRSCoordinates, TelescopeType, ValidationArrayAssembly
+from ska_oso_pdm import (
+    AltAzCoordinates,
+    GalacticCoordinates,
+    ICRSCoordinates,
+    TelescopeType,
+    ValidationArrayAssembly,
+)
 from ska_oso_pdm.builders.target_builder import LowTargetBuilder, MidTargetBuilder
-from validation import ALTAZ_TARGET, GALACTIC_TARGET, LMC_TARGET, SSO_TARGET
 
 from ska_oso_services.validation.model import ValidationContext, ValidationIssueType
 from ska_oso_services.validation.target import (
@@ -10,6 +15,7 @@ from ska_oso_services.validation.target import (
     validate_single_target_pst_beams,
     validate_target,
 )
+from tests.unit.validation import ALTAZ_TARGET, GALACTIC_TARGET, LMC_TARGET, SSO_TARGET
 
 
 @pytest.mark.parametrize("telescope", [TelescopeType.SKA_MID, TelescopeType.SKA_LOW])
@@ -79,6 +85,32 @@ def test_low_target_below_horizon():
         primary_entity=LowTargetBuilder(
             name="JVAS 1938+666",
             reference_coordinate=ICRSCoordinates(ra_str="19:38:25.2890", dec_str="+66:48:52.915"),
+        ),
+        telescope=TelescopeType.SKA_LOW,
+    )
+
+    result = validate_low_elevation(input_context)
+    assert result[0].message == "Source never rises above the horizon"
+
+
+def test_low_galactic_target_below_horizon():
+    input_context = ValidationContext(
+        primary_entity=LowTargetBuilder(
+            name="fake target",
+            reference_coordinate=GalacticCoordinates(l=123.0, b=27.0),
+        ),
+        telescope=TelescopeType.SKA_LOW,
+    )
+
+    result = validate_low_elevation(input_context)
+    assert result[0].message == "Source never rises above the horizon"
+
+
+def test_low_altaz_target_below_horizon():
+    input_context = ValidationContext(
+        primary_entity=LowTargetBuilder(
+            name="fake target",
+            reference_coordinate=AltAzCoordinates(az=270.0, el=-45.0),
         ),
         telescope=TelescopeType.SKA_LOW,
     )
