@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+* [BUGFIX] Fixes bug where AltAz targets cannot be validated
 
 14.2.0
 **********
