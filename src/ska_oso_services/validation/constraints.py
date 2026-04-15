@@ -1,21 +1,33 @@
+# pylint: disable=no-member
 from dataclasses import dataclass
 
 import numpy as np
 from astropy import units as u
-from astropy.io.ascii.tests.test_rst import table
-from astropy.logger import level
-from astropy.units import Quantity
-from ska_oso_pdm import Target, TelescopeType, FivePointParameters, SinglePointParameters, CoordinateKind, \
-    SolarSystemObjectName, SpecialCoordinates
+from ska_oso_pdm import (
+    CoordinateKind,
+    FivePointParameters,
+    SinglePointParameters,
+    SolarSystemObjectName,
+    SpecialCoordinates,
+    Target,
+    TelescopeType,
+)
 from ska_oso_pdm._shared import PointedMosaicParameters
 from ska_oso_pdm.sb_definition import LSTConstraint, ObservingConstraints, ScanDefinition
 
-from ska_oso_services.common.static.constants import LOW_LOCATION, MID_LOCATION, SOLAR_TO_SIDEREAL_CONVERSION_FACTOR
+from ska_oso_services.common.static.constants import (
+    LOW_LOCATION,
+    MID_LOCATION,
+    SOLAR_TO_SIDEREAL_CONVERSION_FACTOR,
+)
 from ska_oso_services.validation.model import (
     ValidationContext,
     ValidationIssue,
-    ValidationIssueType, validator, check_relevant_context_contains,
+    ValidationIssueType,
+    check_relevant_context_contains,
+    validator,
 )
+
 
 @dataclass
 class TargetLSTConstraints:
@@ -25,7 +37,7 @@ class TargetLSTConstraints:
 
 @validator
 def validate_sso_targets_do_not_have_separation_constraints(
-        constraints_context: ValidationContext[ObservingConstraints],
+    constraints_context: ValidationContext[ObservingConstraints],
 ) -> list[ValidationIssue]:
     """
     function to check that e.g. an observation of Jupiter does not
@@ -47,24 +59,27 @@ def validate_sso_targets_do_not_have_separation_constraints(
             if sso_has_an_incompatible_constraint(target.reference_coordinate, constraints):
                 return [
                     ValidationIssue(
-                        level = ValidationIssueType.ERROR,
-                        message = "cannot specify "
-
+                        level=ValidationIssueType.ERROR,
+                        message="cannot specify "
+                        f"{target.reference_coordinate.name.value}_separation "
+                        f"for a Scheduling Block with {target.reference_coordinate.name} "
+                        "as a target",
                     )
                 ]
 
-
+    return []
 
 
 def sso_has_an_incompatible_constraint(
-        coordinate: SpecialCoordinates,
-        constraints: ObservingConstraints
+    coordinate: SpecialCoordinates, constraints: ObservingConstraints
 ) -> bool:
     sso_name = coordinate.name.lower()
     attr_name = f"{sso_name}_separation"
 
     objects_with_potential_separations = [
-        SolarSystemObjectName.SUN, SolarSystemObjectName.MOON, SolarSystemObjectName.JUPITER
+        SolarSystemObjectName.SUN,
+        SolarSystemObjectName.MOON,
+        SolarSystemObjectName.JUPITER,
     ]
 
     if coordinate.name in objects_with_potential_separations:
@@ -106,18 +121,16 @@ def calculate_elevation_implied_from_lst_constraint(
             + np.cos(latitude_radians) * np.cos(declination_radian) * np.cos(hourangle_radian)
         )
         for hourangle_radian in hourangle_constraint_radian
-
-
     ]
 
     return elevation_from_lst
 
 
 def create_target_exec_list(
-        targets: list[Target],
-        scan_definitions: list[ScanDefinition],
-        sbd_lst_constraint: LSTConstraint
-)-> list[TargetLSTConstraints]:
+    targets: list[Target],
+    scan_definitions: list[ScanDefinition],
+    sbd_lst_constraint: LSTConstraint,
+) -> list[TargetLSTConstraints]:
     """
     the LST constraint in the SBD is for *starting* the SBD, therefore
     each target has its own LST window during which it must be validated;
@@ -131,20 +144,17 @@ def create_target_exec_list(
 
     for scan in scan_definitions:
         # extracting the target
-        target = next(
-            target
-            for target in targets
-            if target.target_id == scan.target_ref
-        )
+        target = next(target for target in targets if target.target_id == scan.target_ref)
 
         # the target's own lst constraint is the sbd lst constraint + cumulative execution time
-        # thus far, for the first scan in the SBD the target lst constraint == the sbd lst_constraint
-        # the target must exceed the elevation limit throughout their scan, starting at
-        # lst_start + cumulate_run_time and finishing at lst_end + cumulative_run_time
-        # first converting the cumulative run time from "normal" solar time to sidereal time
+        # thus far, for the first scan in the SBD the target lst constraint == the sbd
+        # lst_constraintthe target must exceed the elevation limit throughout their scan,
+        # starting atlst_start + cumulate_run_time and finishing at
+        # lst_end + cumulative_run_time first converting the cumulative run time from
+        # "normal" solar time to sidereal time
 
         cumulative_execution_time_lst = (
-                cumulative_execution_time * SOLAR_TO_SIDEREAL_CONVERSION_FACTOR
+            cumulative_execution_time * SOLAR_TO_SIDEREAL_CONVERSION_FACTOR
         )
 
         # this can now be directly added to lst constraint. Sadly, Astropy can't handle
@@ -157,14 +167,14 @@ def create_target_exec_list(
         # creating the target specific LSTConstraint Object
 
         target_lst_constraint = LSTConstraint(
-            start = sbd_lst_constraint.start + cumulative_execution_time_lst,
-            end = sbd_lst_constraint.start + cumulative_execution_time_lst,
+            start=sbd_lst_constraint.start + cumulative_execution_time_lst,
+            end=sbd_lst_constraint.start + cumulative_execution_time_lst,
         )
 
         target_lst_constraints_list.append(
             TargetLSTConstraints(
-                target = target,
-                lst_constraint = target_lst_constraint,
+                target=target,
+                lst_constraint=target_lst_constraint,
             )
         )
 
@@ -183,53 +193,12 @@ def create_target_exec_list(
             case SinglePointParameters():
                 n_scans = 1
             case _:
-                raise ValueError(f"pointing pattern {pointing_parameters.kind.value} not supported")
+                raise ValueError(
+                    f"pointing pattern {pointing_parameters.kind.value} not supported"
+                )
 
         # calculating the total scan duration and adding to the cumulative execution time
 
         cumulative_execution_time += scan.scan_duration * n_scans
 
     return target_lst_constraints_list
-
-
-
-
-
-
-
-
-
-
-
-
-# def validate_lst_and_elevation_start_constraints_are_compatible(
-#     constraints_context: ValidationContext[ObservingConstraints],
-# ) -> list[ValidationIssue]:
-#     """
-#     :param constraints_context: a ValidationContext containing an ObservingConstraints
-#         to be validated
-#     :return: a list of ValidationIssue objects if the lst constraints and elevations
-#         constraints are incompatible
-#     """
-#     constraints = constraints_context.primary_entity
-#     target = constraints_context.relevant_context["target"]
-#
-#     elevation_from_lst_start = calculate_elevation_from_hourangle(
-#         constraints_context.telescope, target, constraints.lst.start
-#     )
-#
-#     elevation_from_lst_end = calculate_elevation_from_hourangle(
-#         constraints_context.telescope, target, constraints.lst.end
-#     )
-#
-#     if elevation_from_lst_start < constraints.altitude.min:
-#         return [
-#             ValidationIssue(
-#                 level=ValidationIssueType.WARNING,
-#                 message=f"The LST start constraint, {constraints.lst.start.to(u.deg).value} degrees, and minimum elevation constraint, {constraints.lst.min.to(u.deg).value} degrees, are not consistent for target {target.name}, the more conservative constraint will be used",
-#             )
-#         ]
-#
-#
-# def validate_lst_range_compatible_with_elevation_constraint(ValidationContext[ObservingConstraints])
-#
