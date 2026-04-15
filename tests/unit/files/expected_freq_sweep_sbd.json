@@ -1,14 +1,12 @@
 {
   "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
   "telescope": "ska_low",
+  "name": "FreqSweep TestTarget; CC 64 - 448; BW 96",
+  "validate_against": "AA1",
   "activities": {
     "observe": {
       "function_args": {
-        "init": {
-          "kwargs": {
-            "subarray_id": 1
-          }
-        }
+        "init": {}
       },
       "kind": "git",
       "repo": "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
@@ -196,5 +194,12 @@
         ]
       }
     ]
-  }
+  },
+  "sdp_configurations": [
+    {
+      "sdp_script": "vis-receive",
+      "script_version": "latest",
+      "script_parameters": {}
+    }
+  ]
 }
