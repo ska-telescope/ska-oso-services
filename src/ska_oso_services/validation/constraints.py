@@ -83,7 +83,7 @@ def sso_has_an_incompatible_constraint(
     ]
 
     if coordinate.name in objects_with_potential_separations:
-        return getattr(constraints, attr_name, None) is not None
+        return getattr(constraints, attr_name).min is not None
 
     return False
 
