@@ -1,22 +1,52 @@
+# pylint: disable=no-member
 import astropy.units as u
-from ska_oso_pdm import TelescopeType
+import pytest
+from ska_oso_pdm import ICRSCoordinates, Target, TelescopeType
+from ska_oso_pdm.sb_definition import LSTConstraint
 
-from ska_oso_services.validation.constraints import calculate_elevation_from_hourangle
-from tests.unit.validation import FAKE_TARGET_AT_LOW_ZENTIH
+from ska_oso_services.common.static.constants import LOW_LOCATION
+from ska_oso_services.validation.constraints import calculate_elevation_implied_from_lst_constraint
 
 
-def test_calculate_altitude_from_hourangle_returns_correct_value():
+def test_calculate_elevation_implied_from_lst_constraint():
     """
     a target with a declination equal to the latitude of the observatory will have an altitude
-    of 90 degrees (i.e. will be directly overhead) at a hourangle of zero
+    of 90 degrees (i.e. will be directly overhead) when the hourangle == it's R.A. in the below
+    example - the lst_constraint.end is 01:00:00 which is the same as the dummy R.A. an hour before
+    i.e. the start time corresponds to ~15 degrees, i.e. an elevation of ~90-15 = 75 degrees.
     """
-    low_altitude = calculate_elevation_from_hourangle(
-        TelescopeType.SKA_LOW, FAKE_TARGET_AT_LOW_ZENTIH, u.Quantity(0.0, "hourangle")
+
+    fake_target_at_low_zenith = Target(
+        target_id="target2-34567",
+        name="not a real target",
+        reference_coordinate=ICRSCoordinates(
+            ra_str="01:00:0.00",
+            dec_str=str(LOW_LOCATION.lat.to_string(sep=":")),
+        ),
     )
 
-    mid_altitude = calculate_elevation_from_hourangle(
-        TelescopeType.SKA_MID, FAKE_TARGET_AT_LOW_ZENTIH, u.Quantity(0.0, "hourangle")
+    lst_constraint = LSTConstraint(start=0.0 * u.hourangle, end=1.0 * u.hourangle)
+
+    low_altitude_range = calculate_elevation_implied_from_lst_constraint(
+        TelescopeType.SKA_LOW, fake_target_at_low_zenith, lst_constraint
     )
 
-    assert low_altitude == u.Quantity(90.0, "degree")
-    assert mid_altitude != u.Quantity(90.0, "degree")
+    mid_altitude_range = calculate_elevation_implied_from_lst_constraint(
+        TelescopeType.SKA_MID, fake_target_at_low_zenith, lst_constraint
+    )
+
+    # assert target is exactly overhead when HA == RA (i.e. the end)
+
+    assert low_altitude_range[1].to(u.deg) == u.Quantity(90.0, "degree")
+
+    # assert target is approximate 15 degrees off 90.0 at HA = RA - 1.0
+
+    assert (
+        pytest.approx(float(low_altitude_range[0].to(u.deg).value), rel=0.025)
+        == u.Quantity(75.0, "degree").value
+    )
+
+    # assert that the same source is never at zenith for MID telescope
+
+    assert mid_altitude_range[0].to(u.deg) != u.Quantity(90.0, "degree")  #
+    assert mid_altitude_range[1].to(u.deg) != u.Quantity(90.0, "degree")
