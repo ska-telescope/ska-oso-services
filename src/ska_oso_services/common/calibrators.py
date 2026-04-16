@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List
 
 from astroplan import AltitudeConstraint, Observer, is_observable
-from astropy.coordinates import AltAz, Angle, EarthLocation, SkyCoord
+from astropy.coordinates import AltAz, Angle, SkyCoord
 from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from astropy.time import Time
@@ -20,6 +20,7 @@ from ska_oso_services.common.calibrator_strategy import (
     CalibrationWhen,
     CalibratorChoice,
 )
+from ska_oso_services.common.static.constants import LOW_LOCATION, MID_LOCATION
 
 CALIBRATOR_TABLE_PATH = Path(__file__).parents[0] / "static" / "calibrator_table.ecsv"
 
@@ -97,9 +98,9 @@ def find_appropriate_calibrators(
     match telescope:
         case TelescopeType.SKA_LOW:
             # Todo move to the constant in oso-services!
-            location = EarthLocation.of_site("SKA Low")
+            location = LOW_LOCATION
         case TelescopeType.SKA_MID:
-            location = EarthLocation.of_site("SKA Mid")
+            location = MID_LOCATION
         case _:
             raise ValueError(f"Telescope {telescope} not supported")
 
