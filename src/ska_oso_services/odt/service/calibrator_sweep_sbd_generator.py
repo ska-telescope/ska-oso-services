@@ -18,10 +18,18 @@ from datetime import timedelta
 import astropy.units as u
 from astropy.table import Row
 from astropy.time import Time
-from ska_oso_pdm import Beam, ICRSCoordinates, SBDefinition, Target, TiedArrayBeams
+from ska_oso_pdm import (
+    Beam,
+    ICRSCoordinates,
+    PythonArguments,
+    SBDefinition,
+    Target,
+    TiedArrayBeams,
+    ValidationArrayAssembly,
+)
 from ska_oso_pdm.builders import LowSBDefinitionBuilder, MCCSAllocationBuilder
 from ska_oso_pdm.builders.utils import csp_configuration_id, scan_definition_id, target_id
-from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
+from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition, SDPConfiguration, SDPScript
 from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 
@@ -49,10 +57,20 @@ def generate_cal_sweep_sbd(
     and a scan. Targets are chosen by what is visible at the start time and are added to
     the scan sequence for the subarray beam
     """
-    mccs_allocation = MCCSAllocationBuilder(stations=stations)
     sbd = LowSBDefinitionBuilder(
-        mccs_allocation=mccs_allocation, targets=[], csp_configurations=[]
+        name=f"CalSweep {obs_start}",
+        mccs_allocation=MCCSAllocationBuilder(stations=stations),
+        targets=[],
+        csp_configurations=[],
+        sdp_configurations=[
+            SDPConfiguration(
+                sdp_script=SDPScript.VIS_RECEIVE, script_version="latest", script_parameters={}
+            )
+        ],
+        validate_against=ValidationArrayAssembly.AA1,
     )
+    # Remove subarray_id arg that the builder adds - probably should be removed from the builder
+    sbd.activities["observe"].function_args["init"] = PythonArguments()
 
     csp_configuration = CSPConfiguration(
         config_id=csp_configuration_id(),

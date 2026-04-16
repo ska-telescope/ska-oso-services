@@ -13,8 +13,7 @@ from pydantic import BaseModel, Field
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.repository.status import Status
 from ska_db_oda.rest.fastapicontext import UnitOfWork
-from ska_oso_pdm import ICRSCoordinates, Target, TelescopeType
-from ska_oso_pdm.builders.mccs_builder import AA05_P1_STATIONS
+from ska_oso_pdm import ICRSCoordinates, SubArrayLOW, Target, TelescopeType
 from ska_oso_pdm.builders.utils import target_id
 from ska_oso_pdm.project import Author, ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
@@ -27,6 +26,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.odt.service.calibrator_sweep_sbd_generator import generate_cal_sweep_sbd
 from ska_oso_services.odt.service.frequency_sweep_calibrator import generate_frequency_sweep
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
@@ -105,9 +105,11 @@ class CalibratorSweepInputs(BaseModel):
         "(and which catalogue to pick targets from).",
     )
     stations: list[int] = Field(
-        default_factory=lambda: list(AA05_P1_STATIONS),
-        description="List of station IDs to use in. "
-        "Will default to AA0.5 stations if not given.",
+        default_factory=lambda: get_subarray_specific_parameter_from_osd(
+            TelescopeType.SKA_LOW, SubArrayLOW.AA1_ALL, "receptors"
+        ),
+        description="List of station IDs to set in the SBDefinition. "
+        "Will default to the AA1 stations if not given.",
     )
 
 
@@ -139,9 +141,11 @@ class FrequencySweepInputs(BaseModel):
         "PST beam should be added to the observation",
     )
     stations: list[int] = Field(
-        default_factory=lambda: list(AA05_P1_STATIONS),
-        description="List of station IDs to use in. "
-        "Will default to AA0.5 stations if not given.",
+        default_factory=lambda: get_subarray_specific_parameter_from_osd(
+            TelescopeType.SKA_LOW, SubArrayLOW.AA1_ALL, "receptors"
+        ),
+        description="List of station IDs to set in the SBDefinition. "
+        "Will default to the AA1 stations if not given.",
     )
 
 

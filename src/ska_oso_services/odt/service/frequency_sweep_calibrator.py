@@ -12,11 +12,18 @@ from datetime import timedelta
 
 import astropy.units as u
 import numpy as np
-from ska_oso_pdm import Beam, SBDefinition, Target, TiedArrayBeams
+from ska_oso_pdm import (
+    Beam,
+    PythonArguments,
+    SBDefinition,
+    Target,
+    TiedArrayBeams,
+    ValidationArrayAssembly,
+)
 from ska_oso_pdm.builders import LowSBDefinitionBuilder, MCCSAllocationBuilder
 from ska_oso_pdm.builders.utils import csp_configuration_id as generate_csp_configuration_id
 from ska_oso_pdm.builders.utils import scan_definition_id
-from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
+from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition, SDPConfiguration, SDPScript
 from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 
@@ -30,21 +37,28 @@ def generate_frequency_sweep(
     coarse_channel_end: int,
     coarse_channel_bandwidth: int,
     pst_mode: bool,
-    stations: list[int] | None,
+    stations: list[int],
 ) -> SBDefinition:
     """
     Generate a frequency sweep SBDefinition.
 
     Builds a Low SBDefinition with one target and one scan per frequency step.
     """
-    mccs_allocation = (
-        MCCSAllocationBuilder() if stations is None else MCCSAllocationBuilder(stations=stations)
-    )
     sbd = LowSBDefinitionBuilder(
-        mccs_allocation=mccs_allocation,
+        name=f"FreqSweep {target.name}; "
+        f"CC {coarse_channel_start} - {coarse_channel_end}; BW {coarse_channel_bandwidth}",
+        mccs_allocation=MCCSAllocationBuilder(stations=stations),
         targets=[target],
         csp_configurations=[],
+        sdp_configurations=[
+            SDPConfiguration(
+                sdp_script=SDPScript.VIS_RECEIVE, script_version="latest", script_parameters={}
+            )
+        ],
+        validate_against=ValidationArrayAssembly.AA1,
     )
+    # Remove subarray_id arg that the builder adds - probably should be removed from the builder
+    sbd.activities["observe"].function_args["init"] = PythonArguments()
 
     coarse_channel_span = coarse_channel_end - coarse_channel_start
     n_scans, remainder = divmod(coarse_channel_span, coarse_channel_bandwidth)
