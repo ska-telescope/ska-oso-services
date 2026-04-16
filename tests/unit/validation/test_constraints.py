@@ -1,11 +1,35 @@
 # pylint: disable=no-member
 import astropy.units as u
 import pytest
-from ska_oso_pdm import ICRSCoordinates, Target, TelescopeType
-from ska_oso_pdm.sb_definition import LSTConstraint
+from ska_oso_pdm import (
+    ICRSCoordinates,
+    SolarSystemObjectName,
+    SpecialCoordinates,
+    Target,
+    TelescopeType,
+)
+from ska_oso_pdm.sb_definition import (
+    AngularSeparationConstraint,
+    LSTConstraint,
+    ObservingConstraints,
+)
 
 from ska_oso_services.common.static.constants import LOW_LOCATION
-from ska_oso_services.validation.constraints import calculate_elevation_implied_from_lst_constraint
+from ska_oso_services.validation.constraints import (
+    calculate_elevation_implied_from_lst_constraint,
+    sso_has_an_incompatible_constraint,
+)
+
+
+def test_sso_has_an_incompatible_constraint():
+    constraints = ObservingConstraints(
+        moon_separation=AngularSeparationConstraint(min=15.0 * u.deg)
+    )
+    moon = SpecialCoordinates(name="Moon")
+    sun = SpecialCoordinates(name=SolarSystemObjectName.SUN)
+
+    assert sso_has_an_incompatible_constraint(moon, constraints) is True
+    assert sso_has_an_incompatible_constraint(sun, constraints) is False
 
 
 def test_calculate_elevation_implied_from_lst_constraint():
