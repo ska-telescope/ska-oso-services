@@ -135,3 +135,27 @@ def low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst():
     sbd_json = load_string_from_file(path_to_test_file)
     sbd = SBDefinition.model_validate_json(sbd_json)
     return sbd
+
+
+@pytest.fixture
+def mid_multiple_targets_with_observing_constraints_valid():
+    path_to_test_file = (
+        Path(__file__).parents[0]
+        / "files"
+        / "mid_multiple_targets_with_observing_constraints_valid.json"
+    )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd
+
+
+@pytest.fixture
+def mid_multiple_targets_with_observing_constraints_invalid():
+    path_to_test_file = (
+        Path(__file__).parents[0]
+        / "files"
+        / "mid_multiple_targets_with_observing_constraints_invalid.json"
+    )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd

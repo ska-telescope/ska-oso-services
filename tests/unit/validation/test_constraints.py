@@ -18,7 +18,44 @@ from ska_oso_services.common.static.constants import LOW_LOCATION
 from ska_oso_services.validation.constraints import (
     calculate_elevation_implied_from_lst_constraint,
     sso_has_an_incompatible_constraint,
+    validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint,
 )
+from ska_oso_services.validation.model import ValidationContext
+
+
+def test_validate_targets_lst_and_elevation_constraint(
+    mid_multiple_targets_with_observing_constraints_valid,
+):
+    sbd = mid_multiple_targets_with_observing_constraints_valid
+    results = validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
+        ValidationContext(
+            primary_entity=sbd.observing_constraints,
+            relevant_context={
+                "targets": sbd.targets,
+                "scan_definitions": sbd.dish_allocations.scan_sequence,
+            },
+            telescope=sbd.telescope,
+        )
+    )
+    assert results == []
+
+
+def test_validate_targets_lst_and_elevation_constraint_invalid_sbd(
+    mid_multiple_targets_with_observing_constraints_invalid,
+):
+    sbd = mid_multiple_targets_with_observing_constraints_invalid
+    results = validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
+        ValidationContext(
+            primary_entity=sbd.observing_constraints,
+            relevant_context={
+                "targets": sbd.targets,
+                "scan_definitions": sbd.dish_allocations.scan_sequence,
+            },
+            telescope=sbd.telescope,
+        )
+    )
+    assert len(results) == 1
+    assert "M15" in results[0].message
 
 
 def test_sso_has_an_incompatible_constraint():
