@@ -19,6 +19,8 @@ from ska_oso_services.common.static.constants import (
     LOW_LOCATION,
     MID_LOCATION,
     SOLAR_TO_SIDEREAL_CONVERSION_FACTOR,
+    low_minimum_elevation,
+    mid_minimum_elevation,
 )
 from ska_oso_services.validation.model import (
     ValidationContext,
@@ -33,6 +35,75 @@ from ska_oso_services.validation.model import (
 class TargetLSTConstraints:
     target: Target
     lst_constraint: LSTConstraint
+
+
+@validator
+def validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
+    constraints_context: ValidationContext,
+) -> list[ValidationIssue]:
+    """
+    function to check that the targets in the scans have an elevation
+    above the limit set in the constraints throughout their individual LST
+     windows
+
+    :param constraints_context:a ValidationContext containing an Observing
+        Constraint to be validated
+    :return: a list of validation issues if the targets exceed the elevation
+        limits
+    """
+
+    check_relevant_context_contains(["targets", "scan_definitions"], constraints_context)
+    targets = constraints_context.relevant_context["targets"]
+    scan_definitions = constraints_context.relevant_context["scan_definitions"]
+
+    constraints = constraints_context.primary_entity
+
+    # in theory, it's possible the elevation constraint might have
+    # a max but no min or a min but no max. Pulling from OSD if
+    # only one is set
+
+    if getattr(constraints.altitude, "max", None) is None:
+        constraints.altitude.max = 90.0 * u.deg
+
+    if getattr(constraints.altitude, "min", None) is None:
+        constraints.altitude.min = (
+            mid_minimum_elevation()
+            if ValidationContext.telescope == TelescopeType.SKA_MID
+            else low_minimum_elevation()
+        )
+
+    target_lst_constraints = create_target_lst_list(
+        targets,
+        scan_definitions,
+        constraints.lst,
+    )
+
+    validation_issues = []
+
+    for target_lst_constraint in target_lst_constraints:
+        # this is only for Galactic or ICRS targets
+        target = target_lst_constraint.target
+        if target.reference_coordinate.kind in [CoordinateKind.ICRS, CoordinateKind.GALACTIC]:
+
+            target_elevation_limits = calculate_elevation_implied_from_lst_constraint(
+                constraints_context.telescope,
+                target_lst_constraint.target,
+                target_lst_constraint.lst_constraint,
+            )
+
+            if (
+                min(target_elevation_limits) < constraints.altitude.min
+                or max(target_elevation_limits) > constraints.altitude.max
+            ):
+                validation_issues.append(
+                    ValidationIssue(
+                        level=ValidationIssueType.ERROR,
+                        message="Elevation and LST constraints are incompatible "
+                        f"for target {target.name}",
+                    )
+                )
+
+    return validation_issues
 
 
 @validator
@@ -51,10 +122,13 @@ def validate_sso_targets_do_not_have_separation_constraints(
 
     check_relevant_context_contains(["targets", "scan_definitions"], constraints_context)
     targets = constraints_context.relevant_context["targets"]
+    scan_definitions = constraints_context.relevant_context["scan_definitions"]
 
     constraints = constraints_context.primary_entity
 
-    for target in targets:
+    for scan in scan_definitions:
+        # extracting the target
+        target = next(target for target in targets if target.target_id == scan.target_ref)
         if target.reference_coordinate.kind == CoordinateKind.SPECIAL:
             if sso_has_an_incompatible_constraint(target.reference_coordinate, constraints):
                 return [
@@ -67,7 +141,7 @@ def validate_sso_targets_do_not_have_separation_constraints(
                     )
                 ]
 
-    return []
+        return []
 
 
 def sso_has_an_incompatible_constraint(
@@ -126,7 +200,7 @@ def calculate_elevation_implied_from_lst_constraint(
     return elevation_from_lst
 
 
-def create_target_exec_list(
+def create_target_lst_list(
     targets: list[Target],
     scan_definitions: list[ScanDefinition],
     sbd_lst_constraint: LSTConstraint,
@@ -149,7 +223,7 @@ def create_target_exec_list(
         # the target's own lst constraint is the sbd lst constraint + cumulative execution time
         # thus far, for the first scan in the SBD the target lst constraint == the sbd
         # lst_constraintthe target must exceed the elevation limit throughout their scan,
-        # starting atlst_start + cumulate_run_time and finishing at
+        # starting at lst_start + cumulate_run_time and finishing at
         # lst_end + cumulative_run_time first converting the cumulative run time from
         # "normal" solar time to sidereal time
 
@@ -168,7 +242,7 @@ def create_target_exec_list(
 
         target_lst_constraint = LSTConstraint(
             start=sbd_lst_constraint.start + cumulative_execution_time_lst,
-            end=sbd_lst_constraint.start + cumulative_execution_time_lst,
+            end=sbd_lst_constraint.end + cumulative_execution_time_lst,
         )
 
         target_lst_constraints_list.append(
