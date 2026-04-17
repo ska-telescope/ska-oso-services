@@ -37,6 +37,13 @@ class TargetLSTConstraints:
     lst_constraint: LSTConstraint
 
 
+@dataclass
+class TargetElevation:
+    min: u.Quantity
+    max: u.Quantity
+    mid: u.Quantity
+
+
 @validator
 def validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
     constraints_context: ValidationContext,
@@ -85,16 +92,16 @@ def validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constrai
         target = target_lst_constraint.target
         if target.reference_coordinate.kind in [CoordinateKind.ICRS, CoordinateKind.GALACTIC]:
 
-            target_elevation_limits = calculate_elevation_implied_from_lst_constraint(
+            target_elevation = calculate_elevation_implied_from_lst_constraint(
                 constraints_context.telescope,
                 target_lst_constraint.target,
                 target_lst_constraint.lst_constraint,
             )
 
             if (
-                min(target_elevation_limits) < constraints.altitude.min
-                or max(target_elevation_limits) > constraints.altitude.max
-            ):
+                target_elevation.min < constraints.altitude.min
+                or target_elevation.max > constraints.altitude.max
+            ) or target_elevation.mid < 0:
                 validation_issues.append(
                     ValidationIssue(
                         level=ValidationIssueType.ERROR,
@@ -164,7 +171,7 @@ def sso_has_an_incompatible_constraint(
 
 def calculate_elevation_implied_from_lst_constraint(
     telescope: TelescopeType, target: Target, lst_constraint: LSTConstraint
-) -> list[u.Quantity]:
+) -> TargetElevation:
     """
     private function to calculate the altitude of a target at a given hourangle and telescope
     """
@@ -197,7 +204,18 @@ def calculate_elevation_implied_from_lst_constraint(
         for hourangle_radian in hourangle_constraint_radian
     ]
 
-    return elevation_from_lst
+    elevation_mid_scan = np.arcsin(
+        np.sin(latitude_radians) * np.sin(declination_radian)
+        + np.cos(latitude_radians)
+        * np.cos(declination_radian)
+        * np.cos(sum(hourangle_constraint_radian) / 2.0)
+    )
+
+    target_elevation = TargetElevation(
+        min=min(elevation_from_lst), max=max(elevation_from_lst), mid=elevation_mid_scan
+    )
+
+    return target_elevation
 
 
 def create_target_lst_list(

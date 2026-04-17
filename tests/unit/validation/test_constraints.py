@@ -9,9 +9,11 @@ from ska_oso_pdm import (
     TelescopeType,
 )
 from ska_oso_pdm.sb_definition import (
+    AltitudeConstraint,
     AngularSeparationConstraint,
     LSTConstraint,
     ObservingConstraints,
+    ScanDefinition,
 )
 
 from ska_oso_services.common.static.constants import LOW_LOCATION
@@ -21,6 +23,15 @@ from ska_oso_services.validation.constraints import (
     validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint,
 )
 from ska_oso_services.validation.model import ValidationContext
+
+fake_target_at_low_zenith = Target(
+    target_id="target2-34567",
+    name="not a real target",
+    reference_coordinate=ICRSCoordinates(
+        ra_str="01:00:0.00",
+        dec_str=str(LOW_LOCATION.lat.to_string(sep=":")),
+    ),
+)
 
 
 def test_validate_targets_lst_and_elevation_constraint(
@@ -58,6 +69,33 @@ def test_validate_targets_lst_and_elevation_constraint_invalid_sbd(
     assert "M15" in results[0].message
 
 
+def test_validate_targets_lst_and_elevation_constraint_for_sneaky_target():
+    """
+    this is a test for the niche case that a target exceeds the limits at
+    the beginning and end of the LST window, but is actually set during
+    some point of the scan
+    """
+    constraints = ObservingConstraints(
+        altitude=AltitudeConstraint(min=45.0 * u.deg),
+        lst=LSTConstraint(start=2.0 * u.hourangle, end=23.0 * u.hourangle),
+    )
+
+    scan = ScanDefinition(target_ref=fake_target_at_low_zenith.target_id, scan_duration=20.0 * u.h)
+
+    result = validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
+        ValidationContext(
+            primary_entity=constraints,
+            relevant_context={
+                "targets": [fake_target_at_low_zenith],
+                "scan_definitions": [scan],
+            },
+            telescope=TelescopeType.SKA_LOW,
+        )
+    )
+
+    assert len(result) == 1
+
+
 def test_sso_has_an_incompatible_constraint():
     constraints = ObservingConstraints(
         moon_separation=AngularSeparationConstraint(min=15.0 * u.deg)
@@ -77,15 +115,6 @@ def test_calculate_elevation_implied_from_lst_constraint():
     i.e. the start time corresponds to ~15 degrees, i.e. an elevation of ~90-15 = 75 degrees.
     """
 
-    fake_target_at_low_zenith = Target(
-        target_id="target2-34567",
-        name="not a real target",
-        reference_coordinate=ICRSCoordinates(
-            ra_str="01:00:0.00",
-            dec_str=str(LOW_LOCATION.lat.to_string(sep=":")),
-        ),
-    )
-
     lst_constraint = LSTConstraint(start=0.0 * u.hourangle, end=1.0 * u.hourangle)
 
     low_altitude_range = calculate_elevation_implied_from_lst_constraint(
@@ -98,16 +127,16 @@ def test_calculate_elevation_implied_from_lst_constraint():
 
     # assert target is exactly overhead when HA == RA (i.e. the end)
 
-    assert low_altitude_range[1].to(u.deg) == u.Quantity(90.0, "degree")
+    assert low_altitude_range.max.to(u.deg) == u.Quantity(90.0, "degree")
 
     # assert target is approximate 15 degrees off 90.0 at HA = RA - 1.0
 
     assert (
-        pytest.approx(float(low_altitude_range[0].to(u.deg).value), rel=0.025)
+        pytest.approx(float(low_altitude_range.min.to(u.deg).value), rel=0.025)
         == u.Quantity(75.0, "degree").value
     )
 
     # assert that the same source is never at zenith for MID telescope
 
-    assert mid_altitude_range[0].to(u.deg) != u.Quantity(90.0, "degree")  #
-    assert mid_altitude_range[1].to(u.deg) != u.Quantity(90.0, "degree")
+    assert mid_altitude_range.max.to(u.deg) != u.Quantity(90.0, "degree")  #
+    assert mid_altitude_range.min.to(u.deg) != u.Quantity(90.0, "degree")
