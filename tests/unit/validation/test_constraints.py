@@ -19,10 +19,11 @@ from ska_oso_pdm.sb_definition import (
 from ska_oso_services.common.static.constants import LOW_LOCATION
 from ska_oso_services.validation.constraints import (
     calculate_elevation_implied_from_lst_constraint,
-    sso_has_an_incompatible_constraint,
-    validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint,
+    has_an_incompatible_constraint,
+    validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint, create_target_lst_list,
 )
 from ska_oso_services.validation.model import ValidationContext
+from ska_oso_services.validation.sbdefinition import _get_scan_sequence
 
 fake_target_at_low_zenith = Target(
     target_id="target2-34567",
@@ -103,8 +104,8 @@ def test_sso_has_an_incompatible_constraint():
     moon = SpecialCoordinates(name="Moon")
     sun = SpecialCoordinates(name=SolarSystemObjectName.SUN)
 
-    assert sso_has_an_incompatible_constraint(moon, constraints) is True
-    assert sso_has_an_incompatible_constraint(sun, constraints) is False
+    assert has_an_incompatible_constraint(moon, constraints) is True
+    assert has_an_incompatible_constraint(sun, constraints) is False
 
 
 def test_calculate_elevation_implied_from_lst_constraint():
@@ -140,3 +141,26 @@ def test_calculate_elevation_implied_from_lst_constraint():
 
     assert mid_altitude_range.max.to(u.deg) != u.Quantity(90.0, "degree")  #
     assert mid_altitude_range.min.to(u.deg) != u.Quantity(90.0, "degree")
+
+
+def test_create_target_lst_list_can_handle_multiple_subarray_beams(
+        low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst
+):
+    """
+    this SBD has two subarray beams each with two scans - as such the lst constraint
+    for the first scan of each subarray beam should be identical
+    """
+    sbd = low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst
+    constraints = ObservingConstraints(
+        lst=LSTConstraint(start=2.0 * u.hourangle, end=23.0 * u.hourangle),
+    )
+
+    target_list = create_target_lst_list(
+        sbd.targets,
+        _get_scan_sequence(sbd, preserve_subarray_beams=True),
+        constraints.lst
+    )
+
+    assert len(target_list) == 4
+    assert target_list[0].lst_constraint != target_list[1].lst_constraint
+    assert target_list[0].lst_constraint == target_list[2].lst_constraint
