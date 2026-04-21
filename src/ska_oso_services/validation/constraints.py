@@ -1,4 +1,5 @@
 # pylint: disable=no-member
+import copy
 from dataclasses import dataclass
 
 import numpy as np
@@ -87,7 +88,7 @@ def validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constrai
     targets = constraints_context.relevant_context["targets"]
     scan_definitions = constraints_context.relevant_context["scan_definitions"]
 
-    constraints = constraints_context.primary_entity
+    constraints = copy.copy(constraints_context.primary_entity)
 
     # in theory, it's possible the elevation constraint might have
     # a max but no min or a min but no max. Pulling from OSD if
