@@ -1,9 +1,18 @@
 from ska_oso_pdm import SBDefinition, Target, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 
+from ska_oso_services.validation.constraints import (
+    target_is_jupiter_sun_or_moon,
+    validate_constraints,
+)
 from ska_oso_services.validation.csp import validate_csp
 from ska_oso_services.validation.mccs import validate_mccs
-from ska_oso_services.validation.model import ValidationContext, ValidationIssue, validator
+from ska_oso_services.validation.model import (
+    ValidationContext,
+    ValidationIssue,
+    ValidationIssueType,
+    validator,
+)
 from ska_oso_services.validation.scan import validate_scan_definition
 from ska_oso_services.validation.target import validate_target
 
@@ -16,7 +25,7 @@ def validate_sbdefinition(
     Applies all relevant Validators to the SBDefinition elements,
     collecting all the results into a single list.
 
-    :param sbd: the full SBDefinition to validate
+    :param sbd_context: the full SBDefinition to validate
     :return: the collated ValidationIssues resulting from applying all the
                 SBDefinition Validators
     """
@@ -49,6 +58,39 @@ def validate_sbdefinition(
             )
         )
     ]
+
+    # observing constraints can truly be optional in an SBD, so
+    # only validating if present
+
+    if sbd.observing_constraints is not None:
+        constraint_validation_results = [
+            validate_constraints(
+                ValidationContext(
+                    primary_entity=sbd.observing_constraints,
+                    source_jsonpath="$.observing_constraints",
+                    relevant_context={
+                        "target": sbd.targets,
+                        "scan_definitions": _get_scan_sequence(sbd, preserve_subarray_beams=True),
+                    },
+                    telescope=sbd.telescope,
+                    array_assembly=validation_array_assembly,
+                )
+            )
+        ]
+    # with the exception being if the target is Jupiter, the Sun or Moon
+    # as the default observing constraints are not acceptable in this case
+    else:
+        constraint_validation_results = []
+        for target in sbd.targets:
+            if target_is_jupiter_sun_or_moon(target):
+                constraint_validation_results.append(
+                    ValidationIssue(
+                        level=ValidationIssueType.ERROR,
+                        field="$.observing_constraints",
+                        message=f"default scheduling constraints include a {target.name} "
+                        "avoidance zone",
+                    )
+                )
 
     csp_validation_results = [
         issue
@@ -101,6 +143,7 @@ def validate_sbdefinition(
 
     return (
         target_validation_results
+        + constraint_validation_results
         + receptor_validation_results
         + csp_validation_results
         + scan_validation_results
@@ -125,12 +168,20 @@ def _lookup_csp_configuration_for_scan(
     )
 
 
-def _get_scan_sequence(sbd: SBDefinition) -> list[ScanDefinition]:
+def _get_scan_sequence(
+    sbd: SBDefinition, preserve_subarray_beams: bool = False
+) -> list[ScanDefinition] | list[list[ScanDefinition]]:
     if sbd.telescope == TelescopeType.SKA_MID:
         return sbd.dish_allocations.scan_sequence
 
-    return [
-        scan
-        for subarray_beam in sbd.mccs_allocation.subarray_beams
-        for scan in subarray_beam.scan_sequence
-    ]
+    elif preserve_subarray_beams is True:
+        return [
+            subarray_beam.scan_sequence for subarray_beam in sbd.mccs_allocation.subarray_beams
+        ]
+
+    else:
+        return [
+            scan
+            for subarray_beam in sbd.mccs_allocation.subarray_beams
+            for scan in subarray_beam.scan_sequence
+        ]
