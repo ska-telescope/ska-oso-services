@@ -19,8 +19,9 @@ from ska_oso_pdm.sb_definition import (
 from ska_oso_services.common.static.constants import LOW_LOCATION
 from ska_oso_services.validation.constraints import (
     calculate_elevation_implied_from_lst_constraint,
+    create_target_lst_list,
     has_an_incompatible_constraint,
-    validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint, create_target_lst_list,
+    validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint,
 )
 from ska_oso_services.validation.model import ValidationContext
 from ska_oso_services.validation.sbdefinition import _get_scan_sequence
@@ -68,6 +69,40 @@ def test_validate_targets_lst_and_elevation_constraint_invalid_sbd(
     )
     assert len(results) == 1
     assert "M15" in results[0].message
+
+
+def test_validate_low_targets_lst_and_elevation_constraint(
+    low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst,
+):
+    """
+    This LOW SBD includes 47 Tuc and other SMC adjacent targets that will never exceed
+    the 45 degree limit for low. Reducing the altitude limit to reflect this, but given
+    that the calibrator is LMC adjacent (i.e. RA ~ 5hrs) and the LST constraints provided
+    are narrow - we expect failures for Pictor A on both subarray beams
+    """
+
+    sbd = low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst
+
+    constraints = ObservingConstraints(
+        altitude=AltitudeConstraint(min=40.0 * u.deg),
+        lst=LSTConstraint(start=23.0 * u.hourangle, end=2.0 * u.hourangle),
+    )
+
+    results = validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
+        ValidationContext(
+            primary_entity=constraints,
+            relevant_context={
+                "targets": sbd.targets,
+                "scan_definitions": _get_scan_sequence(sbd, preserve_subarray_beams=True),
+            },
+            telescope=sbd.telescope,
+        )
+    )
+    assert len(results) == 2
+    assert results[0].message == results[1].message
+    assert (
+        results[0].message == "Elevation and LST constraints are incompatible for target Pictor A"
+    )
 
 
 def test_validate_targets_lst_and_elevation_constraint_for_sneaky_target():
@@ -144,7 +179,7 @@ def test_calculate_elevation_implied_from_lst_constraint():
 
 
 def test_create_target_lst_list_can_handle_multiple_subarray_beams(
-        low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst
+    low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst,
 ):
     """
     this SBD has two subarray beams each with two scans - as such the lst constraint
@@ -156,9 +191,7 @@ def test_create_target_lst_list_can_handle_multiple_subarray_beams(
     )
 
     target_list = create_target_lst_list(
-        sbd.targets,
-        _get_scan_sequence(sbd, preserve_subarray_beams=True),
-        constraints.lst
+        sbd.targets, _get_scan_sequence(sbd, preserve_subarray_beams=True), constraints.lst
     )
 
     assert len(target_list) == 4
