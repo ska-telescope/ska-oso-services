@@ -64,9 +64,7 @@ def validate_constraints(
             validate_sso_targets_do_not_have_separation_constraints,
         )
     else:
-        validators = (
-            validate_sso_targets_do_not_have_separation_constraints,
-        )
+        validators = (validate_sso_targets_do_not_have_separation_constraints,)
 
     return validate(constraints_context, validators)
 
