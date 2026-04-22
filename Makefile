@@ -16,6 +16,9 @@ k8s_test_src_dir = pyproject.toml poetry.lock
 SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.14.1
 K8S_TEST_IMAGE_TO_TEST=$(SKA_K8S_TOOLS_BUILD_DEPLOY)
 
+# Set to nothing so that everything in the namespace is waited for
+K8S_WAIT_LABEL_FILTER_ARGS =
+
 PIPELINE_TEST_DEPLOYMENT ?= false
 
 
