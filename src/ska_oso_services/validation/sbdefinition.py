@@ -63,20 +63,19 @@ def validate_sbdefinition(
     # only validating if present
 
     if sbd.observing_constraints is not None:
-        constraint_validation_results = [
-            validate_constraints(
-                ValidationContext(
-                    primary_entity=sbd.observing_constraints,
-                    source_jsonpath="$.observing_constraints",
-                    relevant_context={
-                        "targets": sbd.targets,
-                        "scan_definitions": _get_scan_sequence(sbd, preserve_subarray_beams=True),
-                    },
-                    telescope=sbd.telescope,
-                    array_assembly=validation_array_assembly,
-                )
+        constraint_validation_results = validate_constraints(
+            ValidationContext(
+                primary_entity=sbd.observing_constraints,
+                source_jsonpath="$.observing_constraints",
+                relevant_context={
+                    "targets": sbd.targets,
+                    "scan_definitions": _get_scan_sequence(sbd, preserve_subarray_beams=True),
+                },
+                telescope=sbd.telescope,
+                array_assembly=validation_array_assembly,
             )
-        ]
+        )
+
     # with the exception being if the target is Jupiter, the Sun or Moon
     # as the default observing constraints are not acceptable in this case
     else:
