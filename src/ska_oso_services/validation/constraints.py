@@ -20,7 +20,9 @@ from ska_oso_services.common.static.constants import (
     LOW_LOCATION,
     MID_LOCATION,
     SOLAR_TO_SIDEREAL_CONVERSION_FACTOR,
+    low_maximum_elevation,
     low_minimum_elevation,
+    mid_maximum_elevation,
     mid_minimum_elevation,
 )
 from ska_oso_services.validation.model import (
@@ -95,12 +97,16 @@ def validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constrai
     # only one is set
 
     if getattr(constraints.altitude, "max", None) is None:
-        constraints.altitude.max = 90.0 * u.deg
+        constraints.altitude.max = (
+            mid_maximum_elevation()
+            if constraints_context.telescope == TelescopeType.SKA_MID
+            else low_maximum_elevation()
+        )
 
     if getattr(constraints.altitude, "min", None) is None:
         constraints.altitude.min = (
             mid_minimum_elevation()
-            if ValidationContext.telescope == TelescopeType.SKA_MID
+            if constraints_context.telescope == TelescopeType.SKA_MID
             else low_minimum_elevation()
         )
 
