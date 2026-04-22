@@ -57,14 +57,14 @@ def validate_constraints(
         relevant ObservingConstraints validators
     """
     if hasattr(constraints_context.primary_entity, "lst"):
-        validators = [
+        validators = (
             validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint,
             validate_sso_targets_do_not_have_separation_constraints,
-        ]
+        )
     else:
-        validators = [
+        validators = (
             validate_sso_targets_do_not_have_separation_constraints,
-        ]
+        )
 
     return validate(constraints_context, validators)
 
