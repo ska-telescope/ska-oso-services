@@ -83,14 +83,9 @@ def test_validate_low_targets_lst_and_elevation_constraint(
 
     sbd = low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst
 
-    constraints = ObservingConstraints(
-        altitude=AltitudeConstraint(min=40.0 * u.deg),
-        lst=LSTConstraint(start=23.0 * u.hourangle, end=2.0 * u.hourangle),
-    )
-
     results = validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
         ValidationContext(
-            primary_entity=constraints,
+            primary_entity=sbd.observing_constraints,
             relevant_context={
                 "targets": sbd.targets,
                 "scan_definitions": _get_scan_sequence(sbd, preserve_subarray_beams=True),
