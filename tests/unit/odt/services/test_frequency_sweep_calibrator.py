@@ -105,7 +105,7 @@ class TestGenerateFrequencySweep:
             coarse_channel_end=350,
             coarse_channel_bandwidth=96,
             pst_mode=False,
-            stations=None,
+            stations=[345],
         )
 
         assert len(sbd.csp_configurations) == 3
@@ -120,7 +120,7 @@ class TestGenerateFrequencySweep:
             coarse_channel_end=160,
             coarse_channel_bandwidth=96,
             pst_mode=True,
-            stations=None,
+            stations=[345],
         )
 
         assert all(csp.lowcbf.do_pst for csp in sbd.csp_configurations)
@@ -139,7 +139,7 @@ class TestGenerateFrequencySweep:
             coarse_channel_end=256,
             coarse_channel_bandwidth=96,
             pst_mode=False,
-            stations=None,
+            stations=[345],
         )
 
         for scan in sbd.mccs_allocation.subarray_beams[0].scan_sequence:

@@ -4,6 +4,14 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+************
+
+14.2.2
+************
+* [BUGFIX] Improvements to defaults in commissioning SBD generation (use AA1, set SDP vis-recieve script, add SBD name). 
+  Fixes bug in UI when stations are given in generation input.
+
 14.2.1
 ************
 * [BUGFIX] Fixes bug where AltAz targets cannot be validated
