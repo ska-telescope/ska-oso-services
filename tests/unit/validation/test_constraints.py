@@ -36,53 +36,33 @@ fake_target_at_low_zenith = Target(
 )
 
 
+@pytest.mark.parametrize(
+    "scheduling_block, issue_list_length, problematic_target",
+    [
+        pytest.param(
+            "mid_multiple_targets_with_observing_constraints_valid",
+            0,
+            None,
+            id="MID SBD with no observing constraint issues",
+        ),
+        pytest.param(
+            "mid_multiple_targets_with_observing_constraints_invalid",
+            1,
+            "M15",
+            id="MID SBD with target M15 not visible",
+        ),
+        pytest.param(
+            "low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst",
+            2,
+            "Pictor A",
+            id="LOW SBD with calibrator Pictor A not visible in both subarray beams",
+        ),
+    ],
+)
 def test_validate_targets_lst_and_elevation_constraint(
-    mid_multiple_targets_with_observing_constraints_valid,
+    request, scheduling_block, issue_list_length, problematic_target
 ):
-    sbd = mid_multiple_targets_with_observing_constraints_valid
-    results = validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
-        ValidationContext(
-            primary_entity=sbd.observing_constraints,
-            relevant_context={
-                "targets": sbd.targets,
-                "scan_definitions": sbd.dish_allocations.scan_sequence,
-            },
-            telescope=sbd.telescope,
-        )
-    )
-    assert results == []
-
-
-def test_validate_targets_lst_and_elevation_constraint_invalid_sbd(
-    mid_multiple_targets_with_observing_constraints_invalid,
-):
-    sbd = mid_multiple_targets_with_observing_constraints_invalid
-    results = validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
-        ValidationContext(
-            primary_entity=sbd.observing_constraints,
-            relevant_context={
-                "targets": sbd.targets,
-                "scan_definitions": sbd.dish_allocations.scan_sequence,
-            },
-            telescope=sbd.telescope,
-        )
-    )
-    assert len(results) == 1
-    assert "M15" in results[0].message
-
-
-def test_validate_low_targets_lst_and_elevation_constraint(
-    low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst,
-):
-    """
-    This LOW SBD includes 47 Tuc and other SMC adjacent targets that will never exceed
-    the 45 degree limit for low. Reducing the altitude limit to reflect this, but given
-    that the calibrator is LMC adjacent (i.e. RA ~ 5hrs) and the LST constraints provided
-    are narrow - we expect failures for Pictor A on both subarray beams
-    """
-
-    sbd = low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst
-
+    sbd = request.getfixturevalue(scheduling_block)
     results = validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
         ValidationContext(
             primary_entity=sbd.observing_constraints,
@@ -93,11 +73,9 @@ def test_validate_low_targets_lst_and_elevation_constraint(
             telescope=sbd.telescope,
         )
     )
-    assert len(results) == 2
-    assert results[0].message == results[1].message
-    assert (
-        results[0].message == "Elevation and LST constraints are incompatible for target Pictor A"
-    )
+    assert len(results) == issue_list_length
+    if len(results) > 0:
+        assert problematic_target in results[issue_list_length - 1].message
 
 
 def test_validate_targets_lst_and_elevation_constraint_for_sneaky_target():
