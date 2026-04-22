@@ -1,0 +1,294 @@
+{
+  "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
+  "sbd_id": "sbd-g5e39va5sy4",
+  "name": "LST 13-18 BAD",
+  "telescope": "ska_mid",
+  "validate_against": "AA0.5",
+  "metadata": {
+    "version": 3,
+    "created_by": "DefaultUser",
+    "created_on": "2026-04-17T11:26:54.903316Z",
+    "last_modified_by": "48b857d5-41e7-4fd8-bbf5-605dccf1dc82",
+    "last_modified_on": "2026-04-17T12:27:33.184015Z",
+    "pdm_version": "27.2.1"
+  },
+  "ob_ref": "ob-g5a5bp12zrs",
+  "activities": {
+    "observe": {
+      "function_args": {
+        "init": {},
+        "main": {}
+      },
+      "kind": "git",
+      "repo": "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
+      "path": "git://scripts/allocate_and_observe_sb.py",
+      "branch": "master"
+    }
+  },
+  "targets": [
+    {
+      "target_id": "target-45304",
+      "name": "Terzan 5",
+      "pointing_pattern": {
+        "active": "PointedMosaicParameters",
+        "parameters": [
+          {
+            "kind": "PointedMosaicParameters",
+            "offsets": [
+              {
+                "x": 0,
+                "y": 0
+              }
+            ],
+            "units": "arcsec"
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "17:48:05.0000",
+        "dec_str": "-24:46:48.000",
+        "pm_ra": 0,
+        "pm_dec": 0,
+        "parallax": 0,
+        "epoch": 2000
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": -82.3,
+          "unit": "km / s"
+        },
+        "definition": "OPTICAL",
+        "reference_frame": "BARYCENTRIC",
+        "redshift": 0
+      }
+    },
+    {
+      "target_id": "target-15990",
+      "name": "47 Tuc",
+      "pointing_pattern": {
+        "active": "PointedMosaicParameters",
+        "parameters": [
+          {
+            "kind": "PointedMosaicParameters",
+            "offsets": [
+              {
+                "x": 0,
+                "y": 0
+              }
+            ],
+            "units": "arcsec"
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "00:24:05.3590",
+        "dec_str": "-72:04:53.200",
+        "pm_ra": 0,
+        "pm_dec": 0,
+        "parallax": 0,
+        "epoch": 2000
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": -17.2,
+          "unit": "km / s"
+        },
+        "definition": "OPTICAL",
+        "reference_frame": "BARYCENTRIC",
+        "redshift": 0
+      }
+    },
+    {
+      "target_id": "target-67734",
+      "name": "M15",
+      "pointing_pattern": {
+        "active": "PointedMosaicParameters",
+        "parameters": [
+          {
+            "kind": "PointedMosaicParameters",
+            "offsets": [
+              {
+                "x": 0,
+                "y": 0
+              }
+            ],
+            "units": "arcsec"
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "21:29:58.3300",
+        "dec_str": "12:10:01.200",
+        "pm_ra": 0,
+        "pm_dec": 0,
+        "parallax": 0,
+        "epoch": 2000
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": -106.5,
+          "unit": "km / s"
+        },
+        "definition": "OPTICAL",
+        "reference_frame": "BARYCENTRIC",
+        "redshift": 0
+      }
+    },
+    {
+      "target_id": "target-71296",
+      "name": "Omega Centauri",
+      "pointing_pattern": {
+        "active": "PointedMosaicParameters",
+        "parameters": [
+          {
+            "kind": "PointedMosaicParameters",
+            "offsets": [
+              {
+                "x": 0,
+                "y": 0
+              }
+            ],
+            "units": "arcsec"
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "13:26:47.2800",
+        "dec_str": "-47:28:46.100",
+        "pm_ra": 0,
+        "pm_dec": 0,
+        "parallax": 0,
+        "epoch": 2000
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 232.7,
+          "unit": "km / s"
+        },
+        "definition": "OPTICAL",
+        "reference_frame": "BARYCENTRIC",
+        "redshift": 0
+      }
+    }
+  ],
+  "observing_constraints": {
+    "altitude": {
+      "min": {
+        "value": 15,
+        "unit": "deg"
+      },
+      "max": {
+        "value": 90,
+        "unit": "deg"
+      }
+    },
+    "lst": {
+      "start": {
+        "value": 13,
+        "unit": "hourangle"
+      },
+      "end": {
+        "value": 18,
+        "unit": "hourangle"
+      }
+    }
+  },
+  "csp_configurations": [
+    {
+      "config_id": "csp-configuration-12754",
+      "name": "Config 12754",
+      "midcbf": {
+        "frequency_band": "2",
+        "subbands": [
+          {
+            "frequency_slice_offset": {
+              "value": 0,
+              "unit": "MHz"
+            },
+            "correlation_spws": [
+              {
+                "spw_id": 1,
+                "zoom_factor": 0,
+                "centre_frequency": 1425000000,
+                "number_of_channels": 49840,
+                "channel_averaging_factor": 1,
+                "time_integration_factor": 1
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "dish_allocations": {
+    "dish_allocation_id": "dish-allocation-95719",
+    "selected_subarray_definition": "AA0.5",
+    "dish_ids": [
+      "SKA001",
+      "SKA036",
+      "SKA077",
+      "SKA100"
+    ],
+    "scan_sequence": [
+      {
+        "scan_definition_id": "scan-definition-49306",
+        "target_ref": "target-71296",
+        "csp_configuration_ref": "csp-configuration-12754",
+        "scan_intent": "Science",
+        "pointing_correction": "RESET",
+        "scan_duration_ms": 5400000,
+        "scan_duration": {
+          "value": 1.5,
+          "unit": "h"
+        }
+      },
+      {
+        "scan_definition_id": "scan-definition-33553",
+        "target_ref": "target-45304",
+        "csp_configuration_ref": "csp-configuration-12754",
+        "scan_intent": "Science",
+        "pointing_correction": "RESET",
+        "scan_duration_ms": 5400000,
+        "scan_duration": {
+          "value": 1.5,
+          "unit": "h"
+        }
+      },
+      {
+        "scan_definition_id": "scan-definition-43542",
+        "target_ref": "target-67734",
+        "csp_configuration_ref": "csp-configuration-12754",
+        "scan_intent": "Science",
+        "pointing_correction": "RESET",
+        "scan_duration_ms": 5400000,
+        "scan_duration": {
+          "value": 1.5,
+          "unit": "h"
+        }
+      },
+      {
+        "scan_definition_id": "scan-definition-80986",
+        "target_ref": "target-15990",
+        "csp_configuration_ref": "csp-configuration-12754",
+        "scan_intent": "Science",
+        "pointing_correction": "RESET",
+        "scan_duration_ms": 5400000,
+        "scan_duration": {
+          "value": 1.5,
+          "unit": "h"
+        }
+      }
+    ]
+  },
+  "sdp_configurations": [
+    {
+      "sdp_script": "vis-receive",
+      "script_version": "latest",
+      "script_parameters": {}
+    }
+  ]
+}

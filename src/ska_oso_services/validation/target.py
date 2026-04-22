@@ -1,11 +1,16 @@
 # pylint: disable=no-member
 import astropy.units as u
-from astropy.coordinates import EarthLocation, Latitude
+from astropy.coordinates import Latitude
 from astropy.units import Quantity
 from ska_oso_pdm import CoordinateKind, Target, TelescopeType
 
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
-from ska_oso_services.common.static.constants import low_minimum_elevation, mid_minimum_elevation
+from ska_oso_services.common.static.constants import (
+    LOW_LOCATION,
+    MID_LOCATION,
+    low_minimum_elevation,
+    mid_minimum_elevation,
+)
 from ska_oso_services.validation.model import (
     ValidationContext,
     ValidationIssue,
@@ -13,9 +18,6 @@ from ska_oso_services.validation.model import (
     validate,
     validator,
 )
-
-LOW_LOCATION = EarthLocation.of_site("SKA Low")
-MID_LOCATION = EarthLocation.of_site("SKA Mid")
 
 
 @validator

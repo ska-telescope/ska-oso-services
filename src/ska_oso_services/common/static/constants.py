@@ -2,7 +2,7 @@
 from functools import cache
 
 from astropy import units as u
-from astropy.coordinates import Latitude
+from astropy.coordinates import EarthLocation, Latitude
 from astropy.units import Quantity
 from ska_oso_pdm import TelescopeType, ValidationArrayAssembly
 
@@ -11,6 +11,9 @@ from ska_oso_services.common.osdmapper import (
     get_subarray_specific_parameter_from_osd,
     get_telescope_observing_constraint,
 )
+
+LOW_LOCATION = EarthLocation.of_site("SKA Low")
+MID_LOCATION = EarthLocation.of_site("SKA Mid")
 
 
 @cache
@@ -25,6 +28,14 @@ def mid_minimum_elevation() -> Quantity:
 
 
 @cache
+def mid_maximum_elevation() -> Quantity:
+    mid_max_elevation = get_telescope_observing_constraint(
+        TelescopeType.SKA_MID, "max_elevation_deg"
+    )
+    return Latitude(mid_max_elevation, unit="degree")
+
+
+@cache
 def low_minimum_elevation() -> Quantity:
     """
     SKA Low Telescope limit
@@ -33,6 +44,17 @@ def low_minimum_elevation() -> Quantity:
         TelescopeType.SKA_LOW, "min_elevation_deg"
     )
     return Latitude(low_min_elevation, unit="degree")
+
+
+@cache
+def low_maximum_elevation() -> Quantity:
+    """
+    SKA Low Telescope limit
+    """
+    low_max_elevation = get_telescope_observing_constraint(
+        TelescopeType.SKA_LOW, "max_elevation_deg"
+    )
+    return Latitude(low_max_elevation, unit="degree")
 
 
 @cache
@@ -94,6 +116,7 @@ def low_pst_channel_width() -> Quantity:
 
 MID_DISH_DIAMETER = Quantity(15, u.m)
 LOW_STATION_DIAMETER = Quantity(39, u.m)
+SOLAR_TO_SIDEREAL_CONVERSION_FACTOR = 1.0027
 
 
 # Not telescope constants, used for visibility plots

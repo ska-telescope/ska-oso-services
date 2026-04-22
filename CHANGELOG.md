@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+* Adding validation for the observing constraints
 
 14.2.2
 ************

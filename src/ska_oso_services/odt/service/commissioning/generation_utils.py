@@ -8,12 +8,13 @@ from typing import Literal, NamedTuple
 import astropy.units as u
 import numpy as np
 from astropy.constants import c as speed_of_light  # pylint: disable=E0611
-from astropy.coordinates import AltAz, EarthLocation, SkyCoord, get_sun
+from astropy.coordinates import AltAz, SkyCoord, get_sun
 from astropy.table import Row, Table
 from astropy.time import Time
 from astropy.units import Quantity
 
 from ska_oso_services.common.astro import low_coarse_channel_to_frequency
+from ska_oso_services.common.static.constants import LOW_LOCATION
 from ska_oso_services.odt.service.commissioning import data
 
 logger = logging.getLogger(__name__)
@@ -81,7 +82,7 @@ def pick_targets(
     coord_table.add_index("index")
 
     # First pick targets that are up
-    location = EarthLocation.of_site("SKA-Low")
+    location = LOW_LOCATION
     if obs_time is None:
         obs_time = Time.now()
     altitudes = coord_table["coords"].transform_to(AltAz(obstime=obs_time, location=location)).alt
