@@ -69,7 +69,7 @@ def validate_sbdefinition(
                     primary_entity=sbd.observing_constraints,
                     source_jsonpath="$.observing_constraints",
                     relevant_context={
-                        "target": sbd.targets,
+                        "targets": sbd.targets,
                         "scan_definitions": _get_scan_sequence(sbd, preserve_subarray_beams=True),
                     },
                     telescope=sbd.telescope,
