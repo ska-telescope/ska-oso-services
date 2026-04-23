@@ -35,7 +35,7 @@ DEFAULT_SUBARRAY = SubArrayLOW.AA2_ALL
 
 def _low_default_subarray_parameters() -> tuple[list[int], Quantity]:
     station_ids = get_subarray_specific_parameter_from_osd(
-        TelescopeType.SKA_LOW, DEFAULT_SUBARRAY, "number_station_ids"
+        TelescopeType.SKA_LOW, DEFAULT_SUBARRAY, "receptors"
     )
     total_bandwidth = (
         get_subarray_specific_parameter_from_osd(
