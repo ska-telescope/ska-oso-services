@@ -12,6 +12,8 @@ from ska_oso_services.common.osdmapper import (
     get_mid_frequency_band_data_from_osd,
     get_subarray_specific_parameter_from_osd,
     get_telescope_observing_constraint,
+    CbfMetrics,
+    LowQualityAttributeMetrics,
 )
 
 
@@ -95,3 +97,10 @@ def test_get_telescope_observing_constraint_returns_constraints_for_low():
 def test_get_telescope_observing_constraint_fails_for_invalid_parameter():
     with pytest.raises(ValueError):
         get_telescope_observing_constraint(TelescopeType.SKA_LOW, "not_a_parameter")
+
+
+def test_configuration_from_osd_returns_low_cbf_alveo_configured_percent():
+    value = configuration_from_osd()
+    assert type(value.ska_low.quality_attribute_metrics) is LowQualityAttributeMetrics
+    assert type(value.ska_low.quality_attribute_metrics.cbf) is CbfMetrics
+    assert value.ska_low.quality_attribute_metrics.cbf.alveo_configured_percent is not None
