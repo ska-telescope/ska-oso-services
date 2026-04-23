@@ -32,15 +32,19 @@ from ska_oso_services.odt.service.sbd_generator import _sbd_internal_id
 
 DEFAULT_SUBARRAY = SubArrayLOW.AA2_ALL
 
-STATION_IDS = get_subarray_specific_parameter_from_osd(
-    TelescopeType.SKA_LOW, DEFAULT_SUBARRAY, "number_station_ids"
-)
-TOTAL_BANDWIDTH = (
-    get_subarray_specific_parameter_from_osd(
-        TelescopeType.SKA_LOW, DEFAULT_SUBARRAY, "available_bandwidth_hz"
+
+def _low_default_subarray_parameters() -> tuple[list[int], Quantity]:
+    station_ids = get_subarray_specific_parameter_from_osd(
+        TelescopeType.SKA_LOW, DEFAULT_SUBARRAY, "number_station_ids"
     )
-    * u.Hz
-)
+    total_bandwidth = (
+        get_subarray_specific_parameter_from_osd(
+            TelescopeType.SKA_LOW, DEFAULT_SUBARRAY, "available_bandwidth_hz"
+        )
+        * u.Hz
+    )
+    return station_ids, total_bandwidth
+
 
 CALIBRATOR_TARGET = Target(
     target_id="calibrator-00000",
@@ -59,9 +63,10 @@ def generate_gsm_survey_sbds(
 ) -> list[SBDefinition]:
 
     sbds = []
+    station_ids, total_bandwidth = _low_default_subarray_parameters()
 
     number_of_channels = _get_number_of_channels_for_each_subarray_beam(
-        num_subarray_beams + num_calibrator_beams
+        num_subarray_beams + num_calibrator_beams, total_bandwidth
     )
 
     total_targets = len(input_targets)
@@ -72,7 +77,7 @@ def generate_gsm_survey_sbds(
 
     apertures = [
         Aperture(station_id=station_id, weighting_key="uniform", substation_id=1)
-        for station_id in STATION_IDS
+        for station_id in station_ids
     ]
 
     # This is where you would apply some kind of clustering algorithm
@@ -134,7 +139,9 @@ def _compute_remainder_layout(num_remaining: int, max_beams: int) -> tuple[int, 
     return 1, num_remaining
 
 
-def _get_number_of_channels_for_each_subarray_beam(num_subarray_beams: int) -> int:
+def _get_number_of_channels_for_each_subarray_beam(
+    num_subarray_beams: int, total_bandwidth: Quantity
+) -> int:
     """
     The number_of_channels in the CSPConfiguration for each scan must be a multiple
     of 8 coarse channels.
@@ -145,7 +152,7 @@ def _get_number_of_channels_for_each_subarray_beam(num_subarray_beams: int) -> i
     This function will return the closest valid number_of_channels for the num_subarray_beams.
     """
 
-    exact_coarse_channel = low_frequency_to_coarse_channel(TOTAL_BANDWIDTH / num_subarray_beams)
+    exact_coarse_channel = low_frequency_to_coarse_channel(total_bandwidth / num_subarray_beams)
 
     return floor(exact_coarse_channel / 8) * 8
 
