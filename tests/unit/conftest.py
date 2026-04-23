@@ -159,3 +159,13 @@ def mid_multiple_targets_with_observing_constraints_invalid():
     sbd_json = load_string_from_file(path_to_test_file)
     sbd = SBDefinition.model_validate_json(sbd_json)
     return sbd
+
+
+@pytest.fixture
+def mid_single_scan_with_constraints():
+    path_to_test_file = (
+        Path(__file__).parents[0] / "files" / "mid_single_scan_with_constraints.json"
+    )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd

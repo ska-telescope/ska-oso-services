@@ -1,0 +1,137 @@
+{
+  "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
+  "sbd_id": "sbd-gzvarv3s502",
+  "name": "0218+357",
+  "telescope": "ska_mid",
+  "validate_against": "AA0.5",
+  "metadata": {
+    "version": 3,
+    "created_by": "48b857d5-41e7-4fd8-bbf5-605dccf1dc82",
+    "created_on": "2026-04-22T14:32:40.615835Z",
+    "last_modified_by": "48b857d5-41e7-4fd8-bbf5-605dccf1dc82",
+    "last_modified_on": "2026-04-22T14:38:47.903368Z",
+    "pdm_version": "27.2.1"
+  },
+  "ob_ref": "ob-g5a5bp12zrs",
+  "activities": {
+    "observe": {
+      "function_args": {
+        "init": {},
+        "main": {}
+      },
+      "kind": "git",
+      "repo": "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
+      "path": "git://scripts/allocate_and_observe_sb.py",
+      "branch": "master"
+    }
+  },
+  "targets": [
+    {
+      "target_id": "target-51076",
+      "name": "JVAS B0218+357",
+      "pointing_pattern": {
+        "active": "PointedMosaicParameters",
+        "parameters": [
+          {
+            "kind": "PointedMosaicParameters",
+            "offsets": [
+              {
+                "x": 0,
+                "y": 0
+              }
+            ],
+            "units": "arcsec"
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "icrs",
+        "ra_str": "02:21:05.4921",
+        "dec_str": "35:56:13.849",
+        "pm_ra": 0,
+        "pm_dec": 0,
+        "parallax": 0,
+        "epoch": 2000
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "BARYCENTRIC",
+        "redshift": 0.68466001749
+      }
+    }
+  ],
+  "observing_constraints": {
+    "lst": {
+      "start": {
+        "value": 0,
+        "unit": "hourangle"
+      },
+      "end": {
+        "value": 4,
+        "unit": "hourangle"
+      }
+    }
+  },
+  "csp_configurations": [
+    {
+      "config_id": "csp-configuration-12754",
+      "name": "Config 12754",
+      "midcbf": {
+        "frequency_band": "2",
+        "subbands": [
+          {
+            "frequency_slice_offset": {
+              "value": 0,
+              "unit": "MHz"
+            },
+            "correlation_spws": [
+              {
+                "spw_id": 1,
+                "zoom_factor": 0,
+                "centre_frequency": 1425000000,
+                "number_of_channels": 49840,
+                "channel_averaging_factor": 1,
+                "time_integration_factor": 1
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "dish_allocations": {
+    "dish_allocation_id": "dish-allocation-95719",
+    "selected_subarray_definition": "AA0.5",
+    "dish_ids": [
+      "SKA001",
+      "SKA036",
+      "SKA077",
+      "SKA100"
+    ],
+    "scan_sequence": [
+      {
+        "scan_definition_id": "scan-definition-85626",
+        "target_ref": "target-51076",
+        "csp_configuration_ref": "csp-configuration-12754",
+        "scan_intent": "Science",
+        "pointing_correction": "RESET",
+        "scan_duration_ms": 3600000,
+        "scan_duration": {
+          "value": 3600,
+          "unit": "s"
+        }
+      }
+    ]
+  },
+  "sdp_configurations": [
+    {
+      "sdp_script": "vis-receive",
+      "script_version": "latest",
+      "script_parameters": {}
+    }
+  ]
+}

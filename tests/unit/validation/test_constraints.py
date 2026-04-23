@@ -52,6 +52,12 @@ fake_target_at_low_zenith = Target(
             id="MID SBD with target M15 not visible",
         ),
         pytest.param(
+            "mid_single_scan_with_constraints",
+            1,
+            "JVAS B0218+357",
+            id="MID SBD with target JVAS B0218+357 not visible",
+        ),
+        pytest.param(
             "low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst",
             2,
             "Pictor A",
