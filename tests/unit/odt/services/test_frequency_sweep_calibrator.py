@@ -5,7 +5,9 @@ from unittest import mock
 
 from ska_oso_pdm import ICRSCoordinates, Target
 
-from ska_oso_services.odt.service.frequency_sweep_calibrator import generate_frequency_sweep
+from ska_oso_services.odt.service.frequency_sweep_calibrator import (
+    generate_frequency_sweep,
+)
 from tests.unit.util import assert_json_is_equal, load_string_from_file
 
 MODULE = "ska_oso_services.odt.service.frequency_sweep_calibrator"
@@ -113,8 +115,14 @@ class TestGenerateFrequencySweep:
         assert len(sbd.csp_configurations) == 3
         assert len(sbd.mccs_allocation.subarray_beams[0].scan_sequence) == 3
 
+    # Note: disabled the pylint no-member check as it is misleading
+    # the issue is more because pylint can't make sense of the pydantic jiggery
+    # pokery in the PDM at some point we could use the pylint-pydantic plugin
+    # which i think would remove the need for ths but might have more radical
+    # side effects.
     def test_sets_pst_parts_when_mode_is_pst(self):
 
+        # pylint: disable=no-member
         target = create_target()
         sbd = generate_frequency_sweep(
             target=target,
