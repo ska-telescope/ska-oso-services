@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ************
 * [BUGFIX] fixing validation for the observing constraints
+* Adds a new POST /{prj_id}/{ob_id}/generateGSMSurveySBDefinitions endpoint that will generate SBDefinitions
+  from the pointings file (currently stored in this repo as well) and other inputs.
 
 14.3.0
 ************

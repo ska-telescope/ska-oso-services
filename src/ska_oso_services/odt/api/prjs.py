@@ -2,12 +2,18 @@
 These functions map to the API paths, with the returned value being the API response
 """
 
+import csv
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
+from importlib import resources
 from typing import Annotated, Optional
 
+# pylint: disable=no-member
+import astropy.units as u
+from astropy.coordinates import SkyCoord
 from astropy.time import Time
+from astropy.units import Quantity
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from ska_aaa_authhelpers import AuthContext, Role
@@ -28,7 +34,9 @@ from ska_oso_services.common.error_handling import (
 )
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.odt.service.calibrator_sweep_sbd_generator import generate_cal_sweep_sbd
+from ska_oso_services.odt.service.commissioning import data as commissioning_data
 from ska_oso_services.odt.service.frequency_sweep_calibrator import generate_frequency_sweep
+from ska_oso_services.odt.service.gsm_survey_sbd_generator import generate_gsm_survey_sbds
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
@@ -81,6 +89,29 @@ def _validate_project_has_scheduling_blocks(project: Project) -> None:
 class CommissioningObservingMode(str, Enum):
     VIS = "VIS"
     PST = "PST"
+
+
+class GlobalSkyModelSurveyInputs(BaseModel):
+
+    pointings_file_uri: str = Field(
+        description=(
+            "The location of a csv file with `beam_name`, `ra` and `dec` columns. "
+            "As a first implementation, this should be a filename that corresponds to a "
+            "file in the src/ska_oso_services/odt/service/commissioning/data directory."
+        ),
+    )
+    centre_frequency_mhz: float
+    scan_duration_min: float
+    num_subarray_beams: int
+    num_scans: int
+    num_calibrator_beams: int = 1
+    max_rows: int | None = Field(
+        default=None,
+        description=(
+            "This limits the number of pointings from the pointings file that will "
+            "be used, and is useful for lightweight testing of the generation logic"
+        ),
+    )
 
 
 class CalibratorSweepInputs(BaseModel):
@@ -172,6 +203,43 @@ def _resolve_frequency_sweep_target(inputs: FrequencySweepInputs) -> Target:
             "and dec_str for manual target coordinates."
         )
     )
+
+
+def _load_pointings_as_targets(
+    pointings_file_uri: str, max_rows: int | None = None
+) -> list[Target]:
+    """Load pointings from a CSV in the commissioning data directory as Target objects.
+
+    The CSV is expected to have columns: beam_name, ra (degrees), dec (degrees).
+    """
+    data_file = resources.files(commissioning_data) / pointings_file_uri
+    if not data_file.is_file():
+        raise BadRequestError(
+            detail=f"Pointings file '{pointings_file_uri}' not found in commissioning data."
+        )
+
+    targets = []
+    with resources.as_file(data_file) as path:
+        with open(path, newline="", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for i, row in enumerate(reader):
+                if max_rows is not None and i >= max_rows:
+                    break
+                # TODO Astropy supports vectorized operations so we could do one
+                #  SkyCoord call for all rows
+                coord = SkyCoord(ra=float(row["ra"]), dec=float(row["dec"]), unit="deg")
+                targets.append(
+                    Target(
+                        target_id=target_id(),
+                        name=row["beam_name"],
+                        reference_coordinate=ICRSCoordinates(
+                            ra_str=coord.ra.to_string(u.hour, sep=":"),
+                            dec_str=coord.dec.to_string(u.degree, sep=":"),
+                        ),
+                    )
+                )
+
+    return targets
 
 
 @router.get(
@@ -516,6 +584,78 @@ def prjs_ob_generate_sbds_frequency_sweep(
         uow.commit()
 
     return updated_prj
+
+
+@router.post(
+    "/{identifier}/{obs_block_id}/generateGSMSurveySBDefinitions",
+    summary="Generate GSM survey SBDefinitions in an ObservingBlock",
+    description=(
+        "Generates SBDefinitions for the Low Commissioning GSM survey "
+        "use case. Pointings are loaded from a CSV file in the commissioning "
+        "data directory and converted to targets. The number of SBDefinitions will "
+        "equal the number of targets divided by (num_subarray_beams * num_scans)"
+        "The generated SBDefinitions are persisted in the ODA and linked to "
+        "the specified ObservingBlock."
+    ),
+)
+def prjs_ob_generate_gsm_survey_sbds(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    oda: UnitOfWork,
+    identifier: str,
+    obs_block_id: str,
+    inputs: GlobalSkyModelSurveyInputs,
+) -> Project:
+    """
+    Generate calibrator survey SBDefinitions and store them in the given
+    ObservingBlock within a Project.
+    """
+    LOGGER.debug(
+        "POST PRJS generate GSM Survey SBDefinitions for prj_id: %s and obs_block_id: %s",
+        identifier,
+        obs_block_id,
+    )
+    targets = _load_pointings_as_targets(inputs.pointings_file_uri, max_rows=inputs.max_rows)
+
+    with oda as uow:
+        prj = uow.prjs.get(identifier)
+        try:
+            obs_block = next(
+                obs_block for obs_block in prj.obs_blocks if obs_block.obs_block_id == obs_block_id
+            )
+        except StopIteration:
+            # pylint: disable=raise-missing-from
+            raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
+        obs_block_id_resolved = obs_block.obs_block_id
+
+    # Process targets in batches to limit memory and transaction size
+    # TODO decide what to do with previous transactions if there is an error
+    num_targets_per_sbd = inputs.num_subarray_beams * inputs.num_scans
+    sbd_batch_size = 50
+    target_batch_size = sbd_batch_size * num_targets_per_sbd
+
+    for batch_start in range(0, len(targets), target_batch_size):
+        batch_targets = targets[batch_start : batch_start + target_batch_size]
+
+        sbds = generate_gsm_survey_sbds(
+            input_targets=batch_targets,
+            centre_frequency=Quantity(inputs.centre_frequency_mhz, u.MHz),
+            scan_duration=timedelta(minutes=inputs.scan_duration_min),
+            num_subarray_beams=inputs.num_subarray_beams,
+            num_scans=inputs.num_scans,
+            num_calibrator_beams=inputs.num_calibrator_beams,
+        )
+
+        with oda as uow:
+            for sbd in sbds:
+                sbd.ob_ref = obs_block_id_resolved
+                uow.sbds.add(sbd, user=auth.user_id)
+            uow.commit()
+
+    with oda as uow:
+        return uow.prjs.get(identifier)
 
 
 @router.post(

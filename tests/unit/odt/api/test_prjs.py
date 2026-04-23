@@ -755,3 +755,162 @@ class TestFrequencySweepSBDefinition:
             == "Provide either target_name for catalog lookup, or both ra_str "
             "and dec_str for manual target coordinates."
         )
+
+
+class TestSurveySBDefinition:
+
+    SURVEY_INPUT = {
+        "pointings_file_uri": "hex_relax_beams.sweet_as.csv",
+        "centre_frequency_mhz": 155.47,
+        "scan_duration_min": 5.0,
+        "num_subarray_beams": 2,
+        "num_scans": 3,
+    }
+
+    @mock.patch("ska_oso_services.odt.api.prjs.generate_survey_sbds")
+    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    def test_survey_generate_success(
+        self, mock_load_pointings, mock_generate, client_with_uow_mock
+    ):
+        """
+        A valid request should load pointings, generate SBDs in batches,
+        persist them, and return the updated Project.
+        """
+        client, uow_mock = client_with_uow_mock
+        project = TestDataFactory.project()
+        obs_block_id = "ob-1"
+        project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
+        sbd = TestDataFactory.lowsbdefinition(without_metadata=True)
+        uow_mock.prjs.get.return_value = project
+        uow_mock.sbds.add.return_value = sbd
+        mock_load_pointings.return_value = [
+            Target(
+                target_id=f"target-{i}",
+                name=f"beam_{i}",
+                reference_coordinate=ICRSCoordinates(ra_str="0:0:0", dec_str="-90:0:0"),
+            )
+            for i in range(6)
+        ]
+        mock_generate.return_value = [sbd, sbd]
+
+        resp = client.post(
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}" "/generateSurveySBDefinitions",
+            json=self.SURVEY_INPUT,
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        mock_load_pointings.assert_called_once_with(
+            self.SURVEY_INPUT["pointings_file_uri"], max_rows=None
+        )
+        mock_generate.assert_called_once()
+        assert uow_mock.sbds.add.call_count == 2
+        # Check the SBD's ob_ref was set to the observing block
+        for call in uow_mock.sbds.add.call_args_list:
+            args, _ = call
+            assert args[0].ob_ref == obs_block_id
+
+    @mock.patch("ska_oso_services.odt.api.prjs.generate_survey_sbds")
+    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    def test_survey_generate_batches_targets(
+        self, mock_load_pointings, mock_generate, client_with_uow_mock
+    ):
+        """
+        When more targets than a single batch, generate_survey_sbds
+        should be called multiple times.
+        """
+        client, uow_mock = client_with_uow_mock
+        project = TestDataFactory.project()
+        obs_block_id = "ob-1"
+        project.obs_blocks = [ObservingBlock(obs_block_id=obs_block_id)]
+        sbd = TestDataFactory.lowsbdefinition(without_metadata=True)
+        uow_mock.prjs.get.return_value = project
+        uow_mock.sbds.add.return_value = sbd
+
+        # num_subarray_beams=2 * num_scans=3 = 6 targets per SBD
+        # batch_size=50 SBDs * 6 targets = 300 targets per batch
+        # 306 targets should produce 2 batches (300 + 6)
+        mock_load_pointings.return_value = [
+            Target(
+                target_id=f"target-{i}",
+                name=f"beam_{i}",
+                reference_coordinate=ICRSCoordinates(ra_str="0:0:0", dec_str="-90:0:0"),
+            )
+            for i in range(306)
+        ]
+        mock_generate.return_value = [sbd]
+
+        resp = client.post(
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}" "/generateSurveySBDefinitions",
+            json=self.SURVEY_INPUT,
+        )
+
+        assert resp.status_code == HTTPStatus.OK
+        assert mock_generate.call_count == 2
+
+    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    def test_survey_prj_not_found(self, mock_load_pointings, client_with_uow_mock):
+        """Requesting a non-existent project should return 404."""
+        prj_id = "prj-999"
+        client, uow_mock = client_with_uow_mock
+        mock_load_pointings.return_value = []
+        uow_mock.prjs.get.side_effect = ODANotFound(identifier=prj_id)
+
+        resp = client.post(
+            f"{PRJS_API_URL}/{prj_id}/ob-1/generateSurveySBDefinitions",
+            json=self.SURVEY_INPUT,
+        )
+
+        assert resp.status_code == HTTPStatus.NOT_FOUND
+        assert resp.json()["detail"] == f"The requested identifier {prj_id} could not be found."
+
+    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    def test_survey_obs_block_not_found(self, mock_load_pointings, client_with_uow_mock):
+        """Requesting a non-existent observing block should return 404."""
+        client, uow_mock = client_with_uow_mock
+        project = TestDataFactory.project()
+        project.obs_blocks = []
+        uow_mock.prjs.get.return_value = project
+        mock_load_pointings.return_value = []
+
+        resp = client.post(
+            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001" "/generateSurveySBDefinitions",
+            json=self.SURVEY_INPUT,
+        )
+
+        assert resp.status_code == HTTPStatus.NOT_FOUND
+        assert resp.json()["detail"] == "Observing Block 'obs-block-00001' not found in Project"
+
+    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    def test_survey_oda_error(self, mock_load_pointings, client_with_uow_mock):
+        """An ODA error should propagate as a 500."""
+        client, uow_mock = client_with_uow_mock
+        mock_load_pointings.return_value = []
+        uow_mock.prjs.get.side_effect = IOError("test error")
+
+        with pytest.raises(IOError):
+            resp = client.post(
+                f"{PRJS_API_URL}/prj-123/ob-1/generateSurveySBDefinitions",
+                json=self.SURVEY_INPUT,
+            )
+
+            assert resp.json()["detail"] == "OSError('test error')"
+            assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+
+    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    def test_survey_passes_max_rows(self, mock_load_pointings, client_with_uow_mock):
+        """When max_rows is set in SurveyInputs, it should be passed through."""
+        client, uow_mock = client_with_uow_mock
+        project = TestDataFactory.project()
+        project.obs_blocks = [ObservingBlock(obs_block_id="ob-1")]
+        uow_mock.prjs.get.return_value = project
+        mock_load_pointings.return_value = []
+
+        payload = {**self.SURVEY_INPUT, "max_rows": 20}
+        client.post(
+            f"{PRJS_API_URL}/{project.prj_id}/ob-1/generateSurveySBDefinitions",
+            json=payload,
+        )
+
+        mock_load_pointings.assert_called_once_with(
+            self.SURVEY_INPUT["pointings_file_uri"], max_rows=20
+        )
