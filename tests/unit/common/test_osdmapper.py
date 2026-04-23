@@ -5,15 +5,15 @@ from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
 
 from ska_oso_services.common.osdmapper import (
     Band5bSubband,
+    CbfMetrics,
     Constraints,
+    LowQualityAttributeMetrics,
     MidFrequencyBand,
     configuration_from_osd,
     get_low_basic_capability_parameter_from_osd,
     get_mid_frequency_band_data_from_osd,
     get_subarray_specific_parameter_from_osd,
     get_telescope_observing_constraint,
-    CbfMetrics,
-    LowQualityAttributeMetrics,
 )
 
 

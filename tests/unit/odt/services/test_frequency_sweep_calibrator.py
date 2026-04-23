@@ -3,9 +3,7 @@ from unittest import mock
 
 from ska_oso_pdm import ICRSCoordinates, Target
 
-from ska_oso_services.odt.service.frequency_sweep_calibrator import (
-    generate_frequency_sweep,
-)
+from ska_oso_services.odt.service.frequency_sweep_calibrator import generate_frequency_sweep
 from tests.unit.util import assert_json_is_equal, load_string_from_file
 
 MODULE = "ska_oso_services.odt.service.frequency_sweep_calibrator"
