@@ -187,7 +187,7 @@ def test_survey_sbds_generated_from_project_obs_block(authrequests):
         "max_rows": 6,
     }
     generate_response = authrequests.post(
-        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/generateSurveySBDefinitions",
+        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/generateGSMSurveySBDefinitions",
         json=survey_input,
     )
 

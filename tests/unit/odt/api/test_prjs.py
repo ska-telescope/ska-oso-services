@@ -767,7 +767,7 @@ class TestSurveySBDefinition:
         "num_scans": 3,
     }
 
-    @mock.patch("ska_oso_services.odt.api.prjs.generate_survey_sbds")
+    @mock.patch("ska_oso_services.odt.api.prjs.generate_gsm_survey_sbds")
     @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
     def test_survey_generate_success(
         self, mock_load_pointings, mock_generate, client_with_uow_mock
@@ -794,7 +794,7 @@ class TestSurveySBDefinition:
         mock_generate.return_value = [sbd, sbd]
 
         resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}" "/generateSurveySBDefinitions",
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/generateGSMSurveySBDefinitions",
             json=self.SURVEY_INPUT,
         )
 
@@ -809,13 +809,13 @@ class TestSurveySBDefinition:
             args, _ = call
             assert args[0].ob_ref == obs_block_id
 
-    @mock.patch("ska_oso_services.odt.api.prjs.generate_survey_sbds")
+    @mock.patch("ska_oso_services.odt.api.prjs.generate_gsm_survey_sbds")
     @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
     def test_survey_generate_batches_targets(
         self, mock_load_pointings, mock_generate, client_with_uow_mock
     ):
         """
-        When more targets than a single batch, generate_survey_sbds
+        When more targets than a single batch, generate_gsm_survey_sbds
         should be called multiple times.
         """
         client, uow_mock = client_with_uow_mock
@@ -840,7 +840,7 @@ class TestSurveySBDefinition:
         mock_generate.return_value = [sbd]
 
         resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}" "/generateSurveySBDefinitions",
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/generateGSMSurveySBDefinitions",
             json=self.SURVEY_INPUT,
         )
 
@@ -856,7 +856,7 @@ class TestSurveySBDefinition:
         uow_mock.prjs.get.side_effect = ODANotFound(identifier=prj_id)
 
         resp = client.post(
-            f"{PRJS_API_URL}/{prj_id}/ob-1/generateSurveySBDefinitions",
+            f"{PRJS_API_URL}/{prj_id}/ob-1/generateGSMSurveySBDefinitions",
             json=self.SURVEY_INPUT,
         )
 
@@ -873,7 +873,7 @@ class TestSurveySBDefinition:
         mock_load_pointings.return_value = []
 
         resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001" "/generateSurveySBDefinitions",
+            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateGSMSurveySBDefinitions",
             json=self.SURVEY_INPUT,
         )
 
@@ -889,7 +889,7 @@ class TestSurveySBDefinition:
 
         with pytest.raises(IOError):
             resp = client.post(
-                f"{PRJS_API_URL}/prj-123/ob-1/generateSurveySBDefinitions",
+                f"{PRJS_API_URL}/prj-123/ob-1/generateGSMSurveySBDefinitions",
                 json=self.SURVEY_INPUT,
             )
 
@@ -907,7 +907,7 @@ class TestSurveySBDefinition:
 
         payload = {**self.SURVEY_INPUT, "max_rows": 20}
         client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/ob-1/generateSurveySBDefinitions",
+            f"{PRJS_API_URL}/{project.prj_id}/ob-1/generateGSMSurveySBDefinitions",
             json=payload,
         )
 
