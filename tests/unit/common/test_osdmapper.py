@@ -99,8 +99,11 @@ def test_get_telescope_observing_constraint_fails_for_invalid_parameter():
         get_telescope_observing_constraint(TelescopeType.SKA_LOW, "not_a_parameter")
 
 
-def test_configuration_from_osd_returns_low_cbf_alveo_configured_percent():
+def test_configuration_from_osd_returns_low_cbf_metrics():
     value = configuration_from_osd()
     assert type(value.ska_low.quality_attribute_metrics) is LowQualityAttributeMetrics
     assert type(value.ska_low.quality_attribute_metrics.cbf) is CbfMetrics
-    assert value.ska_low.quality_attribute_metrics.cbf.alveo_configured_percent is not None
+    cbf = value.ska_low.quality_attribute_metrics.cbf
+    assert (
+        cbf.alveo_configured_percent is not None or cbf.processors_ready_percent is not None
+    ), "At least one of alveo_configured_percent or processors_ready_percent must be present"

@@ -85,7 +85,8 @@ class Constraints:
 
 
 class CbfMetrics(AppModel):
-    alveo_configured_percent: float
+    alveo_configured_percent: float | None = None
+    processors_ready_percent: float | None = None
 
 
 class LowQualityAttributeMetrics(AppModel):

@@ -6,7 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-* Adding quality_attribute_metrics to low and mid configurations read from the capabilities in tmdata. At the moment the only one set is the default alveo_configured_percent for the cbf on ska_low (i.e ska_low.quality_attribute_metrics.cbf.alveo_configured_percent)
+* Adding quality_attribute_metrics to low and mid configurations read from the capabilities in tmdata. At the moment the only one set is the default 
+  processors_ready_percent for the cbf on ska_low 
+  (i.e ska_low.quality_attribute_metrics.cbf.processors_ready_percent)
 
 14.3.0
 ************
