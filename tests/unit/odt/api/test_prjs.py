@@ -768,7 +768,7 @@ class TestSurveySBDefinition:
     }
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_gsm_survey_sbds")
-    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
     def test_survey_generate_success(
         self, mock_load_pointings, mock_generate, client_with_uow_mock
     ):
@@ -810,7 +810,7 @@ class TestSurveySBDefinition:
             assert args[0].ob_ref == obs_block_id
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_gsm_survey_sbds")
-    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
     def test_survey_generate_batches_targets(
         self, mock_load_pointings, mock_generate, client_with_uow_mock
     ):
@@ -847,7 +847,7 @@ class TestSurveySBDefinition:
         assert resp.status_code == HTTPStatus.OK
         assert mock_generate.call_count == 2
 
-    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
     def test_survey_prj_not_found(self, mock_load_pointings, client_with_uow_mock):
         """Requesting a non-existent project should return 404."""
         prj_id = "prj-999"
@@ -863,7 +863,7 @@ class TestSurveySBDefinition:
         assert resp.status_code == HTTPStatus.NOT_FOUND
         assert resp.json()["detail"] == f"The requested identifier {prj_id} could not be found."
 
-    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
     def test_survey_obs_block_not_found(self, mock_load_pointings, client_with_uow_mock):
         """Requesting a non-existent observing block should return 404."""
         client, uow_mock = client_with_uow_mock
@@ -880,7 +880,7 @@ class TestSurveySBDefinition:
         assert resp.status_code == HTTPStatus.NOT_FOUND
         assert resp.json()["detail"] == "Observing Block 'obs-block-00001' not found in Project"
 
-    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
     def test_survey_oda_error(self, mock_load_pointings, client_with_uow_mock):
         """An ODA error should propagate as a 500."""
         client, uow_mock = client_with_uow_mock
@@ -896,7 +896,7 @@ class TestSurveySBDefinition:
             assert resp.json()["detail"] == "OSError('test error')"
             assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
-    @mock.patch("ska_oso_services.odt.api.prjs._load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
     def test_survey_passes_max_rows(self, mock_load_pointings, client_with_uow_mock):
         """When max_rows is set in SurveyInputs, it should be passed through."""
         client, uow_mock = client_with_uow_mock

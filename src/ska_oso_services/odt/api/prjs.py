@@ -590,29 +590,29 @@ def prjs_ob_generate_gsm_survey_sbds(
             raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
         obs_block_id_resolved = obs_block.obs_block_id
 
-    # Process targets in batches to limit memory and transaction size
-    # TODO decide what to do with previous transactions if there is an error
-    num_targets_per_sbd = inputs.num_subarray_beams * inputs.num_scans
-    sbd_batch_size = 50
-    target_batch_size = sbd_batch_size * num_targets_per_sbd
+        # Generate SBDs in batches to limit peak memory, but persist
+        # everything in a single transaction for atomicity
+        num_targets_per_sbd = inputs.num_subarray_beams * inputs.num_scans
+        sbd_batch_size = 50
+        target_batch_size = sbd_batch_size * num_targets_per_sbd
 
-    for batch_start in range(0, len(targets), target_batch_size):
-        batch_targets = targets[batch_start : batch_start + target_batch_size]
+        for batch_start in range(0, len(targets), target_batch_size):
+            batch_targets = targets[batch_start : batch_start + target_batch_size]
 
-        sbds = generate_gsm_survey_sbds(
-            input_targets=batch_targets,
-            centre_frequency=Quantity(inputs.centre_frequency_mhz, u.MHz),
-            scan_duration=timedelta(minutes=inputs.scan_duration_min),
-            num_subarray_beams=inputs.num_subarray_beams,
-            num_scans=inputs.num_scans,
-            num_calibrator_beams=inputs.num_calibrator_beams,
-        )
+            sbds = generate_gsm_survey_sbds(
+                input_targets=batch_targets,
+                centre_frequency=Quantity(inputs.centre_frequency_mhz, u.MHz),
+                scan_duration=timedelta(minutes=inputs.scan_duration_min),
+                num_subarray_beams=inputs.num_subarray_beams,
+                num_scans=inputs.num_scans,
+                num_calibrator_beams=inputs.num_calibrator_beams,
+            )
 
-        with oda as uow:
             for sbd in sbds:
                 sbd.ob_ref = obs_block_id_resolved
                 uow.sbds.add(sbd, user=auth.user_id)
-            uow.commit()
+
+        uow.commit()
 
     with oda as uow:
         return uow.prjs.get(identifier)
