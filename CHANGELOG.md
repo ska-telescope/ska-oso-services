@@ -5,10 +5,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
+
 **********
 * Adding quality_attribute_metrics to low and mid configurations read from the capabilities in tmdata. At the moment the only one set is the default 
   processors_ready_percent for the cbf on ska_low 
   (i.e ska_low.quality_attribute_metrics.cbf.processors_ready_percent)
+* [BUGFIX] fixing validation for the observing constraints
+
 
 14.3.0
 ************
