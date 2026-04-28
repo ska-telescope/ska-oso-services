@@ -74,3 +74,10 @@ def test_scans_are_validated(mock_validate_target, mock_validate_scan_definition
     result = validate_sbdefinition(input_context)
 
     assert result == INVALID_RESULT
+
+
+def test_e2e(problematic_low_sbd):
+    sbd = problematic_low_sbd
+    result = validate_sbdefinition(ValidationContext(primary_entity=sbd))
+
+    assert result == []

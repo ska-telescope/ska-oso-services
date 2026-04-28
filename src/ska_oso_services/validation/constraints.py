@@ -90,6 +90,9 @@ def validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constrai
 
     constraints = copy.copy(constraints_context.primary_entity)
 
+    if constraints.lst is None:
+        return []
+
     # in theory, it's possible the elevation constraint might have
     # a max but no min or a min but no max. Pulling from OSD if
     # only one is set
@@ -160,13 +163,13 @@ def validate_sso_targets_do_not_have_separation_constraints(
     targets = constraints_context.relevant_context["targets"]
     scan_definitions = constraints_context.relevant_context["scan_definitions"]
 
+    constraints = constraints_context.primary_entity
+
     # if there is only one subarray beam (or, in the case of MID no subarray beams)
     # formatting the scan definitions so that they're nested for homogeneity
 
     if isinstance(scan_definitions[0], ScanDefinition):
         scan_definitions = [scan_definitions]
-
-    constraints = constraints_context.primary_entity
 
     for subarray_beams in scan_definitions:
         for scan in subarray_beams:
@@ -178,10 +181,9 @@ def validate_sso_targets_do_not_have_separation_constraints(
                 return [
                     ValidationIssue(
                         level=ValidationIssueType.ERROR,
-                        message="cannot specify "
-                        f"{target.reference_coordinate.name.value}_separation "
-                        f"for a Scheduling Block with {target.reference_coordinate.name} "
-                        "as a target",
+                        message=f"{target.reference_coordinate.name.value} Avoidance Zone "
+                        "must be 0.0 degrees for a Scheduling Block with "
+                        f"{target.reference_coordinate.name} as a target",
                     )
                 ]
 
@@ -201,7 +203,7 @@ def has_an_incompatible_constraint(
     ]
 
     if coordinate.name in objects_with_potential_separations:
-        return getattr(constraints, attr_name).min is not None
+        return getattr(constraints, attr_name).min != 0.0
 
     return False
 
@@ -241,8 +243,8 @@ def calculate_elevation_implied_from_lst_constraint(
         for hourangle_radian in hourangle_constraint_radian
     ]
 
-    # now we need to calculate the elevation mid scan to make sure the target
-    # isn't below the ground. First finding the mid point in time:
+    # now we need to calculate the elevation mid-scan to make sure the target
+    # isn't below the ground. First finding the scan midpoint in time:
 
     mid_window_lst = __midpoint_hour_angle(lst_constraint.start, lst_constraint.end)
     mid_window_hourangle = (mid_window_lst - target_skycoord.icrs.ra).to(u.rad)
