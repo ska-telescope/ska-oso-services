@@ -7,7 +7,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 ************
 * Updated to ODA v17.5.0
-* [BUGFIX] fixing validation for the observing constraints
 * Adds a new POST /{prj_id}/{ob_id}/generateGSMSurveySBDefinitions endpoint that will generate SBDefinitions
   from the pointings file (currently stored in this repo as well) and other inputs.
 * Adding quality_attribute_metrics to low configurations from OSD
