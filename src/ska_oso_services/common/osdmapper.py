@@ -85,7 +85,6 @@ class Constraints:
 
 
 class CbfMetrics(AppModel):
-    alveo_configured_percent: float | None = None
     processors_ready_percent: float | None = None
 
 
@@ -100,7 +99,6 @@ class MidQualityAttributeMetrics(AppModel):
 class MidConfiguration(AppModel):
     frequency_band: list[MidFrequencyBand]
     constraints: Constraints
-    quality_attribute_metrics: MidQualityAttributeMetrics | None
     subarrays: list[Subarray]
 
 
@@ -147,8 +145,6 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
         for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + MID_ARRAY_ASSEMBLIES
     ]
 
-    quality_attribute_metrics = mid_response.get("quality_attribute_metrics", {})
-
     receiver_information = mid_response["basic_capabilities"]["receiver_information"]
     constraints = mid_response["constraints"]
 
@@ -166,7 +162,6 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
             frequency_band_from_receiver_information_for_band(receiver_info)
             for receiver_info in receiver_information
         ],
-        quality_attribute_metrics=MidQualityAttributeMetrics(**quality_attribute_metrics),
         constraints=Constraints(**constraints),
         subarrays=subarrays,
     )
@@ -186,7 +181,8 @@ def _get_low_telescope_configuration() -> LowConfiguration:
         for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + LOW_ARRAY_ASSEMBLIES
     ]
 
-    quality_attribute_metrics = low_response.get("quality_attribute_metrics", {})
+    quality_attribute_metrics = low_response["quality_attribute_metrics"]
+    quality_attribute_metrics.get("cbf", {}).pop("alveo_configured_percent", None)
 
     receiver_information = low_response["basic_capabilities"]
     constraints = low_response["constraints"]
