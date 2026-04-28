@@ -1,6 +1,7 @@
 # pylint: disable=no-member
 import csv
 from importlib import resources
+from sys import maxsize
 
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -11,9 +12,7 @@ from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.odt.service.commissioning import data as commissioning_data
 
 
-def load_pointings_as_targets(
-    pointings_file_uri: str, max_rows: int | None = None
-) -> list[Target]:
+def load_pointings_as_targets(pointings_file_uri: str, max_rows: int = maxsize) -> list[Target]:
     """Load pointings from a CSV in the commissioning data directory as Target objects.
 
     The CSV is expected to have columns: beam_name, ra (degrees), dec (degrees).
@@ -29,7 +28,7 @@ def load_pointings_as_targets(
         with open(path, newline="", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             for i, row in enumerate(reader):
-                if max_rows is not None and i >= max_rows:
+                if i >= max_rows:
                     break
                 # TODO Astropy supports vectorized operations so we could do one
                 #  SkyCoord call for all rows

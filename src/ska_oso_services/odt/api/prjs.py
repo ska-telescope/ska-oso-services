@@ -5,6 +5,7 @@ These functions map to the API paths, with the returned value being the API resp
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
+from sys import maxsize
 from typing import Annotated, Optional
 
 # pylint: disable=no-member
@@ -102,8 +103,8 @@ class GlobalSkyModelSurveyInputs(BaseModel):
     num_subarray_beams: int
     num_scans: int
     num_calibrator_beams: int = 1
-    max_rows: int | None = Field(
-        default=None,
+    max_rows: int = Field(
+        default=maxsize,
         description=(
             "This limits the number of pointings from the pointings file that will "
             "be used, and is useful for lightweight testing of the generation logic"

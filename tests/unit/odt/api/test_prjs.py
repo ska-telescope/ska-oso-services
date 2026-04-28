@@ -3,6 +3,7 @@ Unit tests for ska_oso_services.api
 """
 
 from http import HTTPStatus
+from sys import maxsize
 from unittest import mock
 
 import pytest
@@ -800,7 +801,7 @@ class TestSurveySBDefinition:
 
         assert resp.status_code == HTTPStatus.OK
         mock_load_pointings.assert_called_once_with(
-            self.SURVEY_INPUT["pointings_file_uri"], max_rows=None
+            self.SURVEY_INPUT["pointings_file_uri"], max_rows=maxsize
         )
         mock_generate.assert_called_once()
         assert uow_mock.sbds.add.call_count == 2
