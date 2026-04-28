@@ -170,7 +170,7 @@ def validate_sso_targets_do_not_have_separation_constraints(
 
     if isinstance(scan_definitions[0], ScanDefinition):
         scan_definitions = [scan_definitions]
-
+    validation_issues = []
     for subarray_beams in scan_definitions:
         for scan in subarray_beams:
             # extracting the target
@@ -178,16 +178,16 @@ def validate_sso_targets_do_not_have_separation_constraints(
             if target_is_jupiter_sun_or_moon(target) and has_an_incompatible_constraint(
                 target.reference_coordinate, constraints
             ):
-                return [
+                validation_issues.append(
                     ValidationIssue(
                         level=ValidationIssueType.ERROR,
                         message=f"{target.reference_coordinate.name.value} Avoidance Zone "
                         "must be 0.0 degrees for a Scheduling Block with "
                         f"{target.reference_coordinate.name} as a target",
                     )
-                ]
+                )
 
-        return []
+        return validation_issues
 
 
 def has_an_incompatible_constraint(

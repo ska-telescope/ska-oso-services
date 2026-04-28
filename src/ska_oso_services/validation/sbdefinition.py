@@ -51,18 +51,24 @@ def validate_sbdefinition(
         )
     ]
 
-    constraint_validation_results = validate_constraints(
-        ValidationContext(
-            primary_entity=sbd.observing_constraints,
-            source_jsonpath="$.observing_constraints",
-            relevant_context={
-                "targets": sbd.targets,
-                "scan_definitions": _get_scan_sequence(sbd, preserve_subarray_beams=True),
-            },
-            telescope=sbd.telescope,
-            array_assembly=validation_array_assembly,
+    # observing constraints can truly be optional in an SBD, so
+    # only validating if present
+
+    if sbd.observing_constraints is not None:
+        constraint_validation_results = validate_constraints(
+            ValidationContext(
+                primary_entity=sbd.observing_constraints,
+                source_jsonpath="$.observing_constraints",
+                relevant_context={
+                    "targets": sbd.targets,
+                    "scan_definitions": _get_scan_sequence(sbd, preserve_subarray_beams=True),
+                },
+                telescope=sbd.telescope,
+                array_assembly=validation_array_assembly,
+            )
         )
-    )
+    else:
+        constraint_validation_results = []
 
     csp_validation_results = [
         issue
