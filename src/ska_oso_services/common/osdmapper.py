@@ -131,9 +131,9 @@ def configuration_from_osd() -> Configuration:
 
 def _get_mid_telescope_configuration() -> MidConfiguration:
 
-    mid_response = get_osd_data(
-        capabilities="mid", source=OSD_SOURCE, osd_version=OSD_VERSION
-    )["capabilities"]["mid"]
+    mid_response = get_osd_data(capabilities="mid", source=OSD_SOURCE, osd_version=OSD_VERSION)[
+        "capabilities"
+    ]["mid"]
 
     subarrays = [
         MidSubarray(
@@ -148,10 +148,7 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
 
     def frequency_band_from_receiver_information_for_band(receiver_information):
         band5b_subbands = (
-            [
-                Band5bSubband(**sub_band)
-                for sub_band in receiver_information["sub_bands"]
-            ]
+            [Band5bSubband(**sub_band) for sub_band in receiver_information["sub_bands"]]
             if receiver_information["rx_id"] == "Band_5b"
             else None
         )
@@ -170,9 +167,9 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
 
 def _get_low_telescope_configuration() -> LowConfiguration:
 
-    low_response = get_osd_data(
-        capabilities="low", source=OSD_SOURCE, osd_version=OSD_VERSION
-    )["capabilities"]["low"]
+    low_response = get_osd_data(capabilities="low", source=OSD_SOURCE, osd_version=OSD_VERSION)[
+        "capabilities"
+    ]["low"]
 
     subarrays = [
         LowSubarray(
@@ -189,9 +186,7 @@ def _get_low_telescope_configuration() -> LowConfiguration:
     return LowConfiguration(
         frequency_band=LowFrequencyBand(**receiver_information),
         constraints=Constraints(**constraints),
-        quality_attribute_metrics=LowQualityAttributeMetrics(
-            **quality_attribute_metrics
-        ),
+        quality_attribute_metrics=LowQualityAttributeMetrics(**quality_attribute_metrics),
         subarrays=subarrays,
     )
 
@@ -209,11 +204,7 @@ def get_osd_cycles():
         osd_data = get_cycle_list()
     except (OSDModelError, ValueError) as error:
         raise OSDError(error)
-    data = (
-        osd_data.model_dump()["result_data"]
-        if hasattr(osd_data, "model_dump")
-        else osd_data
-    )
+    data = osd_data.model_dump()["result_data"] if hasattr(osd_data, "model_dump") else osd_data
     return data
 
 
@@ -232,11 +223,7 @@ def get_osd_data(*args, **kwargs):
         osd_data = get_osd(params)
     except (OSDModelError, ValueError) as error:
         raise OSDError(error)
-    data = (
-        osd_data.model_dump()["result_data"]
-        if hasattr(osd_data, "model_dump")
-        else osd_data
-    )
+    data = osd_data.model_dump()["result_data"] if hasattr(osd_data, "model_dump") else osd_data
     return data
 
 
@@ -251,9 +238,7 @@ def get_telescope_observing_constraint(telescope: TelescopeType, parameter: str)
         constraints = osd.ska_low.constraints
 
     if not hasattr(constraints, parameter):
-        raise ValueError(
-            f"{parameter} is not a valid observing constraint for {telescope.value}"
-        )
+        raise ValueError(f"{parameter} is not a valid observing constraint for {telescope.value}")
 
     return getattr(constraints, parameter)
 
@@ -286,18 +271,14 @@ def get_mid_frequency_band_data_from_osd(
     bands = osd.ska_mid.frequency_band
 
     if band5b_subband is None:
-        band_info = next(
-            band for band in bands if band.rx_id == "Band_" + obs_band.value
-        )
+        band_info = next(band for band in bands if band.rx_id == "Band_" + obs_band.value)
 
     else:
         subbands_info = next(
             band for band in bands if band.rx_id == "Band_" + obs_band.value
         ).band5b_subbands
         band_info = next(
-            subband
-            for subband in subbands_info
-            if subband.sub_band == band5b_subband.value
+            subband for subband in subbands_info if subband.sub_band == band5b_subband.value
         )
 
     return band_info
