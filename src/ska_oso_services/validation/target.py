@@ -89,10 +89,9 @@ def validate_low_elevation(
     if max_elevation < low_minimum_elevation():
         return [
             ValidationIssue(
-                level=ValidationIssueType.WARNING,
+                level=ValidationIssueType.ERROR,
                 message=f"Maximum elevation ({round(max_elevation.value, 2)} degrees) "
-                f"is less than {low_minimum_elevation().to('degree').value} degrees "
-                "- performance may be degraded",
+                f"is less than {low_minimum_elevation().to('degree').value} degrees ",
             )
         ]
 

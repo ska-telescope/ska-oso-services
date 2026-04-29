@@ -131,11 +131,8 @@ def test_low_target_below_min_elevation():
     result = validate_low_elevation(input_context)
 
     assert len(result) == 1
-    assert (
-        result[0].message == "Maximum elevation (44.74 degrees) is less than 45.0 degrees "
-        "- performance may be degraded"
-    )
-    assert result[0].level == ValidationIssueType.WARNING
+    assert result[0].message == "Maximum elevation (44.74 degrees) is less than 45.0 degrees "
+    assert result[0].level == ValidationIssueType.ERROR
 
 
 def test_target_with_pst_beams(
