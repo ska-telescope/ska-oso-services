@@ -1,3 +1,5 @@
+# pylint: disable=no-member
+
 from datetime import timedelta
 from unittest import mock
 
@@ -112,6 +114,7 @@ class TestGenerateFrequencySweep:
         assert len(sbd.mccs_allocation.subarray_beams[0].scan_sequence) == 3
 
     def test_sets_pst_parts_when_mode_is_pst(self):
+
         target = create_target()
         sbd = generate_frequency_sweep(
             target=target,

@@ -13,7 +13,7 @@ from ska_oso_services.common.model import AppModel
 T = TypeVar("T", bound=PdmObject)
 
 
-class ValidationContext(Generic[T], AppModel):
+class ValidationContext(AppModel, Generic[T]):
     """
     This models the input to all :func:`~ska_oso_services.validation.model.Validator`
     functions and should provide all information that the Validator requires.

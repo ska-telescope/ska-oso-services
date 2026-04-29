@@ -9,6 +9,7 @@ Unreleased
 * [BUGFIX] fixing validation for the observing constraints
 * Adds a new POST /{prj_id}/{ob_id}/generateGSMSurveySBDefinitions endpoint that will generate SBDefinitions
   from the pointings file (currently stored in this repo as well) and other inputs.
+* Adding quality_attribute_metrics to low configurations from OSD
 
 14.3.0
 ************
