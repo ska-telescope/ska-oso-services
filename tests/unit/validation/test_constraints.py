@@ -1,6 +1,5 @@
 # pylint: disable=no-member
 import astropy.units as u
-import numpy as np
 import pytest
 from ska_oso_pdm import (
     ICRSCoordinates,
@@ -126,9 +125,9 @@ def test_sso_has_an_incompatible_constraint():
     sun = SpecialCoordinates(name=SolarSystemObjectName.SUN)
     jupiter = SpecialCoordinates(name="Moon")
 
-    assert has_an_incompatible_constraint(moon, constraints) is True
-    assert has_an_incompatible_constraint(jupiter, constraints) is True
-    assert has_an_incompatible_constraint(sun, constraints) is False
+    assert has_an_incompatible_constraint(moon, constraints) == True  # noqa: E712
+    assert has_an_incompatible_constraint(jupiter, constraints) == True  # noqa: E712
+    assert has_an_incompatible_constraint(sun, constraints) == False  # noqa: E712
 
 
 def test_calculate_elevation_implied_from_lst_constraint():
