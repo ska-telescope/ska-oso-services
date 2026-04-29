@@ -106,6 +106,4 @@ def test_configuration_from_osd_returns_low_cbf_metrics():
     assert type(value.ska_low.quality_attribute_metrics.cbf) is LowCBFMetrics
     cbf = value.ska_low.quality_attribute_metrics.cbf
 
-    assert cbf.processors_ready_percent is not None, (
-        "processors_ready_percent must be present"
-    )
+    assert cbf.processors_ready_percent is not None, "processors_ready_percent must be present"
