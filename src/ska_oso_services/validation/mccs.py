@@ -192,53 +192,6 @@ def validate_subarray_beams_per_scan_have_the_same_duration(
     return validation_issues
 
 
-# @validator
-# def validate_subarray_beams_per_scan_have_the_same_number_of_partials(
-#     mccs_context: ValidationContext[MCCSAllocation],
-# ) -> list[ValidationIssue]:
-#     """
-#     :param mccs_context: a ValidationContext containing an MCCS Allocation to
-#         be validated
-#     :return: a validation error if the subarray beams in a scan do not
-#         have the same number of sub-scans i.e. partial configurations
-#     """
-#     mccs_allocation = mccs_context.primary_entity
-#     targets = mccs_context.relevant_context["targets"]
-#
-#     scans = __build_scan_slices(mccs_allocation)
-#
-#     validation_issues = []
-#     for scan in scans:
-#         target = next(target for target in targets if target.target_id == scan.target_ref)
-#         pointing_parameters = target.pointing_pattern.parameters[0]
-#         # getting the pointing pattern
-#         match pointing_parameters:
-#             case PointedMosaicParameters():
-#                 n_scans = len(pointing_parameters.offsets)
-#             case FivePointParameters():
-#                 n_scans = 5
-#             case SinglePointParameters():
-#                 n_scans = 1
-#             case _:
-#                 raise ValueError(
-#                     f"pointing pattern {pointing_parameters.kind.value} not supported"
-# #                 )
-#
-#         n_scans = len({beam_scan.scan.scan_duration.to(u.s) for beam_scan in scan.beam_scans})
-#         #
-#         # if scan_durations > 1:
-#         #     validation_issues.append(
-#         #         ValidationIssue(
-#         #             level=ValidationIssueType.ERROR,
-#         #             field=".subarray_beams.0.scan_sequence",
-#         #             message=f"The scan durations for scan {scan.index + 1} "
-#         #             "are not equal for all subarray beams",
-#         #         )
-#         #     )
-#
-#     return validation_issues
-
-
 @validator
 def validate_station_bandwidth(
     mccs_context: ValidationContext[MCCSAllocation],
