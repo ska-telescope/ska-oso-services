@@ -1,18 +1,10 @@
 from ska_oso_pdm import SBDefinition, Target, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
 
-from ska_oso_services.validation.constraints import (
-    target_is_jupiter_sun_or_moon,
-    validate_constraints,
-)
+from ska_oso_services.validation.constraints import validate_constraints
 from ska_oso_services.validation.csp import validate_csp
 from ska_oso_services.validation.mccs import validate_mccs
-from ska_oso_services.validation.model import (
-    ValidationContext,
-    ValidationIssue,
-    ValidationIssueType,
-    validator,
-)
+from ska_oso_services.validation.model import ValidationContext, ValidationIssue, validator
 from ska_oso_services.validation.scan import validate_scan_definition
 from ska_oso_services.validation.target import validate_target
 
@@ -75,21 +67,8 @@ def validate_sbdefinition(
                 array_assembly=validation_array_assembly,
             )
         )
-
-    # with the exception being if the target is Jupiter, the Sun or Moon
-    # as the default observing constraints are not acceptable in this case
     else:
         constraint_validation_results = []
-        for target in sbd.targets:
-            if target_is_jupiter_sun_or_moon(target):
-                constraint_validation_results.append(
-                    ValidationIssue(
-                        level=ValidationIssueType.ERROR,
-                        field="$.observing_constraints",
-                        message=f"default scheduling constraints include a {target.name} "
-                        "avoidance zone",
-                    )
-                )
 
     csp_validation_results = [
         issue

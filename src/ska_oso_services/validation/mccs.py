@@ -26,6 +26,8 @@ def validate_mccs(mccs_context: ValidationContext[MCCSAllocation]) -> list[Valid
     :return: the collated ValidationIssues resulting from applying each of
             the relevant MCCS Validators to the MCCS Allocation
     """
+    check_relevant_context_contains(["targets", "csp_config"], mccs_context)
+
     validators = [
         validate_number_subarray_beams,
         validate_number_substations,

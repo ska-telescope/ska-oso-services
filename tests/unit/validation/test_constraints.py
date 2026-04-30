@@ -21,6 +21,7 @@ from ska_oso_services.validation.constraints import (
     calculate_elevation_implied_from_lst_constraint,
     create_target_lst_list,
     has_an_incompatible_constraint,
+    validate_constraints,
     validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint,
 )
 from ska_oso_services.validation.model import ValidationContext
@@ -52,18 +53,28 @@ fake_target_at_low_zenith = Target(
             id="MID SBD with target M15 not visible",
         ),
         pytest.param(
+            "mid_single_scan_with_constraints",
+            1,
+            "JVAS B0218+357",
+            id="MID SBD with target JVAS B0218+357 not visible",
+        ),
+        pytest.param(
             "low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst",
             2,
             "Pictor A",
             id="LOW SBD with calibrator Pictor A not visible in both subarray beams",
         ),
+        pytest.param(
+            "mid_sso_targets_with_constraints",
+            2,
+            "Moon",
+            id="SBD with all 3 avoidance zone SSOs, constraint set to zero for the Sun only",
+        ),
     ],
 )
-def test_validate_targets_lst_and_elevation_constraint(
-    request, scheduling_block, issue_list_length, problematic_target
-):
+def test_validate_constraints(request, scheduling_block, issue_list_length, problematic_target):
     sbd = request.getfixturevalue(scheduling_block)
-    results = validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint(
+    results = validate_constraints(
         ValidationContext(
             primary_entity=sbd.observing_constraints,
             relevant_context={
@@ -107,13 +118,16 @@ def test_validate_targets_lst_and_elevation_constraint_for_sneaky_target():
 
 def test_sso_has_an_incompatible_constraint():
     constraints = ObservingConstraints(
-        moon_separation=AngularSeparationConstraint(min=15.0 * u.deg)
+        moon_separation=AngularSeparationConstraint(min=15.0 * u.deg),
+        sun_separation=AngularSeparationConstraint(min=0 * u.deg),
     )
     moon = SpecialCoordinates(name="Moon")
     sun = SpecialCoordinates(name=SolarSystemObjectName.SUN)
+    jupiter = SpecialCoordinates(name="Moon")
 
-    assert has_an_incompatible_constraint(moon, constraints) is True
-    assert has_an_incompatible_constraint(sun, constraints) is False
+    assert has_an_incompatible_constraint(moon, constraints) == True  # noqa: E712
+    assert has_an_incompatible_constraint(jupiter, constraints) == True  # noqa: E712
+    assert has_an_incompatible_constraint(sun, constraints) == False  # noqa: E712
 
 
 def test_calculate_elevation_implied_from_lst_constraint():

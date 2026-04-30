@@ -90,6 +90,9 @@ def validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constrai
 
     constraints = copy.copy(constraints_context.primary_entity)
 
+    if constraints.lst is None:
+        return []
+
     # in theory, it's possible the elevation constraint might have
     # a max but no min or a min but no max. Pulling from OSD if
     # only one is set
@@ -162,23 +165,29 @@ def validate_sso_targets_do_not_have_separation_constraints(
 
     constraints = constraints_context.primary_entity
 
-    for scan in scan_definitions:
-        # extracting the target
-        target = next(target for target in targets if target.target_id == scan.target_ref)
-        if target_is_jupiter_sun_or_moon(target) and has_an_incompatible_constraint(
-            target.reference_coordinate, constraints
-        ):
-            return [
-                ValidationIssue(
-                    level=ValidationIssueType.ERROR,
-                    message="cannot specify "
-                    f"{target.reference_coordinate.name.value}_separation "
-                    f"for a Scheduling Block with {target.reference_coordinate.name} "
-                    "as a target",
-                )
-            ]
+    # if there is only one subarray beam (or, in the case of MID no subarray beams)
+    # formatting the scan definitions so that they're nested for homogeneity
 
-        return []
+    if isinstance(scan_definitions[0], ScanDefinition):
+        scan_definitions = [scan_definitions]
+    validation_issues = []
+    for subarray_beams in scan_definitions:
+        for scan in subarray_beams:
+            # extracting the target
+            target = next(target for target in targets if target.target_id == scan.target_ref)
+            if target_is_jupiter_sun_or_moon(target) and has_an_incompatible_constraint(
+                target.reference_coordinate, constraints
+            ):
+                validation_issues.append(
+                    ValidationIssue(
+                        level=ValidationIssueType.ERROR,
+                        message=f"{target.reference_coordinate.name.value} Avoidance Zone "
+                        "must be 0.0 degrees for a Scheduling Block with "
+                        f"{target.reference_coordinate.name} as a target",
+                    )
+                )
+
+        return validation_issues
 
 
 def has_an_incompatible_constraint(
@@ -194,7 +203,7 @@ def has_an_incompatible_constraint(
     ]
 
     if coordinate.name in objects_with_potential_separations:
-        return getattr(constraints, attr_name).min is not None
+        return getattr(constraints, attr_name).min != 0.0
 
     return False
 
@@ -234,11 +243,15 @@ def calculate_elevation_implied_from_lst_constraint(
         for hourangle_radian in hourangle_constraint_radian
     ]
 
+    # now we need to calculate the elevation mid-scan to make sure the target
+    # isn't below the ground. First finding the scan midpoint in time:
+
+    mid_window_lst = __midpoint_hour_angle(lst_constraint.start, lst_constraint.end)
+    mid_window_hourangle = (mid_window_lst - target_skycoord.icrs.ra).to(u.rad)
+
     elevation_mid_scan = np.arcsin(
         np.sin(latitude_radians) * np.sin(declination_radian)
-        + np.cos(latitude_radians)
-        * np.cos(declination_radian)
-        * np.cos(sum(hourangle_constraint_radian) / 2.0)
+        + np.cos(latitude_radians) * np.cos(declination_radian) * np.cos(mid_window_hourangle)
     )
 
     target_elevation = TargetElevation(
@@ -277,42 +290,14 @@ def create_target_lst_list(
             # extracting the target
             target = next(target for target in targets if target.target_id == scan.target_ref)
 
-            # the target's own lst constraint is the sbd lst constraint + cumulative execution time
-            # thus far, for the first scan in the SBD the target lst constraint == the sbd
-            # lst_constraint the target must exceed the elevation limit throughout their scan,
-            # starting at lst_start + cumulate_run_time and finishing at
-            # lst_end + cumulative_run_time first converting the cumulative run time from
-            # "normal" solar time to sidereal time
+            # The LST constraint in the SBD is the time the SBD must be *started* as such every
+            # target with a scan in the SBD has its own LST window during which it must exceed
+            # elevation limit that is equal to:
 
-            cumulative_execution_time_lst = (
-                cumulative_execution_time * SOLAR_TO_SIDEREAL_CONVERSION_FACTOR
-            )
+            #   start: lst_constraint_min + cumulative_execution
+            #   end: lst_constraint_max + target_scan_duration + cumulative_execution
 
-            # this can now be directly added to lst constraint. Sadly, Astropy can't handle
-            # this for us so we fudge
-
-            cumulative_execution_time_lst = (
-                cumulative_execution_time_lst.to(u.hour).value * u.hourangle
-            )
-
-            # creating the target specific LSTConstraint Object
-
-            target_lst_constraint = LSTConstraint(
-                start=sbd_lst_constraint.start + cumulative_execution_time_lst,
-                end=sbd_lst_constraint.end + cumulative_execution_time_lst,
-            )
-
-            target_lst_constraints_list.append(
-                TargetLSTConstraints(
-                    target=target,
-                    lst_constraint=target_lst_constraint,
-                )
-            )
-
-            # now updating the cumulative execution time - should this be done in
-            # lst? This feels more obvious and readable. # In future we should
-            # factor in for the slew time of mid and perhaps the time it takes to
-            # assign resources etc. but for now just considering the scan durations
+            # calculating the scan_duration
 
             pointing_parameters = target.pointing_pattern.parameters[0]
             # getting the pointing pattern
@@ -328,7 +313,38 @@ def create_target_lst_list(
                         f"pointing pattern {pointing_parameters.kind.value} not supported"
                     )
 
-            # calculating the total scan duration and adding to the cumulative execution time
+            # calculating the total scan duration in LST and converting to an angle
+            # sadly astropy can't handle this natively so fudging
+
+            total_scan_duration_lst = (
+                scan.scan_duration * n_scans * SOLAR_TO_SIDEREAL_CONVERSION_FACTOR
+            ).to(u.hour).value * u.hourangle
+
+            cumulative_execution_time_lst = (
+                cumulative_execution_time * SOLAR_TO_SIDEREAL_CONVERSION_FACTOR
+            ).to(u.hour).value * u.hourangle
+
+            # creating the target specific LSTConstraint Object
+
+            target_lst_constraint = LSTConstraint(
+                start=__normalise_hourangle(
+                    sbd_lst_constraint.start + cumulative_execution_time_lst
+                ),
+                end=__normalise_hourangle(
+                    sbd_lst_constraint.end
+                    + cumulative_execution_time_lst
+                    + total_scan_duration_lst
+                ),
+            )
+
+            target_lst_constraints_list.append(
+                TargetLSTConstraints(
+                    target=target,
+                    lst_constraint=target_lst_constraint,
+                )
+            )
+
+            # finally - adding the scan duration to the cumulative scan time
 
             cumulative_execution_time += scan.scan_duration * n_scans
 
@@ -345,3 +361,17 @@ def target_is_jupiter_sun_or_moon(target: Target) -> bool:
             return True
 
     return False
+
+
+def __normalise_hourangle(hourangle: u.Quantity) -> u.Quantity:
+    """
+    can't use the python modulus operator with Quantities, so writing
+    a quick function for it
+    """
+    return (hourangle.value % 24.0) * u.hourangle
+
+
+def __midpoint_hour_angle(start: u.Quantity, end: u.Quantity) -> u.Quantity:
+    diff = (end - start).value % 24
+    midpoint = (start.value + diff / 2.0) % 24
+    return midpoint * u.hourangle
