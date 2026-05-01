@@ -19,22 +19,8 @@ from ska_oso_pdm.sb_definition import SBDefinition
 LOGGER = logging.getLogger(__name__)
 
 
-def _validate_csp(sbd: SBDefinition) -> dict[str, str]:
-    messages = {}
-    csp_configs = {csp.config_id: csp for csp in sbd.csp_configurations}
-    for scan_def in sbd.scan_definitions:
-        if scan_def.csp_configuration_ref not in csp_configs.keys():
-            messages[f"csp_config_not_in_sb_{scan_def.scan_definition_id}"] = (
-                f"CSP configuration '{scan_def.csp_configuration_ref}' defined "
-                f"in scan definition '{scan_def.scan_definition_id}' does not "
-                "exist in the SB"
-            )
-
-    return messages
-
-
-MID_VALIDATION_FNS = [_validate_csp]
-LOW_VALIDATION_FNS = [_validate_csp]
+MID_VALIDATION_FNS = []
+LOW_VALIDATION_FNS = []
 COMMON_VALIDATION_FNS = []
 
 

@@ -2,12 +2,8 @@ from unittest import mock
 
 from ska_oso_pdm.sb_definition import SBDefinition
 
-from ska_oso_services.odt.validation import _validate_csp, validate_sbd
-from tests.unit.util import (
-    VALID_LOW_SBDEFINITION_JSON,
-    VALID_MID_SBDEFINITION_JSON,
-    TestDataFactory,
-)
+from ska_oso_services.odt.validation import validate_sbd
+from tests.unit.util import VALID_LOW_SBDEFINITION_JSON, VALID_MID_SBDEFINITION_JSON
 
 
 def test_valid_sbd_returns_no_messages():
@@ -33,39 +29,3 @@ def test_validate_runs_functions():
     for fn in fakes:
         fn.assert_called_once_with(fake_sbd)
     assert result == {"result1": "bad1", "result2": "bad2"}
-
-
-def test_mid_config_not_present_error():
-    invalid_sbd = TestDataFactory.sbdefinition()
-
-    fake_csp_conf_id = "csp-configuration-12345"
-    invalid_sbd.scan_definitions[0].csp_configuration_ref = fake_csp_conf_id
-    fake_scan_definition_id = "scan-definition-09876"
-    invalid_sbd.scan_definitions[0].scan_definition_id = fake_scan_definition_id
-
-    result = _validate_csp(invalid_sbd)
-
-    assert result == {
-        f"csp_config_not_in_sb_{fake_scan_definition_id}": (
-            f"CSP configuration '{fake_csp_conf_id}' defined in scan definition "
-            f"'{fake_scan_definition_id}' does not exist in the SB"
-        )
-    }
-
-
-def test_low_config_not_present_error():
-    invalid_sbd = TestDataFactory.lowsbdefinition()
-
-    fake_csp_conf_id = "csp-configuration-12345"
-    invalid_sbd.scan_definitions[0].csp_configuration_ref = fake_csp_conf_id
-    fake_scan_definition_id = "scan-definition-09876"
-    invalid_sbd.scan_definitions[0].scan_definition_id = fake_scan_definition_id
-
-    result = _validate_csp(invalid_sbd)
-
-    assert result == {
-        f"csp_config_not_in_sb_{fake_scan_definition_id}": (
-            f"CSP configuration '{fake_csp_conf_id}' defined in scan definition "
-            f"'{fake_scan_definition_id}' does not exist in the SB"
-        )
-    }
