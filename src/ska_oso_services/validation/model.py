@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from functools import wraps
 from inspect import signature
-from typing import Callable, Generic, TypeVar, get_type_hints
+from typing import Any, Callable, Generic, TypeVar, get_type_hints
 
 from pydantic import Field
 from ska_oso_pdm import PdmObject, TelescopeType, ValidationArrayAssembly
@@ -63,6 +63,15 @@ class ValidationIssue(AppModel):
 Validator = Callable[[ValidationContext[T]], list[ValidationIssue]]
 """ The general Validator function type. It should take the entity to validate
     wrapped in a ValidationContext and return a list of ValidationIssues."""
+
+
+class ValidationResponse(AppModel):
+    valid: bool | None = None
+    issues: list[ValidationIssue]
+
+    def model_post_init(self, context: Any, /) -> None:
+        if self.valid is None:
+            self.valid = not bool(self.issues)
 
 
 def validator(validator_func: Validator[T]) -> Validator[T]:
