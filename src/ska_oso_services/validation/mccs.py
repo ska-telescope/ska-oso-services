@@ -76,7 +76,7 @@ def validate_number_substations(
         be validated
     :return: a validation error if the number of substations in a subarray beam
         in the allocation exceeds the number permitted for the array assembly being
-         validated against
+        validated against
     """
     mccs_allocation = mccs_context.primary_entity
 
@@ -121,6 +121,7 @@ def validate_number_of_pst_beams_per_scan(
     """
     :param mccs_context: a ValidationContext containing an MCCS Allocation to
         be validated
+
     :return: a validation error if the number of PST tied array beams in a scan,
         across all subarray beams, does not exceed the number permitted for the
         array assembly being validated against

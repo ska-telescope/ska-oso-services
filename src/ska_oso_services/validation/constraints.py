@@ -76,10 +76,11 @@ def validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constrai
     """
     function to check that the targets in the scans have an elevation
     above the limit set in the constraints throughout their individual LST
-     windows
+    windows
 
     :param constraints_context:a ValidationContext containing an Observing
         Constraint to be validated
+
     :return: a list of validation issues if the targets exceed the elevation
         limits
     """
@@ -155,6 +156,7 @@ def validate_sso_targets_do_not_have_separation_constraints(
 
     :param constraints_context:a ValidationContext containing an Observing
         Constraint to be validated
+
     :return: a list of validation issues if the targets and separation constraints
         are incompatible
     """
