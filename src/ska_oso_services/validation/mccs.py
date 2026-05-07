@@ -227,15 +227,17 @@ def validate_subarray_beams_per_scan_have_the_same_number_of_partials(
             if target.target_id == beam.scan.target_ref
         ]
 
-        n_scans = []
+        n_scans = set()
         for pattern in target_pointing_patterns:
             match pattern.active:
                 case PointingKind.SINGLE_POINT:
-                    n_scans.append(1)
+                    n_scans.add(1)
                 case PointingKind.POINTED_MOSAIC:
-                    n_scans.append(len(pattern.parameters[0].offsets))
+                    n_scans.add(len(pattern.parameters[0].offsets))
+                case _:
+                   pass # Log something here? Throw an error?
 
-        if len(set(n_scans)) > 1:
+        if len(n_scans) > 1:
             validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
