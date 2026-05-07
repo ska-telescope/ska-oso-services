@@ -279,5 +279,5 @@ def test_validate_pointing_pattern_fails_for_different_number_of_offsets(
     assert len(result) == 1
     assert (
         result[0].message
-        == "The number of offsets for scan 1 are not equal for all subarray beams"
+        == "The number of pointings for scan 1 are not equal for all subarray beams"
     )

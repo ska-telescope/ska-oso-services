@@ -240,7 +240,7 @@ def validate_subarray_beams_per_scan_have_the_same_number_of_partials(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
                     field="$.subarray_beams.0.scan_sequence",
-                    message=f"The number of offsets for scan {scan.index + 1} "
+                    message=f"The number of pointings for scan {scan.index + 1} "
                     "are not equal for all subarray beams",
                 )
             )
