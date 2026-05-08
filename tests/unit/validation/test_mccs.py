@@ -281,3 +281,17 @@ def test_validate_pointing_pattern_fails_for_different_number_of_offsets(
         result[0].message
         == "The number of pointings for scan 1 are not equal for all subarray beams"
     )
+
+
+def test_full_sbd_with_multiple_beam_errors(low_multiple_subarray_beams_invalid):
+    sbd = low_multiple_subarray_beams_invalid
+
+    input_context = ValidationContext(
+        primary_entity=sbd.mccs_allocation,
+        relevant_context={"targets": sbd.targets, "csp_config": sbd.csp_configurations},
+        telescope=sbd.telescope,
+        array_assembly=ValidationArrayAssembly.AA2,
+    )
+
+    result = validate_mccs(input_context)
+    assert len(result) == 2

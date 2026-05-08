@@ -179,3 +179,13 @@ def mid_sso_targets_with_constraints():
     sbd_json = load_string_from_file(path_to_test_file)
     sbd = SBDefinition.model_validate_json(sbd_json)
     return sbd
+
+
+@pytest.fixture
+def low_multiple_subarray_beams_invalid():
+    path_to_test_file = (
+        Path(__file__).parents[0] / "files" / "low_multiple_subarray_beams_invalid.json"
+    )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd
