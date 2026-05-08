@@ -1,6 +1,7 @@
 from astropy import units as u
-from ska_oso_pdm import ValidationArrayAssembly
+from ska_oso_pdm import CrossScanParameters, PointingKind, PointingPattern, ValidationArrayAssembly
 from ska_oso_pdm._shared import TiedArrayBeams
+from ska_oso_pdm._shared.target import CoordinatesOffset
 from ska_oso_pdm.builders import LowSBDefinitionBuilder, populate_scan_sequences
 from ska_oso_pdm.sb_definition.mccs.mccs_allocation import SubarrayBeamConfiguration
 
@@ -229,4 +230,76 @@ def test_validate_station_bandwidth_fails_for_invalid_setup(
     assert (
         result[0].message == "At least one station in scan 1 is using more bandwidth (918.75 MHz) "
         "than is available (150.0 MHz) for array assembly AA2"
+    )
+
+
+def test_validate_pointing_pattern_fails_for_two_different_patterns(
+    low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst,
+):
+    sbd = low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst
+
+    # modifying the sbd to have a different pointing pattern
+
+    sbd.targets[0].pointing_pattern = PointingPattern(
+        active=PointingKind.CROSS_SCAN, parameters=[CrossScanParameters(offset_arcsec=10.0)]
+    )
+
+    input_context = ValidationContext(
+        primary_entity=sbd.mccs_allocation,
+        relevant_context={"targets": sbd.targets, "csp_config": sbd.csp_configurations},
+        telescope=sbd.telescope,
+        array_assembly=ValidationArrayAssembly.AA2,
+    )
+
+    result = validate_mccs(input_context)
+    assert len(result) == 1
+    assert (
+        result[0].message
+        == "The pointing patterns for scan 1 are not the same for all subarray beams"
+    )
+
+
+def test_validate_pointing_pattern_fails_for_different_number_of_offsets(
+    low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst,
+):
+    sbd = low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst
+
+    # modifying the sbd to have a different pointing pattern
+
+    sbd.targets[1].pointing_pattern.parameters[0].offsets.append(CoordinatesOffset(x=9.0, y=9.0))
+
+    input_context = ValidationContext(
+        primary_entity=sbd.mccs_allocation,
+        relevant_context={"targets": sbd.targets, "csp_config": sbd.csp_configurations},
+        telescope=sbd.telescope,
+        array_assembly=ValidationArrayAssembly.AA2,
+    )
+
+    result = validate_mccs(input_context)
+    assert len(result) == 1
+    assert (
+        result[0].message
+        == "The number of pointings for scan 1 are not equal for all subarray beams"
+    )
+
+
+def test_full_sbd_with_multiple_beam_errors(low_multiple_subarray_beams_invalid):
+    sbd = low_multiple_subarray_beams_invalid
+
+    input_context = ValidationContext(
+        primary_entity=sbd.mccs_allocation,
+        relevant_context={"targets": sbd.targets, "csp_config": sbd.csp_configurations},
+        telescope=sbd.telescope,
+        array_assembly=ValidationArrayAssembly.AA2,
+    )
+
+    result = validate_mccs(input_context)
+    assert len(result) == 2
+    assert (
+        result[0].message
+        == "The pointing patterns for scan 1 are not the same for all subarray beams"
+    )
+    assert (
+        result[1].message
+        == "The pointing patterns for scan 2 are not the same for all subarray beams"
     )

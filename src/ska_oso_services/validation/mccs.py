@@ -2,7 +2,7 @@
 import dataclasses
 
 import astropy.units as u
-from ska_oso_pdm import ValidationArrayAssembly
+from ska_oso_pdm import PointingKind, ValidationArrayAssembly
 from ska_oso_pdm.sb_definition import MCCSAllocation, ScanDefinition
 from ska_oso_pdm.sb_definition.mccs.mccs_allocation import SubarrayBeamConfiguration
 
@@ -32,6 +32,8 @@ def validate_mccs(mccs_context: ValidationContext[MCCSAllocation]) -> list[Valid
         validate_number_subarray_beams,
         validate_number_substations,
         validate_number_of_pst_beams_per_scan,
+        validate_subarray_beams_per_scan_have_the_same_pointing_pattern,
+        validate_subarray_beams_per_scan_have_the_same_number_of_partials,
         validate_subarray_beams_per_scan_have_the_same_duration,
         validate_station_bandwidth,
     ]
@@ -74,7 +76,7 @@ def validate_number_substations(
         be validated
     :return: a validation error if the number of substations in a subarray beam
         in the allocation exceeds the number permitted for the array assembly being
-         validated against
+        validated against
     """
     mccs_allocation = mccs_context.primary_entity
 
@@ -119,6 +121,7 @@ def validate_number_of_pst_beams_per_scan(
     """
     :param mccs_context: a ValidationContext containing an MCCS Allocation to
         be validated
+
     :return: a validation error if the number of PST tied array beams in a scan,
         across all subarray beams, does not exceed the number permitted for the
         array assembly being validated against
@@ -160,6 +163,94 @@ def validate_number_of_pst_beams_per_scan(
 
 
 @validator
+def validate_subarray_beams_per_scan_have_the_same_pointing_pattern(
+    mccs_context: ValidationContext[MCCSAllocation],
+) -> list[ValidationIssue]:
+    """
+    :param mccs_context: a ValidationContext containing an MCCS Allocation to
+        be validated
+    :return: a validation error if the subarray beams in a scan do not
+        have the same pointing pattern
+    """
+
+    mccs_allocation = mccs_context.primary_entity
+    targets = mccs_context.relevant_context["targets"]
+
+    scans = __build_scan_slices(mccs_allocation)
+
+    validation_issues = []
+    for scan in scans:
+        target_pointing_patterns = len(
+            {
+                target.pointing_pattern.active
+                for target in targets
+                for beam in scan.beam_scans
+                if target.target_id == beam.scan.target_ref
+            }
+        )
+
+        if target_pointing_patterns > 1:
+            validation_issues.append(
+                ValidationIssue(
+                    level=ValidationIssueType.ERROR,
+                    field="$.subarray_beams.0.scan_sequence",
+                    message=f"The pointing patterns for scan {scan.index + 1} "
+                    "are not the same for all subarray beams",
+                )
+            )
+
+    return validation_issues
+
+
+@validator
+def validate_subarray_beams_per_scan_have_the_same_number_of_partials(
+    mccs_context: ValidationContext[MCCSAllocation],
+) -> list[ValidationIssue]:
+    """
+    :param mccs_context: a ValidationContext containing an MCCS Allocation to
+        be validated
+    :return: a validation error if the subarray beams in a scan do not
+        have the same pointing pattern
+    """
+
+    mccs_allocation = mccs_context.primary_entity
+    targets = mccs_context.relevant_context["targets"]
+
+    scans = __build_scan_slices(mccs_allocation)
+
+    validation_issues = []
+    for scan in scans:
+        target_pointing_patterns = [
+            target.pointing_pattern
+            for target in targets
+            for beam in scan.beam_scans
+            if target.target_id == beam.scan.target_ref
+        ]
+
+        n_scans = set()
+        for pattern in target_pointing_patterns:
+            match pattern.active:
+                case PointingKind.SINGLE_POINT:
+                    n_scans.add(1)
+                case PointingKind.POINTED_MOSAIC:
+                    n_scans.add(len(pattern.parameters[0].offsets))
+                case _:
+                    pass
+
+        if len(n_scans) > 1:
+            validation_issues.append(
+                ValidationIssue(
+                    level=ValidationIssueType.ERROR,
+                    field="$.subarray_beams.0.scan_sequence",
+                    message=f"The number of pointings for scan {scan.index + 1} "
+                    "are not equal for all subarray beams",
+                )
+            )
+
+    return validation_issues
+
+
+@validator
 def validate_subarray_beams_per_scan_have_the_same_duration(
     mccs_context: ValidationContext[MCCSAllocation],
 ) -> list[ValidationIssue]:
@@ -183,7 +274,7 @@ def validate_subarray_beams_per_scan_have_the_same_duration(
             validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
-                    field=".subarray_beams.0.scan_sequence",
+                    field="$.subarray_beams.0.scan_sequence",
                     message=f"The scan durations for scan {scan.index + 1} "
                     "are not equal for all subarray beams",
                 )
@@ -260,7 +351,7 @@ def validate_station_bandwidth(
             validation_issues.append(
                 ValidationIssue(
                     level=ValidationIssueType.ERROR,
-                    field=".subarray_beams.0.scan_sequence",
+                    field="$.subarray_beams.0.scan_sequence",
                     message=f"At least one station in scan {scan.index + 1} is using more "
                     f"bandwidth ({max_total_bandwidth.to(u.MHz).value} MHz) than is "
                     f"available ({available_bandwidth.to(u.MHz).value} MHz) "

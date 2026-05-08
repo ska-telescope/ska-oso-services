@@ -28,3 +28,6 @@ The validation is exposed via the REST API - see the SwaggerUI for documentation
     validation_python_docs/sbdefinition
     validation_python_docs/target
     validation_python_docs/scans
+    validation_python_docs/csp
+    validation_python_docs/mccs
+    validation_python_docs/constraints
