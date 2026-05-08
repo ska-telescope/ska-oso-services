@@ -13,7 +13,6 @@ Unreleased
 * [BUGFIX] fixing constraint validation that did not correctly take the scan duration into account
 * [BUGFIX] fixing constraint validation that did not correctly account for LST constraints that span midnight
 
-
 14.3.0
 ************
 * Adding validation for the observing constraints
