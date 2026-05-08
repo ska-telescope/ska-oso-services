@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+* Adds PST and PSS parameters to the /configuration response for LOW
 * Adds further validation for multiple subarray beams
 * Adds a new POST /{prj_id}/{ob_id}/generateGSMSurveySBDefinitions endpoint that will generate SBDefinitions
   from the pointings file (currently stored in this repo as well) and other inputs.
