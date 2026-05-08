@@ -6,13 +6,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+* Adds PST and PSS parameters to the /configuration response for LOW
 * Adds further validation for multiple subarray beams
 * Adds a new POST /{prj_id}/{ob_id}/generateGSMSurveySBDefinitions endpoint that will generate SBDefinitions
   from the pointings file (currently stored in this repo as well) and other inputs.
 * Adds quality_attribute_metrics to low configurations from OSD
 * [BUGFIX] fixing constraint validation that did not correctly take the scan duration into account
 * [BUGFIX] fixing constraint validation that did not correctly account for LST constraints that span midnight
-
 
 14.3.0
 ************
