@@ -23,7 +23,6 @@ stages:
   - lint
   - publish
   - integration
-  - staging
   - pages
   - scan
 
@@ -56,10 +55,6 @@ info-dev-environment:
     - oci-image-build
 
 info-integration:
-  script:
-    - *info_script
-
-info-staging:
   script:
     - *info_script
 
@@ -134,7 +129,9 @@ include:
     file: 'gitlab-ci/includes/k8s.gitlab-ci.yml'
   # deploy steps
   - project: 'ska-telescope/templates-repository'
-    file: 'gitlab-ci/includes/deploy.gitlab-ci.yml'
+    file: 'gitlab-ci/includes/deploy.dev.gitlab-ci.yml'
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/deploy.integration.gitlab-ci.yml'
   # upload test results to xray
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/xray-publish.gitlab-ci.yml'
