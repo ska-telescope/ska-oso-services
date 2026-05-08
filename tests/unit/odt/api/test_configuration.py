@@ -22,7 +22,7 @@ def test_configuration_get():
         number_continuum_channels_per_coarse_channel=144,
         number_zoom_channels_per_coarse_channel=432,
         number_pst_channels_per_coarse_channel=216,
-        number_pss_channels_per_coarse_channel=54
+        number_pss_channels_per_coarse_channel=54,
     )
     assert len(response.ska_mid.frequency_band) == 6
     assert len(response.ska_mid.subarrays) == 4

@@ -57,6 +57,7 @@ class LowFrequencyBand(FrequencyBand):
     number_pst_channels_per_coarse_channel: int
     number_pss_channels_per_coarse_channel: int
 
+
 class Subarray(BaseModel):
     name: str
     receptors: list[str | int] = Field(
