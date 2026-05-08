@@ -295,3 +295,11 @@ def test_full_sbd_with_multiple_beam_errors(low_multiple_subarray_beams_invalid)
 
     result = validate_mccs(input_context)
     assert len(result) == 2
+    assert (
+        result[0].message
+        == "The pointing patterns for scan 1 are not the same for all subarray beams"
+    )
+    assert (
+        result[1].message
+        == "The pointing patterns for scan 2 are not the same for all subarray beams"
+    )
