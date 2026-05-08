@@ -199,7 +199,7 @@ def validate_subarray_beams_per_scan_have_the_same_pointing_pattern(
                 )
             )
 
-        return validation_issues
+    return validation_issues
 
 
 @validator
@@ -235,7 +235,7 @@ def validate_subarray_beams_per_scan_have_the_same_number_of_partials(
                 case PointingKind.POINTED_MOSAIC:
                     n_scans.add(len(pattern.parameters[0].offsets))
                 case _:
-                   pass # Log something here? Throw an error?
+                    pass
 
         if len(n_scans) > 1:
             validation_issues.append(
@@ -247,7 +247,7 @@ def validate_subarray_beams_per_scan_have_the_same_number_of_partials(
                 )
             )
 
-        return validation_issues
+    return validation_issues
 
 
 @validator
