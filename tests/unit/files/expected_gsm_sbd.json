@@ -713,11 +713,6 @@
             "weighting_key": "uniform"
           },
           {
-            "station_id": 351,
-            "substation_id": 1,
-            "weighting_key": "uniform"
-          },
-          {
             "station_id": 352,
             "substation_id": 1,
             "weighting_key": "uniform"
@@ -729,6 +724,11 @@
           },
           {
             "station_id": 354,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 355,
             "substation_id": 1,
             "weighting_key": "uniform"
           },
@@ -1096,11 +1096,6 @@
             "weighting_key": "uniform"
           },
           {
-            "station_id": 351,
-            "substation_id": 1,
-            "weighting_key": "uniform"
-          },
-          {
             "station_id": 352,
             "substation_id": 1,
             "weighting_key": "uniform"
@@ -1112,6 +1107,11 @@
           },
           {
             "station_id": 354,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 355,
             "substation_id": 1,
             "weighting_key": "uniform"
           },
