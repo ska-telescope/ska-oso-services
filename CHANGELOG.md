@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ************
+* [BUGFIX] Fixes inconsistency with target validation and scan validation
+* [BUGFIX] Fixes bug where SBD without scans fails validation
+
+14.4.0
+************
 * Adds PST and PSS parameters to the /configuration response for LOW
 * Adds further validation for multiple subarray beams
 * Adds a new POST /{prj_id}/{ob_id}/generateGSMSurveySBDefinitions endpoint that will generate SBDefinitions

@@ -16,7 +16,7 @@ from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal.proposal_access import ProposalAccess
 from ska_oso_pdm.proposal_management import PanelDecision, PanelReview
 from ska_oso_pdm.proposal_management.panel import Panel, ProposalAssignment, ReviewerAssignment
-from ska_oso_pdm.sb_definition import SBDefinition, SBDefinitionID
+from ska_oso_pdm.sb_definition import ObservingConstraints, SBDefinition, SBDefinitionID
 from ska_ser_skuid import EntityType, mint_skuid
 
 CUR_DIR = Path(__file__).parent
@@ -68,6 +68,8 @@ class TestDataFactory:
 
         sbd.metadata.version = version
         sbd.metadata.created_on = created_on
+
+        sbd.observing_constraints = ObservingConstraints()
 
         sbd.ob_ref = ob_ref
 

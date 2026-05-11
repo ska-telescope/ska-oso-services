@@ -46,6 +46,7 @@ def validate_sbdefinition(
                 primary_entity=target,
                 source_jsonpath=f"$.targets.{index}",
                 telescope=sbd.telescope,
+                relevant_context={"constraints": sbd.observing_constraints},
                 array_assembly=validation_array_assembly,
             )
         )

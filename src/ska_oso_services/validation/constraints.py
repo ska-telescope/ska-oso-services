@@ -169,6 +169,9 @@ def validate_sso_targets_do_not_have_separation_constraints(
 
     # if there is only one subarray beam (or, in the case of MID no subarray beams)
     # formatting the scan definitions so that they're nested for homogeneity
+    #
+    if not scan_definitions:
+        return []
 
     if isinstance(scan_definitions[0], ScanDefinition):
         scan_definitions = [scan_definitions]
