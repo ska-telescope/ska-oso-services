@@ -189,3 +189,11 @@ def low_multiple_subarray_beams_invalid():
     sbd_json = load_string_from_file(path_to_test_file)
     sbd = SBDefinition.model_validate_json(sbd_json)
     return sbd
+
+
+@pytest.fixture
+def mid_new_sbd_from_odt():
+    path_to_test_file = Path(__file__).parents[0] / "files" / "mid_empty_sbd_from_odt.json"
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd
