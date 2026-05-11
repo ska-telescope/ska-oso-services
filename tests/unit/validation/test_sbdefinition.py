@@ -74,3 +74,8 @@ def test_scans_are_validated(mock_validate_target, mock_validate_scan_definition
     result = validate_sbdefinition(input_context)
 
     assert result == INVALID_RESULT
+
+
+def test_new_sbd_from_odt_passes_validation(mid_new_sbd_from_odt):
+    result = validate_sbdefinition(ValidationContext(primary_entity=mid_new_sbd_from_odt))
+    assert result == []
