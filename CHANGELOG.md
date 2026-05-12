@@ -4,7 +4,7 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+14.4.1
 ************
 * [BUGFIX] Fixes inconsistency with target validation and scan validation
 * [BUGFIX] Fixes bug where SBD without scans fails validation
