@@ -14,7 +14,7 @@ from ska_db_oda.repository.domain import ODAError, ODANotFound, UniqueConstraint
 from ska_db_oda.repository.domain.errors import ODAIntegrityError
 from ska_ser_logging import configure_logging
 
-from ska_oso_services import odt, pht
+from ska_oso_services import engineering, odt, pht
 from ska_oso_services.common import api, oda
 from ska_oso_services.common.error_handling import (
     OSDError,
@@ -36,6 +36,7 @@ API_PREFIX = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 PRODUCTION = os.getenv("PRODUCTION", "false").lower() == "true"
+ENGINEERING_API_ENABLED = os.getenv("ENGINEERING_API_ENABLED", "true").lower() == "true"
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,6 +62,13 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "get_osd_by_cycle",
                 "visibility_svg",
                 "get_all_osd_cycles",
+                # The following /engineering APIs are unsecured until a way
+                # for notebook users to generate tokens is available
+                "create_eb",
+                "get_eb",
+                "add_request_response",
+                "set_eb_status_observed",
+                "set_eb_status_failed",
             ]
         ),
         # Need this param for code generation - see
@@ -72,6 +80,8 @@ def create_app(production=PRODUCTION) -> FastAPI:
     fastapi_app.include_router(api.common_router, prefix=API_PREFIX)
     fastapi_app.include_router(odt.router, prefix=API_PREFIX)
     fastapi_app.include_router(pht.router, prefix=API_PREFIX)
+    if ENGINEERING_API_ENABLED:
+        fastapi_app.include_router(engineering.router, prefix=API_PREFIX)
     fastapi_app.include_router(validation_router, prefix=API_PREFIX)
     fastapi_app.exception_handler(ODANotFound)(oda_not_found_handler)
     fastapi_app.exception_handler(ODAIntegrityError)(oda_integrity_error_handler)
