@@ -36,7 +36,6 @@ API_PREFIX = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 PRODUCTION = os.getenv("PRODUCTION", "false").lower() == "true"
-ENGINEERING_API_ENABLED = os.getenv("ENGINEERING_API_ENABLED", "true").lower() == "true"
 
 LOGGER = logging.getLogger(__name__)
 
@@ -69,6 +68,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "add_request_response",
                 "set_eb_status_observed",
                 "set_eb_status_failed",
+                "engineering_api_disabled",
             ]
         ),
         # Need this param for code generation - see
@@ -80,8 +80,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
     fastapi_app.include_router(api.common_router, prefix=API_PREFIX)
     fastapi_app.include_router(odt.router, prefix=API_PREFIX)
     fastapi_app.include_router(pht.router, prefix=API_PREFIX)
-    if ENGINEERING_API_ENABLED:
-        fastapi_app.include_router(engineering.router, prefix=API_PREFIX)
+    fastapi_app.include_router(engineering.router, prefix=API_PREFIX)
     fastapi_app.include_router(validation_router, prefix=API_PREFIX)
     fastapi_app.exception_handler(ODANotFound)(oda_not_found_handler)
     fastapi_app.exception_handler(ODAIntegrityError)(oda_integrity_error_handler)

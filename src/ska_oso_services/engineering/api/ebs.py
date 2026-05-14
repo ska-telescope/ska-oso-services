@@ -12,6 +12,8 @@ LOGGER = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ebs")
 
+NOTEBOOK_USER = "NotebookUser"
+
 
 @router.get(
     "/{eb_id}",
@@ -19,12 +21,6 @@ router = APIRouter(prefix="/ebs")
     response_model=ExecutionBlock,
 )
 def get_eb(eb_id: str, oda: UnitOfWork) -> ExecutionBlock:
-    """
-    Get an ExecutionBlock for a given identifier.
-
-    :param eb_id: Requested identifier from the path parameter
-    :return: The ExecutionBlock, if found in the ODA
-    """
     with oda as uow:
         retrieved_eb = uow.ebs.get(eb_id)
     return retrieved_eb
@@ -36,12 +32,6 @@ def get_eb(eb_id: str, oda: UnitOfWork) -> ExecutionBlock:
     response_model=ExecutionBlock,
 )
 def create_eb(telescope: TelescopeType, oda: UnitOfWork) -> ExecutionBlock:
-    """
-    Creates a new ExecutionBlock in the ODA for the given telescope with
-    an empty list of `request_responses`.
-
-    :return: The ExecutionBlock as it exists in the ODA
-    """
     eb = ExecutionBlock(telescope=telescope)
     with oda as uow:
         persisted_eb = uow.ebs.add(eb)
@@ -58,13 +48,6 @@ def create_eb(telescope: TelescopeType, oda: UnitOfWork) -> ExecutionBlock:
 def add_request_response(
     eb_id: str, request_response: RequestResponse, oda: UnitOfWork
 ) -> ExecutionBlock:
-    """
-    Add a RequestResponse to an ExecutionBlock.
-
-    :param eb_id: The identifier of the ExecutionBlock to add the RequestResponse to
-    :param request_response: RequestResponse to add to the ExecutionBlock
-    :return: The ExecutionBlock as it exists in the ODA
-    """
     with oda as uow:
         eb = uow.ebs.get(eb_id)
         if eb.request_responses is None:
@@ -79,20 +62,13 @@ def add_request_response(
 
 @router.put(
     "/{eb_id}/status/observed",
-    summary="Set an ExecutionBlock status to Fully Observed",
+    summary="Set an ExecutionBlock status to Observed",
     response_model=Status,
 )
 def set_eb_status_observed(eb_id: str, oda: UnitOfWork) -> Status:
-    """
-    Sets the status of the ExecutionBlock with the given identifier to Observed.
-
-    :param eb_id: The identifier of the ExecutionBlock to update
-    :return: The updated Status
-    """
     with oda as uow:
         uow.status.update_status(
-            entity_id=eb_id,
-            status=StatusLabel.OBSERVED,
+            entity_id=eb_id, status=StatusLabel.OBSERVED, updated_by=NOTEBOOK_USER
         )
         uow.commit()
         return uow.status.get_current_status(entity_id=eb_id)
@@ -104,13 +80,9 @@ def set_eb_status_observed(eb_id: str, oda: UnitOfWork) -> Status:
     response_model=Status,
 )
 def set_eb_status_failed(eb_id: str, oda: UnitOfWork) -> Status:
-    """
-    Sets the status of the ExecutionBlock with the given identifier to Failed.
-
-    :param eb_id: The identifier of the ExecutionBlock to update
-    :return: The updated Status
-    """
     with oda as uow:
-        uow.status.update_status(entity_id=eb_id, status=StatusLabel.FAILED)
+        uow.status.update_status(
+            entity_id=eb_id, status=StatusLabel.FAILED, updated_by=NOTEBOOK_USER
+        )
         uow.commit()
         return uow.status.get_current_status(entity_id=eb_id)

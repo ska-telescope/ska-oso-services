@@ -172,8 +172,7 @@ class TestSetEBStatusObserved:
         assert result["entity_id"] == "eb-test-123"
         assert result["status"] == StatusLabel.OBSERVED
         uow_mock.status.update_status.assert_called_once_with(
-            entity_id="eb-test-123",
-            status=StatusLabel.OBSERVED,
+            entity_id="eb-test-123", status=StatusLabel.OBSERVED, updated_by="NotebookUser"
         )
         uow_mock.commit.assert_called_once()
         uow_mock.status.get_current_status.assert_called_once_with(entity_id="eb-test-123")
@@ -202,8 +201,7 @@ class TestSetEBStatusFailed:
         assert result["entity_id"] == "eb-test-123"
         assert result["status"] == StatusLabel.FAILED
         uow_mock.status.update_status.assert_called_once_with(
-            entity_id="eb-test-123",
-            status=StatusLabel.FAILED,
+            entity_id="eb-test-123", status=StatusLabel.FAILED, updated_by="NotebookUser"
         )
         uow_mock.commit.assert_called_once()
         uow_mock.status.get_current_status.assert_called_once_with(entity_id="eb-test-123")
