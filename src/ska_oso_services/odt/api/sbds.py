@@ -155,7 +155,7 @@ def sbds_put(
     if sbd.sbd_id != identifier:
         raise UnprocessableEntityError(
             detail=(
-                "There is a mismatch between the SBD ID for the endpoint and the " "JSON payload"
+                "There is a mismatch between the SBD ID for the endpoint and the JSON payload"
             ),
         )
 
