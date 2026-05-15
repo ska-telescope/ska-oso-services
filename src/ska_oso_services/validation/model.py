@@ -71,7 +71,8 @@ class ValidationResponse(AppModel):
 
     def model_post_init(self, context: Any, /) -> None:
         if self.valid is None:
-            self.valid = not bool(self.issues)
+            issues = set([issue.level for issue in self.issues])
+            self.valid = True if ValidationIssueType.ERROR not in issues else False
 
 
 def validator(validator_func: Validator[T]) -> Validator[T]:
