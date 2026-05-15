@@ -161,38 +161,24 @@ def validate_sso_targets_do_not_have_separation_constraints(
         are incompatible
     """
 
-    check_relevant_context_contains(["targets", "scan_definitions"], constraints_context)
+    check_relevant_context_contains(["targets"], constraints_context)
     targets = constraints_context.relevant_context["targets"]
-    scan_definitions = constraints_context.relevant_context["scan_definitions"]
 
     constraints = constraints_context.primary_entity
 
-    # if there is only one subarray beam (or, in the case of MID no subarray beams)
-    # formatting the scan definitions so that they're nested for homogeneity
-    #
-    if not scan_definitions:
-        return []
+    validation_issues = [
+        ValidationIssue(
+            level=ValidationIssueType.ERROR,
+            message=f"{target.reference_coordinate.name.value} Avoidance Zone "
+            "must be 0.0 degrees for a Scheduling Block with "
+            f"{target.reference_coordinate.name} as a target",
+        )
+        for target in targets
+        if target_is_jupiter_sun_or_moon(target)
+        and has_an_incompatible_constraint(target.reference_coordinate, constraints)
+    ]
 
-    if isinstance(scan_definitions[0], ScanDefinition):
-        scan_definitions = [scan_definitions]
-    validation_issues = []
-    for subarray_beams in scan_definitions:
-        for scan in subarray_beams:
-            # extracting the target
-            target = next(target for target in targets if target.target_id == scan.target_ref)
-            if target_is_jupiter_sun_or_moon(target) and has_an_incompatible_constraint(
-                target.reference_coordinate, constraints
-            ):
-                validation_issues.append(
-                    ValidationIssue(
-                        level=ValidationIssueType.ERROR,
-                        message=f"{target.reference_coordinate.name.value} Avoidance Zone "
-                        "must be 0.0 degrees for a Scheduling Block with "
-                        f"{target.reference_coordinate.name} as a target",
-                    )
-                )
-
-        return validation_issues
+    return validation_issues
 
 
 def has_an_incompatible_constraint(
