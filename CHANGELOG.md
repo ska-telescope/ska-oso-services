@@ -4,6 +4,11 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+***********
+* [BUGFIX] Fixes error message for MID targets below the elevation range
+*  Improves validation of Solar System objects
+
 14.4.1
 ************
 * [BUGFIX] Fixes inconsistency with target validation and scan validation
