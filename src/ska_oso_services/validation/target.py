@@ -81,6 +81,15 @@ def validate_elevation(
             )
         ]
 
+    if telescope == TelescopeType.SKA_LOW and max_elevation < Latitude(45, unit=u.deg):
+        return [
+            ValidationIssue(
+                level=ValidationIssueType.WARNING,
+                message=f"Maximum elevation ({round(max_elevation.value, 2)} degrees) "
+                "is less than 45 degrees - performance may be degraded",
+            )
+        ]
+
     return []
 
 

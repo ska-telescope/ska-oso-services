@@ -8,6 +8,7 @@ Unreleased
 ***********
 * [BUGFIX] Fixes error message for MID targets below the elevation range
 *  Improves validation of Solar System objects
+* [BUGFIX] Restore LOW targets below 45 degree elevation warning
 
 14.4.1
 ************
