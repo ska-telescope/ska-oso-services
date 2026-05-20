@@ -23,6 +23,7 @@ Unreleased
 * Adds quality_attribute_metrics to low configurations from OSD
 * [BUGFIX] fixing constraint validation that did not correctly take the scan duration into account
 * [BUGFIX] fixing constraint validation that did not correctly account for LST constraints that span midnight
+* Adds `/engineering` API path with functionality to create and update EBs. This is to be used in notebooks now the ODA API is removed
 
 14.3.0
 ************
