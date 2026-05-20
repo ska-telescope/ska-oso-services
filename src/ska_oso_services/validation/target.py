@@ -77,7 +77,7 @@ def validate_elevation(
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
                 message=f"Maximum elevation ({round(max_elevation.value, 2)} degrees) "
-                f"is less than {min_elevation.to('degree').value} degrees ",
+                f"is less than the limit ({min_elevation.to('degree').value} degrees) ",
             )
         ]
 

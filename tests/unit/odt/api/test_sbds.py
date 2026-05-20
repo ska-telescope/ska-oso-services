@@ -158,7 +158,7 @@ class TestSBDefinitionAPI:
         """
         mock_validate.return_value = [
             ValidationIssue(
-                message="Maximum elevation (44.74 degrees) is less than 45.0 degrees ",
+                message="Maximum elevation (44.74 degrees) is less than the limit (45.0 degrees) ",
                 field="$.targets.0",
                 level=ValidationIssueType.ERROR,
             )
@@ -177,7 +177,7 @@ class TestSBDefinitionAPI:
                         "field": "$.targets.0",
                         "level": "error",
                         "message": "Maximum elevation (44.74 degrees) is less "
-                        "than 45.0 degrees ",
+                        "than the limit (45.0 degrees) ",
                     }
                 ],
             }
