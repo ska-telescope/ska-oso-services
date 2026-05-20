@@ -4,11 +4,12 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+14.5.0
 ***********
 * [BUGFIX] Fixes error message for MID targets below the elevation range
 *  Improves validation of Solar System objects
 * [BUGFIX] Restore LOW targets below 45 degree elevation warning
+* Adds `/engineering` API path with functionality to create and update EBs. This is to be used in notebooks now the ODA API is removed
 
 14.4.1
 ************
@@ -24,7 +25,7 @@ Unreleased
 * Adds quality_attribute_metrics to low configurations from OSD
 * [BUGFIX] fixing constraint validation that did not correctly take the scan duration into account
 * [BUGFIX] fixing constraint validation that did not correctly account for LST constraints that span midnight
-* Adds `/engineering` API path with functionality to create and update EBs. This is to be used in notebooks now the ODA API is removed
+
 
 14.3.0
 ************
