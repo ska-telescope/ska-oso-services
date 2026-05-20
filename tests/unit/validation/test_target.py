@@ -142,7 +142,10 @@ def test_low_target_below_osd_min_elevation():
     result = validate_elevation(input_context)
 
     assert len(result) == 1
-    assert result[0].message == "Maximum elevation (44.74 degrees) is less than 45.0 degrees "
+    assert (
+        result[0].message
+        == "Maximum elevation (44.74 degrees) is less than the limit (45.0 degrees) "
+    )
     assert result[0].level == ValidationIssueType.ERROR
 
 
@@ -160,7 +163,29 @@ def test_low_target_below_osd_elevation_with_constraints():
 
     result = validate_elevation(input_context)
 
-    assert len(result) == 0
+    assert len(result) == 1
+    assert result[0].level == ValidationIssueType.WARNING
+    assert "less than 45 degrees" in result[0].message
+
+
+def test_low_target_below_45_degrees_gives_performance_warning():
+    input_context = ValidationContext(
+        primary_entity=LowTargetBuilder(
+            name="47 Tuc",
+            reference_coordinate=ICRSCoordinates(ra_str="00:24:05.3590", dec_str="-72:04:53.200"),
+        ),
+        telescope=TelescopeType.SKA_LOW,
+        relevant_context={
+            "constraints": ObservingConstraints(altitude=AltitudeConstraint(min=30.0 * u.deg))
+        },
+    )
+
+    result = validate_elevation(input_context)
+
+    assert result[0].level == ValidationIssueType.WARNING
+    assert result[0].message == (
+        "Maximum elevation (44.74 degrees) is less than 45 degrees - performance may be degraded"
+    )
 
 
 def test_target_with_pst_beams(
