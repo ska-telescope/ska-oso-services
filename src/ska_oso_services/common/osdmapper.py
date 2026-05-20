@@ -54,8 +54,8 @@ class LowFrequencyBand(FrequencyBand):
     coarse_channel_width_hz: float
     number_continuum_channels_per_coarse_channel: int
     number_zoom_channels_per_coarse_channel: int
-    number_pst_channels_per_coarse_channel: int | None = None
-    number_pss_channels_per_coarse_channel: int | None = None
+    number_pst_channels_per_coarse_channel: int
+    number_pss_channels_per_coarse_channel: int
 
 
 class Subarray(BaseModel):
