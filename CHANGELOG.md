@@ -4,9 +4,13 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+**********
+* [BREAKING] New major version of ODA Updated to ODA v18.0.0
+* Uses the updated `ska_db_oda.common.uow` UnitOfWork for ODA requests.
+ 
 14.5.0
 ***********
-* [BREAKING] New major version of ODA Updated to ODA v18.0.0
 * [BUGFIX] Fixes error message for MID targets below the elevation range
 *  Improves validation of Solar System objects
 * [BUGFIX] Restore LOW targets below 45 degree elevation warning
