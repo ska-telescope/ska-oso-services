@@ -82,7 +82,7 @@ def set_eb_status_observed(eb_id: str, oda: UnitOfWork) -> Status:
 def set_eb_status_failed(eb_id: str, oda: UnitOfWork) -> Status:
     with oda as uow:
         uow.status.update_status(
-            entity_id=eb_id, status=StatusLabel.FAILED, updated_by=NOTEBOOK_USER
+            entity_id=eb_id, status=StatusLabel.OBSERVING_FAILED, updated_by=NOTEBOOK_USER
         )
         uow.commit()
         return uow.status.get_current_status(entity_id=eb_id)

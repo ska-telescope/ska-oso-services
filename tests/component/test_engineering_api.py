@@ -109,4 +109,4 @@ class TestEBs:
 
         result = put_response.json()
         assert result["entity_id"] == eb_id
-        assert result["status"] == "Failed"
+        assert result["status"] == "Observing Failed"
