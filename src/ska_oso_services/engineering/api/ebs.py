@@ -1,9 +1,9 @@
 import logging
 
 from fastapi import APIRouter
+from ska_db_oda.common.uow import UnitOfWork
 from ska_db_oda.postgres.mapping import StatusLabel
 from ska_db_oda.repository.status import Status
-from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm import OSOExecutionBlock as ExecutionBlock
 from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.execution_block import RequestResponse
