@@ -4,7 +4,7 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+14.6.0
 **********
 * New major version of ODA Updated to ODA v18.0.0
 * Uses the updated `ska_db_oda.common.uow` UnitOfWork for ODA requests.
