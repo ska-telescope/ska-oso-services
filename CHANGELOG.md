@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-* [BREAKING] New major version of ODA Updated to ODA v18.0.0
+* New major version of ODA Updated to ODA v18.0.0
 * Uses the updated `ska_db_oda.common.uow` UnitOfWork for ODA requests.
  
 14.5.0
