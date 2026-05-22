@@ -172,7 +172,9 @@ class TestSetEBStatusObserved:
         assert result["entity_id"] == "eb-test-123"
         assert result["status"] == StatusLabel.OBSERVED
         uow_mock.status.update_status.assert_called_once_with(
-            entity_id="eb-test-123", status=StatusLabel.OBSERVED, updated_by="NotebookUser"
+            entity_id="eb-test-123",
+            status=StatusLabel.OBSERVED,
+            updated_by="NotebookUser",
         )
         uow_mock.commit.assert_called_once()
         uow_mock.status.get_current_status.assert_called_once_with(entity_id="eb-test-123")
@@ -189,9 +191,10 @@ class TestSetEBStatusObserved:
 
 class TestSetEBStatusFailed:
     def test_set_status_failed_returns_updated_status(self, client_with_uow_mock):
-        """PUT /ebs/{eb_id}/status/failed calls update_status with FAILED and returns Status."""
+        """PUT /ebs/{eb_id}/status/failed calls update_status with
+        OBSERVING_FAILED and returns Status."""
         client, uow_mock = client_with_uow_mock
-        returned_status = make_status(status=StatusLabel.FAILED)
+        returned_status = make_status(status=StatusLabel.OBSERVING_FAILED)
         uow_mock.status.get_current_status.return_value = returned_status
 
         response = client.put(f"{EBS_API_URL}/eb-test-123/status/failed")
@@ -199,9 +202,11 @@ class TestSetEBStatusFailed:
         assert response.status_code == HTTPStatus.OK
         result = response.json()
         assert result["entity_id"] == "eb-test-123"
-        assert result["status"] == StatusLabel.FAILED
+        assert result["status"] == StatusLabel.OBSERVING_FAILED
         uow_mock.status.update_status.assert_called_once_with(
-            entity_id="eb-test-123", status=StatusLabel.FAILED, updated_by="NotebookUser"
+            entity_id="eb-test-123",
+            status=StatusLabel.OBSERVING_FAILED,
+            updated_by="NotebookUser",
         )
         uow_mock.commit.assert_called_once()
         uow_mock.status.get_current_status.assert_called_once_with(entity_id="eb-test-123")

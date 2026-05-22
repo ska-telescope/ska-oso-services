@@ -15,7 +15,7 @@ from ska_db_oda.repository.domain.errors import ODAIntegrityError
 from ska_ser_logging import configure_logging
 
 from ska_oso_services import engineering, odt, pht
-from ska_oso_services.common import api, oda
+from ska_oso_services.common import api
 from ska_oso_services.common.error_handling import (
     OSDError,
     dangerous_internal_server_handler,
@@ -97,8 +97,6 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 # Create the FastAPI app
 app = create_app()
-oda.init_app(app)
-
 # Wrap with CORSMiddleware to ensure CORS headers are added to all responses,
 # including error responses from exception handlers
 main = CORSMiddleware(

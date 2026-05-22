@@ -10,8 +10,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
 from ska_aaa_authhelpers import AuthContext, Role
+from ska_db_oda.common.uow import UnitOfWork
 from ska_db_oda.repository.status import Status
-from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
 from starlette.responses import Response

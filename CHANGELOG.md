@@ -4,6 +4,12 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+**********
+* New major version of ODA Updated to ODA v18.0.0
+* Uses the updated `ska_db_oda.common.uow` UnitOfWork for ODA requests.
+* [BUGFIX] Fixed issue with target validation on generated Low commissioning SBs
+ 
 14.5.0
 ***********
 * [BUGFIX] Fixes error message for MID targets below the elevation range

@@ -15,8 +15,8 @@ from astropy.units import Quantity
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from ska_aaa_authhelpers import AuthContext, Role
+from ska_db_oda.common.uow import UnitOfWork
 from ska_db_oda.repository.status import Status
-from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm import ICRSCoordinates, SubArrayLOW, Target, TelescopeType
 from ska_oso_pdm.builders.utils import target_id
 from ska_oso_pdm.project import Author, ObservingBlock, Project
