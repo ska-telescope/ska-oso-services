@@ -8,6 +8,7 @@ Unreleased
 **********
 * New major version of ODA Updated to ODA v18.0.0
 * Uses the updated `ska_db_oda.common.uow` UnitOfWork for ODA requests.
+* [BUGFIX] Fixed issue with target validation on generated Low commissioning SBs
  
 14.5.0
 ***********

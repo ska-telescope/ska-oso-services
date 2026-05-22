@@ -60,7 +60,7 @@ def validate_elevation(
     constraints = target_context.relevant_context["constraints"]
     telescope = target_context.telescope
 
-    if constraints.altitude.min is not None:
+    if constraints is not None and constraints.altitude.min is not None:
         min_elevation = constraints.altitude.min
     elif telescope == TelescopeType.SKA_MID:
         min_elevation = mid_minimum_elevation()
