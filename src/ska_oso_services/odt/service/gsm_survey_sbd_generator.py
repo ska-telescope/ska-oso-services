@@ -52,11 +52,8 @@ def ring_buffer_grouping(
     targets: list[Target],
     group_size: int,
     *,
-    delta_dec: float = 1.8285179062,
-    first_bin_center_dec: float = -90.0,
-    min_separation: float | None = None,
-    max_separation: float | None = None,
-    sample_fraction: float = 1.0,
+    min_separation_factor: float = 1.2,
+    max_separation_factor: float = 2.4,
 ) -> Iterator[list[int]]:
     """Yield groups of target indices using ring-buffer spatial clustering.
 
@@ -64,66 +61,56 @@ def ring_buffer_grouping(
     Groups are built greedily, seeding from the lowest-RA frontier node
     and growing by selecting the valid candidate with the lowest RA.
 
+    The declination bin width (``delta_dec``) is derived automatically as
+    the smallest gap between successive unique declination values in the
+    catalogue.  Separation thresholds are then expressed as multiples of
+    that bin width.
+
     Parameters
     ----------
     targets : list[Target]
         Input target list with ICRS coordinates.
     group_size : int
         Maximum number of targets per group.
-    delta_dec : float
-        Declination bin width in degrees.
-    first_bin_center_dec : float
-        Centre of the first declination bin in degrees.
-    min_separation : float or None
-        Minimum pairwise angular separation in degrees.
-        Defaults to ``delta_dec * 1.2``.
-    max_separation : float or None
-        Maximum angular separation for neighbour detection in degrees.
-        Defaults to ``delta_dec * 3.0``.
-    sample_fraction : float
-        Fraction of the catalogue to use (RA-contiguous subset, 0 < value <= 1).
-        Defaults to 1.0 (use all targets).
+    min_separation_factor : float
+        Minimum pairwise angular separation expressed as a multiple of
+        ``delta_dec``.  Defaults to 1.2.
+    max_separation_factor : float
+        Maximum angular separation for neighbour detection expressed as
+        a multiple of ``delta_dec``.  Defaults to 2.4.
     """
-    if min_separation is None:
-        min_separation = delta_dec * 1.2
-    if max_separation is None:
-        max_separation = delta_dec * 3.0
-
     # --- Build coordinate arrays from Target objects ---
     coords = SkyCoord(
         [t.reference_coordinate.to_sky_coord() for t in targets], frame="icrs"
     )
-    ra_deg = coords.ra.deg
-    dec_deg = coords.dec.deg
+    ra_deg = np.asarray(coords.ra.deg)
+    dec_deg = np.asarray(coords.dec.deg)
 
-    # --- Optionally select an RA-contiguous subset ---
-    if sample_fraction < 1.0:
-        n_targets = max(1, int(sample_fraction * len(targets)))
-        sorted_indices = np.argsort(ra_deg)
-        selected_mask = np.zeros(len(targets), dtype=bool)
-        selected_mask[sorted_indices[:n_targets]] = True
-        subset_indices = np.nonzero(selected_mask)[0]
-    else:
-        subset_indices = np.arange(len(targets))
+    # --- Derive delta_dec from the catalogue ---
+    unique_decs = np.unique(dec_deg)
+    if len(unique_decs) < 2:
+        raise ValueError(
+            "ring_buffer_grouping requires targets at two or more distinct "
+            "declination values to derive the bin width"
+        )
+    delta_dec = float(np.min(np.diff(unique_decs)))
 
-    # Work in a local index space over the subset; map back to original
-    # indices when yielding groups.
-    local_ra = ra_deg[subset_indices]
-    local_dec = dec_deg[subset_indices]
-    local_coords = coords[subset_indices]
+    first_bin_center_dec = float(np.min(dec_deg))
+    min_separation = delta_dec * min_separation_factor
+    max_separation = delta_dec * max_separation_factor
 
     def _edge_key(i: int, j: int) -> tuple[int, int]:
         return (i, j) if i < j else (j, i)
 
     # --- Build RA-ordered queues from fixed-width declination bins ---
     ring_ids = np.floor(
-        (local_dec - first_bin_center_dec) / delta_dec + 0.5
+        (dec_deg - first_bin_center_dec) / delta_dec + 0.5
     ).astype(int)
     ring_queues: list[deque[int]] = []
     for ring_id in sorted(np.unique(ring_ids)):
         ring_mask = ring_ids == ring_id
         indices = np.where(ring_mask)[0]
-        indices_sorted = indices[np.argsort(local_ra[indices])]
+        indices_sorted = indices[np.argsort(ra_deg[indices])]
         ring_queues.append(deque(indices_sorted.tolist()))
 
     edge_separation: dict[tuple[int, int], float] = {}
@@ -137,13 +124,13 @@ def ring_buffer_grouping(
             if not q:
                 continue
             if active_nodes:
-                graph_min_ra = min(local_ra[n] for n in active_nodes)
-                if local_ra[q[0]] >= graph_min_ra:
+                graph_min_ra = min(ra_deg[n] for n in active_nodes)
+                if ra_deg[q[0]] >= graph_min_ra:
                     continue
             pid = q.popleft()
             for other_pid in active_nodes:
                 edge_separation[_edge_key(pid, other_pid)] = float(
-                    local_coords[pid].separation(local_coords[other_pid]).degree
+                    coords[pid].separation(coords[other_pid]).degree
                 )
             active_nodes[pid] = None
 
@@ -151,38 +138,38 @@ def ring_buffer_grouping(
             break
 
         # Step 2: Seed a new group with the globally lowest-RA frontier node.
-        i0 = min(active_nodes, key=lambda n: local_ra[n])
+        i0 = min(active_nodes, key=lambda n: ra_deg[n])
         group: list[int] = [i0]
 
         # Step 3: Grow group until full or no valid candidate remains.
         while len(group) < group_size:
             # 3a: Compute frontier bounds from the current group.
-            group_dec_min = float(np.min(local_dec[group])) - max_separation
-            group_dec_max = float(np.max(local_dec[group])) + max_separation
-            group_max_ra = float(np.max(local_ra[group]))
+            group_dec_min = float(np.min(dec_deg[group])) - max_separation
+            group_dec_max = float(np.max(dec_deg[group])) + max_separation
+            group_max_ra = float(np.max(ra_deg[group]))
 
             # 3b: Expand graph by yielding queue heads within dec/RA/separation.
             for q in ring_queues:
                 while q:
                     head_pid = q[0]
-                    head_dec = local_dec[head_pid]
+                    head_dec = dec_deg[head_pid]
                     if head_dec < group_dec_min or head_dec > group_dec_max:
                         break
 
                     last_pid = group[-1]
                     head_sep = float(
-                        local_coords[head_pid]
-                        .separation(local_coords[last_pid])
+                        coords[head_pid]
+                        .separation(coords[last_pid])
                         .degree
                     )
-                    if head_sep > max_separation and local_ra[head_pid] > group_max_ra:
+                    if head_sep > max_separation and ra_deg[head_pid] > group_max_ra:
                         break
 
                     pid = q.popleft()
                     for other_pid in active_nodes:
                         edge_separation[_edge_key(pid, other_pid)] = float(
-                            local_coords[pid]
-                            .separation(local_coords[other_pid])
+                            coords[pid]
+                            .separation(coords[other_pid])
                             .degree
                         )
                     active_nodes[pid] = None
@@ -208,24 +195,23 @@ def ring_buffer_grouping(
                     min_separation <= sep <= max_separation for sep in sep_to_group
                 ):
                     continue
-                if local_ra[n] < best_ra:
-                    best_ra = local_ra[n]
+                if ra_deg[n] < best_ra:
+                    best_ra = ra_deg[n]
                     best_candidate = n
 
             if best_candidate is None:
                 break
             group.append(best_candidate)
 
-        # Step 4: Yield group (mapped back to original indices), then
-        # remove its nodes from the active graph.
-        yield [int(subset_indices[n]) for n in group]
+        # Step 4: Yield group, then remove its nodes from the active graph.
+        yield [int(n) for n in group]
         for n in group:
             active_nodes.pop(n, None)
 
     # Yield any targets still sitting in queues that were never activated
     # (possible when the spatial constraints prevented them from joining
     # any group during the main loop).
-    remaining = [int(subset_indices[q.popleft()]) for q in ring_queues for _ in range(len(q))]
+    remaining = [q.popleft() for q in ring_queues for _ in range(len(q))]
     if remaining:
         for start in range(0, len(remaining), group_size):
             yield remaining[start : start + group_size]
