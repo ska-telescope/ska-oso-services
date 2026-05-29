@@ -95,7 +95,7 @@ def ring_buffer_grouping(
     dec_deg = np.asarray(coords.dec.deg)
 
     # --- Derive delta_dec from the catalogue ---
-    unique_decs = np.unique(dec_deg)
+    unique_decs = np.unique(np.round(dec_deg, decimals=5))
     if len(unique_decs) < 2:
         raise ValueError(
             "ring_buffer_grouping requires targets at two or more distinct "
