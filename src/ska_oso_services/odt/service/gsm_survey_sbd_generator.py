@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections import deque
 from collections.abc import Iterator
 from datetime import timedelta
+from enum import Enum
 from math import floor
 
 import numpy as np
@@ -36,6 +37,13 @@ from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_fr
 from ska_oso_services.odt.service.sbd_generator import _sbd_internal_id
 
 DEFAULT_SUBARRAY = SubArrayLOW.AA2_ALL
+
+
+class GroupingMethod(str, Enum):
+    """Strategy used to partition targets into SBD groups."""
+
+    SEQUENTIAL = "sequential"
+    RING_BUFFER = "ring_buffer"
 
 
 def sequential_grouping(num_targets: int, group_size: int) -> Iterator[list[int]]:
@@ -244,6 +252,8 @@ def generate_gsm_survey_sbds(
     num_subarray_beams: int,
     num_scans: int,
     num_calibrator_beams: int,
+    grouping: GroupingMethod = GroupingMethod.SEQUENTIAL,
+    ring_buffer_kwargs: dict | None = None,
 ) -> list[SBDefinition]:
 
     sbds = []
@@ -264,13 +274,17 @@ def generate_gsm_survey_sbds(
         for station_id in station_ids
     ]
 
-    # This is where you would apply some kind of clustering algorithm
-    # that decides how to break the list of targets into SBDs.
-    # This basic first implementation just fills each SBD with num_subarray_beams * num_scans
-    # targets until it runs out of targets, then creates a final SBD with the remaining targets.
     num_targets_per_sbd = num_scans * num_subarray_beams
 
-    for group_indices in sequential_grouping(total_targets, num_targets_per_sbd):
+    if grouping == GroupingMethod.SEQUENTIAL:
+        groups = sequential_grouping(total_targets, num_targets_per_sbd)
+    elif grouping == GroupingMethod.RING_BUFFER:
+        kwargs = ring_buffer_kwargs or {}
+        groups = ring_buffer_grouping(input_targets, num_targets_per_sbd, **kwargs)
+    else:
+        raise ValueError(f"Unknown grouping method: {grouping}")
+
+    for group_indices in groups:
         targets_for_sbd = [input_targets[i] for i in group_indices]
 
         if len(targets_for_sbd) == num_targets_per_sbd:
