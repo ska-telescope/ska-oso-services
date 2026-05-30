@@ -211,10 +211,17 @@ def ring_buffer_grouping(
                 break
             group.append(best_candidate)
 
-        # Step 4: Yield group, then remove its nodes from the active graph.
+        # Step 4: Yield group, then remove its nodes from the active graph
+        # and clean up edge_separation entries referencing them.
         yield [int(n) for n in group]
+        removed = set(group)
         for n in group:
             active_nodes.pop(n, None)
+        edge_separation = {
+            k: v
+            for k, v in edge_separation.items()
+            if k[0] not in removed and k[1] not in removed
+        }
 
     # Yield any targets still sitting in queues that were never activated
     # (possible when the spatial constraints prevented them from joining
