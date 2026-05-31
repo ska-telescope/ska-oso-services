@@ -1,8 +1,13 @@
 """Unit tests for ring_buffer_grouping."""
 
+import pytest
 from ska_oso_pdm import ICRSCoordinates, Target
 
-from ska_oso_services.odt.service.gsm_survey_sbd_generator import ring_buffer_grouping
+from ska_oso_services.odt.service.gsm_survey_sbd_generator import (
+    _build_ring_data,
+    _validate_ring_catalogue,
+    ring_buffer_grouping,
+)
 
 # 8 dec rows (0°, 2°, 4°, …, 14°) × 2 RA columns (0°, 3°) = 16 targets.
 # Ordered dec-major: index 0 = (ra=0, dec=0), index 1 = (ra=3, dec=0),
@@ -91,3 +96,77 @@ class TestRingBufferGrouping:
         # Groups should be smaller since valid neighbours are restricted
         assert all(len(g) <= 8 for g in groups)
         assert len(groups) > 2
+
+
+def _make_target(ra_str: str, dec_str: str, idx: int) -> Target:
+    """Helper to create a Target with minimal boilerplate."""
+    return Target(
+        target_id=f"v-{idx:04d}",
+        name=f"V{idx}",
+        reference_coordinate=ICRSCoordinates(ra_str=ra_str, dec_str=dec_str),
+    )
+
+
+# Non-uniform dec spacing: rows at 0°, 2°, 4°, 10° (gap ratio = 6/2 = 3.0)
+NON_UNIFORM_DEC_TARGETS = [
+    _make_target("00:00:00.00", "+00:00:00.00", 0),
+    _make_target("00:12:00.00", "+00:00:00.00", 1),
+    _make_target("00:00:00.00", "+02:00:00.00", 2),
+    _make_target("00:12:00.00", "+02:00:00.00", 3),
+    _make_target("00:00:00.00", "+04:00:00.00", 4),
+    _make_target("00:12:00.00", "+04:00:00.00", 5),
+    _make_target("00:00:00.00", "+10:00:00.00", 6),
+    _make_target("00:12:00.00", "+10:00:00.00", 7),
+]
+
+# Missing ring: rows at dec 0°, 2°, 6° — ring_id 2 (dec≈4°) is absent.
+MISSING_RING_TARGETS = [
+    _make_target("00:00:00.00", "+00:00:00.00", 0),
+    _make_target("00:12:00.00", "+00:00:00.00", 1),
+    _make_target("00:00:00.00", "+02:00:00.00", 2),
+    _make_target("00:12:00.00", "+02:00:00.00", 3),
+    _make_target("00:00:00.00", "+06:00:00.00", 4),
+    _make_target("00:12:00.00", "+06:00:00.00", 5),
+]
+
+# Bad RA spacing: 4 dec rows × 4 RA columns with RA gap = 10° at equator.
+# delta_dec = 2°, min_sep = 2.4°, so k=1 RA sep ≈ 10° >> min_sep (fails k=1 check).
+BAD_RA_SPACING_TARGETS = [
+    _make_target(f"{ra_h:02d}:00:00.00", f"+{dec:02d}:00:00.00", i)
+    for i, (ra_h, dec) in enumerate(
+        (ra_h, dec) for dec in (0, 2, 4, 6) for ra_h in (0, 1, 2, 3)
+    )
+]
+
+
+class TestValidateRingCatalogue:
+    """Tests for _validate_ring_catalogue pre-flight checks."""
+
+    def test_valid_catalogue_passes(self):
+        """The regular GRID_16_TARGETS should pass validation without error."""
+        rd = _build_ring_data(GRID_16_TARGETS)
+        _validate_ring_catalogue(rd)
+
+    def test_non_uniform_dec_raises(self):
+        """Catalogue with irregular dec spacing should raise ValueError."""
+        rd = _build_ring_data(NON_UNIFORM_DEC_TARGETS)
+        with pytest.raises(ValueError, match="Declination spacing is not uniform"):
+            _validate_ring_catalogue(rd)
+
+    def test_missing_ring_raises(self):
+        """Catalogue with a gap in ring ids should raise ValueError."""
+        rd = _build_ring_data(MISSING_RING_TARGETS)
+        # Relax dec-uniformity tolerance so the empty-ring check is reached.
+        with pytest.raises(ValueError, match="Empty ring"):
+            _validate_ring_catalogue(rd, dec_uniformity_tolerance=3.0)
+
+    def test_bad_ra_spacing_raises(self):
+        """Catalogue where RA spacing violates k=1/k=2/k=3 rules raises ValueError."""
+        rd = _build_ring_data(BAD_RA_SPACING_TARGETS)
+        with pytest.raises(ValueError, match="RA spacing check failed"):
+            _validate_ring_catalogue(rd)
+
+    def test_ring_buffer_grouping_runs_validation(self):
+        """ring_buffer_grouping should raise ValueError for an invalid catalogue."""
+        with pytest.raises(ValueError, match="Declination spacing is not uniform"):
+            list(ring_buffer_grouping(NON_UNIFORM_DEC_TARGETS, group_size=4))
