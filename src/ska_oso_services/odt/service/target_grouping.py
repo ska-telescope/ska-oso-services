@@ -49,9 +49,6 @@ class RingData:
     def _from_coords(
         cls,
         coords: SkyCoord,
-        *,
-        min_separation_factor: float = 1.2,
-        max_separation_factor: float = 2.4,
     ) -> RingData:
         """Shared construction logic from a SkyCoord array."""
         ra_deg = np.asarray(coords.ra.deg)
@@ -66,8 +63,6 @@ class RingData:
         delta_dec = float(np.min(np.diff(unique_decs)))
 
         first_bin_center_dec = float(np.min(dec_deg))
-        min_separation = delta_dec * min_separation_factor
-        max_separation = delta_dec * max_separation_factor
 
         ring_ids = np.floor(
             (dec_deg - first_bin_center_dec) / delta_dec + 0.5
@@ -78,6 +73,37 @@ class RingData:
             indices = np.where(ring_mask)[0]
             indices_sorted = indices[np.argsort(ra_deg[indices])]
             ring_queues.append(deque(indices_sorted.tolist()))
+
+        # Derive min/max separation from k-neighbour statistics.
+        # For each ring, compute the approximate angular separation
+        # between targets at offset k as delta_ra * cos(dec).
+        k_global_max: dict[int, float] = {1: 0.0, 2: 0.0, 3: 0.0}
+        k_global_min: dict[int, float] = {
+            1: float("inf"),
+            2: float("inf"),
+            3: float("inf"),
+        }
+        for q in ring_queues:
+            if len(q) < 4:
+                continue
+            indices = list(q)
+            ring_ra = ra_deg[indices]
+            ring_dec_mean = float(np.mean(dec_deg[indices]))
+            cos_dec = float(np.cos(np.radians(ring_dec_mean)))
+            for k in (1, 2, 3):
+                if len(ring_ra) < k + 1:
+                    continue
+                seps = (ring_ra[k:] - ring_ra[:-k]) * cos_dec
+                k_global_min[k] = min(k_global_min[k], float(np.min(seps)))
+                k_global_max[k] = max(k_global_max[k], float(np.max(seps)))
+
+        if k_global_min[2] == float("inf"):
+            # Fallback for catalogues with very few targets per ring
+            min_separation = delta_dec * 1.2
+            max_separation = delta_dec * 2.4
+        else:
+            min_separation = (k_global_max[1] + k_global_min[2]) / 2.0
+            max_separation = (k_global_max[2] + k_global_min[3]) / 2.0
 
         return cls(
             coords=coords,
@@ -96,22 +122,16 @@ class RingData:
     def from_targets(
         cls,
         targets: list[Target],
-        *,
-        min_separation_factor: float = 1.2,
-        max_separation_factor: float = 2.4,
     ) -> RingData:
         """Construct RingData from a list of Target objects.
+
+        Separation thresholds are derived automatically from the
+        k-neighbour spacing statistics of the catalogue.
 
         Parameters
         ----------
         targets : list[Target]
             Input target list with ICRS coordinates.
-        min_separation_factor : float
-            Minimum pairwise angular separation as a multiple of
-            ``delta_dec``.  Defaults to 1.2.
-        max_separation_factor : float
-            Maximum angular separation as a multiple of ``delta_dec``.
-            Defaults to 2.4.
 
         Raises
         ------
@@ -122,43 +142,29 @@ class RingData:
             [t.reference_coordinate.to_sky_coord() for t in targets],
             frame="icrs",
         )
-        return cls._from_coords(
-            coords,
-            min_separation_factor=min_separation_factor,
-            max_separation_factor=max_separation_factor,
-        )
+        return cls._from_coords(coords)
 
     @classmethod
     def from_sky_coord(
         cls,
         coords: SkyCoord,
-        *,
-        min_separation_factor: float = 1.2,
-        max_separation_factor: float = 2.4,
     ) -> RingData:
         """Construct RingData from an existing SkyCoord array.
+
+        Separation thresholds are derived automatically from the
+        k-neighbour spacing statistics of the catalogue.
 
         Parameters
         ----------
         coords : SkyCoord
             Sky coordinates for all targets.
-        min_separation_factor : float
-            Minimum pairwise angular separation as a multiple of
-            ``delta_dec``.  Defaults to 1.2.
-        max_separation_factor : float
-            Maximum angular separation as a multiple of ``delta_dec``.
-            Defaults to 2.4.
 
         Raises
         ------
         ValueError
             If fewer than two distinct declination values are present.
         """
-        return cls._from_coords(
-            coords,
-            min_separation_factor=min_separation_factor,
-            max_separation_factor=max_separation_factor,
-        )
+        return cls._from_coords(coords)
 
     def validate(
         self,
@@ -290,24 +296,13 @@ class RingBufferGrouper:
     ring_data : RingData, optional
         Pre-computed ring data.  If not supplied, it will be derived
         from the targets passed to :meth:`group`.
-    min_separation_factor : float
-        Minimum pairwise angular separation as a multiple of
-        ``delta_dec``.  Only used when *ring_data* is not provided.
-    max_separation_factor : float
-        Maximum angular separation as a multiple of ``delta_dec``.
-        Only used when *ring_data* is not provided.
     """
 
     def __init__(
         self,
         ring_data: RingData | None = None,
-        *,
-        min_separation_factor: float = 1.2,
-        max_separation_factor: float = 2.4,
     ) -> None:
         self._ring_data = ring_data
-        self._min_separation_factor = min_separation_factor
-        self._max_separation_factor = max_separation_factor
 
     def group(
         self, targets: list[Target], group_size: int
@@ -316,11 +311,7 @@ class RingBufferGrouper:
         if self._ring_data is not None:
             rd = self._ring_data
         else:
-            rd = RingData.from_targets(
-                targets,
-                min_separation_factor=self._min_separation_factor,
-                max_separation_factor=self._max_separation_factor,
-            )
+            rd = RingData.from_targets(targets)
 
         coords = rd.coords
         ra_deg = rd.ra_deg
@@ -467,7 +458,7 @@ def create_grouper(
         The grouping strategy to use.
     **kwargs
         Extra keyword arguments forwarded to the grouper constructor
-        (e.g. ``ring_data``, ``min_separation_factor``).
+        (e.g. ``ring_data``).
     """
     if method == GroupingMethod.SEQUENTIAL:
         return SequentialGrouper()

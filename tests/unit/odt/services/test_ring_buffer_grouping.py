@@ -86,19 +86,15 @@ class TestRingBufferGrouping:
         all_indices = [idx for g in groups for idx in g]
         assert sorted(all_indices) == list(range(4))
 
-    def test_custom_separation_factors(self):
-        """Custom separation factors are applied correctly."""
-        # Tighten max_separation_factor so cross-column same-dec (3.0)
-        # exceeds max_sep (2.0 * 1.3 = 2.6). Groups will be smaller.
-        grouper = RingBufferGrouper(max_separation_factor=1.3)
+    def test_precomputed_ring_data(self):
+        """RingBufferGrouper accepts pre-computed RingData."""
+        rd = RingData.from_targets(GRID_16_TARGETS)
+        grouper = RingBufferGrouper(ring_data=rd)
         groups = list(grouper.group(GRID_16_TARGETS, group_size=8))
 
         # Still must cover all targets
         all_indices = [idx for g in groups for idx in g]
         assert sorted(all_indices) == list(range(len(GRID_16_TARGETS)))
-        # Groups should be smaller since valid neighbours are restricted
-        assert all(len(g) <= 8 for g in groups)
-        assert len(groups) > 2
 
 
 def _make_target(ra_str: str, dec_str: str, idx: int) -> Target:
@@ -132,12 +128,18 @@ MISSING_RING_TARGETS = [
     _make_target("00:12:00.00", "+06:00:00.00", 5),
 ]
 
-# Bad RA spacing: 4 dec rows × 4 RA columns with RA gap = 10° at equator.
-# delta_dec = 2°, min_sep = 2.4°, so k=1 RA sep ≈ 10° >> min_sep (fails k=1 check).
+# Bad RA spacing: 4 dec rows × 4 RA columns with non-uniform RA spacing.
+# Within each ring: RA = 0°, 1°, 10°, 11° — k=1 gaps alternate between 1°
+# and 9°, so they overlap with k=2 gaps. The approximate median-based
+# validation checks will fail.
 BAD_RA_SPACING_TARGETS = [
-    _make_target(f"{ra_h:02d}:00:00.00", f"+{dec:02d}:00:00.00", i)
-    for i, (ra_h, dec) in enumerate(
-        (ra_h, dec) for dec in (0, 2, 4, 6) for ra_h in (0, 1, 2, 3)
+    _make_target(
+        f"{ra_h:02d}:{ra_m:02d}:00.00", f"+{dec:02d}:00:00.00", i
+    )
+    for i, (ra_h, ra_m, dec) in enumerate(
+        (ra_h, ra_m, dec)
+        for dec in (0, 2, 4, 6)
+        for ra_h, ra_m in ((0, 0), (0, 4), (0, 40), (0, 44))
     )
 ]
 
@@ -164,7 +166,7 @@ class TestValidateRingCatalogue:
             rd.validate(dec_uniformity_tolerance=3.0)
 
     def test_bad_ra_spacing_raises(self):
-        """Catalogue where RA spacing violates k=1/k=2/k=3 rules raises ValueError."""
+        """Catalogue with non-uniform RA spacing raises ValueError."""
         rd = RingData.from_targets(BAD_RA_SPACING_TARGETS)
         with pytest.raises(ValueError, match="RA spacing check failed"):
             rd.validate()
