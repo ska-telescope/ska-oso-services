@@ -3,9 +3,9 @@
 import pytest
 from ska_oso_pdm import ICRSCoordinates, Target
 
-from ska_oso_services.odt.service.gsm_survey_sbd_generator import (
+from ska_oso_services.odt.service.target_grouping import (
+    RingBufferGrouper,
     RingData,
-    ring_buffer_grouping,
 )
 
 # 8 dec rows (0°, 2°, 4°, …, 14°) × 2 RA columns (0°, 3°) = 16 targets.
@@ -35,7 +35,7 @@ GRID_4_TARGETS = GRID_16_TARGETS[:4]
 
 
 class TestRingBufferGrouping:
-    """Tests for the ring_buffer_grouping generator function."""
+    """Tests for the RingBufferGrouper.group method."""
 
     def test_two_interleaved_groups_on_regular_grid(self):
         """A 8-row × 2-column grid should produce exactly two full groups of 8.
@@ -46,21 +46,24 @@ class TestRingBufferGrouping:
         - same-column adjacent rows = 2.0 < min_sep → excluded from same group
         This forces the algorithm to interleave alternate dec rows.
         """
-        groups = list(ring_buffer_grouping(GRID_16_TARGETS, group_size=8))
+        grouper = RingBufferGrouper()
+        groups = list(grouper.group(GRID_16_TARGETS, group_size=8))
 
         assert len(groups) == 2
         assert all(len(g) == 8 for g in groups)
 
     def test_full_coverage_no_duplicates(self):
         """Every target index must appear exactly once across all groups."""
-        groups = list(ring_buffer_grouping(GRID_16_TARGETS, group_size=8))
+        grouper = RingBufferGrouper()
+        groups = list(grouper.group(GRID_16_TARGETS, group_size=8))
 
         all_indices = [idx for g in groups for idx in g]
         assert sorted(all_indices) == list(range(len(GRID_16_TARGETS)))
 
     def test_group_size_respected(self):
         """No group should exceed the requested group_size."""
-        groups = list(ring_buffer_grouping(GRID_16_TARGETS, group_size=4))
+        grouper = RingBufferGrouper()
+        groups = list(grouper.group(GRID_16_TARGETS, group_size=4))
 
         assert all(len(g) <= 4 for g in groups)
         # All targets must still be covered
@@ -69,14 +72,16 @@ class TestRingBufferGrouping:
 
     def test_deterministic(self):
         """Running twice on the same input produces identical groups."""
-        groups_a = list(ring_buffer_grouping(GRID_16_TARGETS, group_size=8))
-        groups_b = list(ring_buffer_grouping(GRID_16_TARGETS, group_size=8))
+        grouper = RingBufferGrouper()
+        groups_a = list(grouper.group(GRID_16_TARGETS, group_size=8))
+        groups_b = list(grouper.group(GRID_16_TARGETS, group_size=8))
 
         assert groups_a == groups_b
 
     def test_small_catalogue_single_partial_group(self):
         """Fewer targets than group_size should yield a single partial group."""
-        groups = list(ring_buffer_grouping(GRID_4_TARGETS, group_size=8))
+        grouper = RingBufferGrouper()
+        groups = list(grouper.group(GRID_4_TARGETS, group_size=8))
 
         all_indices = [idx for g in groups for idx in g]
         assert sorted(all_indices) == list(range(4))
@@ -85,9 +90,8 @@ class TestRingBufferGrouping:
         """Custom separation factors are applied correctly."""
         # Tighten max_separation_factor so cross-column same-dec (3.0)
         # exceeds max_sep (2.0 * 1.3 = 2.6). Groups will be smaller.
-        groups = list(
-            ring_buffer_grouping(GRID_16_TARGETS, group_size=8, max_separation_factor=1.3)
-        )
+        grouper = RingBufferGrouper(max_separation_factor=1.3)
+        groups = list(grouper.group(GRID_16_TARGETS, group_size=8))
 
         # Still must cover all targets
         all_indices = [idx for g in groups for idx in g]
