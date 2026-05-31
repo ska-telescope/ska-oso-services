@@ -187,102 +187,100 @@ class RingData:
             max_separation_factor=max_separation_factor,
         )
 
+    def validate(
+        self,
+        *,
+        dec_uniformity_tolerance: float = 1.5,
+        ra_ring_fail_fraction: float = 0.2,
+    ) -> None:
+        """Validate that the catalogue is suitable for ring-buffer grouping.
 
-def _validate_ring_catalogue(
-    rd: RingData,
-    *,
-    dec_uniformity_tolerance: float = 1.5,
-    ra_ring_fail_fraction: float = 0.2,
-) -> None:
-    """Validate that a target catalogue is suitable for ring-buffer grouping.
+        Parameters
+        ----------
+        dec_uniformity_tolerance : float
+            Maximum allowed ratio of the largest to smallest gap between
+            successive unique declination values.  Defaults to 1.5.
+        ra_ring_fail_fraction : float
+            Maximum fraction of rings allowed to violate the RA-spacing
+            checks before a ``ValueError`` is raised.  Defaults to 0.2.
 
-    Parameters
-    ----------
-    rd : RingData
-        Pre-computed ring data from :meth:`RingData.from_targets` or
-        :meth:`RingData.from_sky_coord`.
-    dec_uniformity_tolerance : float
-        Maximum allowed ratio of the largest to smallest gap between
-        successive unique declination values.  Defaults to 1.5.
-    ra_ring_fail_fraction : float
-        Maximum fraction of rings allowed to violate the RA-spacing
-        checks before a ``ValueError`` is raised.  Defaults to 0.2.
-
-    Raises
-    ------
-    ValueError
-        If the catalogue fails any of the structural checks.
-    """
-    # --- Check 1: Uniform declination spacing ---
-    dec_diffs = np.diff(rd.unique_decs)
-    ratio = float(np.max(dec_diffs) / np.min(dec_diffs))
-    if ratio > dec_uniformity_tolerance:
-        raise ValueError(
-            f"Declination spacing is not uniform: max/min gap ratio is "
-            f"{ratio:.2f}, exceeding tolerance {dec_uniformity_tolerance}. "
-            f"The ring-buffer algorithm requires approximately equal "
-            f"declination spacing between target rings."
-        )
-
-    # --- Check 2: No empty rings ---
-    all_ring_ids = rd.ring_ids
-    expected_ids = set(range(int(np.min(all_ring_ids)), int(np.max(all_ring_ids)) + 1))
-    actual_ids = set(int(rid) for rid in np.unique(all_ring_ids))
-    missing = expected_ids - actual_ids
-    if missing:
-        raise ValueError(
-            f"Empty ring(s) detected at ring id(s) {sorted(missing)}. "
-            f"The ring-buffer algorithm requires every declination ring "
-            f"between the first and last to contain at least one target."
-        )
-
-    # --- Check 3: Intra-ring RA spacing vs separation thresholds ---
-    failing_rings: list[str] = []
-    for q in rd.ring_queues:
-        if len(q) < 3:
-            continue
-        indices = list(q)
-        ring_ra = rd.ra_deg[indices]
-        ring_dec_mean = float(np.mean(rd.dec_deg[indices]))
-        cos_dec = np.cos(np.radians(ring_dec_mean))
-
-        ra_gaps = np.diff(ring_ra)
-        delta_ra = float(np.median(ra_gaps))
-        approx_sep_k1 = delta_ra * cos_dec
-        approx_sep_k2 = 2.0 * delta_ra * cos_dec
-        approx_sep_k3 = 3.0 * delta_ra * cos_dec
-
-        issues: list[str] = []
-        if approx_sep_k1 >= rd.min_separation:
-            issues.append(
-                f"k=1 separation ({approx_sep_k1:.3f}°) >= "
-                f"min_separation ({rd.min_separation:.3f}°)"
-            )
-        if not (rd.min_separation <= approx_sep_k2 <= rd.max_separation):
-            issues.append(
-                f"k=2 separation ({approx_sep_k2:.3f}°) not in "
-                f"[{rd.min_separation:.3f}°, {rd.max_separation:.3f}°]"
-            )
-        if approx_sep_k3 <= rd.max_separation:
-            issues.append(
-                f"k=3 separation ({approx_sep_k3:.3f}°) <= "
-                f"max_separation ({rd.max_separation:.3f}°)"
-            )
-        if issues:
-            failing_rings.append(
-                f"ring at dec≈{ring_dec_mean:.1f}°: {'; '.join(issues)}"
-            )
-
-    checkable_rings = sum(1 for q in rd.ring_queues if len(q) >= 3)
-    if checkable_rings > 0:
-        fail_frac = len(failing_rings) / checkable_rings
-        if fail_frac > ra_ring_fail_fraction:
-            detail = "\n  ".join(failing_rings[:5])
+        Raises
+        ------
+        ValueError
+            If the catalogue fails any of the structural checks.
+        """
+        # --- Check 1: Uniform declination spacing ---
+        dec_diffs = np.diff(self.unique_decs)
+        ratio = float(np.max(dec_diffs) / np.min(dec_diffs))
+        if ratio > dec_uniformity_tolerance:
             raise ValueError(
-                f"RA spacing check failed for {len(failing_rings)}/{checkable_rings} "
-                f"rings ({fail_frac:.0%}), exceeding tolerance "
-                f"{ra_ring_fail_fraction:.0%}. Examples:\n  {detail}"
+                f"Declination spacing is not uniform: max/min gap ratio is "
+                f"{ratio:.2f}, exceeding tolerance {dec_uniformity_tolerance}. "
+                f"The ring-buffer algorithm requires approximately equal "
+                f"declination spacing between target rings."
             )
+
+        # --- Check 2: No empty rings ---
+        expected_ids = set(
+            range(int(np.min(self.ring_ids)), int(np.max(self.ring_ids)) + 1)
+        )
+        actual_ids = set(int(rid) for rid in np.unique(self.ring_ids))
+        missing = expected_ids - actual_ids
+        if missing:
+            raise ValueError(
+                f"Empty ring(s) detected at ring id(s) {sorted(missing)}. "
+                f"The ring-buffer algorithm requires every declination ring "
+                f"between the first and last to contain at least one target."
+            )
+
+        # --- Check 3: Intra-ring RA spacing vs separation thresholds ---
+        failing_rings: list[str] = []
+        for q in self.ring_queues:
+            if len(q) < 3:
+                continue
+            indices = list(q)
+            ring_ra = self.ra_deg[indices]
+            ring_dec_mean = float(np.mean(self.dec_deg[indices]))
+            cos_dec = np.cos(np.radians(ring_dec_mean))
+
+            ra_gaps = np.diff(ring_ra)
+            delta_ra = float(np.median(ra_gaps))
+            approx_sep_k1 = delta_ra * cos_dec
+            approx_sep_k2 = 2.0 * delta_ra * cos_dec
+            approx_sep_k3 = 3.0 * delta_ra * cos_dec
+
+            issues: list[str] = []
+            if approx_sep_k1 >= self.min_separation:
+                issues.append(
+                    f"k=1 separation ({approx_sep_k1:.3f}°) >= "
+                    f"min_separation ({self.min_separation:.3f}°)"
+                )
+            if not (self.min_separation <= approx_sep_k2 <= self.max_separation):
+                issues.append(
+                    f"k=2 separation ({approx_sep_k2:.3f}°) not in "
+                    f"[{self.min_separation:.3f}°, {self.max_separation:.3f}°]"
+                )
+            if approx_sep_k3 <= self.max_separation:
+                issues.append(
+                    f"k=3 separation ({approx_sep_k3:.3f}°) <= "
+                    f"max_separation ({self.max_separation:.3f}°)"
+                )
+            if issues:
+                failing_rings.append(
+                    f"ring at dec≈{ring_dec_mean:.1f}°: {'; '.join(issues)}"
+                )
+
+        checkable_rings = sum(1 for q in self.ring_queues if len(q) >= 3)
+        if checkable_rings > 0:
+            fail_frac = len(failing_rings) / checkable_rings
+            if fail_frac > ra_ring_fail_fraction:
+                detail = "\n  ".join(failing_rings[:5])
+                raise ValueError(
+                    f"RA spacing check failed for "
+                    f"{len(failing_rings)}/{checkable_rings} "
+                    f"rings ({fail_frac:.0%}), exceeding tolerance "
+                    f"{ra_ring_fail_fraction:.0%}. Examples:\n  {detail}"
+                )
 
 
 def ring_buffer_grouping(
@@ -321,7 +319,6 @@ def ring_buffer_grouping(
         min_separation_factor=min_separation_factor,
         max_separation_factor=max_separation_factor,
     )
-    _validate_ring_catalogue(rd)
     coords = rd.coords
     ra_deg = rd.ra_deg
     dec_deg = rd.dec_deg
