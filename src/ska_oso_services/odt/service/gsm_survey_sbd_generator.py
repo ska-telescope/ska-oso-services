@@ -72,74 +72,120 @@ class RingData:
     ring_ids: np.ndarray
     ring_queues: list[deque[int]] = field(default_factory=list)
 
+    @classmethod
+    def _from_coords(
+        cls,
+        coords: SkyCoord,
+        *,
+        min_separation_factor: float = 1.2,
+        max_separation_factor: float = 2.4,
+    ) -> RingData:
+        """Shared construction logic from a SkyCoord array."""
+        ra_deg = np.asarray(coords.ra.deg)
+        dec_deg = np.asarray(coords.dec.deg)
 
-def _build_ring_data(
-    targets: list[Target],
-    *,
-    min_separation_factor: float = 1.2,
-    max_separation_factor: float = 2.4,
-) -> RingData:
-    """Build coordinate arrays, derive delta_dec, and bin targets into ring queues.
+        unique_decs = np.unique(np.round(dec_deg, decimals=5))
+        if len(unique_decs) < 2:
+            raise ValueError(
+                "ring_buffer_grouping requires targets at two or more distinct "
+                "declination values to derive the bin width"
+            )
+        delta_dec = float(np.min(np.diff(unique_decs)))
 
-    Parameters
-    ----------
-    targets : list[Target]
-        Input target list with ICRS coordinates.
-    min_separation_factor : float
-        Minimum pairwise angular separation as a multiple of ``delta_dec``.
-    max_separation_factor : float
-        Maximum angular separation as a multiple of ``delta_dec``.
+        first_bin_center_dec = float(np.min(dec_deg))
+        min_separation = delta_dec * min_separation_factor
+        max_separation = delta_dec * max_separation_factor
 
-    Returns
-    -------
-    RingData
-        Derived spatial data ready for grouping or validation.
+        ring_ids = np.floor(
+            (dec_deg - first_bin_center_dec) / delta_dec + 0.5
+        ).astype(int)
+        ring_queues: list[deque[int]] = []
+        for ring_id in sorted(np.unique(ring_ids)):
+            ring_mask = ring_ids == ring_id
+            indices = np.where(ring_mask)[0]
+            indices_sorted = indices[np.argsort(ra_deg[indices])]
+            ring_queues.append(deque(indices_sorted.tolist()))
 
-    Raises
-    ------
-    ValueError
-        If fewer than two distinct declination values are present.
-    """
-    coords = SkyCoord(
-        [t.reference_coordinate.to_sky_coord() for t in targets], frame="icrs"
-    )
-    ra_deg = np.asarray(coords.ra.deg)
-    dec_deg = np.asarray(coords.dec.deg)
-
-    unique_decs = np.unique(np.round(dec_deg, decimals=5))
-    if len(unique_decs) < 2:
-        raise ValueError(
-            "ring_buffer_grouping requires targets at two or more distinct "
-            "declination values to derive the bin width"
+        return cls(
+            coords=coords,
+            ra_deg=ra_deg,
+            dec_deg=dec_deg,
+            unique_decs=unique_decs,
+            delta_dec=delta_dec,
+            first_bin_center_dec=first_bin_center_dec,
+            min_separation=min_separation,
+            max_separation=max_separation,
+            ring_ids=ring_ids,
+            ring_queues=ring_queues,
         )
-    delta_dec = float(np.min(np.diff(unique_decs)))
 
-    first_bin_center_dec = float(np.min(dec_deg))
-    min_separation = delta_dec * min_separation_factor
-    max_separation = delta_dec * max_separation_factor
+    @classmethod
+    def from_targets(
+        cls,
+        targets: list[Target],
+        *,
+        min_separation_factor: float = 1.2,
+        max_separation_factor: float = 2.4,
+    ) -> RingData:
+        """Construct RingData from a list of Target objects.
 
-    ring_ids = np.floor(
-        (dec_deg - first_bin_center_dec) / delta_dec + 0.5
-    ).astype(int)
-    ring_queues: list[deque[int]] = []
-    for ring_id in sorted(np.unique(ring_ids)):
-        ring_mask = ring_ids == ring_id
-        indices = np.where(ring_mask)[0]
-        indices_sorted = indices[np.argsort(ra_deg[indices])]
-        ring_queues.append(deque(indices_sorted.tolist()))
+        Parameters
+        ----------
+        targets : list[Target]
+            Input target list with ICRS coordinates.
+        min_separation_factor : float
+            Minimum pairwise angular separation as a multiple of
+            ``delta_dec``.  Defaults to 1.2.
+        max_separation_factor : float
+            Maximum angular separation as a multiple of ``delta_dec``.
+            Defaults to 2.4.
 
-    return RingData(
-        coords=coords,
-        ra_deg=ra_deg,
-        dec_deg=dec_deg,
-        unique_decs=unique_decs,
-        delta_dec=delta_dec,
-        first_bin_center_dec=first_bin_center_dec,
-        min_separation=min_separation,
-        max_separation=max_separation,
-        ring_ids=ring_ids,
-        ring_queues=ring_queues,
-    )
+        Raises
+        ------
+        ValueError
+            If fewer than two distinct declination values are present.
+        """
+        coords = SkyCoord(
+            [t.reference_coordinate.to_sky_coord() for t in targets],
+            frame="icrs",
+        )
+        return cls._from_coords(
+            coords,
+            min_separation_factor=min_separation_factor,
+            max_separation_factor=max_separation_factor,
+        )
+
+    @classmethod
+    def from_sky_coord(
+        cls,
+        coords: SkyCoord,
+        *,
+        min_separation_factor: float = 1.2,
+        max_separation_factor: float = 2.4,
+    ) -> RingData:
+        """Construct RingData from an existing SkyCoord array.
+
+        Parameters
+        ----------
+        coords : SkyCoord
+            Sky coordinates for all targets.
+        min_separation_factor : float
+            Minimum pairwise angular separation as a multiple of
+            ``delta_dec``.  Defaults to 1.2.
+        max_separation_factor : float
+            Maximum angular separation as a multiple of ``delta_dec``.
+            Defaults to 2.4.
+
+        Raises
+        ------
+        ValueError
+            If fewer than two distinct declination values are present.
+        """
+        return cls._from_coords(
+            coords,
+            min_separation_factor=min_separation_factor,
+            max_separation_factor=max_separation_factor,
+        )
 
 
 def _validate_ring_catalogue(
@@ -153,7 +199,8 @@ def _validate_ring_catalogue(
     Parameters
     ----------
     rd : RingData
-        Pre-computed ring data from :func:`_build_ring_data`.
+        Pre-computed ring data from :meth:`RingData.from_targets` or
+        :meth:`RingData.from_sky_coord`.
     dec_uniformity_tolerance : float
         Maximum allowed ratio of the largest to smallest gap between
         successive unique declination values.  Defaults to 1.5.
@@ -269,7 +316,7 @@ def ring_buffer_grouping(
         Maximum angular separation for neighbour detection expressed as
         a multiple of ``delta_dec``.  Defaults to 2.4.
     """
-    rd = _build_ring_data(
+    rd = RingData.from_targets(
         targets,
         min_separation_factor=min_separation_factor,
         max_separation_factor=max_separation_factor,

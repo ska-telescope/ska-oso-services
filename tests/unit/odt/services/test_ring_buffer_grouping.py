@@ -4,7 +4,7 @@ import pytest
 from ska_oso_pdm import ICRSCoordinates, Target
 
 from ska_oso_services.odt.service.gsm_survey_sbd_generator import (
-    _build_ring_data,
+    RingData,
     _validate_ring_catalogue,
     ring_buffer_grouping,
 )
@@ -144,25 +144,25 @@ class TestValidateRingCatalogue:
 
     def test_valid_catalogue_passes(self):
         """The regular GRID_16_TARGETS should pass validation without error."""
-        rd = _build_ring_data(GRID_16_TARGETS)
+        rd = RingData.from_targets(GRID_16_TARGETS)
         _validate_ring_catalogue(rd)
 
     def test_non_uniform_dec_raises(self):
         """Catalogue with irregular dec spacing should raise ValueError."""
-        rd = _build_ring_data(NON_UNIFORM_DEC_TARGETS)
+        rd = RingData.from_targets(NON_UNIFORM_DEC_TARGETS)
         with pytest.raises(ValueError, match="Declination spacing is not uniform"):
             _validate_ring_catalogue(rd)
 
     def test_missing_ring_raises(self):
         """Catalogue with a gap in ring ids should raise ValueError."""
-        rd = _build_ring_data(MISSING_RING_TARGETS)
+        rd = RingData.from_targets(MISSING_RING_TARGETS)
         # Relax dec-uniformity tolerance so the empty-ring check is reached.
         with pytest.raises(ValueError, match="Empty ring"):
             _validate_ring_catalogue(rd, dec_uniformity_tolerance=3.0)
 
     def test_bad_ra_spacing_raises(self):
         """Catalogue where RA spacing violates k=1/k=2/k=3 rules raises ValueError."""
-        rd = _build_ring_data(BAD_RA_SPACING_TARGETS)
+        rd = RingData.from_targets(BAD_RA_SPACING_TARGETS)
         with pytest.raises(ValueError, match="RA spacing check failed"):
             _validate_ring_catalogue(rd)
 
