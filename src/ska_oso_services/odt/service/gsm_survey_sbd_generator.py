@@ -65,7 +65,6 @@ def generate_gsm_survey_sbds(
     num_scans: int,
     num_calibrator_beams: int,
     grouping: GroupingMethod = GroupingMethod.SEQUENTIAL,
-    ring_buffer_kwargs: dict | None = None,
 ) -> list[SBDefinition]:
 
     sbds = []
@@ -86,7 +85,7 @@ def generate_gsm_survey_sbds(
 
     num_targets_per_sbd = num_scans * num_subarray_beams
 
-    grouper = create_grouper(grouping, **(ring_buffer_kwargs or {}))
+    grouper = create_grouper(grouping)
     groups = grouper.group(input_targets, num_targets_per_sbd)
 
     for group_indices in groups:
