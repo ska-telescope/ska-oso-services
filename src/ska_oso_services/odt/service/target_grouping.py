@@ -281,6 +281,26 @@ class SequentialGrouper:
 class RingBufferGrouper:
     """Partition targets using ring-buffer spatial clustering.
 
+    This algorithm assumes a very specific survey geometry:
+
+    1. **Declination rings** — targets live on a discrete set of
+       declination values (rings), approximately equally spaced in
+       declination.
+    2. **Uniform intra-ring spacing** — within each ring, targets are
+       approximately equally spaced in right ascension.
+    3. **Similar angular scale** — the RA spacing between neighbouring
+       targets on a ring is similar to the declination spacing between
+       rings, and similar across all rings.
+
+    These assumptions allow separation thresholds to be derived from
+    k-nearest-neighbour statistics.  When adding a candidate target to
+    a partially formed group, it must not be withing min_separation of
+    any group member, and it must be within between min_separation and
+    max_separation of at least one group member.
+
+    Use :meth:`RingData.validate` to check whether a catalogue
+    satisfies these assumptions before grouping.
+
     Parameters
     ----------
     ring_data : RingData, optional
