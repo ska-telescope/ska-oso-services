@@ -279,9 +279,13 @@ class SequentialGrouper:
 
 
 class RingBufferGrouper:
-    """Partition targets using ring-buffer spatial clustering.
+    """Partition targets using a greedy DEC-constrainted RA sweep.
 
-    This algorithm assumes a very specific survey geometry:
+    The algorithm uses greedy local heuristics to generate groups with
+    small sky footprints and small LST ranges, with the expectation
+    that this will make them easy to schedule.
+
+    **Catalogue geometry assumptions**
 
     1. **Declination rings** — targets live on a discrete set of
        declination values (rings), approximately equally spaced in
@@ -292,14 +296,35 @@ class RingBufferGrouper:
        targets on a ring is similar to the declination spacing between
        rings, and similar across all rings.
 
-    These assumptions allow separation thresholds to be derived from
-    k-nearest-neighbour statistics.  When adding a candidate target to
-    a partially formed group, it must not be withing min_separation of
-    any group member, and it must be within between min_separation and
-    max_separation of at least one group member.
-
     Use :meth:`RingData.validate` to check whether a catalogue
     satisfies these assumptions before grouping.
+
+    **Algorithm**
+
+    1. Form RA-sorted queues of targets at each declination ring.
+    2. Determine ``min_separation`` and ``max_separation`` such that
+       k=1 nearest neighbours in each queue are below
+       ``min_separation``, k=2 nearest neighbours are between
+       ``min_separation`` and ``max_separation``, and k=3 nearest
+       neighbours are above ``max_separation``.
+    3. Seed a new group with the lowest-RA target amongst all queues.
+    4. Iteratively add targets to the group until it is full or no
+       candidates remain:
+
+       - A candidate must be more than ``min_separation`` from
+         *every* target already in the group.
+       - A candidate must be between ``min_separation`` and
+         ``max_separation`` from *at least one* target in the group.
+       - The candidate with the minimum RA is selected.
+
+    5. Yield the group and repeat from step 3 until all targets are
+       assigned.
+
+    Note that within a completed group, some pairs of members may be
+    at k=3 distances from each other.  This is expected: each member
+    was added because it had at least one k=2-distance neighbour
+    already in the group, but it is not required to be close to every
+    other member.
 
     Parameters
     ----------
