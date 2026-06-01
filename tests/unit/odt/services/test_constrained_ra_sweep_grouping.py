@@ -1,9 +1,12 @@
-"""Unit tests for ring_buffer_grouping."""
+"""Unit tests for constrained_ra_sweep_grouping."""
 
 import pytest
 from ska_oso_pdm import ICRSCoordinates, Target
 
-from ska_oso_services.odt.service.target_grouping import RingBufferGrouper, RingData
+from ska_oso_services.odt.service.target_grouping import (
+    ConstrainedRaSweepGrouper,
+    DeclinationQueues,
+)
 
 # 8 dec rows (0°, 2°, 4°, …, 14°) × 2 RA columns (0°, 3°) = 16 targets.
 # Ordered dec-major: index 0 = (ra=0, dec=0), index 1 = (ra=3, dec=0),
@@ -95,8 +98,8 @@ GRID_16_TARGETS = [
 GRID_4_TARGETS = GRID_16_TARGETS[:4]
 
 
-class TestRingBufferGrouping:
-    """Tests for the RingBufferGrouper.group method."""
+class TestConstrainedRaSweepGrouping:
+    """Tests for the ConstrainedRaSweepGrouper.group method."""
 
     def test_two_interleaved_groups_on_regular_grid(self):
         """A 8-row × 2-column grid should produce exactly two full groups of 8.
@@ -107,7 +110,7 @@ class TestRingBufferGrouping:
         - same-column adjacent rows = 2.0 < min_sep → excluded from same group
         This forces the algorithm to interleave alternate dec rows.
         """
-        grouper = RingBufferGrouper()
+        grouper = ConstrainedRaSweepGrouper()
         groups = list(grouper.group(GRID_16_TARGETS, group_size=8))
 
         assert len(groups) == 2
@@ -115,7 +118,7 @@ class TestRingBufferGrouping:
 
     def test_full_coverage_no_duplicates(self):
         """Every target index must appear exactly once across all groups."""
-        grouper = RingBufferGrouper()
+        grouper = ConstrainedRaSweepGrouper()
         groups = list(grouper.group(GRID_16_TARGETS, group_size=8))
 
         all_indices = [idx for g in groups for idx in g]
@@ -123,7 +126,7 @@ class TestRingBufferGrouping:
 
     def test_group_size_respected(self):
         """No group should exceed the requested group_size."""
-        grouper = RingBufferGrouper()
+        grouper = ConstrainedRaSweepGrouper()
         groups = list(grouper.group(GRID_16_TARGETS, group_size=4))
 
         assert all(len(g) <= 4 for g in groups)
@@ -133,7 +136,7 @@ class TestRingBufferGrouping:
 
     def test_deterministic(self):
         """Running twice on the same input produces identical groups."""
-        grouper = RingBufferGrouper()
+        grouper = ConstrainedRaSweepGrouper()
         groups_a = list(grouper.group(GRID_16_TARGETS, group_size=8))
         groups_b = list(grouper.group(GRID_16_TARGETS, group_size=8))
 
@@ -141,16 +144,16 @@ class TestRingBufferGrouping:
 
     def test_small_catalogue_single_partial_group(self):
         """Fewer targets than group_size should yield a single partial group."""
-        grouper = RingBufferGrouper()
+        grouper = ConstrainedRaSweepGrouper()
         groups = list(grouper.group(GRID_4_TARGETS, group_size=8))
 
         all_indices = [idx for g in groups for idx in g]
         assert sorted(all_indices) == list(range(4))
 
-    def test_precomputed_ring_data(self):
-        """RingBufferGrouper accepts pre-computed RingData."""
-        rd = RingData.from_targets(GRID_16_TARGETS)
-        grouper = RingBufferGrouper(ring_data=rd)
+    def test_precomputed_dec_queues(self):
+        """ConstrainedRaSweepGrouper accepts pre-computed DeclinationQueues."""
+        rd = DeclinationQueues.from_targets(GRID_16_TARGETS)
+        grouper = ConstrainedRaSweepGrouper(dec_queues=rd)
         groups = list(grouper.group(GRID_16_TARGETS, group_size=8))
 
         # Still must cover all targets
@@ -203,29 +206,29 @@ BAD_RA_SPACING_TARGETS = [
 ]
 
 
-class TestValidateRingCatalogue:
-    """Tests for RingData.validate() pre-flight checks."""
+class TestValidateDeclinationQueues:
+    """Tests for DeclinationQueues.validate() pre-flight checks."""
 
     def test_valid_catalogue_passes(self):
         """The regular GRID_16_TARGETS should pass validation without error."""
-        rd = RingData.from_targets(GRID_16_TARGETS)
+        rd = DeclinationQueues.from_targets(GRID_16_TARGETS)
         rd.validate()
 
     def test_non_uniform_dec_raises(self):
         """Catalogue with irregular dec spacing should raise ValueError."""
-        rd = RingData.from_targets(NON_UNIFORM_DEC_TARGETS)
+        rd = DeclinationQueues.from_targets(NON_UNIFORM_DEC_TARGETS)
         with pytest.raises(ValueError, match="Declination spacing is not uniform"):
             rd.validate()
 
     def test_missing_ring_raises(self):
         """Catalogue with a gap in ring ids should raise ValueError."""
-        rd = RingData.from_targets(MISSING_RING_TARGETS)
+        rd = DeclinationQueues.from_targets(MISSING_RING_TARGETS)
         # Relax dec-uniformity tolerance so the empty-ring check is reached.
         with pytest.raises(ValueError, match="Empty ring"):
             rd.validate(dec_uniformity_tolerance=3.0)
 
     def test_bad_ra_spacing_raises(self):
         """Catalogue with non-uniform RA spacing raises ValueError."""
-        rd = RingData.from_targets(BAD_RA_SPACING_TARGETS)
+        rd = DeclinationQueues.from_targets(BAD_RA_SPACING_TARGETS)
         with pytest.raises(ValueError, match="RA spacing check failed"):
             rd.validate()

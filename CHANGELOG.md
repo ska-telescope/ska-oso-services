@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-* Ring-buffer grouping for GSM survey SBDs
+* Constrained RA-sweep grouping for GSM survey SBDs
 
 14.6.0
 **********

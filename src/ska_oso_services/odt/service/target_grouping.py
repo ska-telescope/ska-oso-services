@@ -22,17 +22,17 @@ class GroupingMethod(str, Enum):
     """Strategy used to partition targets into SBD groups."""
 
     SEQUENTIAL = "sequential"
-    RING_BUFFER = "ring_buffer"
+    CONSTRAINED_RA_SWEEP = "constrained_ra_sweep"
 
 
 # ---------------------------------------------------------------------------
-# RingData — value object describing the ring geometry of a catalogue
+# DeclinationQueues — value object describing the ring geometry of a catalogue
 # ---------------------------------------------------------------------------
 
 
 @dataclass
-class RingData:
-    """Derived spatial data from a target catalogue for ring-buffer grouping."""
+class DeclinationQueues:
+    """Derived spatial data from a target catalogue for constrained-RA-sweep grouping."""
 
     coords: SkyCoord
     ra_deg: np.ndarray
@@ -42,13 +42,13 @@ class RingData:
     first_bin_center_dec: float
     min_separation: float
     max_separation: float
-    ring_queues: list[deque[int]] = field(default_factory=list)
+    queues: list[deque[int]] = field(default_factory=list)
 
     @classmethod
     def _from_coords(
         cls,
         coords: SkyCoord,
-    ) -> RingData:
+    ) -> DeclinationQueues:
         """Shared construction logic from a SkyCoord array."""
         ra_deg = np.asarray(coords.ra.deg)
         dec_deg = np.asarray(coords.dec.deg)
@@ -56,7 +56,7 @@ class RingData:
         unique_decs = np.unique(np.round(dec_deg, decimals=5))
         if len(unique_decs) < 2:
             raise ValueError(
-                "Ring-buffer grouping requires targets at two or more "
+                "Constrained-RA-sweep grouping requires targets at two or more "
                 "distinct declination values to derive the bin width"
             )
         delta_dec = float(np.min(np.diff(unique_decs)))
@@ -64,12 +64,12 @@ class RingData:
         first_bin_center_dec = float(np.min(dec_deg))
 
         ring_ids = np.floor((dec_deg - first_bin_center_dec) / delta_dec + 0.5).astype(int)
-        ring_queues: list[deque[int]] = []
+        queues: list[deque[int]] = []
         for ring_id in sorted(np.unique(ring_ids)):
             ring_mask = ring_ids == ring_id
             indices = np.where(ring_mask)[0]
             indices_sorted = indices[np.argsort(ra_deg[indices])]
-            ring_queues.append(deque(indices_sorted.tolist()))
+            queues.append(deque(indices_sorted.tolist()))
 
         # Derive min/max separation from k-neighbour statistics.
         # For each ring, compute the approximate angular separation
@@ -80,7 +80,7 @@ class RingData:
             2: float("inf"),
             3: float("inf"),
         }
-        for q in ring_queues:
+        for q in queues:
             if len(q) < 4:
                 continue
             indices = list(q)
@@ -111,15 +111,15 @@ class RingData:
             first_bin_center_dec=first_bin_center_dec,
             min_separation=min_separation,
             max_separation=max_separation,
-            ring_queues=ring_queues,
+            queues=queues,
         )
 
     @classmethod
     def from_targets(
         cls,
         targets: list[Target],
-    ) -> RingData:
-        """Construct RingData from a list of Target objects.
+    ) -> DeclinationQueues:
+        """Construct DeclinationQueues from a list of Target objects.
 
         Separation thresholds are derived automatically from the
         k-neighbour spacing statistics of the catalogue.
@@ -144,8 +144,8 @@ class RingData:
     def from_sky_coord(
         cls,
         coords: SkyCoord,
-    ) -> RingData:
-        """Construct RingData from an existing SkyCoord array.
+    ) -> DeclinationQueues:
+        """Construct DeclinationQueues from an existing SkyCoord array.
 
         Separation thresholds are derived automatically from the
         k-neighbour spacing statistics of the catalogue.
@@ -168,7 +168,7 @@ class RingData:
         dec_uniformity_tolerance: float = 1.5,
         ra_ring_fail_fraction: float = 0.2,
     ) -> None:
-        """Validate that the catalogue is suitable for ring-buffer grouping.
+        """Validate that the catalogue is suitable for constrained-RA-sweep grouping.
 
         Parameters
         ----------
@@ -191,7 +191,7 @@ class RingData:
             raise ValueError(
                 f"Declination spacing is not uniform: max/min gap ratio is "
                 f"{ratio:.2f}, exceeding tolerance {dec_uniformity_tolerance}. "
-                f"The ring-buffer algorithm requires approximately equal "
+                f"The constrained-RA-sweep algorithm requires approximately equal "
                 f"declination spacing between target rings."
             )
 
@@ -203,13 +203,13 @@ class RingData:
             raise ValueError(
                 f"Empty ring(s) detected: expected {expected_num_rings} rings "
                 f"but found {len(self.unique_decs)}. "
-                f"The ring-buffer algorithm requires every declination ring "
+                f"The constrained-RA-sweep algorithm requires every declination ring "
                 f"between the first and last to contain at least one target."
             )
 
         # --- Check 3: Intra-ring RA spacing vs separation thresholds ---
         failing_rings: list[str] = []
-        for q in self.ring_queues:
+        for q in self.queues:
             if len(q) < 3:
                 continue
             indices = list(q)
@@ -242,7 +242,7 @@ class RingData:
             if issues:
                 failing_rings.append(f"ring at dec≈{ring_dec_mean:.1f}°: {'; '.join(issues)}")
 
-        checkable_rings = sum(1 for q in self.ring_queues if len(q) >= 3)
+        checkable_rings = sum(1 for q in self.queues if len(q) >= 3)
         if checkable_rings > 0:
             fail_frac = len(failing_rings) / checkable_rings
             if fail_frac > ra_ring_fail_fraction:
@@ -277,7 +277,7 @@ class SequentialGrouper:
             yield list(range(start, min(start + group_size, num_targets)))
 
 
-class RingBufferGrouper:
+class ConstrainedRaSweepGrouper:
     """Partition targets using a greedy DEC-constrainted RA sweep.
 
     The algorithm uses greedy local heuristics to generate groups with
@@ -295,7 +295,7 @@ class RingBufferGrouper:
        targets on a ring is similar to the declination spacing between
        rings, and similar across all rings.
 
-    Use :meth:`RingData.validate` to check whether a catalogue
+    Use :meth:`DeclinationQueues.validate` to check whether a catalogue
     satisfies these assumptions before grouping.
 
     **Algorithm**
@@ -327,23 +327,23 @@ class RingBufferGrouper:
 
     Parameters
     ----------
-    ring_data : RingData, optional
+    dec_queues : DeclinationQueues, optional
         Pre-computed ring data.  If not supplied, it will be derived
         from the targets passed to :meth:`group`.
     """
 
     def __init__(
         self,
-        ring_data: RingData | None = None,
+        dec_queues: DeclinationQueues | None = None,
     ) -> None:
-        self._ring_data = ring_data
+        self._dec_queues = dec_queues
 
     def group(self, targets: list[Target], group_size: int) -> Iterator[list[int]]:
-        """Yield groups of target indices using ring-buffer clustering."""
-        if self._ring_data is not None:
-            rd = self._ring_data
+        """Yield groups of target indices using constrained-RA-sweep clustering."""
+        if self._dec_queues is not None:
+            rd = self._dec_queues
         else:
-            rd = RingData.from_targets(targets)
+            rd = DeclinationQueues.from_targets(targets)
 
         coords = rd.coords
         ra_deg = rd.ra_deg
@@ -351,7 +351,7 @@ class RingBufferGrouper:
         min_separation = rd.min_separation
         max_separation = rd.max_separation
         # Deep-copy queues so the grouper can be called again
-        ring_queues = [deque(q) for q in rd.ring_queues]
+        queues = [deque(q) for q in rd.queues]
 
         def _edge_key(i: int, j: int) -> tuple[int, int]:
             return (i, j) if i < j else (j, i)
@@ -360,8 +360,8 @@ class RingBufferGrouper:
         active_nodes: dict[int, None] = {}
 
         # --- Main grouping loop ---
-        while any(q for q in ring_queues) or active_nodes:
-            for q in ring_queues:
+        while any(q for q in queues) or active_nodes:
+            for q in queues:
                 if not q:
                     continue
                 if active_nodes:
@@ -386,7 +386,7 @@ class RingBufferGrouper:
                 group_dec_max = float(np.max(dec_deg[group])) + max_separation
                 group_max_ra = float(np.max(ra_deg[group]))
 
-                for q in ring_queues:
+                for q in queues:
                     while q:
                         head_pid = q[0]
                         head_dec = dec_deg[head_pid]
@@ -439,7 +439,7 @@ class RingBufferGrouper:
                 if k[0] not in removed and k[1] not in removed
             }
 
-        remaining = [q.popleft() for q in ring_queues for _ in range(len(q))]
+        remaining = [q.popleft() for q in queues for _ in range(len(q))]
         if remaining:
             for start in range(0, len(remaining), group_size):
                 yield remaining[start : start + group_size]
@@ -462,10 +462,10 @@ def create_grouper(
         The grouping strategy to use.
     **kwargs
         Extra keyword arguments forwarded to the grouper constructor
-        (e.g. ``ring_data``).
+        (e.g. ``dec_queues``).
     """
     if method == GroupingMethod.SEQUENTIAL:
         return SequentialGrouper()
-    if method == GroupingMethod.RING_BUFFER:
-        return RingBufferGrouper(**kwargs)
+    if method == GroupingMethod.CONSTRAINED_RA_SWEEP:
+        return ConstrainedRaSweepGrouper(**kwargs)
     raise ValueError(f"Unknown grouping method: {method}")
