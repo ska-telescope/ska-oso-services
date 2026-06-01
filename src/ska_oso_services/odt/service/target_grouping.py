@@ -42,7 +42,6 @@ class RingData:
     first_bin_center_dec: float
     min_separation: float
     max_separation: float
-    ring_ids: np.ndarray
     ring_queues: list[deque[int]] = field(default_factory=list)
 
     @classmethod
@@ -112,7 +111,6 @@ class RingData:
             first_bin_center_dec=first_bin_center_dec,
             min_separation=min_separation,
             max_separation=max_separation,
-            ring_ids=ring_ids,
             ring_queues=ring_queues,
         )
 
@@ -198,12 +196,13 @@ class RingData:
             )
 
         # --- Check 2: No empty rings ---
-        expected_ids = set(range(int(np.min(self.ring_ids)), int(np.max(self.ring_ids)) + 1))
-        actual_ids = set(int(rid) for rid in np.unique(self.ring_ids))
-        missing = expected_ids - actual_ids
-        if missing:
+        expected_num_rings = (
+            round((self.unique_decs[-1] - self.unique_decs[0]) / self.delta_dec) + 1
+        )
+        if len(self.unique_decs) < expected_num_rings:
             raise ValueError(
-                f"Empty ring(s) detected at ring id(s) {sorted(missing)}. "
+                f"Empty ring(s) detected: expected {expected_num_rings} rings "
+                f"but found {len(self.unique_decs)}. "
                 f"The ring-buffer algorithm requires every declination ring "
                 f"between the first and last to contain at least one target."
             )
