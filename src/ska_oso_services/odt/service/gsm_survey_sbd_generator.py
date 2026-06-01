@@ -29,10 +29,7 @@ from ska_oso_pdm.sb_definition.procedures import GitScript
 from ska_oso_services.common.astro import low_frequency_to_coarse_channel
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.odt.service.sbd_generator import _sbd_internal_id
-from ska_oso_services.odt.service.target_grouping import (
-    GroupingMethod,
-    create_grouper,
-)
+from ska_oso_services.odt.service.target_grouping import GroupingMethod, create_grouper
 
 DEFAULT_SUBARRAY = SubArrayLOW.AA2_ALL
 

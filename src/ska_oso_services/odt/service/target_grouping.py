@@ -64,9 +64,7 @@ class RingData:
 
         first_bin_center_dec = float(np.min(dec_deg))
 
-        ring_ids = np.floor(
-            (dec_deg - first_bin_center_dec) / delta_dec + 0.5
-        ).astype(int)
+        ring_ids = np.floor((dec_deg - first_bin_center_dec) / delta_dec + 0.5).astype(int)
         ring_queues: list[deque[int]] = []
         for ring_id in sorted(np.unique(ring_ids)):
             ring_mask = ring_ids == ring_id
@@ -200,9 +198,7 @@ class RingData:
             )
 
         # --- Check 2: No empty rings ---
-        expected_ids = set(
-            range(int(np.min(self.ring_ids)), int(np.max(self.ring_ids)) + 1)
-        )
+        expected_ids = set(range(int(np.min(self.ring_ids)), int(np.max(self.ring_ids)) + 1))
         actual_ids = set(int(rid) for rid in np.unique(self.ring_ids))
         missing = expected_ids - actual_ids
         if missing:
@@ -245,9 +241,7 @@ class RingData:
                     f"max_separation ({self.max_separation:.3f}°)"
                 )
             if issues:
-                failing_rings.append(
-                    f"ring at dec≈{ring_dec_mean:.1f}°: {'; '.join(issues)}"
-                )
+                failing_rings.append(f"ring at dec≈{ring_dec_mean:.1f}°: {'; '.join(issues)}")
 
         checkable_rings = sum(1 for q in self.ring_queues if len(q) >= 3)
         if checkable_rings > 0:
@@ -270,18 +264,14 @@ class RingData:
 class TargetGrouper(Protocol):
     """Common interface for target-grouping strategies."""
 
-    def group(
-        self, targets: list[Target], group_size: int
-    ) -> Iterator[list[int]]:
+    def group(self, targets: list[Target], group_size: int) -> Iterator[list[int]]:
         """Yield lists of indices into *targets*, one per group."""
 
 
 class SequentialGrouper:
     """Partition targets into sequential, non-overlapping chunks."""
 
-    def group(
-        self, targets: list[Target], group_size: int
-    ) -> Iterator[list[int]]:
+    def group(self, targets: list[Target], group_size: int) -> Iterator[list[int]]:
         """Yield sequential chunks of target indices."""
         num_targets = len(targets)
         for start in range(0, num_targets, group_size):
@@ -304,9 +294,7 @@ class RingBufferGrouper:
     ) -> None:
         self._ring_data = ring_data
 
-    def group(
-        self, targets: list[Target], group_size: int
-    ) -> Iterator[list[int]]:
+    def group(self, targets: list[Target], group_size: int) -> Iterator[list[int]]:
         """Yield groups of target indices using ring-buffer clustering."""
         if self._ring_data is not None:
             rd = self._ring_data
@@ -350,44 +338,26 @@ class RingBufferGrouper:
             group: list[int] = [i0]
 
             while len(group) < group_size:
-                group_dec_min = (
-                    float(np.min(dec_deg[group])) - max_separation
-                )
-                group_dec_max = (
-                    float(np.max(dec_deg[group])) + max_separation
-                )
+                group_dec_min = float(np.min(dec_deg[group])) - max_separation
+                group_dec_max = float(np.max(dec_deg[group])) + max_separation
                 group_max_ra = float(np.max(ra_deg[group]))
 
                 for q in ring_queues:
                     while q:
                         head_pid = q[0]
                         head_dec = dec_deg[head_pid]
-                        if (
-                            head_dec < group_dec_min
-                            or head_dec > group_dec_max
-                        ):
+                        if head_dec < group_dec_min or head_dec > group_dec_max:
                             break
 
                         last_pid = group[-1]
-                        head_sep = float(
-                            coords[head_pid]
-                            .separation(coords[last_pid])
-                            .degree
-                        )
-                        if (
-                            head_sep > max_separation
-                            and ra_deg[head_pid] > group_max_ra
-                        ):
+                        head_sep = float(coords[head_pid].separation(coords[last_pid]).degree)
+                        if head_sep > max_separation and ra_deg[head_pid] > group_max_ra:
                             break
 
                         pid = q.popleft()
                         for other_pid in active_nodes:
-                            edge_separation[
-                                _edge_key(pid, other_pid)
-                            ] = float(
-                                coords[pid]
-                                .separation(coords[other_pid])
-                                .degree
+                            edge_separation[_edge_key(pid, other_pid)] = float(
+                                coords[pid].separation(coords[other_pid]).degree
                             )
                         active_nodes[pid] = None
 
@@ -402,18 +372,10 @@ class RingBufferGrouper:
                         for idx, a in enumerate(proposed)
                         for b in proposed[idx + 1 :]
                     ]
-                    if not all(
-                        edge_separation[pair] >= min_separation
-                        for pair in proposed_pairs
-                    ):
+                    if not all(edge_separation[pair] >= min_separation for pair in proposed_pairs):
                         continue
-                    sep_to_group = [
-                        edge_separation[_edge_key(n, g)] for g in group
-                    ]
-                    if not any(
-                        min_separation <= sep <= max_separation
-                        for sep in sep_to_group
-                    ):
+                    sep_to_group = [edge_separation[_edge_key(n, g)] for g in group]
+                    if not any(min_separation <= sep <= max_separation for sep in sep_to_group):
                         continue
                     if ra_deg[n] < best_ra:
                         best_ra = ra_deg[n]
@@ -433,9 +395,7 @@ class RingBufferGrouper:
                 if k[0] not in removed and k[1] not in removed
             }
 
-        remaining = [
-            q.popleft() for q in ring_queues for _ in range(len(q))
-        ]
+        remaining = [q.popleft() for q in ring_queues for _ in range(len(q))]
         if remaining:
             for start in range(0, len(remaining), group_size):
                 yield remaining[start : start + group_size]

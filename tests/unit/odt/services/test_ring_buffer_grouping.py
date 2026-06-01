@@ -3,31 +3,92 @@
 import pytest
 from ska_oso_pdm import ICRSCoordinates, Target
 
-from ska_oso_services.odt.service.target_grouping import (
-    RingBufferGrouper,
-    RingData,
-)
+from ska_oso_services.odt.service.target_grouping import RingBufferGrouper, RingData
 
 # 8 dec rows (0°, 2°, 4°, …, 14°) × 2 RA columns (0°, 3°) = 16 targets.
 # Ordered dec-major: index 0 = (ra=0, dec=0), index 1 = (ra=3, dec=0),
 #                    index 2 = (ra=0, dec=2), index 3 = (ra=3, dec=2), …
 GRID_16_TARGETS = [
-    Target(target_id="t-0000", name="T0", reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+00:00:00.00")),
-    Target(target_id="t-0001", name="T1", reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+00:00:00.00")),
-    Target(target_id="t-0002", name="T2", reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+02:00:00.00")),
-    Target(target_id="t-0003", name="T3", reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+02:00:00.00")),
-    Target(target_id="t-0004", name="T4", reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+04:00:00.00")),
-    Target(target_id="t-0005", name="T5", reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+04:00:00.00")),
-    Target(target_id="t-0006", name="T6", reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+06:00:00.00")),
-    Target(target_id="t-0007", name="T7", reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+06:00:00.00")),
-    Target(target_id="t-0008", name="T8", reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+08:00:00.00")),
-    Target(target_id="t-0009", name="T9", reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+08:00:00.00")),
-    Target(target_id="t-0010", name="T10", reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+10:00:00.00")),
-    Target(target_id="t-0011", name="T11", reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+10:00:00.00")),
-    Target(target_id="t-0012", name="T12", reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+12:00:00.00")),
-    Target(target_id="t-0013", name="T13", reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+12:00:00.00")),
-    Target(target_id="t-0014", name="T14", reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+14:00:00.00")),
-    Target(target_id="t-0015", name="T15", reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+14:00:00.00")),
+    Target(
+        target_id="t-0000",
+        name="T0",
+        reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+00:00:00.00"),
+    ),
+    Target(
+        target_id="t-0001",
+        name="T1",
+        reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+00:00:00.00"),
+    ),
+    Target(
+        target_id="t-0002",
+        name="T2",
+        reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+02:00:00.00"),
+    ),
+    Target(
+        target_id="t-0003",
+        name="T3",
+        reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+02:00:00.00"),
+    ),
+    Target(
+        target_id="t-0004",
+        name="T4",
+        reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+04:00:00.00"),
+    ),
+    Target(
+        target_id="t-0005",
+        name="T5",
+        reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+04:00:00.00"),
+    ),
+    Target(
+        target_id="t-0006",
+        name="T6",
+        reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+06:00:00.00"),
+    ),
+    Target(
+        target_id="t-0007",
+        name="T7",
+        reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+06:00:00.00"),
+    ),
+    Target(
+        target_id="t-0008",
+        name="T8",
+        reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+08:00:00.00"),
+    ),
+    Target(
+        target_id="t-0009",
+        name="T9",
+        reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+08:00:00.00"),
+    ),
+    Target(
+        target_id="t-0010",
+        name="T10",
+        reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+10:00:00.00"),
+    ),
+    Target(
+        target_id="t-0011",
+        name="T11",
+        reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+10:00:00.00"),
+    ),
+    Target(
+        target_id="t-0012",
+        name="T12",
+        reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+12:00:00.00"),
+    ),
+    Target(
+        target_id="t-0013",
+        name="T13",
+        reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+12:00:00.00"),
+    ),
+    Target(
+        target_id="t-0014",
+        name="T14",
+        reference_coordinate=ICRSCoordinates(ra_str="00:00:00.00", dec_str="+14:00:00.00"),
+    ),
+    Target(
+        target_id="t-0015",
+        name="T15",
+        reference_coordinate=ICRSCoordinates(ra_str="00:12:00.00", dec_str="+14:00:00.00"),
+    ),
 ]
 
 # Subset: first 2 dec rows (4 targets) for small-catalogue test.
@@ -133,9 +194,7 @@ MISSING_RING_TARGETS = [
 # and 9°, so they overlap with k=2 gaps. The approximate median-based
 # validation checks will fail.
 BAD_RA_SPACING_TARGETS = [
-    _make_target(
-        f"{ra_h:02d}:{ra_m:02d}:00.00", f"+{dec:02d}:00:00.00", i
-    )
+    _make_target(f"{ra_h:02d}:{ra_m:02d}:00.00", f"+{dec:02d}:00:00.00", i)
     for i, (ra_h, ra_m, dec) in enumerate(
         (ra_h, ra_m, dec)
         for dec in (0, 2, 4, 6)
