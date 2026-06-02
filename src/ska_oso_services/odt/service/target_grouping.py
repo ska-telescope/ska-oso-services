@@ -451,7 +451,7 @@ class ConstrainedRaSweepGrouper:
 
 
 def create_grouper(
-    method: GroupingMethod = GroupingMethod.SEQUENTIAL,
+    method: GroupingMethod = GroupingMethod.CONSTRAINED_RA_SWEEP,
     **kwargs,
 ) -> TargetGrouper:
     """Create a :class:`TargetGrouper` for the given method.
