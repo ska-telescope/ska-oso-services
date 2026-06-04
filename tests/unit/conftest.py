@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token, monkeypatch_pubkeys
-from ska_db_oda.rest.fastapicontext import get_uow
+from ska_db_oda.common.uow import get_uow
 from ska_oso_pdm import SBDefinition
 
 from ska_oso_services import create_app
@@ -132,6 +132,68 @@ def low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst():
         / "files"
         / "low_multiple_subarray_beams_multiple_apertures_multiple_spws_with_pst.json"
     )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd
+
+
+@pytest.fixture
+def mid_multiple_targets_with_observing_constraints_valid():
+    path_to_test_file = (
+        Path(__file__).parents[0]
+        / "files"
+        / "mid_multiple_targets_with_observing_constraints_valid.json"
+    )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd
+
+
+@pytest.fixture
+def mid_multiple_targets_with_observing_constraints_invalid():
+    path_to_test_file = (
+        Path(__file__).parents[0]
+        / "files"
+        / "mid_multiple_targets_with_observing_constraints_invalid.json"
+    )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd
+
+
+@pytest.fixture
+def mid_single_scan_with_constraints():
+    path_to_test_file = (
+        Path(__file__).parents[0] / "files" / "mid_single_scan_with_constraints.json"
+    )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd
+
+
+@pytest.fixture
+def mid_sso_targets_with_constraints():
+    path_to_test_file = (
+        Path(__file__).parents[0] / "files" / "mid_sso_targets_with_observing_constraints.json"
+    )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd
+
+
+@pytest.fixture
+def low_multiple_subarray_beams_invalid():
+    path_to_test_file = (
+        Path(__file__).parents[0] / "files" / "low_multiple_subarray_beams_invalid.json"
+    )
+    sbd_json = load_string_from_file(path_to_test_file)
+    sbd = SBDefinition.model_validate_json(sbd_json)
+    return sbd
+
+
+@pytest.fixture
+def mid_new_sbd_from_odt():
+    path_to_test_file = Path(__file__).parents[0] / "files" / "mid_empty_sbd_from_odt.json"
     sbd_json = load_string_from_file(path_to_test_file)
     sbd = SBDefinition.model_validate_json(sbd_json)
     return sbd

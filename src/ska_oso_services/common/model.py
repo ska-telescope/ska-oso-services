@@ -10,11 +10,6 @@ class AppModel(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_default=True, validate_assignment=True)
 
 
-class ValidationResponse(AppModel):
-    valid: bool
-    messages: dict[str, str]
-
-
 class ErrorResponseTraceback(AppModel):
     key: str
     type: str

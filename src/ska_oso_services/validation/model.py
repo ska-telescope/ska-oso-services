@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from functools import wraps
 from inspect import signature
-from typing import Callable, Generic, TypeVar, get_type_hints
+from typing import Any, Callable, Generic, TypeVar, get_type_hints
 
 from pydantic import Field
 from ska_oso_pdm import PdmObject, TelescopeType, ValidationArrayAssembly
@@ -13,7 +13,7 @@ from ska_oso_services.common.model import AppModel
 T = TypeVar("T", bound=PdmObject)
 
 
-class ValidationContext(Generic[T], AppModel):
+class ValidationContext(AppModel, Generic[T]):
     """
     This models the input to all :func:`~ska_oso_services.validation.model.Validator`
     functions and should provide all information that the Validator requires.
@@ -34,7 +34,7 @@ class ValidationContext(Generic[T], AppModel):
     )
     array_assembly: ValidationArrayAssembly | None = Field(
         None,
-        description="The array assembly to validate the primary_entity against, " "if appropriate",
+        description="The array assembly to validate the primary_entity against,if appropriate",
     )
 
 
@@ -63,6 +63,16 @@ class ValidationIssue(AppModel):
 Validator = Callable[[ValidationContext[T]], list[ValidationIssue]]
 """ The general Validator function type. It should take the entity to validate
     wrapped in a ValidationContext and return a list of ValidationIssues."""
+
+
+class ValidationResponse(AppModel):
+    valid: bool | None = None
+    issues: list[ValidationIssue]
+
+    def model_post_init(self, context: Any, /) -> None:
+        if self.valid is None:
+            issues = set([issue.level for issue in self.issues])
+            self.valid = True if ValidationIssueType.ERROR not in issues else False
 
 
 def validator(validator_func: Validator[T]) -> Validator[T]:

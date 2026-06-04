@@ -52,6 +52,7 @@ rest:
   domain: operations
   logLevel: INFO
   enabled: true
+  engineeringApiEnabled: true
   image:
     registry: artefact.skao.int
     image: ska-oso-services

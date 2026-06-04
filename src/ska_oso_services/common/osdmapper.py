@@ -54,6 +54,8 @@ class LowFrequencyBand(FrequencyBand):
     coarse_channel_width_hz: float
     number_continuum_channels_per_coarse_channel: int
     number_zoom_channels_per_coarse_channel: int
+    number_pst_channels_per_coarse_channel: int
+    number_pss_channels_per_coarse_channel: int
 
 
 class Subarray(BaseModel):
@@ -84,6 +86,16 @@ class Constraints:
     max_elevation_deg: float
 
 
+@dataclasses.dataclass
+class LowCBFMetrics:
+    processors_ready_percent: float
+
+
+@dataclasses.dataclass
+class LowQualityAttributeMetrics:
+    cbf: LowCBFMetrics
+
+
 class MidConfiguration(AppModel):
     frequency_band: list[MidFrequencyBand]
     constraints: Constraints
@@ -93,6 +105,7 @@ class MidConfiguration(AppModel):
 class LowConfiguration(AppModel):
     frequency_band: LowFrequencyBand
     constraints: Constraints
+    quality_attribute_metrics: LowQualityAttributeMetrics
     subarrays: list[LowSubarray]
 
 
@@ -168,12 +181,14 @@ def _get_low_telescope_configuration() -> LowConfiguration:
         for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + LOW_ARRAY_ASSEMBLIES
     ]
 
+    quality_attribute_metrics = low_response["quality_attribute_metrics"]
     receiver_information = low_response["basic_capabilities"]
     constraints = low_response["constraints"]
 
     return LowConfiguration(
         frequency_band=LowFrequencyBand(**receiver_information),
         constraints=Constraints(**constraints),
+        quality_attribute_metrics=LowQualityAttributeMetrics(**quality_attribute_metrics),
         subarrays=subarrays,
     )
 

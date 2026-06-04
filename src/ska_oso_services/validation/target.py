@@ -1,21 +1,24 @@
 # pylint: disable=no-member
 import astropy.units as u
-from astropy.coordinates import EarthLocation, Latitude
+from astropy.coordinates import Latitude
 from astropy.units import Quantity
 from ska_oso_pdm import CoordinateKind, Target, TelescopeType
 
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
-from ska_oso_services.common.static.constants import low_minimum_elevation, mid_minimum_elevation
+from ska_oso_services.common.static.constants import (
+    LOW_LOCATION,
+    MID_LOCATION,
+    low_minimum_elevation,
+    mid_minimum_elevation,
+)
 from ska_oso_services.validation.model import (
     ValidationContext,
     ValidationIssue,
     ValidationIssueType,
+    check_relevant_context_contains,
     validate,
     validator,
 )
-
-LOW_LOCATION = EarthLocation.of_site("SKA Low")
-MID_LOCATION = EarthLocation.of_site("SKA Mid")
 
 
 @validator
@@ -25,6 +28,8 @@ def validate_target(target_context: ValidationContext[Target]) -> list[Validatio
     :return: the collated ValidationIssues resulting from applying each of
             the relevant Target Validators to the Target
     """
+
+    check_relevant_context_contains(["constraints"], target_context)
 
     if target_context.primary_entity.reference_coordinate.kind in (
         CoordinateKind.TLE,
@@ -37,60 +42,51 @@ def validate_target(target_context: ValidationContext[Target]) -> list[Validatio
             )
         ]
 
-    if target_context.telescope == TelescopeType.SKA_MID:
-        validators = [validate_mid_elevation, validate_single_target_pst_beams]
-    else:
-        validators = [validate_low_elevation, validate_single_target_pst_beams]
+    validators = [validate_elevation, validate_single_target_pst_beams]
 
     return validate(target_context, validators)
 
 
 @validator
-def validate_mid_elevation(
+def validate_elevation(
     target_context: ValidationContext[Target],
 ) -> list[ValidationIssue]:
     """
-    :param target_context: a ValidationContext containing an SKA-Mid Target
+    :param target_context: a ValidationContext containing a Target
         to be validated
-    :return: a validation error if the target doesn't reach the minimum 15 degrees
+    :return: a validation error if the target doesn't reach the minimum
             elevation required for Mid
     """
-    max_elevation = _find_max_elevation(target_context.primary_entity, TelescopeType.SKA_MID)
+    constraints = target_context.relevant_context["constraints"]
+    telescope = target_context.telescope
 
-    if max_elevation < mid_minimum_elevation():
-        return [
-            ValidationIssue(
-                message=f"Source never rises above {mid_minimum_elevation().to('degree').value} "
-                "degrees"
-            )
-        ]
+    if constraints is not None and constraints.altitude.min is not None:
+        min_elevation = constraints.altitude.min
+    elif telescope == TelescopeType.SKA_MID:
+        min_elevation = mid_minimum_elevation()
+    else:
+        min_elevation = low_minimum_elevation()
 
-    return []
-
-
-@validator
-def validate_low_elevation(
-    target_context: ValidationContext[Target],
-) -> list[ValidationIssue]:
-    """
-    :param target_context: a ValidationContext containing an SKA-Low Target
-        to be validated
-    :return: a validation error if the target doesn't rise above the horizon;
-         a validation warning if the maximum elevation of the target is less
-         than 45 degrees
-    """
-    max_elevation = _find_max_elevation(target_context.primary_entity, TelescopeType.SKA_LOW)
+    max_elevation = _find_max_elevation(target_context.primary_entity, telescope)
 
     if max_elevation < Latitude(0, unit=u.deg):
         return [ValidationIssue(message="Source never rises above the horizon")]
 
-    if max_elevation < low_minimum_elevation():
+    if max_elevation < min_elevation:
+        return [
+            ValidationIssue(
+                level=ValidationIssueType.ERROR,
+                message=f"Maximum elevation ({round(max_elevation.value, 2)} degrees) "
+                f"is less than the limit ({min_elevation.to('degree').value} degrees) ",
+            )
+        ]
+
+    if telescope == TelescopeType.SKA_LOW and max_elevation < Latitude(45, unit=u.deg):
         return [
             ValidationIssue(
                 level=ValidationIssueType.WARNING,
                 message=f"Maximum elevation ({round(max_elevation.value, 2)} degrees) "
-                f"is less than {low_minimum_elevation().to('degree').value} degrees "
-                "- performance may be degraded",
+                "is less than 45 degrees - performance may be degraded",
             )
         ]
 

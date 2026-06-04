@@ -49,13 +49,19 @@ class PanelCreateRequest(AppModel):
 
     name: str
     sci_reviewers: list[str] = Field(
-        default_factory=list, description="List of reviewer entries.", example=[]
+        default_factory=list,
+        description="List of reviewer entries.",
+        json_schema_extra={"example": []},
     )
     tech_reviewers: list[str] = Field(
-        default_factory=list, description="List of reviewer entries.", example=[]
+        default_factory=list,
+        description="List of reviewer entries.",
+        json_schema_extra={"example": []},
     )
     proposals: list[str] = Field(
-        default_factory=list, description="List of proposal entries.", example=[]
+        default_factory=list,
+        description="List of proposal entries.",
+        json_schema_extra={"example": []},
     )
 
 

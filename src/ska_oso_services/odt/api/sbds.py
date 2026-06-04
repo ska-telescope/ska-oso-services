@@ -10,16 +10,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
 from ska_aaa_authhelpers import AuthContext, Role
+from ska_db_oda.common.uow import UnitOfWork
 from ska_db_oda.repository.status import Status
-from ska_db_oda.rest.fastapicontext import UnitOfWork
 from ska_oso_pdm.entity_status_history import SBDStatus
 from ska_oso_pdm.sb_definition import SBDefinition
 from starlette.responses import Response
 
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import BadRequestError, UnprocessableEntityError
-from ska_oso_services.common.model import ValidationResponse
-from ska_oso_services.odt.validation import validate_sbd
+from ska_oso_services.validation.model import ValidationContext, ValidationResponse
+from ska_oso_services.validation.sbdefinition import validate_sbdefinition
 
 LOGGER = logging.getLogger(__name__)
 
@@ -155,7 +155,7 @@ def sbds_put(
     if sbd.sbd_id != identifier:
         raise UnprocessableEntityError(
             detail=(
-                "There is a mismatch between the SBD ID for the endpoint and the " "JSON payload"
+                "There is a mismatch between the SBD ID for the endpoint and the JSON payload"
             ),
         )
 
@@ -187,17 +187,6 @@ def sbds_delete(
         uow.sbds.delete(identifier)
         uow.commit()
     return Response(status_code=204)
-
-
-def validate(sbd: SBDefinition) -> ValidationResponse:
-    """
-    Validate SB Definition by running custom validation steps
-    """
-    validate_result = validate_sbd(sbd)
-
-    valid = not bool(validate_result)
-
-    return ValidationResponse(valid=valid, messages=validate_result)
 
 
 @router.put(
@@ -252,3 +241,11 @@ def sbds_status_set_draft(
         )
         uow.commit()
         return uow.status.get_current_status(entity_id=identifier)
+
+
+def validate(sbd: SBDefinition) -> ValidationResponse:
+    """
+    Validate SB Definition by running custom validation steps
+    """
+    validate_result = validate_sbdefinition(ValidationContext(primary_entity=sbd))
+    return ValidationResponse(issues=validate_result)

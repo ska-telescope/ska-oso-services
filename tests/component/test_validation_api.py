@@ -12,6 +12,7 @@ from ska_oso_pdm import ICRSCoordinates
 from ska_oso_pdm.builders import LowSBDefinitionBuilder
 from ska_oso_pdm.builders.target_builder import LowTargetBuilder
 from ska_oso_pdm.builders.utils import populate_scan_sequences
+from ska_oso_pdm.sb_definition import ObservingConstraints
 
 from . import OSO_SERVICES_URL
 
@@ -34,6 +35,8 @@ def test_sbd_validate(authrequests):
     )
 
     sbd = populate_scan_sequences(sbd, [50000, 100000])
+
+    sbd.observing_constraints = ObservingConstraints()
 
     response = authrequests.post(
         f"{OSO_SERVICES_URL}/validate/sbd",

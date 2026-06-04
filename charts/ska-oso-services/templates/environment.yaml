@@ -14,3 +14,4 @@ data:
   PIPELINE_TESTS_DEPLOYMENT: {{ .Values.pipeline_test_deployment | quote }}
   KUBE_NAMESPACE: {{ .Release.Namespace }}
   SDP_SCRIPT_TMDATA: {{ .Values.global.oso.sdp_tmdata }}
+  ENGINEERING_API_ENABLED: {{ .Values.rest.engineeringApiEnabled | quote }}

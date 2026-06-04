@@ -2,6 +2,24 @@
   "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
   "sbd_id": "sbd-m36afbuk-20260203-633645749524785",
   "telescope": "ska_low",
+  "observing_constraints": {
+    "altitude": {
+      "min": {
+        "value": 40,
+        "unit": "deg"
+      }
+    },
+    "lst": {
+      "start": {
+        "value": 23,
+        "unit": "hourangle"
+      },
+      "end": {
+        "value": 2,
+        "unit": "hourangle"
+      }
+    }
+  },
   "metadata": {
     "version": 13,
     "created_by": "248091c7-cd6f-40c3-847b-dd15644997a0",

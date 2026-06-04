@@ -14,8 +14,8 @@ from ska_db_oda.repository.domain import ODAError, ODANotFound, UniqueConstraint
 from ska_db_oda.repository.domain.errors import ODAIntegrityError
 from ska_ser_logging import configure_logging
 
-from ska_oso_services import odt, pht
-from ska_oso_services.common import api, oda
+from ska_oso_services import engineering, odt, pht
+from ska_oso_services.common import api
 from ska_oso_services.common.error_handling import (
     OSDError,
     dangerous_internal_server_handler,
@@ -61,6 +61,14 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 "get_osd_by_cycle",
                 "visibility_svg",
                 "get_all_osd_cycles",
+                # The following /engineering APIs are unsecured until a way
+                # for notebook users to generate tokens is available
+                "create_eb",
+                "get_eb",
+                "add_request_response",
+                "set_eb_status_observed",
+                "set_eb_status_failed",
+                "engineering_api_disabled",
             ]
         ),
         # Need this param for code generation - see
@@ -72,6 +80,7 @@ def create_app(production=PRODUCTION) -> FastAPI:
     fastapi_app.include_router(api.common_router, prefix=API_PREFIX)
     fastapi_app.include_router(odt.router, prefix=API_PREFIX)
     fastapi_app.include_router(pht.router, prefix=API_PREFIX)
+    fastapi_app.include_router(engineering.router, prefix=API_PREFIX)
     fastapi_app.include_router(validation_router, prefix=API_PREFIX)
     fastapi_app.exception_handler(ODANotFound)(oda_not_found_handler)
     fastapi_app.exception_handler(ODAIntegrityError)(oda_integrity_error_handler)
@@ -88,8 +97,6 @@ def create_app(production=PRODUCTION) -> FastAPI:
 
 # Create the FastAPI app
 app = create_app()
-oda.init_app(app)
-
 # Wrap with CORSMiddleware to ensure CORS headers are added to all responses,
 # including error responses from exception handlers
 main = CORSMiddleware(

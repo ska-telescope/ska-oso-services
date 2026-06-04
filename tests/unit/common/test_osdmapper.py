@@ -6,6 +6,8 @@ from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
 from ska_oso_services.common.osdmapper import (
     Band5bSubband,
     Constraints,
+    LowCBFMetrics,
+    LowQualityAttributeMetrics,
     MidFrequencyBand,
     configuration_from_osd,
     get_low_basic_capability_parameter_from_osd,
@@ -95,3 +97,13 @@ def test_get_telescope_observing_constraint_returns_constraints_for_low():
 def test_get_telescope_observing_constraint_fails_for_invalid_parameter():
     with pytest.raises(ValueError):
         get_telescope_observing_constraint(TelescopeType.SKA_LOW, "not_a_parameter")
+
+
+def test_configuration_from_osd_returns_low_cbf_metrics():
+    value = configuration_from_osd()
+    assert type(value.ska_low.quality_attribute_metrics) is LowQualityAttributeMetrics
+
+    assert type(value.ska_low.quality_attribute_metrics.cbf) is LowCBFMetrics
+    cbf = value.ska_low.quality_attribute_metrics.cbf
+
+    assert cbf.processors_ready_percent is not None, "processors_ready_percent must be present"
