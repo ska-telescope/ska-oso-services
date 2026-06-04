@@ -8,7 +8,6 @@ CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-services
 KUBE_NAMESPACE ?= ska-oso-services
-RELEASE_NAME ?= test
 MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 OSO_SERVICES_URL ?= http://ska-oso-services-rest-test:5000/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 
@@ -16,8 +15,9 @@ k8s_test_src_dir = pyproject.toml poetry.lock
 SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.14.1
 K8S_TEST_IMAGE_TO_TEST=$(SKA_K8S_TOOLS_BUILD_DEPLOY)
 
-# Set to nothing so that everything in the namespace is waited for
-K8S_WAIT_LABEL_FILTER_ARGS =
+# This project brings in multiple deployments so instead of filtering
+# on app label we should filter on the release label.
+K8S_WAIT_LABEL_FILTER_ARGS = -l release=$(HELM_RELEASE)
 
 PIPELINE_TEST_DEPLOYMENT ?= false
 
