@@ -5,14 +5,14 @@ from astropy.units import Quantity
 matplotlib.use("Agg")
 import io
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import astropy.units as u
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.coordinates import AltAz, EarthLocation, SkyCoord
 from astropy.time import Time
+from matplotlib.ticker import FuncFormatter, MultipleLocator
 
 from ska_oso_services.common.static.constants import STEP_SECONDS_DEFAULT_VISIBILITY, T10_COLOURS
 
@@ -77,8 +77,14 @@ def render_svg(
     min_elev: float,
     step_s: int = STEP_SECONDS_DEFAULT_VISIBILITY,
 ) -> bytes:
-    base = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    end = base + timedelta(days=1)
+    # Anchor at the UTC time when LST = 0h at this site so that the LST values
+    # returned by _alts run monotonically 0 → ~24.07h with no in-window wrap.
+    _SIDEREAL_DAY_S = 86164.09053
+    _t_ref = Time(datetime.now(timezone.utc))
+    _lst_ref_h = _t_ref.sidereal_time("apparent", longitude=site.lon).hour
+    base = (_t_ref - (_lst_ref_h / 24.0 * _SIDEREAL_DAY_S) * u.s).to_datetime(
+        timezone=timezone.utc
+    )
 
     times, alt = _alts(ra, dec, site, base, step_s)
     _, vis_h, vis_m = _visible_duration(alt, min_elev, step_s)
@@ -99,9 +105,11 @@ def render_svg(
 
     fig, ax = plt.subplots(figsize=(12, 6.2))
 
+    lst_hours = Time(times).sidereal_time("apparent", longitude=site.lon).hour
+
     # only above horizon
     ax.plot(
-        times,
+        lst_hours,
         np.where(alt >= 0, alt, np.nan),
         color=T10_COLOURS["blue"],
         lw=2.2,
@@ -121,7 +129,7 @@ def render_svg(
     )
 
     ax.fill_between(
-        times,
+        lst_hours,
         min_elev,
         alt,
         where=(alt >= min_elev),
@@ -129,20 +137,20 @@ def render_svg(
         alpha=0.18,
     )
 
-    ax.set_xlim(base, end)
+    ax.set_xlim(0, 24)
     ax.set_ylim(0, 90)
     ax.grid(False)
 
     ax.set_title(
-        f"Visibility on {base.date()} (UTC): {vis_h}h {vis_m}m above {min_elev:.0f}°",
+        f"Target Visibility: {vis_h}h {vis_m}m above {min_elev:.0f}°",
         pad=10,
     )
     ax.set_ylabel("Elevation (°)", fontsize=14, labelpad=6)
-    ax.set_xlabel("Time (UTC)", fontsize=14, labelpad=8)
+    ax.set_xlabel("LST (hh:mm)", fontsize=14, labelpad=8)
 
     # Hourly ticks
-    ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=timezone.utc))
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda h, _: f"{int(h):02d}:00"))
     ax.tick_params(axis="both", which="major", labelsize=11)
 
     for label in ax.get_xticklabels():
