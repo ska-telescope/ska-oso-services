@@ -77,16 +77,17 @@ def render_svg(
     min_elev: float,
     step_s: int = STEP_SECONDS_DEFAULT_VISIBILITY,
 ) -> bytes:
-    # Anchor at the UTC time when LST = 0h at this site so that the LST values
-    # returned by _alts run monotonically 0 → ~24.07h with no in-window wrap.
-    _SIDEREAL_DAY_S = 86164.09053
+    # Anchor at the UTC time when LST = 0h so the x-axis starts at 0h.
+    # LST is then computed as a linear ramp (0 → ~24.07h over one solar day)
+    # rather than via astropy's sidereal_time(), which wraps at 24h and would
+    # produce discontinuities at both ends of the data array.
     _t_ref = Time(datetime.now(timezone.utc))
     _lst_ref_h = _t_ref.sidereal_time("apparent", longitude=site.lon).hour
-    base = (_t_ref - (_lst_ref_h / 24.0 * _SIDEREAL_DAY_S) * u.s).to_datetime(
+    plot_start_time_utc = (_t_ref - (_lst_ref_h / 24.0) * u.sday).to_datetime(
         timezone=timezone.utc
     )
 
-    times, alt = _alts(ra, dec, site, base, step_s)
+    times, alt = _alts(ra, dec, site, plot_start_time_utc, step_s)
     _, vis_h, vis_m = _visible_duration(alt, min_elev, step_s)
 
     # Matte style
@@ -105,7 +106,9 @@ def render_svg(
 
     fig, ax = plt.subplots(figsize=(12, 6.2))
 
-    lst_hours = Time(times).sidereal_time("apparent", longitude=site.lon).hour
+    # One solar day advances LST by solar_day/sidereal_day × 24h ≈ 24.066h.
+    # Using linspace avoids the 24→0 wrap that astropy's .hour attribute produces.
+    lst_hours = np.linspace(0, 24 * (24 * 3600 / u.sday.to(u.s)), len(times))
 
     # only above horizon
     ax.plot(
