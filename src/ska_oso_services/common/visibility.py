@@ -88,7 +88,13 @@ def render_svg(
     )
 
     times, alt = _alts(ra, dec, site, plot_start_time_utc, step_s)
-    _, vis_h, vis_m = _visible_duration(alt, min_elev, step_s)
+
+    # One solar day advances LST by solar_day/sidereal_day × 24h ≈ 24.066h.
+    # Using linspace avoids the 24→0 wrap that astropy's .hour attribute produces.
+    lst_hours = np.linspace(0, 24 * (24 * 3600 / u.sday.to(u.s)), len(times))
+
+    # Compute visibility only for samples within the displayed LST range (0–24h).
+    _, vis_h, vis_m = _visible_duration(alt[lst_hours <= 24], min_elev, step_s)
 
     # Matte style
     plt.rcParams.update(
@@ -105,10 +111,6 @@ def render_svg(
     )
 
     fig, ax = plt.subplots(figsize=(12, 6.2))
-
-    # One solar day advances LST by solar_day/sidereal_day × 24h ≈ 24.066h.
-    # Using linspace avoids the 24→0 wrap that astropy's .hour attribute produces.
-    lst_hours = np.linspace(0, 24 * (24 * 3600 / u.sday.to(u.s)), len(times))
 
     # only above horizon
     ax.plot(
