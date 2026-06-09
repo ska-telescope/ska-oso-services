@@ -27,11 +27,28 @@ def get_eb(eb_id: str, oda: UnitOfWork) -> ExecutionBlock:
 
 
 @router.post(
-    "/{telescope}",
-    summary="Create a new ExecutionBlock at the start of an observing session",
+    "/",
+    summary="Create a new ExecutionBlock from the request body. "
+    "Use this API for creating ExecutionBlocks with initial data like labels.",
     response_model=ExecutionBlock,
 )
-def create_eb(telescope: TelescopeType, oda: UnitOfWork) -> ExecutionBlock:
+def create_eb(oda: UnitOfWork, eb: ExecutionBlock) -> ExecutionBlock:
+    with oda as uow:
+        persisted_eb = uow.ebs.add(eb)
+        uow.commit()
+
+    return persisted_eb
+
+
+@router.post(
+    "/{telescope}",
+    summary="Create a new empty ExecutionBlock for the given telescope.",
+    response_model=ExecutionBlock,
+)
+def create_eb_for_telescope(
+    telescope: TelescopeType,
+    oda: UnitOfWork,
+) -> ExecutionBlock:
     eb = ExecutionBlock(telescope=telescope)
     with oda as uow:
         persisted_eb = uow.ebs.add(eb)
@@ -57,6 +74,24 @@ def add_request_response(
         persisted_eb = uow.ebs.add(eb)
         uow.commit()
 
+    return persisted_eb
+
+
+@router.patch(
+    "/{eb_id}/labels",
+    summary="Add or update labels on an ExecutionBlock",
+    response_model=ExecutionBlock,
+)
+def add_labels(
+    eb_id: str,
+    labels: dict[str, str | float | bool],
+    oda: UnitOfWork,
+) -> ExecutionBlock:
+    with oda as uow:
+        eb = uow.ebs.get(eb_id)
+        eb.labels.update(labels)
+        persisted_eb = uow.ebs.add(eb)
+        uow.commit()
     return persisted_eb
 
 

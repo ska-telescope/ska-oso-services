@@ -64,6 +64,8 @@ def create_app(production=PRODUCTION) -> FastAPI:
                 # The following /engineering APIs are unsecured until a way
                 # for notebook users to generate tokens is available
                 "create_eb",
+                "create_eb_for_telescope",
+                "add_labels",
                 "get_eb",
                 "add_request_response",
                 "set_eb_status_observed",

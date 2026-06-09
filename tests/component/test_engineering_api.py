@@ -5,6 +5,7 @@ These will run from a test pod inside a kubernetes cluster, making requests
 to a deployment of ska-oso-services in the same cluster.
 """
 
+import json
 from datetime import datetime
 
 import requests
@@ -20,18 +21,28 @@ TEST_DATETIME = datetime.fromisoformat("2000-01-01T00:00:00.000000+00:00")
 class TestEBs:
     def test_create_eb(self):
         """
-        Tests that POST /ebs creates an ExecutionBlock and returns the eb_id.
+        Tests that POST /ebs/ creates an ExecutionBlock and returns the eb_id.
         """
         eb = OSOExecutionBlock(telescope=TelescopeType.SKA_MID)
         post_response = requests.post(
-            f"{ENGINEERING_URL}/ebs/ska_low",
+            f"{ENGINEERING_URL}/ebs/",
             data=eb.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
         assert post_response.status_code == 200
         result = post_response.json()
         assert result["eb_id"].startswith("eb-")
-        assert result["telescope"] == "ska_low"
+        assert result["telescope"] == "ska_mid"
+
+    def test_create_eb_with_telescope_path_and_no_body(self):
+        """
+        Tests that POST /ebs/{telescope} remains backward compatible with no body.
+        """
+        post_response = requests.post(f"{ENGINEERING_URL}/ebs/ska_mid")
+        assert post_response.status_code == 200
+        result = post_response.json()
+        assert result["eb_id"].startswith("eb-")
+        assert result["telescope"] == "ska_mid"
 
     def test_create_eb_then_add_request_response(self):
         """
@@ -41,7 +52,7 @@ class TestEBs:
         # Create EB
         eb = OSOExecutionBlock(telescope=TelescopeType.SKA_MID)
         post_response = requests.post(
-            f"{ENGINEERING_URL}/ebs/ska_low",
+            f"{ENGINEERING_URL}/ebs/",
             data=eb.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
@@ -79,8 +90,10 @@ class TestEBs:
         """
         Tests that PUT /ebs/{eb_id}/status/observed sets the EB status to Observed.
         """
+        eb = OSOExecutionBlock(telescope=TelescopeType.SKA_MID)
         post_response = requests.post(
-            f"{ENGINEERING_URL}/ebs/ska_mid",
+            f"{ENGINEERING_URL}/ebs/",
+            data=eb.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
         assert post_response.status_code == 200
@@ -97,8 +110,10 @@ class TestEBs:
         """
         Tests that PUT /ebs/{eb_id}/status/failed sets the EB status to Failed.
         """
+        eb = OSOExecutionBlock(telescope=TelescopeType.SKA_MID)
         post_response = requests.post(
-            f"{ENGINEERING_URL}/ebs/ska_mid",
+            f"{ENGINEERING_URL}/ebs/",
+            data=eb.model_dump_json(),
             headers={"Content-type": "application/json"},
         )
         assert post_response.status_code == 200
@@ -110,3 +125,33 @@ class TestEBs:
         result = put_response.json()
         assert result["entity_id"] == eb_id
         assert result["status"] == "Observing Failed"
+
+    def test_add_labels(self):
+        """
+        Tests the full flow: create an EB via POST, add labels via PATCH,
+        then verify the labels are persisted via GET.
+        """
+        # Create EB
+        eb = OSOExecutionBlock(telescope=TelescopeType.SKA_MID)
+        post_response = requests.post(
+            f"{ENGINEERING_URL}/ebs/",
+            data=eb.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+        assert post_response.status_code == 200
+        eb_id = post_response.json()["eb_id"]
+
+        # Add labels
+        labels = {"env": "test", "run_id": 42.0, "dry_run": True}
+        patch_response = requests.patch(
+            f"{ENGINEERING_URL}/ebs/{eb_id}/labels",
+            data=json.dumps(labels),
+            headers={"Content-type": "application/json"},
+        )
+        assert patch_response.status_code == 200
+
+        # Verify labels persisted via GET
+        get_response = requests.get(f"{ENGINEERING_URL}/ebs/{eb_id}")
+        assert get_response.status_code == 200
+        result_eb = OSOExecutionBlock.model_validate_json(get_response.content)
+        assert result_eb.labels == labels
