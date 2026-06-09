@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+14.7.0
+**********
 * Constrained RA-sweep grouping for GSM survey SBDs
 * Adds `POST /engineering/ebs/` with to allow ExecutionBlocks to be created with some initial data, such as labels
 * Adds `PATCH /engineering/ebs/{eb_id}/labels` to allow labels to be added to ExecutionBlocks after creation
