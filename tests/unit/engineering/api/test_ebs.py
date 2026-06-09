@@ -2,6 +2,7 @@
 Unit tests for ska_oso_services.engineering.api.ebs
 """
 
+import json
 from http import HTTPStatus
 from unittest.mock import MagicMock
 
@@ -18,10 +19,17 @@ from tests.unit.conftest import APP_BASE_API_URL
 EBS_API_URL = f"{APP_BASE_API_URL}/engineering/ebs"
 
 
-def make_eb(eb_id="eb-test-123", telescope=TelescopeType.SKA_MID, request_responses=None):
+def make_eb(
+    eb_id="eb-test-123",
+    telescope=TelescopeType.SKA_MID,
+    request_responses=None,
+    labels=None,
+):
     kwargs = {"eb_id": eb_id, "telescope": telescope}
     if request_responses is not None:
         kwargs["request_responses"] = request_responses
+    if labels is not None:
+        kwargs["labels"] = labels
     return ExecutionBlock(**kwargs)
 
 
@@ -61,8 +69,27 @@ class TestGetEB:
 
 
 class TestCreateEB:
-    def test_create_eb_for_mid(self, client_with_uow_mock):
-        """POST /ebs/{telescope} creates and returns a new EB for SKA_MID."""
+    def test_create_eb_with_body(self, client_with_uow_mock):
+        """POST /ebs/ accepts an ExecutionBlock body and creates it in the ODA."""
+        client, uow_mock = client_with_uow_mock
+        eb_body = make_eb(eb_id=None, telescope=TelescopeType.SKA_MID)
+        persisted_eb = make_eb(telescope=TelescopeType.SKA_MID)
+        uow_mock.ebs.add.return_value = persisted_eb
+
+        response = client.post(
+            f"{EBS_API_URL}/",
+            content=eb_body.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        result = ExecutionBlock.model_validate_json(response.text)
+        assert result.telescope == TelescopeType.SKA_MID
+        uow_mock.ebs.add.assert_called_once()
+        uow_mock.commit.assert_called_once()
+
+    def test_create_eb_with_telescope_path_and_no_body(self, client_with_uow_mock):
+        """POST /ebs/{telescope} supports legacy no-body creation."""
         client, uow_mock = client_with_uow_mock
         persisted_eb = make_eb(telescope=TelescopeType.SKA_MID)
         uow_mock.ebs.add.return_value = persisted_eb
@@ -73,19 +100,9 @@ class TestCreateEB:
         result = ExecutionBlock.model_validate_json(response.text)
         assert result.telescope == TelescopeType.SKA_MID
         uow_mock.ebs.add.assert_called_once()
+        created_eb = uow_mock.ebs.add.call_args.args[0]
+        assert created_eb.telescope == TelescopeType.SKA_MID
         uow_mock.commit.assert_called_once()
-
-    def test_create_eb_for_low(self, client_with_uow_mock):
-        """POST /ebs/{telescope} creates and returns a new EB for SKA_LOW."""
-        client, uow_mock = client_with_uow_mock
-        persisted_eb = make_eb(telescope=TelescopeType.SKA_LOW)
-        uow_mock.ebs.add.return_value = persisted_eb
-
-        response = client.post(f"{EBS_API_URL}/ska_low")
-
-        assert response.status_code == HTTPStatus.OK
-        result = ExecutionBlock.model_validate_json(response.text)
-        assert result.telescope == TelescopeType.SKA_LOW
 
 
 class TestAddRequestResponse:
@@ -144,6 +161,64 @@ class TestAddRequestResponse:
         response = client.patch(
             f"{EBS_API_URL}/eb-missing/request_response",
             content=new_rr.model_dump_json(),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert "eb-missing" in response.json()["detail"]
+
+
+class TestAddLabels:
+    def test_add_labels_on_empty_labels(self, client_with_uow_mock):
+        """PATCH /ebs/{eb_id}/labels sets labels on an EB with an empty labels dict."""
+        client, uow_mock = client_with_uow_mock
+        eb = make_eb()
+        updated_eb = make_eb(labels={"env": "test", "priority": 1.0})
+        uow_mock.ebs.get.return_value = eb
+        uow_mock.ebs.add.return_value = updated_eb
+
+        response = client.patch(
+            f"{EBS_API_URL}/eb-test-123/labels",
+            content=json.dumps({"env": "test", "priority": 1.0}),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        result = ExecutionBlock.model_validate_json(response.text)
+        assert result.labels == {"env": "test", "priority": 1.0}
+        uow_mock.ebs.get.assert_called_once_with("eb-test-123")
+        uow_mock.ebs.add.assert_called_once()
+        uow_mock.commit.assert_called_once()
+
+    def test_add_labels_merges_with_existing(self, client_with_uow_mock):
+        """PATCH /ebs/{eb_id}/labels merges new labels with existing ones."""
+        client, uow_mock = client_with_uow_mock
+        eb = make_eb(labels={"existing": "value"})
+        updated_eb = make_eb(labels={"existing": "value", "new_key": "new_value"})
+        uow_mock.ebs.get.return_value = eb
+        uow_mock.ebs.add.return_value = updated_eb
+
+        response = client.patch(
+            f"{EBS_API_URL}/eb-test-123/labels",
+            content=json.dumps({"new_key": "new_value"}),
+            headers={"Content-type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        result = ExecutionBlock.model_validate_json(response.text)
+        assert result.labels == {"existing": "value", "new_key": "new_value"}
+        uow_mock.ebs.get.assert_called_once_with("eb-test-123")
+        uow_mock.ebs.add.assert_called_once()
+        uow_mock.commit.assert_called_once()
+
+    def test_add_labels_eb_not_found(self, client_with_uow_mock):
+        """PATCH /ebs/{eb_id}/labels returns 404 when the EB does not exist."""
+        client, uow_mock = client_with_uow_mock
+        uow_mock.ebs.get.side_effect = ODANotFound(identifier="eb-missing")
+
+        response = client.patch(
+            f"{EBS_API_URL}/eb-missing/labels",
+            content=json.dumps({"key": "value"}),
             headers={"Content-type": "application/json"},
         )
 
