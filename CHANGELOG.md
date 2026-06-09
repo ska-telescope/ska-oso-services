@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Refactored coordinate lookup module to use Sesame
 
 14.7.0
 **********
