@@ -3,11 +3,11 @@ from __future__ import annotations
 # https://stackoverflow.com/a/50099819
 # pylint: disable=no-member,no-name-in-module
 import logging
+from enum import Enum
 
 import astropy.units as u
-from astropy.coordinates import SkyCoord
-from astroquery.exceptions import TimeoutError  # pylint: disable=redefined-builtin
-from astroquery.exceptions import RemoteServiceError, TableParseError
+from astropy.coordinates import SkyCoord, get_icrs_coordinates
+from astropy.coordinates.name_resolve import NameResolveError
 from astroquery.ipac.ned import Ned
 from astroquery.simbad import Simbad
 from ska_oso_pdm import (
@@ -23,7 +23,9 @@ from ska_oso_services.common.error_handling import CatalogLookupError, NotFoundE
 LOGGER = logging.getLogger(__name__)
 
 
-AstroqueryExceptions = (TimeoutError, TableParseError, RemoteServiceError)
+class ReferenceFrame(str, Enum):
+    equatorial = "equatorial"
+    galactic = "galactic"
 
 
 def _as_python_scalar(value):
@@ -50,14 +52,11 @@ def _as_python_scalar(value):
     return value
 
 
-def get_coordinates(object_name: str) -> Target:
+def get_coordinates(object_name: str, reference_frame: ReferenceFrame) -> Target:
     """
-    Query celestial coordinates for a given object name in either the
-    SIMBAD or the NED databases of astronomical sources. We search SIMBAD
-    and if the source is not found, try NED.
-    The function returns the Right Ascension (RA) and Declination (Dec)
-    in the hour-minute-second (HMS) and degree-minute-second (DMS) format
-    respectively.
+    Query celestial coordinates for a given object name using sesame.
+    This queries the  SIMBAD, NED and Vizier databases of astronomical
+    sources.
 
     Velocities are handled in the following way:
     Simbad - for each object, a master value is stored which will be either
@@ -65,108 +64,96 @@ def get_coordinates(object_name: str) -> Target:
     stores it. The other is set to zero.
     NED - only the redshift is stored as the velocity has limited precision.
     Velocity is set to zero.
+
+    :param object_name: The name of the object to be queried
+    :param reference_frame: Reference frame of the object coordinates to be
+        returned
     """
     try:
-        simbad_result = lookup_in_simbad(object_name)
-        if simbad_result is not None:
-            return simbad_result
+        sesame_result = get_icrs_coordinates(object_name)
 
-    except AstroqueryExceptions:
-        LOGGER.exception("Error occurred while searching SIMBAD")
-        # Continue to lookup in NED
+        if reference_frame == ReferenceFrame.equatorial:
+            reference_coordinate = _sky_coord_to_pdm_icrs(sesame_result)
+        else:
+            reference_coordinate = _sky_coord_to_pdm_gal(sesame_result)
 
-    try:
-        ned_result = lookup_in_ned(object_name)
-        if ned_result is not None:
-            return ned_result
-    except AstroqueryExceptions as err:
-        LOGGER.exception("Error occurred while searching NED")
-        raise CatalogLookupError(
-            "Error while looking up target in SIMBAD/NED. "
-            "Please try again or manually input target details."
-        ) from err
+        return Target(
+            name=object_name,
+            reference_coordinate=reference_coordinate,
+            radial_velocity=get_radial_motion(object_name),
+        )
 
-    not_found_msg = f"Object {object_name} not found in SIMBAD or NED"
-    LOGGER.debug(not_found_msg)
-    raise NotFoundError(detail=not_found_msg)
+    except NameResolveError as err:
+        LOGGER.exception("Error occurred executing Sesame query")
+        msg = str(err)
+
+        if msg.startswith("Unable to find coordinates for name"):
+            raise NotFoundError(
+                f"Object {object_name} not found in SIMBAD, NED or VizieR. "
+                "Please try again or manually input target details."
+            )
+        else:
+            raise CatalogLookupError(
+                "Error occurred while resolving target. "
+                "Please try again or manually input target details."
+            )
 
 
-def lookup_in_simbad(object_name: str) -> Target | None:
-    LOGGER.debug("Looking up %s in SIMBAD", object_name)
+def get_radial_motion(object_name: str) -> RadialVelocity | None:
+    LOGGER.debug("Looking up radial velocity for %s in SIMBAD", object_name)
     Simbad.add_votable_fields("velocity")
     result_table_simbad = Simbad.query_object(object_name)
 
-    if len(result_table_simbad) == 0:
-        return None
+    if len(result_table_simbad) != 0:
 
-    ra = result_table_simbad["ra"][0]
-    dec = result_table_simbad["dec"][0]
-    coordinates = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs")
-    pdm_coordinate = _sky_coord_to_pdm_icrs(coordinates)
-
-    # Determine if stored information is redshift or velocity
-    rvz_type = _as_python_scalar(result_table_simbad["rvz_type"])
-    match rvz_type:
-        case "z":
-            radial_velocity = RadialVelocity(
-                redshift=float(_as_python_scalar(result_table_simbad["rvz_redshift"]))
-            )
-        case "v":
-            radial_velocity = RadialVelocity(
-                quantity=(
-                    u.Quantity(
-                        value=float(_as_python_scalar(result_table_simbad["rvz_radvel"])),
-                        unit=RadialVelocityUnits.KM_PER_SEC,
+        # Determine if stored information is redshift or velocity
+        rvz_type = _as_python_scalar(result_table_simbad["rvz_type"])
+        match rvz_type:
+            case "z":
+                radial_velocity = RadialVelocity(
+                    redshift=float(_as_python_scalar(result_table_simbad["rvz_redshift"]))
+                )
+            case "v":
+                radial_velocity = RadialVelocity(
+                    quantity=(
+                        u.Quantity(
+                            value=float(_as_python_scalar(result_table_simbad["rvz_radvel"])),
+                            unit=RadialVelocityUnits.KM_PER_SEC,
+                        )
                     )
                 )
-            )
-        case _:
-            # The other rvz_type that might be stored in simbad are not supported
+            case _:
+                # The other rvz_type that might be stored in simbad are not supported
+                radial_velocity = RadialVelocity()
+
+    else:
+
+        LOGGER.debug("Looking up %s in NED", object_name)
+        result_table_ned = Ned.query_object(object_name)
+        if len(result_table_ned) == 0:
             radial_velocity = RadialVelocity()
 
-    return Target(
-        name=object_name,
-        reference_coordinate=pdm_coordinate,
-        radial_velocity=radial_velocity,
-    )
+        # For NED we only take the redshift
+        elif (
+            hasattr(result_table_ned["Redshift"], "mask") and result_table_ned["Redshift"].mask[0]
+        ):
+            radial_velocity = RadialVelocity(redshift=0)
+        else:
+            radial_velocity = RadialVelocity(
+                redshift=float(_as_python_scalar(result_table_ned["Redshift"][0]))
+            )
 
-
-def lookup_in_ned(object_name: str) -> Target | None:
-    LOGGER.debug("Looking up %s in NED", object_name)
-    result_table_ned = Ned.query_object(object_name)
-    if len(result_table_ned) == 0:
-        return None
-
-    ra = result_table_ned["RA"][0]
-    dec = result_table_ned["DEC"][0]
-    coordinates = SkyCoord(ra, dec, unit=(u.degree, u.degree), frame="icrs")
-    pdm_coordinate = _sky_coord_to_pdm_icrs(coordinates)
-
-    # For NED we only take the redshift
-    if hasattr(result_table_ned["Redshift"], "mask") and result_table_ned["Redshift"].mask[0]:
-        radial_velocity = RadialVelocity(redshift=0)
-    else:
-        radial_velocity = RadialVelocity(
-            redshift=float(_as_python_scalar(result_table_ned["Redshift"][0]))
-        )
-
-    return Target(
-        name=object_name,
-        reference_coordinate=pdm_coordinate,
-        radial_velocity=radial_velocity,
-    )
-
-
-def convert_icrs_to_galactic(icrs_coordinates: ICRSCoordinates) -> GalacticCoordinates:
-    sky_coord = icrs_coordinates.to_sky_coord()
-
-    return GalacticCoordinates(
-        l=round(sky_coord.galactic.l.value, 7), b=round(sky_coord.galactic.b.value, 7)
-    )
+    return radial_velocity
 
 
 def _sky_coord_to_pdm_icrs(sky_coord: SkyCoord) -> ICRSCoordinates:
     return ICRSCoordinates(
         ra_str=sky_coord.icrs.ra.to_string(u.hourangle, sep=":", pad=True, precision=4),
         dec_str=sky_coord.icrs.dec.to_string(u.degree, sep=":", pad=True, precision=3),
+    )
+
+
+def _sky_coord_to_pdm_gal(sky_coord: SkyCoord) -> GalacticCoordinates:
+    return GalacticCoordinates(
+        l=round(float(sky_coord.galactic.l.deg), 7), b=round(float(sky_coord.galactic.b.deg), 7)
     )
