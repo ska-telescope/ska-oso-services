@@ -170,16 +170,17 @@ def _make_target(ra_str: str, dec_str: str, idx: int) -> Target:
     )
 
 
-# Non-uniform dec spacing: rows at 0°, 2°, 4°, 10° (gap ratio = 6/2 = 3.0)
+# Non-uniform dec spacing with no missing rings:
+# rows at 0°, 2°, 4.05°, 6.05° (gaps: 2.0°, 2.05°, 2.0°).
 NON_UNIFORM_DEC_TARGETS = [
     _make_target("00:00:00.00", "+00:00:00.00", 0),
     _make_target("00:12:00.00", "+00:00:00.00", 1),
     _make_target("00:00:00.00", "+02:00:00.00", 2),
     _make_target("00:12:00.00", "+02:00:00.00", 3),
-    _make_target("00:00:00.00", "+04:00:00.00", 4),
-    _make_target("00:12:00.00", "+04:00:00.00", 5),
-    _make_target("00:00:00.00", "+10:00:00.00", 6),
-    _make_target("00:12:00.00", "+10:00:00.00", 7),
+    _make_target("00:00:00.00", "+04:03:00.00", 4),
+    _make_target("00:12:00.00", "+04:03:00.00", 5),
+    _make_target("00:00:00.00", "+06:03:00.00", 6),
+    _make_target("00:12:00.00", "+06:03:00.00", 7),
 ]
 
 # Missing ring: rows at dec 0°, 2°, 6° — ring_id 2 (dec≈4°) is absent.
@@ -220,12 +221,16 @@ class TestValidateDeclinationQueues:
         with pytest.raises(ValueError, match="Declination spacing is not uniform"):
             rd.validate()
 
+    def test_non_uniform_dec_can_relax_tolerance(self):
+        """Callers can override the default declination spacing tolerance."""
+        rd = DeclinationQueues.from_targets(NON_UNIFORM_DEC_TARGETS)
+        rd.validate(dec_uniformity_tolerance=0.03)
+
     def test_missing_ring_raises(self):
         """Catalogue with a gap in ring ids should raise ValueError."""
         rd = DeclinationQueues.from_targets(MISSING_RING_TARGETS)
-        # Relax dec-uniformity tolerance so the empty-ring check is reached.
         with pytest.raises(ValueError, match="Empty ring"):
-            rd.validate(dec_uniformity_tolerance=3.0)
+            rd.validate()
 
     def test_bad_ra_spacing_raises(self):
         """Catalogue with non-uniform RA spacing raises ValueError."""

@@ -25,6 +25,9 @@ class GroupingMethod(str, Enum):
     CONSTRAINED_RA_SWEEP = "constrained_ra_sweep"
 
 
+DEC_UNIFORMITY_RELATIVE_TOLERANCE = 0.01
+
+
 # ---------------------------------------------------------------------------
 # DeclinationQueues — value object describing the ring geometry of a catalogue
 # ---------------------------------------------------------------------------
@@ -165,37 +168,22 @@ class DeclinationQueues:
     def validate(
         self,
         *,
-        dec_uniformity_tolerance: float = 1.5,
-        ra_ring_fail_fraction: float = 0.2,
+        dec_uniformity_tolerance: float = DEC_UNIFORMITY_RELATIVE_TOLERANCE,
     ) -> None:
         """Validate that the catalogue is suitable for constrained-RA-sweep grouping.
 
         Parameters
         ----------
         dec_uniformity_tolerance : float
-            Maximum allowed ratio of the largest to smallest gap between
-            successive unique declination values.  Defaults to 1.5.
-        ra_ring_fail_fraction : float
-            Maximum fraction of rings allowed to violate the RA-spacing
-            checks before a ``ValueError`` is raised.  Defaults to 0.2.
+            Maximum allowed relative deviation of declination gaps from ``delta_dec``.
+            Default is ``DEC_UNIFORMITY_RELATIVE_TOLERANCE`` = 0.01.
 
         Raises
         ------
         ValueError
             If the catalogue fails any of the structural checks.
         """
-        # --- Check 1: Uniform declination spacing ---
-        dec_diffs = np.diff(self.unique_decs)
-        ratio = float(np.max(dec_diffs) / np.min(dec_diffs))
-        if ratio > dec_uniformity_tolerance:
-            raise ValueError(
-                f"Declination spacing is not uniform: max/min gap ratio is "
-                f"{ratio:.2f}, exceeding tolerance {dec_uniformity_tolerance}. "
-                f"The constrained-RA-sweep algorithm requires approximately equal "
-                f"declination spacing between target rings."
-            )
-
-        # --- Check 2: No empty rings ---
+        # --- Check 1: No empty rings ---
         expected_num_rings = (
             round((self.unique_decs[-1] - self.unique_decs[0]) / self.delta_dec) + 1
         )
@@ -207,10 +195,24 @@ class DeclinationQueues:
                 f"between the first and last to contain at least one target."
             )
 
+        # --- Check 2: Uniform declination spacing ---
+        dec_diffs = np.diff(self.unique_decs)
+        rel_error = np.abs(dec_diffs - self.delta_dec) / self.delta_dec
+        max_rel_error = float(np.max(rel_error))
+        if max_rel_error > dec_uniformity_tolerance:
+            raise ValueError(
+                f"Declination spacing is not uniform: maximum relative deviation from "
+                f"delta_dec is {max_rel_error:.2%}, exceeding tolerance "
+                f"{dec_uniformity_tolerance:.2%}. "
+                f"The constrained-RA-sweep algorithm requires near-uniform "
+                f"declination spacing between rings."
+            )
+
         # --- Check 3: Intra-ring RA spacing vs separation thresholds ---
-        failing_rings: list[str] = []
+        issue_lines: list[str] = []
+        failing_dec_count = 0
         for q in self.queues:
-            if len(q) < 3:
+            if len(q) < 4:
                 continue
             indices = list(q)
             ring_ra = self.ra_deg[indices]
@@ -232,7 +234,8 @@ class DeclinationQueues:
             if not (self.min_separation <= approx_sep_k2 <= self.max_separation):
                 issues.append(
                     f"k=2 separation ({approx_sep_k2:.3f}°) not in "
-                    f"[{self.min_separation:.3f}°, {self.max_separation:.3f}°]"
+                    f"[min_separation ({self.min_separation:.3f}°), "
+                    f"max_separation ({self.max_separation:.3f}°)]"
                 )
             if approx_sep_k3 <= self.max_separation:
                 issues.append(
@@ -240,19 +243,21 @@ class DeclinationQueues:
                     f"max_separation ({self.max_separation:.3f}°)"
                 )
             if issues:
-                failing_rings.append(f"ring at dec≈{ring_dec_mean:.1f}°: {'; '.join(issues)}")
-
-        checkable_rings = sum(1 for q in self.queues if len(q) >= 3)
-        if checkable_rings > 0:
-            fail_frac = len(failing_rings) / checkable_rings
-            if fail_frac > ra_ring_fail_fraction:
-                detail = "\n  ".join(failing_rings[:5])
-                raise ValueError(
-                    f"RA spacing check failed for "
-                    f"{len(failing_rings)}/{checkable_rings} "
-                    f"rings ({fail_frac:.0%}), exceeding tolerance "
-                    f"{ra_ring_fail_fraction:.0%}. Examples:\n  {detail}"
+                failing_dec_count += 1
+                issue_lines.extend(
+                    f"ring at dec≈{ring_dec_mean:.1f}°: {issue}" for issue in issues
                 )
+
+        if issue_lines:
+            shown_lines = issue_lines[:10]
+            detail = "\n  ".join(shown_lines)
+            remaining = len(issue_lines) - len(shown_lines)
+            tail = f"\n  plus {remaining} further issues" if remaining > 0 else ""
+            raise ValueError(
+                f"RA spacing check failed at {failing_dec_count} declinations. "
+                f"Every declination with at least four targets must satisfy "
+                f"the k=1/k=2/k=3 separation bounds.\n  {detail}{tail}"
+            )
 
 
 # ---------------------------------------------------------------------------
