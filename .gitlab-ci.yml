@@ -26,6 +26,14 @@ stages:
   - pages
   - scan
 
+CHANGELOG:
+  stage: lint
+  only:
+    - merge_requests
+  allow_failure: true
+  script:
+    - if git diff --quiet $CI_MERGE_REQUEST_DIFF_BASE_SHA...HEAD -- CHANGELOG.rst; then exit 1; fi
+
 k8s-test:
   variables:
     PIPELINE_TEST_DEPLOYMENT: true
