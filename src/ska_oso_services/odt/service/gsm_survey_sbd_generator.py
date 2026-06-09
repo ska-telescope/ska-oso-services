@@ -29,6 +29,7 @@ from ska_oso_pdm.sb_definition.procedures import GitScript
 from ska_oso_services.common.astro import low_frequency_to_coarse_channel
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.odt.service.sbd_generator import _sbd_internal_id
+from ska_oso_services.odt.service.target_grouping import GroupingMethod, create_grouper
 
 DEFAULT_SUBARRAY = SubArrayLOW.AA2_ALL
 
@@ -60,6 +61,7 @@ def generate_gsm_survey_sbds(
     num_subarray_beams: int,
     num_scans: int,
     num_calibrator_beams: int,
+    grouping: GroupingMethod = GroupingMethod.SEQUENTIAL,
 ) -> list[SBDefinition]:
 
     sbds = []
@@ -68,8 +70,6 @@ def generate_gsm_survey_sbds(
     number_of_channels = _get_number_of_channels_for_each_subarray_beam(
         num_subarray_beams + num_calibrator_beams, total_bandwidth
     )
-
-    total_targets = len(input_targets)
 
     csp_configuration = _csp_configuration(
         centre_frequency=centre_frequency, number_of_channels=number_of_channels
@@ -80,43 +80,29 @@ def generate_gsm_survey_sbds(
         for station_id in station_ids
     ]
 
-    # This is where you would apply some kind of clustering algorithm
-    # that decides how to break the list of targets into SBDs.
-    # This basic first implementation just fills each SBD with num_subarray_beams * num_scans
-    # targets until it runs out of targets, then creates a final SBD with the remaining targets.
     num_targets_per_sbd = num_scans * num_subarray_beams
-    num_full_sbds = total_targets // num_targets_per_sbd
 
-    for index in range(0, num_full_sbds * num_targets_per_sbd, num_targets_per_sbd):
+    grouper = create_grouper(grouping)
+    groups = grouper.group(input_targets, num_targets_per_sbd)
 
-        targets_for_sbd = input_targets[index : index + num_targets_per_sbd]
+    for group_indices in groups:
+        targets_for_sbd = [input_targets[i] for i in group_indices]
+
+        if len(targets_for_sbd) == num_targets_per_sbd:
+            sbd_beams = num_subarray_beams
+            sbd_scans = num_scans
+        else:
+            sbd_beams, sbd_scans = _compute_remainder_layout(
+                len(targets_for_sbd), num_subarray_beams
+            )
 
         sbds.append(
             _sbd_for_calibrator_targets(
                 targets_for_sbd,
                 csp_configuration,
                 scan_duration,
-                num_subarray_beams,
-                num_scans,
-                apertures,
-                num_calibrator_beams,
-            )
-        )
-
-    # Handle remaining targets that don't fill a complete SBD with the requested
-    # number of subarray beams. This may result in an SBD with fewer subarray
-    # beams than requested but will guarantee each subarray beam has the same number of scans
-    remainder = total_targets - (num_full_sbds * num_targets_per_sbd)
-    if remainder > 0:
-        remainder_targets = input_targets[num_full_sbds * num_targets_per_sbd :]
-        remainder_beams, remainder_scans = _compute_remainder_layout(remainder, num_subarray_beams)
-        sbds.append(
-            _sbd_for_calibrator_targets(
-                remainder_targets,
-                csp_configuration,
-                scan_duration,
-                remainder_beams,
-                remainder_scans,
+                sbd_beams,
+                sbd_scans,
                 apertures,
                 num_calibrator_beams,
             )

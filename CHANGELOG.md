@@ -4,6 +4,10 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+**********
+* Constrained RA-sweep grouping for GSM survey SBDs
+
 14.6.0
 **********
 * New major version of ODA Updated to ODA v18.0.0
