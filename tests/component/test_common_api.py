@@ -45,12 +45,6 @@ from . import OSO_SERVICES_URL
                     "reference_frame": "LSRK",
                     "redshift": 0.0,
                 },
-                "equatorial": {
-                    "ra": "00:24:05.3590",
-                    "dec": "-72:04:53.200",
-                    "velocity": -17.2,
-                    "redshift": 0.0,
-                },
             },
         ),
         (
@@ -81,12 +75,6 @@ from . import OSO_SERVICES_URL
                     "quantity": {"value": -17.2, "unit": "km / s"},
                     "definition": "RADIO",
                     "reference_frame": "LSRK",
-                    "redshift": 0.0,
-                },
-                "galactic": {
-                    "lon": 305.8953327,
-                    "lat": -44.8891135,
-                    "velocity": -17.2,
                     "redshift": 0.0,
                 },
             },
@@ -124,12 +112,6 @@ from . import OSO_SERVICES_URL
                     "reference_frame": "LSRK",
                     "redshift": 0.0,
                 },
-                "equatorial": {
-                    "ra": "00:42:44.3300",
-                    "dec": "41:16:07.500",
-                    "velocity": -300.0,
-                    "redshift": 0.0,
-                },
             },
         ),
         (
@@ -150,7 +132,7 @@ from . import OSO_SERVICES_URL
                 "reference_coordinate": {
                     "kind": "galactic",
                     "l": 354.2101588,
-                    "b": -78.58564767,
+                    "b": -78.5856477,
                     "pm_l": 0.0,
                     "pm_b": 0.0,
                     "epoch": 2000.0,
@@ -161,13 +143,7 @@ from . import OSO_SERVICES_URL
                     "definition": "RADIO",
                     "reference_frame": "LSRK",
                     "redshift": 0.0,
-                },
-                "galactic": {
-                    "lat": -78.5856477,
-                    "lon": 354.2101595,
-                    "redshift": 0.0,
-                    "velocity": 6800.0,
-                },
+                }
             },
         ),
     ],
