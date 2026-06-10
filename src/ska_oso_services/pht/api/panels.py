@@ -12,7 +12,6 @@ from ska_ser_skuid import EntityType, mint_skuid
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import UnprocessableEntityError
-from ska_oso_services.pht.models.domain import PrslRole
 from ska_oso_services.pht.models.schemas import PanelAssignResponse, PanelBatchCreateResult
 from ska_oso_services.pht.service.panel_operations import (
     _to_prsl_id,

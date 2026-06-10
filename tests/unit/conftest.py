@@ -18,7 +18,7 @@ from ska_db_oda.common.uow import get_uow
 from ska_oso_pdm import SBDefinition
 
 from ska_oso_services import create_app
-from ska_oso_services.common.auth import AUDIENCE, Scope
+from ska_oso_services.common.auth import Scope
 from tests.unit.util import load_string_from_file
 
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]

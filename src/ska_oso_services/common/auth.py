@@ -16,14 +16,21 @@ DEFAULT_AUDIENCES = (
     # TODO: Remove this MS Entra once all clients are fully migrated to Indigo.
     "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b",
 )
-AUDIENCE = getenv("SKA_AUTH_AUDIENCE", DEFAULT_AUDIENCES)
+
+
+def get_audience() -> tuple[str, ...]:
+    if aud := getenv("SKA_AUTH_AUDIENCE"):
+        return tuple(aud.split(","))
+    return DEFAULT_AUDIENCES
 
 
 # This should never be true in production, because
 if getenv("PIPELINE_TESTS_DEPLOYMENT", "false") == "true":
-    Permissions = partial(Requires, audience=AUDIENCE, keys=TEST_PUBLIC_KEYS, issuer=TEST_ISSUER)
+    Permissions = partial(
+        Requires, audience=get_audience(), keys=TEST_PUBLIC_KEYS, issuer=TEST_ISSUER
+    )
 else:
-    Permissions = partial(Requires, audience=AUDIENCE)
+    Permissions = partial(Requires, audience=get_audience())
 
 
 # Use StrEnum once we upgrade Python
