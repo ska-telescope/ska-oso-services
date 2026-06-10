@@ -143,7 +143,7 @@ from . import OSO_SERVICES_URL
                     "definition": "RADIO",
                     "reference_frame": "LSRK",
                     "redshift": 0.0,
-                }
+                },
             },
         ),
     ],
