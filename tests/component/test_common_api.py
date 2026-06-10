@@ -149,8 +149,8 @@ from . import OSO_SERVICES_URL
                 },
                 "reference_coordinate": {
                     "kind": "galactic",
-                    "l": 354.2101595,
-                    "b": -78.5856477,
+                    "l": 354.2101588,
+                    "b": -78.58564767,
                     "pm_l": 0.0,
                     "pm_b": 0.0,
                     "epoch": 2000.0,
