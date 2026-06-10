@@ -344,7 +344,7 @@ def get_proposal(
     response_model=list[Proposal],
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READ],
         )
     ],
@@ -374,7 +374,7 @@ def get_proposals_batch(
     summary="Get all reviews for a particular proposal",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READ],
         )
     ],

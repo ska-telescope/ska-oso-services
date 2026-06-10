@@ -42,7 +42,7 @@ def create_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -71,7 +71,7 @@ def auto_assign_to_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -247,7 +247,7 @@ def auto_create_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -331,7 +331,7 @@ def auto_create_panel(
     summary="Retrieve an existing panel by panel_id",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READ],
         )
     ],
@@ -355,7 +355,7 @@ def update_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -540,7 +540,7 @@ def update_panel(
     summary="Get all panels matching the given query parameters",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READ],
         )
     ],
