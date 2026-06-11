@@ -698,7 +698,7 @@ class TestFrequencySweepSBDefinition:
         )
 
         assert resp.status_code == HTTPStatus.OK
-        mock_get_coordinates.assert_called_once_with("M83")
+        mock_get_coordinates.assert_called_once_with("M83", "equatorial")
         target = mock_generate.call_args.kwargs["target"]
         assert isinstance(target, Target)
         assert target.name == resolved_target.name

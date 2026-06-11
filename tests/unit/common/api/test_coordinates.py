@@ -3,7 +3,7 @@ from http import HTTPStatus
 from unittest import mock
 
 from astropy.units import Quantity
-from ska_oso_pdm import ICRSCoordinates, RadialVelocity, Target
+from ska_oso_pdm import GalacticCoordinates, ICRSCoordinates, RadialVelocity, Target
 
 from ska_oso_services.common.error_handling import NotFoundError
 from tests.unit.conftest import APP_BASE_API_URL
@@ -17,6 +17,12 @@ TEST_TARGET_WITH_VELOCITY = Target(
     radial_velocity=RadialVelocity(quantity=Quantity(value=519.1, unit="km/s")),
 )
 
+TEST_GALACTIC_TARGET_WITH_VELOCITY = Target(
+    name="M83",
+    reference_coordinate=GalacticCoordinates(l=121.1743291, b=-21.5733088),
+    radial_velocity=RadialVelocity(quantity=Quantity(value=519.1, unit="km/s")),
+)
+
 
 class TestCoordinates:
     @mock.patch("ska_oso_services.common.api.coordinates.get_coordinates")
@@ -24,12 +30,6 @@ class TestCoordinates:
         mock_get_coordinates.return_value = TEST_TARGET_WITH_VELOCITY
 
         expected_response = {
-            "equatorial": {
-                "dec": "+41:16:07.500",
-                "ra": "00:42:44.3300",
-                "redshift": 0.0,
-                "velocity": 519.1,
-            },
             "name": "M83",
             "pointing_pattern": {
                 "active": "SinglePointParameters",
@@ -65,15 +65,9 @@ class TestCoordinates:
 
     @mock.patch("ska_oso_services.common.api.coordinates.get_coordinates")
     def test_success_galactic(self, mock_get_coordinates, client):
-        mock_get_coordinates.return_value = TEST_TARGET_WITH_VELOCITY
+        mock_get_coordinates.return_value = TEST_GALACTIC_TARGET_WITH_VELOCITY
 
         expected_response = {
-            "galactic": {
-                "lat": -21.5733088,
-                "lon": 121.1743291,
-                "redshift": 0.0,
-                "velocity": 519.1,
-            },
             "name": "M83",
             "pointing_pattern": {
                 "active": "SinglePointParameters",

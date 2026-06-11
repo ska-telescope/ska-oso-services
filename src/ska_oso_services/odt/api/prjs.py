@@ -24,7 +24,7 @@ from ska_oso_pdm.sb_definition import SBDefinition
 from ska_ser_skuid import EntityType, mint_skuid
 
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.common.coordinateslookup import get_coordinates
+from ska_oso_services.common.coordinateslookup import ReferenceFrame, get_coordinates
 from ska_oso_services.common.error_handling import (
     BadRequestError,
     NotFoundError,
@@ -181,7 +181,7 @@ class FrequencySweepInputs(BaseModel):
 def _resolve_frequency_sweep_target(inputs: FrequencySweepInputs) -> Target:
     """Resolve the target for frequency-sweep generation from API inputs."""
     if inputs.target_name:
-        target = get_coordinates(inputs.target_name)
+        target = get_coordinates(inputs.target_name, ReferenceFrame.equatorial)
         target.target_id = target_id()
         return target
 
