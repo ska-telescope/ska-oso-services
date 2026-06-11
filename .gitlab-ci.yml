@@ -32,7 +32,7 @@ CHANGELOG:
     - merge_requests
   allow_failure: true
   script:
-    - if git diff --quiet $CI_MERGE_REQUEST_DIFF_BASE_SHA...HEAD -- CHANGELOG.rst; then exit 1; fi
+    - if git diff --quiet $CI_MERGE_REQUEST_DIFF_BASE_SHA...HEAD -- CHANGELOG.md; then exit 1; fi
 
 k8s-test:
   variables:
