@@ -104,6 +104,12 @@ flake8 = "^7.0.0"
 deepdiff = "^7.0.0"
 ska-ser-xray = "^0.7.0"
 numpy = "<2.4.0"
+httpx = ">=0.20"
+
+[tool.pytest.ini_options]
+markers = [
+    "live: requires live network access to the staging Indigo IAM (deselect with '-m not live')",
+]
 
 [tool.poetry.group.docs]
 optional = true
