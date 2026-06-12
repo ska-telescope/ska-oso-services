@@ -100,19 +100,11 @@ test-chart-templates:
       junit: build/reports/chart_template_tests.xml
 
 indigo-live-auth:
-  stage: test
+  extends: python-test
   allow_failure: true
   variables:
-    SKA_AUTH_AUDIENCE: "test:pht"
-  script:
-    - poetry install
-    - PYTHONPATH=$(pwd)/src poetry run pytest tests/live/ -v --junitxml=build/reports/indigo-live-tests.xml
-  artifacts:
-    when: always
-    paths:
-      - build/reports/indigo-live-tests.xml
-    reports:
-      junit: build/reports/indigo-live-tests.xml
+    PYTHON_TEST_FILE: tests/live/
+    SKA_AUTH_AUDIENCE: test:pht
 
 xray-publish:
   rules:
