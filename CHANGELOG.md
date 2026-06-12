@@ -6,7 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-* Refactored coordinate lookup module to use Sesame
+* Refactored coordinate lookup module to use Sesame.
+* Accept Indigo IAM access tokens alongside MS Entra tokens.
 
 14.7.0
 **********
@@ -19,7 +20,7 @@ Unreleased
 * New major version of ODA Updated to ODA v18.0.0
 * Uses the updated `ska_db_oda.common.uow` UnitOfWork for ODA requests.
 * [BUGFIX] Fixed issue with target validation on generated Low commissioning SBs
- 
+
 14.5.0
 ***********
 * [BUGFIX] Fixes error message for MID targets below the elevation range
@@ -49,7 +50,7 @@ Unreleased
 
 14.2.2
 ************
-* [BUGFIX] Improvements to defaults in commissioning SBD generation (use AA1, set SDP vis-recieve script, add SBD name). 
+* [BUGFIX] Improvements to defaults in commissioning SBD generation (use AA1, set SDP vis-recieve script, add SBD name).
   Fixes bug in UI when stations are given in generation input.
 
 14.2.1
@@ -90,7 +91,7 @@ Unreleased
 * Adds `PUT /sbds/{sbd_id}/status/ready` and `PUT /sbds/{sbd_id}/status/draft`
 * Updates to `POST /panels/generate` to generate both SV panel and Science Category panels
 * Updated OSD to v5.2.1
-* Added `GET /prsls/osd/cycles` 
+* Added `GET /prsls/osd/cycles`
 
 13.1.1
 ************
