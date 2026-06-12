@@ -4,13 +4,13 @@ Fixtures for live Indigo IAM smoke tests.
 These credentials are non-secret defaults for an isolated staging environment.
 Override any value via the corresponding environment variable.
 """
+
 import os
+from importlib.metadata import version
 
 import httpx
 import pytest
 from fastapi.testclient import TestClient
-from importlib.metadata import version
-from ska_aaa_authhelpers.test_helpers import TEST_AUDIENCE
 
 from ska_oso_services import create_app
 

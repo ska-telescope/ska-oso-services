@@ -3,6 +3,7 @@ Smoke tests: verify a real Indigo IAM token is accepted by PHT endpoints.
 Requires live network access to the staging Indigo IAM instance.
 Run via: pytest tests/live/ -m live
 """
+
 from http import HTTPStatus
 from unittest import mock
 
