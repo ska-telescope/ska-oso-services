@@ -123,7 +123,7 @@ class Testpanel_decisionAPI:
         403 when token lacks SW_ENGINEER role and has no allowed groups.
         """
         bad_token = mint_test_token(
-            audience="live:pht",
+            audience="test:pht",
             roles=[Role.ANY],
             scopes=[Scope.PHT_READWRITE],
             groups=[],

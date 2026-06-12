@@ -79,10 +79,13 @@ PYTHON_LINE_LENGTH = 99
 # Set the k8s test command run inside the testing pod to only run the component
 # tests (no k8s pod deployment required for unit tests)
 
-K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
+K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) SKA_AUTH_AUDIENCE=test:pht pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the component tests
 PYTHON_TEST_FILE = tests/unit/
+
+# Set test audience so tokens minted in unit tests are accepted by the app
+PYTHON_VARS_BEFORE_PYTEST = PYTHONPATH=$(CURDIR)/$(PYTHON_SRC):/app/$(PYTHON_SRC):$(PYTHONPATH) SKA_AUTH_AUDIENCE=test:pht
 
 # Variables used by the xray make targets
 XRAY_TEST_RESULT_FILE = build/reports/report.xml

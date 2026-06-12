@@ -50,7 +50,7 @@ def request_headers() -> dict:
     Returns headers for a test request, including a test auth token
     """
     token = mint_test_token(
-        audience="live:pht",
+        audience="test:pht",
         roles=[
             Role.ANY,
             Role.OPS_PROPOSAL_ADMIN,
