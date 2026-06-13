@@ -34,7 +34,7 @@ def create_panel_decision(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],

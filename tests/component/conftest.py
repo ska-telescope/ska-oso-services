@@ -14,7 +14,7 @@ from tests.component import ODT_URL
 from ..unit.util import TestDataFactory
 from . import PHT_URL
 
-AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b")
+AUDIENCE = getenv("SKA_AUTH_AUDIENCE", "test:pht")
 
 TENANT_ID = "78887040-bad7-494b-8760-88dcacfb3805"
 CLIENT_ID = "e4d6bb9b-cdd0-46c4-b30a-d045091b501b"

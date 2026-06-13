@@ -12,7 +12,6 @@ from ska_ser_skuid import EntityType, mint_skuid
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import UnprocessableEntityError
-from ska_oso_services.pht.models.domain import PrslRole
 from ska_oso_services.pht.models.schemas import PanelAssignResponse, PanelBatchCreateResult
 from ska_oso_services.pht.service.panel_operations import (
     _to_prsl_id,
@@ -42,7 +41,7 @@ def create_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -71,7 +70,7 @@ def auto_assign_to_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -247,7 +246,7 @@ def auto_create_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -331,7 +330,7 @@ def auto_create_panel(
     summary="Retrieve an existing panel by panel_id",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READ],
         )
     ],
@@ -355,7 +354,7 @@ def update_panel(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -540,7 +539,7 @@ def update_panel(
     summary="Get all panels matching the given query parameters",
     dependencies=[
         Permissions(
-            roles=[PrslRole.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
+            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
             scopes=[Scope.PHT_READ],
         )
     ],

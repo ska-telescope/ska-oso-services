@@ -18,8 +18,7 @@ from ska_db_oda.common.uow import get_uow
 from ska_oso_pdm import SBDefinition
 
 from ska_oso_services import create_app
-from ska_oso_services.common.auth import AUDIENCE, Scope
-from ska_oso_services.pht.models.domain import PrslRole
+from ska_oso_services.common.auth import Scope
 from tests.unit.util import load_string_from_file
 
 OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
@@ -51,7 +50,7 @@ def request_headers() -> dict:
     Returns headers for a test request, including a test auth token
     """
     token = mint_test_token(
-        audience=AUDIENCE,
+        audience="test:pht",
         roles=[
             Role.ANY,
             Role.OPS_PROPOSAL_ADMIN,
@@ -65,7 +64,7 @@ def request_headers() -> dict:
             Scope.PHT_READ,
             Scope.PHT_READWRITE,
         ],
-        groups=[Role.OPS_PROPOSAL_ADMIN, PrslRole.OPS_REVIEW_CHAIR],
+        groups=["role/ops_review_chair"],
     )
     return {"Authorization": f"Bearer {token}"}
 

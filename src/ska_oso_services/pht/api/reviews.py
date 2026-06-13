@@ -29,7 +29,7 @@ def create_review(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={Role.SW_ENGINEER, PrslRole.OPS_PROPOSAL_ADMIN},
+            roles={Role.SW_ENGINEER, Role.OPS_PROPOSAL_ADMIN},
             scopes={Scope.PHT_READWRITE},
         ),
     ],

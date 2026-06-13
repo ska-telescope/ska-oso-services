@@ -49,6 +49,12 @@ global:
 rest:
   component: rest
   function: oso-services
+  # Accepted JWT audience values. Includes Indigo IAM audiences and the
+  # legacy MS Entra app URI. Switch "test:" prefixes to "live:" for prod.
+  authAudiences:
+    - "test:pht"
+    - "test:odt"
+    - "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b"
   domain: operations
   logLevel: INFO
   enabled: true

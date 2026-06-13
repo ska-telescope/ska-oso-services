@@ -15,6 +15,12 @@ tests:
           value:
             "false"
 
+  - it: should set SKA_AUTH_AUDIENCE with Indigo and Entra audiences.
+    asserts:
+      - equal:
+          path: data.SKA_AUTH_AUDIENCE
+          value: "test:pht,test:odt,api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b"
+
   - it: should be of type ConfigMap and have the correct apiVersion, v1.
     documentIndex: 0
     asserts:
