@@ -2,13 +2,13 @@ import uuid
 from http import HTTPStatus
 
 from ..unit.util import TestDataFactory
-from . import PHT_URL
+from . import PHT_BASE_API_URL
 
-PANELS_API_URL = f"{PHT_URL}/panels"
+PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"
 HEADERS = {"Content-type": "application/json"}
 
 
-def test_get_list_panels_for_user(authrequests):
+def test_get_list_panels_for_user(client):
     """
     Integration test:
     - Create multiple panels
@@ -24,9 +24,9 @@ def test_get_list_panels_for_user(authrequests):
         panel = TestDataFactory.panel_basic(cycle="2024A")
         panel_json = panel.model_dump_json()
 
-        response = authrequests.post(
+        response = client.post(
             f"{PANELS_API_URL}/create",
-            data=panel_json,
+            content=panel_json,
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == HTTPStatus.OK, response.content
@@ -34,10 +34,10 @@ def test_get_list_panels_for_user(authrequests):
 
     # Get created_by from one of the created panels
     example_panel_id = created_ids[0]
-    get_response = authrequests.get(f"{PANELS_API_URL}/{example_panel_id}")
+    get_response = client.get(f"{PANELS_API_URL}/{example_panel_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
-    list_response = authrequests.get(f"{PANELS_API_URL}/")
+    list_response = client.get(f"{PANELS_API_URL}/")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     panels = list_response.json()
@@ -50,9 +50,9 @@ def test_get_list_panels_for_user(authrequests):
         assert panel_id in returned_ids, f"Missing panel {panel_id}"
 
 
-def test_generate_panels(authrequests):
+def test_generate_panels(client):
     # First call: may create some or none (depends on suite state)
-    resp = authrequests.post(f"{PANELS_API_URL}/generate")
+    resp = client.post(f"{PANELS_API_URL}/generate")
     assert resp.status_code == HTTPStatus.OK, resp.text
 
     data = resp.json()
@@ -71,18 +71,18 @@ def test_generate_panels(authrequests):
     assert created_count >= 0
 
     # Calling again should create nothing new
-    resp2 = authrequests.post(f"{PANELS_API_URL}/generate")
+    resp2 = client.post(f"{PANELS_API_URL}/generate")
     assert resp2.status_code == HTTPStatus.OK, resp2.text
     data2 = resp2.json()
     assert data2["created_count"] == 0
     assert data2["created_names"] == []
 
 
-def test_put_panel_with_proposal_and_reviewers(authrequests):
+def test_put_panel_with_proposal_and_reviewers(client):
     # Create a proposal to reference in panel assignments
-    proposal_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+    proposal_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert proposal_response.status_code == HTTPStatus.OK, proposal_response.text
@@ -90,9 +90,9 @@ def test_put_panel_with_proposal_and_reviewers(authrequests):
 
     # Create a panel to update
     panel = TestDataFactory.panel_basic(cycle="2024A")
-    panel_response = authrequests.post(
+    panel_response = client.post(
         f"{PANELS_API_URL}/create",
-        data=panel.model_dump_json(),
+        content=panel.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert panel_response.status_code == HTTPStatus.OK, panel_response.text
@@ -121,9 +121,9 @@ def test_put_panel_with_proposal_and_reviewers(authrequests):
         cycle="2024A",
     )
 
-    put_response = authrequests.put(
+    put_response = client.put(
         f"{PANELS_API_URL}/{created_panel_id}",
-        data=panel_update.model_dump_json(),
+        content=panel_update.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
 

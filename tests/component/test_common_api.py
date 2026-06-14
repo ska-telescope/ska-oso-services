@@ -9,7 +9,7 @@ from http import HTTPStatus
 
 import pytest
 
-from . import OSO_SERVICES_URL
+from . import OSO_SERVICES_BASE_API_URL
 
 
 @pytest.mark.parametrize(
@@ -148,13 +148,18 @@ from . import OSO_SERVICES_URL
         ),
     ],
 )
-def test_coordinates_get(authrequests, identifier, reference_frame, expected_response):
+def test_coordinates_get(client, identifier, reference_frame, expected_response):
     """
     Test that the GET /coordinates path receives the request
     and returns a success response with the resolved coordinates
     """
 
-    response = authrequests.get(f"{OSO_SERVICES_URL}/coordinates/{identifier}/{reference_frame}")
+    response = client.get(
+        f"{OSO_SERVICES_BASE_API_URL}/coordinates/{identifier}/{reference_frame}"
+    )
 
     assert response.status_code == HTTPStatus.OK, response.json()
-    assert response.json()["reference_coordinate"] == expected_response["reference_coordinate"]
+    assert (
+        response.json()["reference_coordinate"]
+        == expected_response["reference_coordinate"]
+    )

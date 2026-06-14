@@ -10,10 +10,10 @@ import json
 from http import HTTPStatus
 
 from ..unit.util import TestDataFactory
-from . import PHT_URL
+from . import PHT_BASE_API_URL
 
 
-def test_create_and_get_review(authrequests, test_panel_id, test_proposal):
+def test_create_and_get_review(client, test_panel_id, test_proposal):
     """
     Integration test for the POST /reviews/create endpoint
     and GET /reviews/{review_id}.
@@ -21,18 +21,22 @@ def test_create_and_get_review(authrequests, test_panel_id, test_proposal):
     """
 
     # POST using JSON string
-    review = TestDataFactory.reviews(panel_id=test_panel_id, prsl_id=test_proposal.prsl_id)
-    post_response = authrequests.post(
-        f"{PHT_URL}/reviews/create",
-        data=review.model_dump_json(),
+    review = TestDataFactory.reviews(
+        panel_id=test_panel_id, prsl_id=test_proposal.prsl_id
+    )
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/reviews/create",
+        content=review.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     review_id = post_response.json()
-    assert isinstance(review_id, str), f"Expected string, got {type(review_id)}: {review_id}"
+    assert isinstance(
+        review_id, str
+    ), f"Expected string, got {type(review_id)}: {review_id}"
 
     # GET created proposal
-    get_response = authrequests.get(f"{PHT_URL}/reviews/{review_id}")
+    get_response = client.get(f"{PHT_BASE_API_URL}/reviews/{review_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     actual_payload = get_response.json()
 
@@ -48,7 +52,7 @@ def test_create_and_get_review(authrequests, test_panel_id, test_proposal):
     assert actual_payload == expected_payload
 
 
-def test_review_create_then_put(authrequests, test_panel_id, test_proposal):
+def test_review_create_then_put(client, test_panel_id, test_proposal):
     """
     Test that an entity POSTed to /reviews/create
     can then be updated with PUT /reviews/{identifier},
@@ -56,11 +60,13 @@ def test_review_create_then_put(authrequests, test_panel_id, test_proposal):
     """
 
     # POST a new proposal
-    review = TestDataFactory.reviews(panel_id=test_panel_id, prsl_id=test_proposal.prsl_id)
+    review = TestDataFactory.reviews(
+        panel_id=test_panel_id, prsl_id=test_proposal.prsl_id
+    )
     review_id = review.review_id
-    post_response = authrequests.post(
-        f"{PHT_URL}/reviews/create",
-        data=review.model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/reviews/create",
+        content=review.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
 
@@ -71,7 +77,7 @@ def test_review_create_then_put(authrequests, test_panel_id, test_proposal):
     assert returned_review_id == review_id
 
     # GET proposal to fetch latest state
-    get_response = authrequests.get(f"{PHT_URL}/reviews/{returned_review_id}")
+    get_response = client.get(f"{PHT_BASE_API_URL}/reviews/{returned_review_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
     originalreview = get_response.json()
@@ -81,9 +87,9 @@ def test_review_create_then_put(authrequests, test_panel_id, test_proposal):
     review_to_update = json.dumps(originalreview)
 
     # PUT updated proposal
-    put_response = authrequests.put(
-        f"{PHT_URL}/reviews/{returned_review_id}",
-        data=review_to_update,
+    put_response = client.put(
+        f"{PHT_BASE_API_URL}/reviews/{returned_review_id}",
+        content=review_to_update,
         headers={"Content-Type": "application/json"},
     )
 
@@ -91,7 +97,7 @@ def test_review_create_then_put(authrequests, test_panel_id, test_proposal):
     assert put_response.json()["metadata"]["version"] == initial_version + 1
 
 
-def test_get_list_reviews_for_user(authrequests, test_panel_id):
+def test_get_list_reviews_for_user(client, test_panel_id):
     """
     Integration test:
     - Create multiple reviews
@@ -105,9 +111,9 @@ def test_get_list_reviews_for_user(authrequests, test_panel_id):
     # Create 2 reviews with unique review_ids
     for _ in range(2):
         # Add project to link reviews to
-        post_response = authrequests.post(
-            f"{PHT_URL}/prsls/create",
-            data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+        post_response = client.post(
+            f"{PHT_BASE_API_URL}/prsls/create",
+            content=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
             headers={"Content-Type": "application/json"},
         )
         assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -120,9 +126,9 @@ def test_get_list_reviews_for_user(authrequests, test_panel_id):
         )
         review_json = review.model_dump_json()
 
-        response = authrequests.post(
-            f"{PHT_URL}/reviews/create",
-            data=review_json,
+        response = client.post(
+            f"{PHT_BASE_API_URL}/reviews/create",
+            content=review_json,
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == HTTPStatus.OK, response.content
@@ -130,11 +136,11 @@ def test_get_list_reviews_for_user(authrequests, test_panel_id):
 
     # Get created_by from one of the created reviews
     example_review_id = created_ids[0]
-    get_response = authrequests.get(f"{PHT_URL}/reviews/{example_review_id}")
+    get_response = client.get(f"{PHT_BASE_API_URL}/reviews/{example_review_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
     # GET /list/{user_id}
-    list_response = authrequests.get(f"{PHT_URL}/reviews/users/reviews")
+    list_response = client.get(f"{PHT_BASE_API_URL}/reviews/users/reviews")
     assert list_response.status_code == HTTPStatus.OK, list_response.content
 
     reviews = list_response.json()
@@ -144,4 +150,6 @@ def test_get_list_reviews_for_user(authrequests, test_panel_id):
     # Check that all created reviews are returned
     returned_ids = {p["review_id"] for p in reviews}
     for review_id in created_ids:
-        assert review_id in returned_ids, f"Missing proposal {review_id} in GET /users/reviews"
+        assert (
+            review_id in returned_ids
+        ), f"Missing proposal {review_id} in GET /users/reviews"

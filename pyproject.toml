@@ -105,6 +105,7 @@ deepdiff = "^7.0.0"
 ska-ser-xray = "^0.7.0"
 numpy = "<2.4.0"
 httpx = ">=0.20"
+testcontainers = {extras = ["postgres"], version = "^4.0"}
 
 [tool.pytest.ini_options]
 markers = [

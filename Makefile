@@ -76,14 +76,16 @@ PYTHON_SWITCHES_FOR_PYLINT =
 # System Team makefiles' 79 character default
 PYTHON_LINE_LENGTH = 99
 
-# Set the k8s test command run inside the testing pod to only run the component
-# tests (no k8s pod deployment required for unit tests)
+# k8s-test only verifies the chart/image/deployment plumbing — that the
+# image started, routing works, and the app can reach its Postgres.
+# Application business-logic integration tests live in tests/component/ and
+# run via `make python-test` against a testcontainer Postgres, so no k8s
+# deployment is needed for the bulk of the suite.
+K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) SKA_AUTH_AUDIENCE=test:pht pytest ./tests/k8s --junitxml=build/reports/report.xml | tee pytest.stdout
 
-K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) SKA_AUTH_AUDIENCE=test:pht pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
-
-# Set python-test make target to run unit tests and not the component tests.
-# Use ?= so CI jobs can override (e.g. PYTHON_TEST_FILE=tests/live/).
-PYTHON_TEST_FILE ?= tests/unit/
+# tests/live/ is excluded by default — it needs real Indigo IAM credentials
+# and is opted into via CI override (PYTHON_TEST_FILE=tests/live/).
+PYTHON_TEST_FILE ?= tests/unit/ tests/component/
 
 # Audience accepted by the app and embedded in test tokens.
 # Use ?= so CI jobs can set a different value (e.g. for live Indigo tests).

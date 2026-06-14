@@ -12,28 +12,28 @@ from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
 from ska_ser_skuid import EntityType, mint_skuid
 
 from ..unit.util import TestDataFactory
-from . import PHT_URL
+from . import PHT_BASE_API_URL
 
-PANELS_API_URL = f"{PHT_URL}/panels"
+PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"
 
 
-def test_get_osd_data_fail(authrequests):
+def test_get_osd_data_fail(client):
     cycle = 9999
-    response = authrequests.get(f"{PHT_URL}/prsls/osd/{cycle}")
+    response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-def test_get_osd_data_success(authrequests):
+def test_get_osd_data_success(client):
     cycle = 1
-    response = authrequests.get(f"{PHT_URL}/prsls/osd/{cycle}")
+    response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/{cycle}")
 
     res = response.json()
     assert res["observatory_policy"]["cycle_number"] == 1
     assert res["observatory_policy"]["cycle_information"]["cycle_id"] == "SKAO_2027_1"
 
 
-def test_get_osd_cycles_success(authrequests):
-    response = authrequests.get(f"{PHT_URL}/prsls/osd/cycles")
+def test_get_osd_cycles_success(client):
+    response = client.get(f"{PHT_BASE_API_URL}/prsls/osd/cycles")
     assert response.status_code == HTTPStatus.OK
 
     data = response.json()
@@ -41,7 +41,7 @@ def test_get_osd_cycles_success(authrequests):
     assert len(data) > 0  # ensures OSD is reachable and cycles are returned
 
 
-def test_create_and_get_proposal(authrequests):
+def test_create_and_get_proposal(client):
     """
     Integration test for the POST /prsls/create endpoint
     and GET /prsls/{prsl_id}.
@@ -49,9 +49,9 @@ def test_create_and_get_proposal(authrequests):
     """
 
     # POST using JSON string
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal().model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -59,7 +59,7 @@ def test_create_and_get_proposal(authrequests):
     assert isinstance(prsl_id, str), f"Expected string, got {type(prsl_id)}: {prsl_id}"
 
     # GET created proposal
-    get_response = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    get_response = client.get(f"{PHT_BASE_API_URL}/prsls/{prsl_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
     actual_payload = get_response.json()
 
@@ -77,79 +77,83 @@ def test_create_and_get_proposal(authrequests):
     assert actual_payload == expected_payload
 
 
-def test_proposal_create_then_put(authrequests):
+def test_proposal_create_then_put(client):
     """
     POST /prsls/create with a unique prsl_id, then PUT /prsls/{identifier}
     and verify metadata.version increments.
     """
 
     # Create proposal
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal().model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     prsl_id = post_response.json()["prsl_id"]
 
     # Get the created proposal
-    get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    get_v1 = client.get(f"{PHT_BASE_API_URL}/prsls/{prsl_id}")
     assert get_v1.status_code == HTTPStatus.OK, get_v1.content
     v1 = get_v1.json()["metadata"]["version"]
 
     # Update title and PUT back
     updated_entity = get_v1.json()
-    updated_entity["title"] = f"{updated_entity.get('title', 'Untitled')} (updated title)"
-    put_resp = authrequests.put(
-        f"{PHT_URL}/prsls/{prsl_id}",
-        data=json.dumps(updated_entity),
+    updated_entity["title"] = (
+        f"{updated_entity.get('title', 'Untitled')} (updated title)"
+    )
+    put_resp = client.put(
+        f"{PHT_BASE_API_URL}/prsls/{prsl_id}",
+        content=json.dumps(updated_entity),
         headers={"Content-Type": "application/json"},
     )
     assert put_resp.status_code == HTTPStatus.OK, put_resp.content
 
     # Verify version increment
-    get_v2 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    get_v2 = client.get(f"{PHT_BASE_API_URL}/prsls/{prsl_id}")
     assert get_v2.status_code == HTTPStatus.OK, get_v2.content
     assert get_v2.json()["metadata"]["version"] == v1 + 1
 
 
-def test_proposal_create_then_put_submit(authrequests):
+def test_proposal_create_then_put_submit(client):
     """
     POST /prsls/create with a unique prsl_id
     then PUT /prsls/{identifier} using complete submit proposal
     and verify metadata.version increments.
     """
     # Create proposal
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal().model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     prsl_id = post_response.json()["prsl_id"]
 
     # Get the created proposal
-    get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    get_v1 = client.get(f"{PHT_BASE_API_URL}/prsls/{prsl_id}")
     assert get_v1.status_code == HTTPStatus.OK, get_v1.content
     v1 = get_v1.json()["metadata"]["version"]
 
     # Use a completed proposal with submitted status and PUT back
-    updated_complete_submit_proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id)
+    updated_complete_submit_proposal = TestDataFactory.complete_proposal(
+        prsl_id=prsl_id
+    )
 
-    put_resp = authrequests.put(
-        f"{PHT_URL}/prsls/{prsl_id}",
-        data=updated_complete_submit_proposal.model_dump_json(),
+    put_resp = client.put(
+        f"{PHT_BASE_API_URL}/prsls/{prsl_id}",
+        content=updated_complete_submit_proposal.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert put_resp.status_code == HTTPStatus.OK, put_resp.content
 
     # Verify version increment
-    get_v2 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    get_v2 = client.get(f"{PHT_BASE_API_URL}/prsls/{prsl_id}")
     assert get_v2.status_code == HTTPStatus.OK, get_v2.content
     assert get_v2.json()["metadata"]["version"] == v1 + 1
 
 
-def test_proposal_create_then_put_update_forbidden(authrequests):
+def test_proposal_create_then_put_update_forbidden(client):
     """
     POST /prsls/create with a unique prsl_id
     GET /proposal-access/{prsl_id} to get list of proposal access
@@ -159,51 +163,55 @@ def test_proposal_create_then_put_update_forbidden(authrequests):
     verify return forbidden and version increment does not occur
     """
     # Create proposal
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal().model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     prsl_id = post_response.json()["prsl_id"]
 
     # Get the created proposal
-    get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    get_v1 = client.get(f"{PHT_BASE_API_URL}/prsls/{prsl_id}")
     assert get_v1.status_code == HTTPStatus.OK, get_v1.content
     v1 = get_v1.json()["metadata"]["version"]
 
     # Get my proposal access record and remove(update) access from proposal access
-    access_records = authrequests.get(f"{PHT_URL}/proposal-access/{prsl_id}")
+    access_records = client.get(f"{PHT_BASE_API_URL}/proposal-access/{prsl_id}")
 
-    filtered_access = [obj for obj in access_records.json() if obj.get("user_id") == TEST_USER]
+    filtered_access = [
+        obj for obj in access_records.json() if obj.get("user_id") == TEST_USER
+    ]
     my_access_record = filtered_access[0]
     my_access_id = my_access_record["access_id"]
 
     my_access_record["permissions"] = ["view"]
 
-    authrequests.put(
-        f"{PHT_URL}/proposal-access/user/{my_access_id}",
-        data=json.dumps(my_access_record),
+    client.put(
+        f"{PHT_BASE_API_URL}/proposal-access/user/{my_access_id}",
+        content=json.dumps(my_access_record),
         headers={"Content-Type": "application/json"},
     )
 
     # Update title and PUT back
     updated_entity = get_v1.json()
-    updated_entity["title"] = f"{updated_entity.get('title', 'Untitled')} (updated title)"
-    put_resp = authrequests.put(
-        f"{PHT_URL}/prsls/{prsl_id}",
-        data=json.dumps(updated_entity),
+    updated_entity["title"] = (
+        f"{updated_entity.get('title', 'Untitled')} (updated title)"
+    )
+    put_resp = client.put(
+        f"{PHT_BASE_API_URL}/prsls/{prsl_id}",
+        content=json.dumps(updated_entity),
         headers={"Content-Type": "application/json"},
     )
     assert put_resp.status_code == HTTPStatus.FORBIDDEN
 
     # Verify version increment not occured
-    get_still_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    get_still_v1 = client.get(f"{PHT_BASE_API_URL}/prsls/{prsl_id}")
     assert get_still_v1.status_code == HTTPStatus.OK, get_still_v1.content
     assert get_still_v1.json()["metadata"]["version"] == v1
 
 
-def test_proposal_create_then_put_submit_forbidden(authrequests):
+def test_proposal_create_then_put_submit_forbidden(client):
     """
     POST /prsls/create with a unique prsl_id
     GET /proposal-access/{prsl_id} to get list of proposal access
@@ -213,50 +221,54 @@ def test_proposal_create_then_put_submit_forbidden(authrequests):
     verify return forbidden and version increment does not occur
     """
     # Create proposal
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal().model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal().model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     prsl_id = post_response.json()["prsl_id"]
 
     # Get the created proposal
-    get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    get_v1 = client.get(f"{PHT_BASE_API_URL}/prsls/{prsl_id}")
     assert get_v1.status_code == HTTPStatus.OK, get_v1.content
     v1 = get_v1.json()["metadata"]["version"]
 
     # Get my proposal access record and remove(update) access from proposal access
-    access_records = authrequests.get(f"{PHT_URL}/proposal-access/{prsl_id}")
+    access_records = client.get(f"{PHT_BASE_API_URL}/proposal-access/{prsl_id}")
 
-    filtered_access = [obj for obj in access_records.json() if obj.get("user_id") == TEST_USER]
+    filtered_access = [
+        obj for obj in access_records.json() if obj.get("user_id") == TEST_USER
+    ]
     my_access_record = filtered_access[0]
     my_access_id = my_access_record["access_id"]
 
     my_access_record["permissions"] = ["view"]
 
-    authrequests.put(
-        f"{PHT_URL}/proposal-access/user/{my_access_id}",
-        data=json.dumps(my_access_record),
+    client.put(
+        f"{PHT_BASE_API_URL}/proposal-access/user/{my_access_id}",
+        content=json.dumps(my_access_record),
         headers={"Content-Type": "application/json"},
     )
 
-    updated_complete_submit_proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id)
+    updated_complete_submit_proposal = TestDataFactory.complete_proposal(
+        prsl_id=prsl_id
+    )
 
-    put_resp = authrequests.put(
-        f"{PHT_URL}/prsls/{prsl_id}",
-        data=updated_complete_submit_proposal.model_dump_json(),
+    put_resp = client.put(
+        f"{PHT_BASE_API_URL}/prsls/{prsl_id}",
+        content=updated_complete_submit_proposal.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert put_resp.status_code == HTTPStatus.FORBIDDEN
 
     # Verify version increment not occured
-    get_still_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
+    get_still_v1 = client.get(f"{PHT_BASE_API_URL}/prsls/{prsl_id}")
     assert get_still_v1.status_code == HTTPStatus.OK, get_still_v1.content
     assert get_still_v1.json()["metadata"]["version"] == v1
 
 
-def test_get_proposals_batch(authrequests):
+def test_get_proposals_batch(client):
     """
     Integration test:
     - Create multiple proposals with unique IDs
@@ -271,17 +283,17 @@ def test_get_proposals_batch(authrequests):
         proposal = TestDataFactory.proposal()
         proposal_json = proposal.model_dump_json()
 
-        response = authrequests.post(
-            f"{PHT_URL}/prsls/create",
-            data=proposal_json,
+        response = client.post(
+            f"{PHT_BASE_API_URL}/prsls/create",
+            content=proposal_json,
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == HTTPStatus.OK, response.content
         created_ids.append(response.json()["prsl_id"])
 
     # Use POST /batch to retrieve them
-    batch_response = authrequests.post(
-        f"{PHT_URL}/prsls/batch",
+    batch_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/batch",
         json={"prsl_ids": created_ids},
     )
 
@@ -298,19 +310,19 @@ def test_get_proposals_batch(authrequests):
         assert prsl_id in returned_ids, f"Missing proposal {prsl_id} in POST /batch"
 
 
-def test_get_reviews_for_panel_with_wrong_id(authrequests):
+def test_get_reviews_for_panel_with_wrong_id(client):
     prsl_id = mint_skuid(EntityType.PRP)
-    response = authrequests.get(f"{PHT_URL}/prsls/reviews/{prsl_id}")
+    response = client.get(f"{PHT_BASE_API_URL}/prsls/reviews/{prsl_id}")
     assert response.status_code == HTTPStatus.OK
     res = response.json()
     assert [] == res
 
 
-def test_get_reviews_for_panel_with_valid_id(authrequests):
+def test_get_reviews_for_panel_with_valid_id(client):
     proposal = TestDataFactory.complete_proposal()
-    response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=proposal.model_dump_json(),
+    response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=proposal.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     prsl_id = response.json()["prsl_id"]
@@ -318,21 +330,21 @@ def test_get_reviews_for_panel_with_valid_id(authrequests):
 
     panel_id = mint_skuid(EntityType.PNL)
     panel = TestDataFactory.panel_basic(panel_id=panel_id)
-    response = authrequests.post(
+    response = client.post(
         f"{PANELS_API_URL}/create",
-        data=panel.model_dump_json(),
+        content=panel.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert response.status_code == HTTPStatus.OK, response.content
     review = [TestDataFactory.reviews(prsl_id=prsl_id, panel_id=panel_id)]
-    response = authrequests.post(
-        f"{PHT_URL}/reviews/create",
-        data=review[0].json(),
+    response = client.post(
+        f"{PHT_BASE_API_URL}/reviews/create",
+        content=review[0].json(),
         headers={"Content-Type": "application/json"},
     )
     assert response.status_code == HTTPStatus.OK
 
-    response = authrequests.get(f"{PHT_URL}/prsls/reviews/{prsl_id}")
+    response = client.get(f"{PHT_BASE_API_URL}/prsls/reviews/{prsl_id}")
     assert response.status_code == HTTPStatus.OK
     res = response.json()
     del res[0]["metadata"]
@@ -340,7 +352,7 @@ def test_get_reviews_for_panel_with_valid_id(authrequests):
     assert expected == res
 
 
-def test_get_proposals_by_status(authrequests):
+def test_get_proposals_by_status(client):
     """
     - Create proposals with various statuses (e.g. 'pending', 'rejected', 'submitted')
     - Fetch proposals using GET /prsls/status/{status}
@@ -356,9 +368,9 @@ def test_get_proposals_by_status(authrequests):
         proposal = TestDataFactory.complete_proposal(status=status_to_test)
         proposal_json = proposal.model_dump_json()
 
-        response = authrequests.post(
-            f"{PHT_URL}/prsls/create",
-            data=proposal_json,
+        response = client.post(
+            f"{PHT_BASE_API_URL}/prsls/create",
+            content=proposal_json,
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == HTTPStatus.OK, response.content
@@ -370,16 +382,16 @@ def test_get_proposals_by_status(authrequests):
         proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id, status=status)
         proposal_json = proposal.model_dump_json()
 
-        response = authrequests.post(
-            f"{PHT_URL}/prsls/create",
-            data=proposal_json,
+        response = client.post(
+            f"{PHT_BASE_API_URL}/prsls/create",
+            content=proposal_json,
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == HTTPStatus.OK, response.content
         created_ids_with_other_status.append(prsl_id)
 
     # Get proposals by 'draft' status
-    status_response = authrequests.get(f"{PHT_URL}/prsls/reviewable")
+    status_response = client.get(f"{PHT_BASE_API_URL}/prsls/reviewable")
     assert status_response.status_code == HTTPStatus.OK, status_response.content
 
     proposals = status_response.json()
@@ -389,7 +401,9 @@ def test_get_proposals_by_status(authrequests):
 
     # All with 'draft' should be returned
     for prsl_id in created_ids_with_target_status:
-        assert prsl_id in returned_ids, f"Missing {prsl_id} from GET /status/{status_to_test}"
+        assert (
+            prsl_id in returned_ids
+        ), f"Missing {prsl_id} from GET /status/{status_to_test}"
 
     # Other statuses should not be returned
     for prsl_id in created_ids_with_other_status:

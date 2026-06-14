@@ -3,19 +3,21 @@ from http import HTTPStatus
 from ska_ser_skuid import EntityType, mint_skuid
 
 from ..unit.util import REVIEWERS, TestDataFactory
-from . import PHT_URL
+from . import PHT_BASE_API_URL
 
 HEADERS = {"Content-type": "application/json"}
 
 
-def test_get_report_for_user(authrequests, test_panel_id):
+def test_get_report_for_user(client, test_panel_id):
     """
     Integration test for the GET /reports/ endpoint.
     """
     proposal1 = TestDataFactory.complete_proposal()
     proposal2 = TestDataFactory.complete_proposal()
 
-    decision = TestDataFactory.panel_decision(prsl_id=proposal1.prsl_id, panel_id=test_panel_id)
+    decision = TestDataFactory.panel_decision(
+        prsl_id=proposal1.prsl_id, panel_id=test_panel_id
+    )
     reviews = TestDataFactory.reviews(
         prsl_id=proposal1.prsl_id,
         reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
@@ -40,38 +42,46 @@ def test_get_report_for_user(authrequests, test_panel_id):
         prsl_id_2=prsl2_id,
     )
 
-    created_proposal1 = authrequests.post(
-        f"{PHT_URL}/prsls/create", data=proposal1.model_dump_json(), headers=HEADERS
+    created_proposal1 = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=proposal1.model_dump_json(),
+        headers=HEADERS,
     )
     assert created_proposal1.status_code == HTTPStatus.OK, created_proposal1.text
     assert created_proposal1.json()["prsl_id"] == prsl1_id
 
-    created_proposal2 = authrequests.post(
-        f"{PHT_URL}/prsls/create", data=proposal2.model_dump_json(), headers=HEADERS
+    created_proposal2 = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=proposal2.model_dump_json(),
+        headers=HEADERS,
     )
     assert created_proposal2.status_code == HTTPStatus.OK, created_proposal2.text
     assert created_proposal2.json()["prsl_id"] == prsl2_id
 
     # --- Create panel, decision, review ---
-    created_panel = authrequests.post(
-        f"{PHT_URL}/panels/create", data=panel.model_dump_json(), headers=HEADERS
+    created_panel = client.post(
+        f"{PHT_BASE_API_URL}/panels/create",
+        content=panel.model_dump_json(),
+        headers=HEADERS,
     )
     assert created_panel.status_code == HTTPStatus.OK, created_panel.text
 
-    created_decision = authrequests.post(
-        f"{PHT_URL}/panel/decision/create",
-        data=decision.model_dump_json(),
+    created_decision = client.post(
+        f"{PHT_BASE_API_URL}/panel/decision/create",
+        content=decision.model_dump_json(),
         headers=HEADERS,
     )
     assert created_decision.status_code == HTTPStatus.OK, created_decision.text
 
-    created_review = authrequests.post(
-        f"{PHT_URL}/reviews/create", data=reviews.model_dump_json(), headers=HEADERS
+    created_review = client.post(
+        f"{PHT_BASE_API_URL}/reviews/create",
+        content=reviews.model_dump_json(),
+        headers=HEADERS,
     )
     assert created_review.status_code == HTTPStatus.OK, created_review.text
 
     # --- GET report ---
-    resp = authrequests.get(f"{PHT_URL}/report/")
+    resp = client.get(f"{PHT_BASE_API_URL}/report/")
     assert resp.status_code == HTTPStatus.OK, resp.text
 
     report = resp.json()

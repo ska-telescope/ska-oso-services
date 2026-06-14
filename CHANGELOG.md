@@ -8,6 +8,11 @@ Unreleased
 **********
 * Refactored coordinate lookup module to use Sesame.
 * Accept Indigo IAM access tokens alongside MS Entra tokens.
+* Component tests now run in-process via FastAPI ``TestClient`` against a
+  Postgres started by testcontainers, removing the minikube dependency for
+  most of the test suite.  ``make k8s-test`` now runs only the new
+  ``tests/k8s/`` smoke suite, which verifies the deployed chart / image /
+  network plumbing.  See README for podman setup.
 
 14.7.0
 **********

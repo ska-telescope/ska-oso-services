@@ -12,45 +12,52 @@ import pytest
 from ska_ser_skuid import EntityType, mint_skuid
 
 from ..unit.util import TestDataFactory, assert_json_is_equal
-from . import ODT_URL
+from . import ODT_BASE_API_URL
 
 
-def test_sbd_create(authrequests):
+def test_sbd_create(client):
     """
     Test that the GET /sbds/create path receives the request
     and returns a valid SBD
     """
 
-    response = authrequests.get(f"{ODT_URL}/sbds/create")
+    response = client.get(f"{ODT_BASE_API_URL}/sbds/create")
     assert response.status_code == HTTPStatus.OK
 
     assert response.json()["interface"] == "https://schema.skao.int/ska-oso-pdm-sbd/0.1"
 
 
-def test_post_without_ob_ref_fails(authrequests):
+def test_post_without_ob_ref_fails(client):
     ob_not_in_db = mint_skuid(EntityType.OB)
-    response = authrequests.post(
-        f"{ODT_URL}/sbds",
-        data=TestDataFactory.sbdefinition(sbd_id=None, ob_ref=ob_not_in_db).model_dump_json(),
+    response = client.post(
+        f"{ODT_BASE_API_URL}/sbds",
+        content=TestDataFactory.sbdefinition(
+            sbd_id=None, ob_ref=ob_not_in_db
+        ).model_dump_json(),
         headers={"Content-type": "application/json"},
     )
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     result = response.json()
 
-    assert result["detail"] == f"The referenced identifier {ob_not_in_db} could not be found"
+    assert (
+        result["detail"]
+        == f"The referenced identifier {ob_not_in_db} could not be found"
+    )
 
 
 @pytest.mark.xray("XTP-34548")
-def test_sbd_post_then_get(authrequests, test_project):
+def test_sbd_post_then_get(client, test_project):
     """
     Test that an entity POSTed to /sbds can then be retrieved
     with GET /sbds/{identifier}
     """
-    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
-    post_response = authrequests.post(
-        f"{ODT_URL}/sbds",
-        data=sbd.model_dump_json(),
+    sbd = TestDataFactory.sbdefinition(
+        sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id
+    )
+    post_response = client.post(
+        f"{ODT_BASE_API_URL}/sbds",
+        content=sbd.model_dump_json(),
         headers={"Content-type": "application/json"},
     )
 
@@ -62,7 +69,7 @@ def test_sbd_post_then_get(authrequests, test_project):
     )
 
     sbd_id = post_response.json()["sbd_id"]
-    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
+    get_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}")
 
     # Assert the ODT can get the SBD, ignoring the metadata as it contains
     # timestamps and is the responsibility of the ODA
@@ -74,36 +81,38 @@ def test_sbd_post_then_get(authrequests, test_project):
     )
 
 
-def test_sbd_status_get(authrequests, test_project):
+def test_sbd_status_get(client, test_project):
     """
     Test that GET /sbds/{identifier}/status returns a current Status
     for an existing SBD.
     """
-    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
-    post_response = authrequests.post(
-        f"{ODT_URL}/sbds",
-        data=sbd.model_dump_json(),
+    sbd = TestDataFactory.sbdefinition(
+        sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id
+    )
+    post_response = client.post(
+        f"{ODT_BASE_API_URL}/sbds",
+        content=sbd.model_dump_json(),
         headers={"Content-type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
 
     sbd_id = post_response.json()["sbd_id"]
-    status_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}/status")
+    status_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}/status")
 
     assert status_response.status_code == HTTPStatus.OK, status_response.content
     assert status_response.json()["status"] == "Draft"
 
 
-def test_sbd_post_then_put(authrequests, test_project):
+def test_sbd_post_then_put(client, test_project):
     """
     Test that an entity POSTed to /sbds can then be updated with PUT /sbds/{identifier}
     """
     ob_ref = test_project.obs_blocks[0].obs_block_id
     sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=ob_ref)
 
-    post_response = authrequests.post(
-        f"{ODT_URL}/sbds",
-        data=sbd.model_dump_json(),
+    post_response = client.post(
+        f"{ODT_BASE_API_URL}/sbds",
+        content=sbd.model_dump_json(),
         headers={"Content-type": "application/json"},
     )
 
@@ -115,10 +124,12 @@ def test_sbd_post_then_put(authrequests, test_project):
     )
 
     sbd_id = post_response.json()["sbd_id"]
-    sbd_to_update = TestDataFactory.sbdefinition(sbd_id=sbd_id, ob_ref=ob_ref).model_dump_json()
-    put_response = authrequests.put(
-        f"{ODT_URL}/sbds/{sbd_id}",
-        data=sbd_to_update,
+    sbd_to_update = TestDataFactory.sbdefinition(
+        sbd_id=sbd_id, ob_ref=ob_ref
+    ).model_dump_json()
+    put_response = client.put(
+        f"{ODT_BASE_API_URL}/sbds/{sbd_id}",
+        content=sbd_to_update,
         headers={"Content-type": "application/json"},
     )
     # Assert the ODT can get the SBD, ignoring the metadata as it contains
@@ -132,116 +143,128 @@ def test_sbd_post_then_put(authrequests, test_project):
     assert put_response.json()["metadata"]["version"] == 2
 
 
-def test_sbd_get_not_found(authrequests):
+def test_sbd_get_not_found(client):
     """
     Test that the GET /sbds/{identifier} path returns
     404 when the SBD is not found in the ODA
     """
     id_not_in_db = mint_skuid(EntityType.SBD)
-    response = authrequests.get(f"{ODT_URL}/sbds/{id_not_in_db}")
+    response = client.get(f"{ODT_BASE_API_URL}/sbds/{id_not_in_db}")
 
     assert response.status_code == HTTPStatus.NOT_FOUND, response.content
     assert (
-        response.json()["detail"] == f"The requested identifier {id_not_in_db} could not be found."
+        response.json()["detail"]
+        == f"The requested identifier {id_not_in_db} could not be found."
     )
 
 
-def test_sbd_put_not_found(authrequests):
+def test_sbd_put_not_found(client):
     """
     Test that the GET /sbds/{identifier} path returns
     404 when the SBD is not found in the ODA
     """
     id_not_in_db = mint_skuid(EntityType.SBD)
-    response = authrequests.get(f"{ODT_URL}/sbds/{id_not_in_db}")
+    response = client.get(f"{ODT_BASE_API_URL}/sbds/{id_not_in_db}")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert (
-        response.json()["detail"] == f"The requested identifier {id_not_in_db} could not be found."
+        response.json()["detail"]
+        == f"The requested identifier {id_not_in_db} could not be found."
     )
 
 
-def test_sbd_put_validation_error(authrequests):
+def test_sbd_put_validation_error(client):
     """
     Test that the PUT /sbds/{identifier} path with an invalid SBDefinition
     returns a FastAPI generated validation error response
     """
 
-    response = authrequests.put(
-        f"{ODT_URL}/sbds/sbd-tcomp01test",
-        data="""{"telescope": "not_a_telescope"}""",
+    response = client.put(
+        f"{ODT_BASE_API_URL}/sbds/sbd-tcomp01test",
+        content="""{"telescope": "not_a_telescope"}""",
         headers={"Content-type": "application/json"},
     )
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     result = response.json()
 
-    assert result["detail"][0]["msg"] == "Input should be 'ska_mid', 'ska_low' or 'MeerKAT'"
+    assert (
+        result["detail"][0]["msg"]
+        == "Input should be 'ska_mid', 'ska_low' or 'MeerKAT'"
+    )
 
 
-def test_sbd_delete_success(authrequests, test_project):
+def test_sbd_delete_success(client, test_project):
     """
     Test that DELETE /sbds/{identifier} removes the SBD and returns 204 No Content.
     """
-    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
-    post_response = authrequests.post(
-        f"{ODT_URL}/sbds",
-        data=sbd.model_dump_json(),
+    sbd = TestDataFactory.sbdefinition(
+        sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id
+    )
+    post_response = client.post(
+        f"{ODT_BASE_API_URL}/sbds",
+        content=sbd.model_dump_json(),
         headers={"Content-type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     sbd_id = post_response.json()["sbd_id"]
 
-    delete_response = authrequests.delete(f"{ODT_URL}/sbds/{sbd_id}")
+    delete_response = client.delete(f"{ODT_BASE_API_URL}/sbds/{sbd_id}")
     assert delete_response.status_code == HTTPStatus.NO_CONTENT, delete_response.content
 
-    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
+    get_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}")
     assert get_response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_sbd_delete_not_found(authrequests):
+def test_sbd_delete_not_found(client):
     """
     Test that DELETE /sbds/{identifier} returns 404 if SBD not found.
     """
     bad_sbd_id = mint_skuid(EntityType.SBD)
-    delete_response = authrequests.delete(f"{ODT_URL}/sbds/{bad_sbd_id}")
+    delete_response = client.delete(f"{ODT_BASE_API_URL}/sbds/{bad_sbd_id}")
     assert delete_response.status_code == HTTPStatus.NOT_FOUND
 
-    assert "The requested identifier could not be found" in delete_response.json()["detail"]
+    assert (
+        "The requested identifier could not be found"
+        in delete_response.json()["detail"]
+    )
 
 
-def test_sbd_status_set_ready_then_draft(authrequests, test_project):
+def test_sbd_status_set_ready_then_draft(client, test_project):
     """
     Test SBD status updates by first checking the initial status is Draft,
     then setting it to Ready, then back to Draft
     """
-    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
-    post_response = authrequests.post(
-        f"{ODT_URL}/sbds",
-        data=sbd.model_dump_json(),
+    sbd = TestDataFactory.sbdefinition(
+        sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id
+    )
+    post_response = client.post(
+        f"{ODT_BASE_API_URL}/sbds",
+        content=sbd.model_dump_json(),
         headers={"Content-type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     sbd_id = post_response.json()["sbd_id"]
 
     # Assert the initial status is Draft
-    status_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}/status")
+    status_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}/status")
     assert status_response.status_code == HTTPStatus.OK, status_response.content
     assert status_response.json()["status"] == "Draft"
 
     # Set the status to Ready and check it was updated in the database
-    response = authrequests.put(f"{ODT_URL}/sbds/{sbd_id}/status/ready")
+    response = client.put(f"{ODT_BASE_API_URL}/sbds/{sbd_id}/status/ready")
     assert response.status_code == HTTPStatus.OK, response.content
     assert response.json()["status"] == "Ready"
 
-    status_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}/status")
+    status_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}/status")
     assert status_response.status_code == HTTPStatus.OK, status_response.content
     assert status_response.json()["status"] == "Ready"
 
     # Set the status back to Draft and check it was updated in the database
-    response = authrequests.put(f"{ODT_URL}/sbds/{sbd_id}/status/draft")
+    response = client.put(f"{ODT_BASE_API_URL}/sbds/{sbd_id}/status/draft")
     assert response.status_code == HTTPStatus.OK, response.content
     assert response.json()["status"] == "Draft"
 
-    status_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}/status")
+    status_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}/status")
     assert status_response.status_code == HTTPStatus.OK, status_response.content
     assert status_response.json()["status"] == "Draft"

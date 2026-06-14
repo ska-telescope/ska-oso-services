@@ -4,47 +4,53 @@ from ska_oso_pdm import Project
 
 from tests.unit.util import TestDataFactory
 
-from . import ODT_URL, PHT_URL
+from . import ODT_BASE_API_URL, PHT_BASE_API_URL
 
 
-def test_project_generated_from_proposal(authrequests):
+def test_project_generated_from_proposal(client):
     # First need to add a proposal to generate from
     proposal = TestDataFactory.complete_proposal()
     proposal.prsl_id = None
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=proposal.model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=proposal.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     prsl_id = post_response.json()["prsl_id"]
 
     # Generate the Project
-    generate_response = authrequests.post(f"{ODT_URL}/prsls/{prsl_id}/generateProject")
+    generate_response = client.post(
+        f"{ODT_BASE_API_URL}/prsls/{prsl_id}/generateProject"
+    )
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text
     assert prsl_id == generate_response.json()["prsl_ref"]
 
     # Check the Project exists in the ODA
     prj_id = generate_response.json()["prj_id"]
-    get_response = authrequests.get(f"{ODT_URL}/prjs/{prj_id}")
+    get_response = client.get(f"{ODT_BASE_API_URL}/prjs/{prj_id}")
 
     assert get_response.status_code == HTTPStatus.OK
 
 
-def test_sbds_generated_from_project(authrequests):
+def test_sbds_generated_from_project(client):
     # First need to add a Project to generate from
-    project = TestDataFactory.project_with_two_mid_observation_groups(prj_id=None, prsl_ref=None)
-    post_response = authrequests.post(
-        f"{ODT_URL}/prjs",
-        data=project.model_dump_json(),
+    project = TestDataFactory.project_with_two_mid_observation_groups(
+        prj_id=None, prsl_ref=None
+    )
+    post_response = client.post(
+        f"{ODT_BASE_API_URL}/prjs",
+        content=project.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     prj_id = post_response.json()["prj_id"]
 
     # Generate the SBDefinitions
-    generate_response = authrequests.post(f"{ODT_URL}/prjs/{prj_id}/generateSBDefinitions")
+    generate_response = client.post(
+        f"{ODT_BASE_API_URL}/prjs/{prj_id}/generateSBDefinitions"
+    )
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text
     project = Project.model_validate_json(generate_response.text)
@@ -54,24 +60,25 @@ def test_sbds_generated_from_project(authrequests):
 
     # Check the SBDefinitions exists in the ODA
     for sbd_id in project.obs_blocks[0].sbd_ids:
-        get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
+        get_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}")
         assert get_response.status_code == HTTPStatus.OK
 
 
-def test_sbds_generated_from_project_obs_block(authrequests):
+def test_sbds_generated_from_project_obs_block(client):
     # First need to add a Project to generate from
     project = TestDataFactory.project_with_two_low_targets(prj_id=None, prsl_ref=None)
-    post_response = authrequests.post(
-        f"{ODT_URL}/prjs",
-        data=project.model_dump_json(),
+    post_response = client.post(
+        f"{ODT_BASE_API_URL}/prjs",
+        content=project.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     prj_id = post_response.json()["prj_id"]
 
     # Generate the SBDefinitions
-    generate_response = authrequests.post(
-        f"{ODT_URL}/prjs" f"/{prj_id}/{project.obs_blocks[0].obs_block_id}/generateSBDefinitions"
+    generate_response = client.post(
+        f"{ODT_BASE_API_URL}/prjs"
+        f"/{prj_id}/{project.obs_blocks[0].obs_block_id}/generateSBDefinitions"
     )
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text
@@ -81,16 +88,18 @@ def test_sbds_generated_from_project_obs_block(authrequests):
     assert len(project.obs_blocks[0].sbd_ids) == 1
 
     # Check the SBDefinitions exists in the ODA
-    get_response = authrequests.get(f"{ODT_URL}/sbds/{project.obs_blocks[0].sbd_ids[0]}")
+    get_response = client.get(
+        f"{ODT_BASE_API_URL}/sbds/{project.obs_blocks[0].sbd_ids[0]}"
+    )
     assert get_response.status_code == HTTPStatus.OK
 
 
-def test_cal_sweep_sbd_generated_from_project_obs_block(authrequests):
+def test_cal_sweep_sbd_generated_from_project_obs_block(client):
     # First need to add a Project to generate from
     project = TestDataFactory.project_with_two_low_targets(prj_id=None, prsl_ref=None)
-    post_response = authrequests.post(
-        f"{ODT_URL}/prjs",
-        data=project.model_dump_json(),
+    post_response = client.post(
+        f"{ODT_BASE_API_URL}/prjs",
+        content=project.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -108,8 +117,8 @@ def test_cal_sweep_sbd_generated_from_project_obs_block(authrequests):
         "coarse_channel_bandwidth": 96,
         "mode": "PST",
     }
-    generate_response = authrequests.post(
-        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/generateCalibratorSweepSBDefinition",
+    generate_response = client.post(
+        f"{ODT_BASE_API_URL}/prjs/{prj_id}/{obs_block_id}/generateCalibratorSweepSBDefinition",
         json=cal_sweep_input,
     )
 
@@ -121,16 +130,16 @@ def test_cal_sweep_sbd_generated_from_project_obs_block(authrequests):
 
     # Check the SBDefinition exists in the ODA
     sbd_id = project.obs_blocks[0].sbd_ids[-1]
-    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
+    get_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}")
     assert get_response.status_code == HTTPStatus.OK
 
 
-def test_frequency_sweep_sbd_generated_from_project_obs_block(authrequests):
+def test_frequency_sweep_sbd_generated_from_project_obs_block(client):
     # First need to add a Project to generate from
     project = TestDataFactory.project_with_two_low_targets(prj_id=None, prsl_ref=None)
-    post_response = authrequests.post(
-        f"{ODT_URL}/prjs",
-        data=project.model_dump_json(),
+    post_response = client.post(
+        f"{ODT_BASE_API_URL}/prjs",
+        content=project.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -148,8 +157,8 @@ def test_frequency_sweep_sbd_generated_from_project_obs_block(authrequests):
         "coarse_channel_bandwidth": 96,
         "mode": "VIS",
     }
-    generate_response = authrequests.post(
-        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/generateFrequencySweepSBDefinition",
+    generate_response = client.post(
+        f"{ODT_BASE_API_URL}/prjs/{prj_id}/{obs_block_id}/generateFrequencySweepSBDefinition",
         json=frequency_sweep_input,
     )
 
@@ -161,16 +170,16 @@ def test_frequency_sweep_sbd_generated_from_project_obs_block(authrequests):
 
     # Check the SBDefinition exist sbd = generate_cal_sweep_s in the ODA
     sbd_id = project.obs_blocks[0].sbd_ids[-1]
-    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
+    get_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}")
     assert get_response.status_code == HTTPStatus.OK
 
 
-def test_survey_sbds_generated_from_project_obs_block(authrequests):
+def test_survey_sbds_generated_from_project_obs_block(client):
     # First need to add a Project to generate from
     project = TestDataFactory.project_with_two_low_targets(prj_id=None, prsl_ref=None)
-    post_response = authrequests.post(
-        f"{ODT_URL}/prjs",
-        data=project.model_dump_json(),
+    post_response = client.post(
+        f"{ODT_BASE_API_URL}/prjs",
+        content=project.model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -186,8 +195,8 @@ def test_survey_sbds_generated_from_project_obs_block(authrequests):
         "num_scans": 3,
         "max_rows": 6,
     }
-    generate_response = authrequests.post(
-        f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/generateGSMSurveySBDefinitions",
+    generate_response = client.post(
+        f"{ODT_BASE_API_URL}/prjs/{prj_id}/{obs_block_id}/generateGSMSurveySBDefinitions",
         json=survey_input,
     )
 
@@ -199,5 +208,5 @@ def test_survey_sbds_generated_from_project_obs_block(authrequests):
 
     # Check the SBDefinition exists in the ODA
     sbd_id = project.obs_blocks[0].sbd_ids[0]
-    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
+    get_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}")
     assert get_response.status_code == HTTPStatus.OK

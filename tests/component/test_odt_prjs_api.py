@@ -1,62 +1,60 @@
 """
-Component level tests for the /oda/prjs paths of ska-oso-services API.
+Component-level tests for the /odt/prjs paths of ska-oso-services API.
 
-These will run from a test pod inside a kubernetes cluster, making requests
-to a deployment of ska-oso-services in the same cluster
+The FastAPI app runs in-process via TestClient against a real Postgres
+started by the testcontainers fixture in ``tests/db_fixtures.py``.
 """
 
 import json
-
-# pylint: disable=missing-timeout
 from http import HTTPStatus
 
 from ska_oso_pdm import Project, SBDefinition
 from ska_ser_skuid import EntityType, mint_skuid
 
 from ..unit.util import TestDataFactory, assert_json_is_equal
-from . import ODT_URL
+from . import ODT_BASE_API_URL
 
 
 class TestLinkingSBDefinitions:
     """Tests of the /prjs subroutes that concern linked ObservingBlocks and SBDefinitions"""
 
-    def test_sbd_created_and_linked_to_project(self, authrequests):
+    def test_sbd_created_and_linked_to_project(self, client):
         """
         Test that an entity sent to POST /prjs creates an empty project, then a request
         to POST /prjs/<prj_id>/<obs_block_id>/sbds with an SBDefinition in the request body
         adds that SBDefinition to the Project
         """
         # Create an empty Project
-        prj_post_response = authrequests.post(f"{ODT_URL}/prjs")
+        prj_post_response = client.post(f"{ODT_BASE_API_URL}/prjs")
 
         assert prj_post_response.status_code == HTTPStatus.OK, prj_post_response.content
         prj_id = prj_post_response.json()["prj_id"]
         obs_block_id = prj_post_response.json()["obs_blocks"][0]["obs_block_id"]
 
         # Create an SBDefinition in that Project in the first observing block
-        sbd_post_response = authrequests.post(
-            f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/sbds",
-            data=json.dumps({"telescope": "ska_mid"}),
+        sbd_post_response = client.post(
+            f"{ODT_BASE_API_URL}/prjs/{prj_id}/{obs_block_id}/sbds",
+            content=json.dumps({"telescope": "ska_mid"}),
             headers={"Content-type": "application/json"},
         )
         assert sbd_post_response.status_code == HTTPStatus.OK, sbd_post_response.text
         assert sbd_post_response.json()["sbd"]["telescope"] == "ska_mid"
 
         sbd_id = sbd_post_response.json()["sbd"]["sbd_id"]
-        get_sbd_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
+        get_sbd_response = client.get(f"{ODT_BASE_API_URL}/sbds/{sbd_id}")
         assert get_sbd_response.status_code == HTTPStatus.OK
         assert get_sbd_response.json()["ob_ref"] == obs_block_id
 
         # Check the SBDefinition is resolved when getting Project
-        get_prj_response = authrequests.get(f"{ODT_URL}/prjs/{prj_id}")
+        get_prj_response = client.get(f"{ODT_BASE_API_URL}/prjs/{prj_id}")
         assert get_prj_response.status_code == HTTPStatus.OK, get_prj_response.content
         assert get_prj_response.json()["obs_blocks"][0]["sbd_ids"][0] == sbd_id
 
-    def test_project_not_found_raises_error(self, authrequests):
+    def test_project_not_found_raises_error(self, client):
         prj_id_not_in_db = mint_skuid(EntityType.PRJ)
-        response = authrequests.post(
-            f"{ODT_URL}/prjs/{prj_id_not_in_db}/ob-t0001test/sbds",
-            data=json.dumps({"telescope": "ska_mid"}),
+        response = client.post(
+            f"{ODT_BASE_API_URL}/prjs/{prj_id_not_in_db}/ob-t0001test/sbds",
+            content=json.dumps({"telescope": "ska_mid"}),
             headers={"Content-type": "application/json"},
         )
 
@@ -66,21 +64,24 @@ class TestLinkingSBDefinitions:
             == f"The requested identifier {prj_id_not_in_db} could not be found."
         )
 
-    def test_ob_not_in_project_raises_error(self, authrequests, test_project):
+    def test_ob_not_in_project_raises_error(self, client, test_project):
         ob_id = "not-an-ob"
-        response = authrequests.post(
-            f"{ODT_URL}/prjs/{test_project.prj_id}/{ob_id}/sbds",
-            data=json.dumps({"telescope": "ska_mid"}),
+        response = client.post(
+            f"{ODT_BASE_API_URL}/prjs/{test_project.prj_id}/{ob_id}/sbds",
+            content=json.dumps({"telescope": "ska_mid"}),
             headers={"Content-type": "application/json"},
         )
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
-        assert response.json()["detail"] == f"Observing Block '{ob_id}' not found in Project"
+        assert (
+            response.json()["detail"]
+            == f"Observing Block '{ob_id}' not found in Project"
+        )
 
-    def test_inconsistent_ob_ref_raises_error(self, authrequests, test_project):
-        response = authrequests.post(
-            f"{ODT_URL}/prjs/{test_project.prj_id}/{test_project.obs_blocks[0].obs_block_id}/sbds",
-            data=json.dumps({"telescope": "ska_mid", "ob_ref": "different-ob"}),
+    def test_inconsistent_ob_ref_raises_error(self, client, test_project):
+        response = client.post(
+            f"{ODT_BASE_API_URL}/prjs/{test_project.prj_id}/{test_project.obs_blocks[0].obs_block_id}/sbds",
+            content=json.dumps({"telescope": "ska_mid", "ob_ref": "different-ob"}),
             headers={"Content-type": "application/json"},
         )
 
@@ -90,27 +91,29 @@ class TestLinkingSBDefinitions:
             == "ob_ref in SBDefinition body does not match the request URL"
         )
 
-    def test_delete_observing_block_success(self, authrequests):
+    def test_delete_observing_block_success(self, client):
         # Create a project
-        prj_post_response = authrequests.post(f"{ODT_URL}/prjs")
+        prj_post_response = client.post(f"{ODT_BASE_API_URL}/prjs")
         assert prj_post_response.status_code == HTTPStatus.OK, prj_post_response.content
         prj = prj_post_response.json()
         prj_id = prj["prj_id"]
         obs_block_id = prj["obs_blocks"][0]["obs_block_id"]
 
         # Delete the observing block
-        delete_response = authrequests.delete(f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}")
+        delete_response = client.delete(
+            f"{ODT_BASE_API_URL}/prjs/{prj_id}/{obs_block_id}"
+        )
         assert delete_response.status_code == HTTPStatus.OK, delete_response.content
         updated_prj = Project.model_validate_json(delete_response.content)
         # The obs_blocks list should now not contain the deleted OB
         assert all(ob.obs_block_id != obs_block_id for ob in updated_prj.obs_blocks)
 
-    def test_delete_observing_block_not_in_prj(self, authrequests):
-        prj_post_response = authrequests.post(f"{ODT_URL}/prjs")
+    def test_delete_observing_block_not_in_prj(self, client):
+        prj_post_response = client.post(f"{ODT_BASE_API_URL}/prjs")
         assert prj_post_response.status_code == HTTPStatus.OK, prj_post_response.content
         prj_id = prj_post_response.json()["prj_id"]
         bad_ob_id = "not-an-ob"
-        delete_response = authrequests.delete(f"{ODT_URL}/prjs/{prj_id}/{bad_ob_id}")
+        delete_response = client.delete(f"{ODT_BASE_API_URL}/prjs/{prj_id}/{bad_ob_id}")
         assert (
             delete_response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
         ), delete_response.content
@@ -123,15 +126,15 @@ class TestLinkingSBDefinitions:
 class TestProjectAPI:
     """Tests of the standard methods on the /prjs route"""
 
-    def test_prj_post_then_get(self, authrequests):
+    def test_prj_post_then_get(self, client):
         """
         Test that an entity sent to POST /prjs can then be retrieved
         with GET /prjs/{identifier}
         """
         project_json = TestDataFactory.project(prj_id=None).model_dump_json()
-        post_response = authrequests.post(
-            f"{ODT_URL}/prjs",
-            data=project_json,
+        post_response = client.post(
+            f"{ODT_BASE_API_URL}/prjs",
+            content=project_json,
             headers={"Content-type": "application/json"},
         )
 
@@ -148,7 +151,7 @@ class TestProjectAPI:
         )
 
         prj_id = post_response.json()["prj_id"]
-        get_response = authrequests.get(f"{ODT_URL}/prjs/{prj_id}")
+        get_response = client.get(f"{ODT_BASE_API_URL}/prjs/{prj_id}")
 
         # Assert the ODT can get the Project, ignoring the metadata as it contains
         # timestamps and is the responsibility of the ODA
@@ -165,16 +168,16 @@ class TestProjectAPI:
             ],
         )
 
-    def test_prj_post_then_put(self, authrequests):
+    def test_prj_post_then_put(self, client):
         """
         Test that an entity sent to POST /prjs can then be
         updated with PUT /prjs/{identifier} - this tests an OB can be added
         """
         project = TestDataFactory.project(prj_id=None)
         project_json = project.model_dump_json()
-        post_response = authrequests.post(
-            f"{ODT_URL}/prjs",
-            data=project_json,
+        post_response = client.post(
+            f"{ODT_BASE_API_URL}/prjs",
+            content=project_json,
             headers={"Content-type": "application/json"},
         )
 
@@ -190,9 +193,9 @@ class TestProjectAPI:
         project.obs_blocks.append(TestDataFactory.project(prj_id=prj_id).obs_blocks[0])
         updated_project_json = project.model_dump_json()
 
-        put_response = authrequests.put(
-            f"{ODT_URL}/prjs/{prj_id}",
-            data=updated_project_json,
+        put_response = client.put(
+            f"{ODT_BASE_API_URL}/prjs/{prj_id}",
+            content=updated_project_json,
             headers={"Content-type": "application/json"},
         )
         # Assert the ODT can get the Project, ignoring the metadata as it contains
@@ -205,27 +208,27 @@ class TestProjectAPI:
         )
         assert put_response.json()["metadata"]["version"] == 2
 
-    def test_prj_status_get(self, authrequests):
+    def test_prj_status_get(self, client):
         """
         Test that GET /prjs/{identifier}/status returns a current Status
         for an existing Project.
         """
-        post_response = authrequests.post(f"{ODT_URL}/prjs")
+        post_response = client.post(f"{ODT_BASE_API_URL}/prjs")
         assert post_response.status_code == HTTPStatus.OK, post_response.content
 
         prj_id = post_response.json()["prj_id"]
-        status_response = authrequests.get(f"{ODT_URL}/prjs/{prj_id}/status")
+        status_response = client.get(f"{ODT_BASE_API_URL}/prjs/{prj_id}/status")
 
         assert status_response.status_code == HTTPStatus.OK, status_response.content
         assert status_response.json()["status"] == "Draft"
 
-    def test_prj_status_get_not_found(self, authrequests):
+    def test_prj_status_get_not_found(self, client):
         """
         Test that the GET /prjs/{identifier}/status path returns
         404 when the Project is not found in the ODA
         """
 
-        response = authrequests.get(f"{ODT_URL}/prjs/prj-t0001test/status")
+        response = client.get(f"{ODT_BASE_API_URL}/prjs/prj-t0001test/status")
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
         assert (
@@ -233,13 +236,13 @@ class TestProjectAPI:
             == "The requested identifier prj-t0001test could not be found."
         )
 
-    def test_prj_get_not_found(self, authrequests):
+    def test_prj_get_not_found(self, client):
         """
         Test that the GET /prjs/{identifier} path returns
         404 when the Project is not found in the ODA
         """
 
-        response = authrequests.get(f"{ODT_URL}/prjs/prj-t0001test")
+        response = client.get(f"{ODT_BASE_API_URL}/prjs/prj-t0001test")
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
         assert (
@@ -247,13 +250,13 @@ class TestProjectAPI:
             == "The requested identifier prj-t0001test could not be found."
         )
 
-    def test_prj_put_not_found(self, authrequests):
+    def test_prj_put_not_found(self, client):
         """
         Test that the GET /prjs/{identifier} path returns
         404 when the Project is not found in the ODA
         """
 
-        response = authrequests.get(f"{ODT_URL}/prjs/prj-t0001test")
+        response = client.get(f"{ODT_BASE_API_URL}/prjs/prj-t0001test")
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
         assert (
@@ -262,20 +265,20 @@ class TestProjectAPI:
         )
 
     def test_mark_project_ready(
-        self, test_sbd: SBDefinition, test_project: Project, authrequests
+        self, test_sbd: SBDefinition, test_project: Project, client
     ) -> dict:
         """
         Test we can set a project to status=Ready
         """
         prj_id = test_project.prj_id
-        ready_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/ready")
+        ready_response = client.put(f"{ODT_BASE_API_URL}/prjs/{prj_id}/status/ready")
         ready_response.raise_for_status()
         payload1 = ready_response.json()
         assert payload1["entity_id"] == prj_id
         assert payload1["status"] == "Ready"
 
         # And the SBD as well?
-        sbd_response = authrequests.get(f"{ODT_URL}/sbds/{test_sbd.sbd_id}/status")
+        sbd_response = client.get(f"{ODT_BASE_API_URL}/sbds/{test_sbd.sbd_id}/status")
         sbd_response.raise_for_status()
         payload2 = sbd_response.json()
         assert payload2["entity_id"] == test_sbd.sbd_id
@@ -284,14 +287,16 @@ class TestProjectAPI:
         return payload1
 
     def test_mark_project_repeated_calls_idempotent(
-        self, test_sbd: SBDefinition, test_project: Project, authrequests
+        self, test_sbd: SBDefinition, test_project: Project, client
     ):
         """
         Test that repeatedly setting the project to status=Ready just makes it Ready.
         """
-        first_result = self.test_mark_project_ready(test_sbd, test_project, authrequests)
-        url = "{}/prjs/{}/status/ready".format(ODT_URL, first_result["entity_id"])
-        resp = authrequests.put(url)
+        first_result = self.test_mark_project_ready(test_sbd, test_project, client)
+        url = "{}/prjs/{}/status/ready".format(
+            ODT_BASE_API_URL, first_result["entity_id"]
+        )
+        resp = client.put(url)
         resp.raise_for_status()
         second_result = resp.json()
         # This is pseudo-idempotent, re-setting to the same status is harmless.
@@ -302,51 +307,53 @@ class TestProjectAPI:
         assert second_result["as_of"] > first_result["as_of"]
 
     def test_mark_project_back_to_draft(
-        self, test_sbd: SBDefinition, test_project: Project, authrequests
+        self, test_sbd: SBDefinition, test_project: Project, client
     ):
         """
         Test that the Project status can be changed back to Draft.
         """
-        prj_id = self.test_mark_project_ready(test_sbd, test_project, authrequests)["entity_id"]
+        prj_id = self.test_mark_project_ready(test_sbd, test_project, client)[
+            "entity_id"
+        ]
 
-        draft_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/draft")
+        draft_response = client.put(f"{ODT_BASE_API_URL}/prjs/{prj_id}/status/draft")
         draft_response.raise_for_status()
         assert draft_response.json()["entity_id"] == prj_id
         assert draft_response.json()["status"] == "Draft"
 
-    def test_mark_project_ready_without_sbd_fails(self, authrequests):
+    def test_mark_project_ready_without_sbd_fails(self, client):
         """
         Test that marking a project as ready fails when it has no scheduling blocks
         """
         # Create a project (auto-creates with empty obs_blocks/sbd_ids)
-        prj_post_response = authrequests.post(
-            f"{ODT_URL}/prjs",
+        prj_post_response = client.post(
+            f"{ODT_BASE_API_URL}/prjs",
             headers={"Content-type": "application/json"},
         )
         assert prj_post_response.status_code == HTTPStatus.OK
         prj_id = prj_post_response.json()["prj_id"]
 
         # Attempt to mark as ready without adding any SBDs
-        ready_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/ready")
+        ready_response = client.put(f"{ODT_BASE_API_URL}/prjs/{prj_id}/status/ready")
 
         assert ready_response.status_code == HTTPStatus.BAD_REQUEST
         assert "no scheduling blocks" in ready_response.json()["detail"]
         assert prj_id in ready_response.json()["detail"]
 
-    def test_mark_project_draft_without_sbd_fails(self, authrequests):
+    def test_mark_project_draft_without_sbd_fails(self, client):
         """
         Test that marking a project as draft fails when it has no scheduling blocks
         """
         # Create a project (auto-creates with empty obs_blocks/sbd_ids)
-        prj_post_response = authrequests.post(
-            f"{ODT_URL}/prjs",
+        prj_post_response = client.post(
+            f"{ODT_BASE_API_URL}/prjs",
             headers={"Content-type": "application/json"},
         )
         assert prj_post_response.status_code == HTTPStatus.OK
         prj_id = prj_post_response.json()["prj_id"]
 
         # Attempt to mark as draft without adding any SBDs
-        draft_response = authrequests.put(f"{ODT_URL}/prjs/{prj_id}/status/draft")
+        draft_response = client.put(f"{ODT_BASE_API_URL}/prjs/{prj_id}/status/draft")
 
         assert draft_response.status_code == HTTPStatus.BAD_REQUEST
         assert "no scheduling blocks" in draft_response.json()["detail"]

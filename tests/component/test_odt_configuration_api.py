@@ -7,14 +7,14 @@ to a deployment of ska-oso-services in the same cluster
 
 from http import HTTPStatus
 
-from . import ODT_URL
+from . import ODT_BASE_API_URL
 
 
-def test_configuration_get(authrequests):
+def test_configuration_get(client):
     """
     Test that the GET /odt/configuration path receives the request
     and returns a success response
     """
 
-    response = authrequests.get(f"{ODT_URL}/configuration")
+    response = client.get(f"{ODT_BASE_API_URL}/configuration")
     assert response.status_code == HTTPStatus.OK, response.json()

@@ -4,11 +4,11 @@ from http import HTTPStatus
 from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
 
 from ..unit.util import TestDataFactory
-from . import PHT_URL
-from .conftest import SECOND_TEST_USER, temporary_different_user_request
+from . import PHT_BASE_API_URL
+from .conftest import SECOND_TEST_USER
 
 
-def test_post_proposal_access(authrequests):
+def test_post_proposal_access(client):
     """
     Integration test:
     - Create a proposal access
@@ -16,9 +16,9 @@ def test_post_proposal_access(authrequests):
     """
 
     # Add proposal to link to
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -29,9 +29,9 @@ def test_post_proposal_access(authrequests):
     )
     proposal_access_json = proposal_access.model_dump_json()
 
-    response = authrequests.post(
-        f"{PHT_URL}/proposal-access/create",
-        data=proposal_access_json,
+    response = client.post(
+        f"{PHT_BASE_API_URL}/proposal-access/create",
+        content=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
@@ -41,7 +41,7 @@ def test_post_proposal_access(authrequests):
     assert isinstance(result, str)
 
 
-def test_get_list_proposal_access_for_user(authrequests):
+def test_get_list_proposal_access_for_user(client, temporary_different_user_client):
     """
     Integration test:
     - Create two proposal accesses for two users linked to the same prsl_id
@@ -51,15 +51,15 @@ def test_get_list_proposal_access_for_user(authrequests):
 
     # Add proposal to link to - this will also create the proposal access
     # with the user as the PI
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     prsl_id = post_response.json()["prsl_id"]
 
-    with temporary_different_user_request() as temp_authrequests:
+    with temporary_different_user_client() as temp_client:
         proposal_access_other_user = TestDataFactory.proposal_access(
             access_id="access_id_test_get_by_user",
             prsl_id=prsl_id,
@@ -68,15 +68,15 @@ def test_get_list_proposal_access_for_user(authrequests):
 
         proposal_access_other_user_json = proposal_access_other_user.model_dump_json()
 
-        post_response = temp_authrequests.post(
-            f"{PHT_URL}/proposal-access/create",
-            data=proposal_access_other_user_json,
+        post_response = temp_client.post(
+            f"{PHT_BASE_API_URL}/proposal-access/create",
+            content=proposal_access_other_user_json,
             headers={"Content-Type": "application/json"},
         )
 
         assert post_response.status_code == HTTPStatus.OK
 
-    get_response = authrequests.get(f"{PHT_URL}/proposal-access/user")
+    get_response = client.get(f"{PHT_BASE_API_URL}/proposal-access/user")
 
     assert get_response.status_code == HTTPStatus.OK
 
@@ -86,19 +86,21 @@ def test_get_list_proposal_access_for_user(authrequests):
 
     assert len(get_result_filtered) == 1
 
-    with temporary_different_user_request() as temp_authrequests:
-        get_response = temp_authrequests.get(f"{PHT_URL}/proposal-access/user")
+    with temporary_different_user_client() as temp_client:
+        get_response = temp_client.get(f"{PHT_BASE_API_URL}/proposal-access/user")
 
         assert get_response.status_code == HTTPStatus.OK
 
         get_result = get_response.json()
 
-        get_result_filtered = [item for item in get_result if (item["prsl_id"] == prsl_id)]
+        get_result_filtered = [
+            item for item in get_result if (item["prsl_id"] == prsl_id)
+        ]
 
         assert len(get_result_filtered) == 1
 
 
-def test_get_list_proposal_access_for_prsl_id(authrequests):
+def test_get_list_proposal_access_for_prsl_id(client):
     """
     Integration test:
     - Create proposal access for the PI and CoI
@@ -107,9 +109,9 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
     """
 
     # Add proposal to link to - will also create a proposal access
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -125,15 +127,15 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
 
     proposal_access_json = proposal_access.model_dump_json()
 
-    post_response = authrequests.post(
-        f"{PHT_URL}/proposal-access/create",
-        data=proposal_access_json,
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/proposal-access/create",
+        content=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
     assert post_response.status_code == HTTPStatus.OK
 
-    get_response = authrequests.get(f"{PHT_URL}/proposal-access/{prsl_id}")
+    get_response = client.get(f"{PHT_BASE_API_URL}/proposal-access/{prsl_id}")
 
     assert get_response.status_code == HTTPStatus.OK
 
@@ -145,7 +147,9 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
     assert get_result_filtered[0]["prsl_id"] == prsl_id
 
 
-def test_get_list_proposal_access_for_prsl_id_not_PI(authrequests):
+def test_get_list_proposal_access_for_prsl_id_not_PI(
+    client, temporary_different_user_client
+):
     """
     Integration test:
     - Create proposal access for a user as the PI
@@ -155,21 +159,21 @@ def test_get_list_proposal_access_for_prsl_id_not_PI(authrequests):
 
     # Add proposal to link to - this will also create the proposal access
     # with the user as the PI
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     prsl_id = post_response.json()["prsl_id"]
 
-    with temporary_different_user_request() as temp_authrequests:
-        get_response = temp_authrequests.get(f"{PHT_URL}/proposal-access/{prsl_id}")
+    with temporary_different_user_client() as temp_client:
+        get_response = temp_client.get(f"{PHT_BASE_API_URL}/proposal-access/{prsl_id}")
 
         assert get_response.status_code == HTTPStatus.FORBIDDEN
 
 
-def test_put_proposal_access(authrequests):
+def test_put_proposal_access(client):
     """
     Integration test:
     - Create proposal access and save access_id
@@ -177,9 +181,9 @@ def test_put_proposal_access(authrequests):
     - Ensure version is bumped
     """
     # Add proposal to link to
-    post_response = authrequests.post(
-        f"{PHT_URL}/prsls/create",
-        data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/prsls/create",
+        content=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
@@ -192,9 +196,9 @@ def test_put_proposal_access(authrequests):
 
     proposal_access_json = proposal_access.model_dump_json()
 
-    post_response = authrequests.post(
-        f"{PHT_URL}/proposal-access/create",
-        data=proposal_access_json,
+    post_response = client.post(
+        f"{PHT_BASE_API_URL}/proposal-access/create",
+        content=proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 
@@ -212,9 +216,9 @@ def test_put_proposal_access(authrequests):
 
     put_proposal_access_json = put_proposal_access.model_dump_json()
 
-    put_response = authrequests.put(
-        f"{PHT_URL}/proposal-access/user/{access_id}",
-        data=put_proposal_access_json,
+    put_response = client.put(
+        f"{PHT_BASE_API_URL}/proposal-access/user/{access_id}",
+        content=put_proposal_access_json,
         headers={"Content-Type": "application/json"},
     )
 

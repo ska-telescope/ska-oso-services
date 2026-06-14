@@ -14,10 +14,10 @@ from ska_oso_pdm.builders.target_builder import LowTargetBuilder
 from ska_oso_pdm.builders.utils import populate_scan_sequences
 from ska_oso_pdm.sb_definition import ObservingConstraints
 
-from . import OSO_SERVICES_URL
+from . import OSO_SERVICES_BASE_API_URL
 
 
-def test_sbd_validate(authrequests):
+def test_sbd_validate(client):
     """
     Test that the POST /sbds/validate path receives the request
     and returns the correct response
@@ -38,9 +38,9 @@ def test_sbd_validate(authrequests):
 
     sbd.observing_constraints = ObservingConstraints()
 
-    response = authrequests.post(
-        f"{OSO_SERVICES_URL}/validate/sbd",
-        data=sbd.model_dump_json(),
+    response = client.post(
+        f"{OSO_SERVICES_BASE_API_URL}/validate/sbd",
+        content=sbd.model_dump_json(),
         headers={"Content-type": "application/json"},
     )
 

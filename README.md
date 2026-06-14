@@ -42,6 +42,33 @@ make python-test
 make python-lint
 ```
 
+`make python-test` runs both ``tests/unit/`` and ``tests/component/``.  The
+component tests drive the FastAPI app in-process via ``TestClient`` against a
+Postgres container started by [testcontainers](https://testcontainers-python.readthedocs.io).
+The container is launched from
+``registry.gitlab.com/ska-telescope/db/ska-db-oda/oda-test-db`` and is
+fully pre-migrated.
+
+#### Running tests under Podman
+
+If you use Podman instead of Docker, export the following before invoking
+``make python-test``:
+
+```
+export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
+export TESTCONTAINERS_RYUK_DISABLED=true
+```
+
+#### Overriding the test-DB image
+
+The image tag is pinned in ``tests/db_fixtures.py``.  To run against a
+different build (e.g. a newer ska-db-oda artefact) without editing source,
+set:
+
+```
+export ODA_TEST_DB_IMAGE=registry.gitlab.com/ska-telescope/db/ska-db-oda/oda-test-db:<tag>
+```
+
 To run a helm chart unit tests to verify helm chart configuration:
 
 ```
@@ -69,7 +96,9 @@ The Swagger UI should be available external to the cluster at `http://<KUBE_HOST
 If using minikube, `KUBE_HOST` can be found by running `minikube ip`. 
 `KUBE_NAMESPACE` is the namespace the chart was deployed to, likely `ska-oso-services`
 
-To run the component tests in a k8s pod:
+To run the smoke tests in a k8s pod against the deployed release — these
+verify the chart / image / network plumbing, not application business logic
+(which is covered by ``make python-test``):
 
 ```
 make k8s-test
