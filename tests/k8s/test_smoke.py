@@ -41,7 +41,7 @@ def test_create_and_get_project_round_trip(service_url, auth_headers):
 
 def test_forbidden_without_token(service_url):
     """A secured route rejects requests without an Authorization header."""
-    response = requests.post(f"{service_url}/odt/sbds/create")
+    response = requests.get(f"{service_url}/odt/sbds/create")
     assert response.status_code in (
         HTTPStatus.UNAUTHORIZED,
         HTTPStatus.FORBIDDEN,

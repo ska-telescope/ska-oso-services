@@ -10,7 +10,6 @@ environment variable (the Makefile's ``k8s-test`` target sets it).
 
 import os
 from http import HTTPStatus
-from importlib.metadata import version
 
 import pytest
 import requests
@@ -19,7 +18,6 @@ from ska_aaa_authhelpers.test_helpers import mint_test_token
 
 OSO_SERVICES_URL = os.environ.get("OSO_SERVICES_URL")
 AUDIENCE = os.environ.get("SKA_AUTH_AUDIENCE", "test:pht")
-OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
 
 
 @pytest.fixture(scope="session")
