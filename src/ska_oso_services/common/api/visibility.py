@@ -29,12 +29,10 @@ def visibility_svg(
         )
 
     try:
-        site_cfg = SITES[key]
         svg = render_svg(
             ra=ra,
             dec=dec,
-            site=site_cfg.location,
-            min_elev=site_cfg.min_elev_deg,
+            site_key=key,
             step_s=STEP_SECONDS_DEFAULT_VISIBILITY,
             show_ateam=show_ateam,
         )

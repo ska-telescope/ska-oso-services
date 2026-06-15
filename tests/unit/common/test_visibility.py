@@ -16,8 +16,7 @@ class TestVisibilityRenderSvg:
         svg_bytes = visibility.render_svg(
             ra="10h00m00s",
             dec="-30d00m00s",
-            site=visibility.SITES["LOW"].location,
-            min_elev=20.0,
+            site_key="LOW",
             step_s=3600,
         )
 
@@ -38,8 +37,7 @@ class TestVisibilityRenderSvg:
         svg_bytes = visibility.render_svg(
             ra="10h00m00s",
             dec="-30d00m00s",
-            site=visibility.SITES["LOW"].location,
-            min_elev=20.0,
+            site_key="LOW",
             step_s=3600,
         )
 
@@ -55,8 +53,7 @@ class TestVisibilityRenderSvg:
         svg_bytes = visibility.render_svg(
             ra="10h00m00s",
             dec="-30d00m00s",
-            site=visibility.SITES["LOW"].location,
-            min_elev=20.0,
+            site_key="LOW",
             step_s=3600,
         )
 
@@ -72,8 +69,7 @@ class TestVisibilityRenderSvg:
         svg_bytes = visibility.render_svg(
             ra="10h00m00s",
             dec="-30d00m00s",
-            site=visibility.SITES["LOW"].location,
-            min_elev=20.0,
+            site_key="LOW",
             step_s=3600,
             show_ateam=False,
         )

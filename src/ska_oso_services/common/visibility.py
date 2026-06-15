@@ -53,11 +53,12 @@ ATEAM_SOURCES: dict[str, tuple[str, str]] = {
     "Taurus A": ("05h34m31.7760s", "+22d01m02.640s"),
     "Cygnus A": ("19h59m28.3566s", "+40d44m02.097s"),
     "Hercules A": ("16h51m07.9887s", "+04d59m35.547s"),
+    "Cassiopeia A": ("23h23m26.0160s", "+58d48m40.680s"),
 }
 
 # Okabe-Ito palette (colour vision deficiency safe), cycled across 8 A-team sources
-_ATEAM_COLOURS = ["#E69F00", "#009E73", "#CC79A7", "#56B4E9"]
-# 8 visually distinct dash patterns, one per A-team source
+_ATEAM_COLOURS = ["#E69F00", "#56B4E9", "#009E73", "#D55E00", "#CC79A7"]
+# Visually distinct dash patterns, one per A-team source
 _ATEAM_LINE_STYLES = [
     (0, (8, 2)),  # long dash
     (0, (4, 2)),  # medium dash
@@ -67,6 +68,7 @@ _ATEAM_LINE_STYLES = [
     (0, (8, 2, 1, 2)),  # long-dash-dot
     (0, (2, 2)),  # short dash
     (0, (8, 2, 4, 2)),  # long-medium dash
+    (0, (1, 1)),  # densely dotted
 ]
 
 
@@ -96,14 +98,37 @@ def _visible_duration(alt: np.ndarray, min_elev: float, step_s: int) -> tuple[in
     return seconds, hours, minutes
 
 
+# Fixed epoch used to pre-compute A-team alt arrays (elevation vs LST is date-invariant).
+_REF_EPOCH = datetime(2000, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+
+def _precompute_ateam_alts(site: EarthLocation) -> dict[str, np.ndarray]:
+    t_ref = Time(_REF_EPOCH)
+    lst_ref_h = t_ref.sidereal_time("apparent", longitude=site.lon).hour
+    start = (t_ref - (lst_ref_h / 24.0) * u.sday).to_datetime(timezone=timezone.utc)
+    return {
+        name: _alts(ra, dec, site, start, STEP_SECONDS_DEFAULT_VISIBILITY)[1]
+        for name, (ra, dec) in ATEAM_SOURCES.items()
+    }
+
+
+# Pre-computed at module load for each known site; keyed by site name ("LOW", "MID").
+_ATEAM_ALTS: dict[str, dict[str, np.ndarray]] = {
+    key: _precompute_ateam_alts(cfg.location) for key, cfg in SITES.items()
+}
+
+
 def render_svg(
     ra: str,
     dec: str,
-    site: EarthLocation,
-    min_elev: float,
+    site_key: str,
     step_s: int = STEP_SECONDS_DEFAULT_VISIBILITY,
     show_ateam: bool = True,
 ) -> bytes:
+    site_cfg = SITES[site_key]
+    site = site_cfg.location
+    min_elev = site_cfg.min_elev_deg
+
     # Anchor at the UTC time when LST = 0h so the x-axis starts at 0h.
     # LST is then computed as a linear ramp (0 → ~24.07h over one solar day)
     # rather than via astropy's sidereal_time(), which wraps at 24h and would
@@ -171,16 +196,21 @@ def render_svg(
     )
 
     if show_ateam:
+        use_cache = step_s == STEP_SECONDS_DEFAULT_VISIBILITY
         for i, (name, (src_ra, src_dec)) in enumerate(ATEAM_SOURCES.items()):
             ateam_coord = SkyCoord(ra=src_ra, dec=src_dec, unit=(u.hourangle, u.deg), frame="icrs")
             sep_deg = target_coord.separation(ateam_coord).deg
-            _, src_alt = _alts(src_ra, src_dec, site, plot_start_time_utc, step_s)
+            src_alt = (
+                _ATEAM_ALTS[site_key][name]
+                if use_cache
+                else _alts(src_ra, src_dec, site, plot_start_time_utc, step_s)[1]
+            )
             ax.plot(
                 lst_hours,
                 np.where(src_alt >= 0, src_alt, np.nan),
                 color=_ATEAM_COLOURS[i % len(_ATEAM_COLOURS)],
                 ls=_ATEAM_LINE_STYLES[i],
-                lw=2.0,
+                lw=1.0,
                 alpha=0.6,
                 antialiased=True,
                 label=f"{name}  (sep = {sep_deg:.1f}°)",
