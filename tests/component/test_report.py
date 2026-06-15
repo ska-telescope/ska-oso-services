@@ -15,9 +15,7 @@ def test_get_report_for_user(client, test_panel_id):
     proposal1 = TestDataFactory.complete_proposal()
     proposal2 = TestDataFactory.complete_proposal()
 
-    decision = TestDataFactory.panel_decision(
-        prsl_id=proposal1.prsl_id, panel_id=test_panel_id
-    )
+    decision = TestDataFactory.panel_decision(prsl_id=proposal1.prsl_id, panel_id=test_panel_id)
     reviews = TestDataFactory.reviews(
         prsl_id=proposal1.prsl_id,
         reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],

@@ -20,9 +20,7 @@ def test_project_generated_from_proposal(client):
     prsl_id = post_response.json()["prsl_id"]
 
     # Generate the Project
-    generate_response = client.post(
-        f"{ODT_BASE_API_URL}/prsls/{prsl_id}/generateProject"
-    )
+    generate_response = client.post(f"{ODT_BASE_API_URL}/prsls/{prsl_id}/generateProject")
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text
     assert prsl_id == generate_response.json()["prsl_ref"]
@@ -36,9 +34,7 @@ def test_project_generated_from_proposal(client):
 
 def test_sbds_generated_from_project(client):
     # First need to add a Project to generate from
-    project = TestDataFactory.project_with_two_mid_observation_groups(
-        prj_id=None, prsl_ref=None
-    )
+    project = TestDataFactory.project_with_two_mid_observation_groups(prj_id=None, prsl_ref=None)
     post_response = client.post(
         f"{ODT_BASE_API_URL}/prjs",
         content=project.model_dump_json(),
@@ -48,9 +44,7 @@ def test_sbds_generated_from_project(client):
     prj_id = post_response.json()["prj_id"]
 
     # Generate the SBDefinitions
-    generate_response = client.post(
-        f"{ODT_BASE_API_URL}/prjs/{prj_id}/generateSBDefinitions"
-    )
+    generate_response = client.post(f"{ODT_BASE_API_URL}/prjs/{prj_id}/generateSBDefinitions")
 
     assert generate_response.status_code == HTTPStatus.OK, generate_response.text
     project = Project.model_validate_json(generate_response.text)
@@ -88,9 +82,7 @@ def test_sbds_generated_from_project_obs_block(client):
     assert len(project.obs_blocks[0].sbd_ids) == 1
 
     # Check the SBDefinitions exists in the ODA
-    get_response = client.get(
-        f"{ODT_BASE_API_URL}/sbds/{project.obs_blocks[0].sbd_ids[0]}"
-    )
+    get_response = client.get(f"{ODT_BASE_API_URL}/sbds/{project.obs_blocks[0].sbd_ids[0]}")
     assert get_response.status_code == HTTPStatus.OK
 
 

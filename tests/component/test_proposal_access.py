@@ -93,9 +93,7 @@ def test_get_list_proposal_access_for_user(client, temporary_different_user_clie
 
         get_result = get_response.json()
 
-        get_result_filtered = [
-            item for item in get_result if (item["prsl_id"] == prsl_id)
-        ]
+        get_result_filtered = [item for item in get_result if (item["prsl_id"] == prsl_id)]
 
         assert len(get_result_filtered) == 1
 
@@ -147,9 +145,7 @@ def test_get_list_proposal_access_for_prsl_id(client):
     assert get_result_filtered[0]["prsl_id"] == prsl_id
 
 
-def test_get_list_proposal_access_for_prsl_id_not_PI(
-    client, temporary_different_user_client
-):
+def test_get_list_proposal_access_for_prsl_id_not_PI(client, temporary_different_user_client):
     """
     Integration test:
     - Create proposal access for a user as the PI

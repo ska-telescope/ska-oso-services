@@ -24,9 +24,7 @@ import pytest
 from psycopg import sql as psql
 from testcontainers.postgres import PostgresContainer
 
-_DEFAULT_ODA_TEST_DB_IMAGE = (
-    "registry.gitlab.com/ska-telescope/db/ska-db-oda/oda-test-db:e3b7519b"
-)
+_DEFAULT_ODA_TEST_DB_IMAGE = "registry.gitlab.com/ska-telescope/db/ska-db-oda/oda-test-db:e3b7519b"
 # Pinned tag — bump when ska-db-oda publishes a newer build, or override via
 # the env var to test against a different image without editing source.
 ODA_TEST_DB_IMAGE = os.environ.get("ODA_TEST_DB_IMAGE", _DEFAULT_ODA_TEST_DB_IMAGE)
@@ -100,7 +98,8 @@ def postgres_container():
 
 
 @pytest.fixture
-def clean_db(postgres_container):  # pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name,unused-argument
+def clean_db(postgres_container):
     """Truncate ODA tables after each test for isolation.
 
     Lookup/seed tables are preserved.  ``CASCADE`` handles FK chains;
@@ -116,5 +115,6 @@ def clean_db(postgres_container):  # pylint: disable=unused-argument
                 psql.Identifier(*tbl.split(".")) for tbl in _TABLES_TO_TRUNCATE
             )
         )
-        uow._conn.execute(statement)  # pylint: disable=protected-access
+        # pylint: disable=protected-access,no-member
+        uow._conn.execute(statement)
         uow.commit()

@@ -10,11 +10,7 @@ from datetime import datetime
 
 from ska_oso_pdm import OSOExecutionBlock
 from ska_oso_pdm._shared import TelescopeType
-from ska_oso_pdm.execution_block import (
-    PythonArguments,
-    RequestResponse,
-    ResponseWrapper,
-)
+from ska_oso_pdm.execution_block import PythonArguments, RequestResponse, ResponseWrapper
 
 from . import ENGINEERING_BASE_API_URL
 
@@ -102,9 +98,7 @@ class TestEBs:
         assert post_response.status_code == 200
         eb_id = post_response.json()["eb_id"]
 
-        put_response = client.put(
-            f"{ENGINEERING_BASE_API_URL}/ebs/{eb_id}/status/observed"
-        )
+        put_response = client.put(f"{ENGINEERING_BASE_API_URL}/ebs/{eb_id}/status/observed")
         assert put_response.status_code == 200
 
         result = put_response.json()
@@ -124,9 +118,7 @@ class TestEBs:
         assert post_response.status_code == 200
         eb_id = post_response.json()["eb_id"]
 
-        put_response = client.put(
-            f"{ENGINEERING_BASE_API_URL}/ebs/{eb_id}/status/failed"
-        )
+        put_response = client.put(f"{ENGINEERING_BASE_API_URL}/ebs/{eb_id}/status/failed")
         assert put_response.status_code == 200
 
         result = put_response.json()

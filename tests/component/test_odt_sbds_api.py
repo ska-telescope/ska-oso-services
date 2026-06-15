@@ -31,19 +31,14 @@ def test_post_without_ob_ref_fails(client):
     ob_not_in_db = mint_skuid(EntityType.OB)
     response = client.post(
         f"{ODT_BASE_API_URL}/sbds",
-        content=TestDataFactory.sbdefinition(
-            sbd_id=None, ob_ref=ob_not_in_db
-        ).model_dump_json(),
+        content=TestDataFactory.sbdefinition(sbd_id=None, ob_ref=ob_not_in_db).model_dump_json(),
         headers={"Content-type": "application/json"},
     )
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     result = response.json()
 
-    assert (
-        result["detail"]
-        == f"The referenced identifier {ob_not_in_db} could not be found"
-    )
+    assert result["detail"] == f"The referenced identifier {ob_not_in_db} could not be found"
 
 
 @pytest.mark.xray("XTP-34548")
@@ -52,9 +47,7 @@ def test_sbd_post_then_get(client, test_project):
     Test that an entity POSTed to /sbds can then be retrieved
     with GET /sbds/{identifier}
     """
-    sbd = TestDataFactory.sbdefinition(
-        sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id
-    )
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
     post_response = client.post(
         f"{ODT_BASE_API_URL}/sbds",
         content=sbd.model_dump_json(),
@@ -86,9 +79,7 @@ def test_sbd_status_get(client, test_project):
     Test that GET /sbds/{identifier}/status returns a current Status
     for an existing SBD.
     """
-    sbd = TestDataFactory.sbdefinition(
-        sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id
-    )
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
     post_response = client.post(
         f"{ODT_BASE_API_URL}/sbds",
         content=sbd.model_dump_json(),
@@ -124,9 +115,7 @@ def test_sbd_post_then_put(client, test_project):
     )
 
     sbd_id = post_response.json()["sbd_id"]
-    sbd_to_update = TestDataFactory.sbdefinition(
-        sbd_id=sbd_id, ob_ref=ob_ref
-    ).model_dump_json()
+    sbd_to_update = TestDataFactory.sbdefinition(sbd_id=sbd_id, ob_ref=ob_ref).model_dump_json()
     put_response = client.put(
         f"{ODT_BASE_API_URL}/sbds/{sbd_id}",
         content=sbd_to_update,
@@ -153,8 +142,7 @@ def test_sbd_get_not_found(client):
 
     assert response.status_code == HTTPStatus.NOT_FOUND, response.content
     assert (
-        response.json()["detail"]
-        == f"The requested identifier {id_not_in_db} could not be found."
+        response.json()["detail"] == f"The requested identifier {id_not_in_db} could not be found."
     )
 
 
@@ -168,8 +156,7 @@ def test_sbd_put_not_found(client):
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert (
-        response.json()["detail"]
-        == f"The requested identifier {id_not_in_db} could not be found."
+        response.json()["detail"] == f"The requested identifier {id_not_in_db} could not be found."
     )
 
 
@@ -188,19 +175,14 @@ def test_sbd_put_validation_error(client):
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     result = response.json()
 
-    assert (
-        result["detail"][0]["msg"]
-        == "Input should be 'ska_mid', 'ska_low' or 'MeerKAT'"
-    )
+    assert result["detail"][0]["msg"] == "Input should be 'ska_mid', 'ska_low' or 'MeerKAT'"
 
 
 def test_sbd_delete_success(client, test_project):
     """
     Test that DELETE /sbds/{identifier} removes the SBD and returns 204 No Content.
     """
-    sbd = TestDataFactory.sbdefinition(
-        sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id
-    )
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
     post_response = client.post(
         f"{ODT_BASE_API_URL}/sbds",
         content=sbd.model_dump_json(),
@@ -224,10 +206,7 @@ def test_sbd_delete_not_found(client):
     delete_response = client.delete(f"{ODT_BASE_API_URL}/sbds/{bad_sbd_id}")
     assert delete_response.status_code == HTTPStatus.NOT_FOUND
 
-    assert (
-        "The requested identifier could not be found"
-        in delete_response.json()["detail"]
-    )
+    assert "The requested identifier could not be found" in delete_response.json()["detail"]
 
 
 def test_sbd_status_set_ready_then_draft(client, test_project):
@@ -235,9 +214,7 @@ def test_sbd_status_set_ready_then_draft(client, test_project):
     Test SBD status updates by first checking the initial status is Draft,
     then setting it to Ready, then back to Draft
     """
-    sbd = TestDataFactory.sbdefinition(
-        sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id
-    )
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
     post_response = client.post(
         f"{ODT_BASE_API_URL}/sbds",
         content=sbd.model_dump_json(),

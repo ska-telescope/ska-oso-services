@@ -40,9 +40,7 @@ def test_create_and_get_panel_decision(client, test_panel_id):
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     decision_id = post_response.json()
-    assert isinstance(
-        decision_id, str
-    ), f"Expected string, got {type(decision_id)}: {decision_id}"
+    assert isinstance(decision_id, str), f"Expected string, got {type(decision_id)}: {decision_id}"
 
     # GET created proposal
     get_response = client.get(f"{PHT_BASE_API_URL}/panel/decision/{decision_id}")
@@ -92,9 +90,7 @@ def test_panel_decision_create_then_put(client, test_panel_id):
     assert returned_decision_id == decision.decision_id
 
     # GET proposal to fetch latest state
-    get_response = client.get(
-        f"{PHT_BASE_API_URL}/panel/decision/{returned_decision_id}"
-    )
+    get_response = client.get(f"{PHT_BASE_API_URL}/panel/decision/{returned_decision_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
     originalreview = get_response.json()
@@ -135,9 +131,7 @@ def test_panel_decision_put_decided_updates_proposal(client, test_panel_id):
     decision_id = post_decision_response.json()
 
     # GET decision to fetch latest state
-    get_decision_response = client.get(
-        f"{PHT_BASE_API_URL}/panel/decision/{decision_id}"
-    )
+    get_decision_response = client.get(f"{PHT_BASE_API_URL}/panel/decision/{decision_id}")
 
     originaldecision = get_decision_response.json()
 
@@ -188,9 +182,7 @@ def test_panel_decision_put_not_decided_not_updating_proposal(client, test_panel
     decision_id = post_decision_response.json()
 
     # GET decision to fetch latest state
-    get_decision_response = client.get(
-        f"{PHT_BASE_API_URL}/panel/decision/{decision_id}"
-    )
+    get_decision_response = client.get(f"{PHT_BASE_API_URL}/panel/decision/{decision_id}")
 
     originaldecision = get_decision_response.json()
 
@@ -239,9 +231,7 @@ def test_get_list_panel_decision_for_user(client, test_panel_id):
         )
         assert post_response.status_code == HTTPStatus.OK, post_response.text
         prsl_id = post_response.json()["prsl_id"]
-        panel_decision = TestDataFactory.panel_decision(
-            prsl_id=prsl_id, panel_id=test_panel_id
-        )
+        panel_decision = TestDataFactory.panel_decision(prsl_id=prsl_id, panel_id=test_panel_id)
 
         response = client.post(
             f"{PHT_BASE_API_URL}/panel/decision/create",
@@ -253,9 +243,7 @@ def test_get_list_panel_decision_for_user(client, test_panel_id):
 
     # Get created_by from one of the created reviews
     example_decision_id = created_ids[0]
-    get_response = client.get(
-        f"{PHT_BASE_API_URL}/panel/decision/{example_decision_id}"
-    )
+    get_response = client.get(f"{PHT_BASE_API_URL}/panel/decision/{example_decision_id}")
     assert get_response.status_code == HTTPStatus.OK, get_response.content
 
     list_response = client.get(f"{PHT_BASE_API_URL}/panel/decision/")

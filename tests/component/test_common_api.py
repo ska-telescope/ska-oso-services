@@ -159,7 +159,4 @@ def test_coordinates_get(client, identifier, reference_frame, expected_response)
     )
 
     assert response.status_code == HTTPStatus.OK, response.json()
-    assert (
-        response.json()["reference_coordinate"]
-        == expected_response["reference_coordinate"]
-    )
+    assert response.json()["reference_coordinate"] == expected_response["reference_coordinate"]

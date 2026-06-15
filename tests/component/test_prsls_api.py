@@ -99,9 +99,7 @@ def test_proposal_create_then_put(client):
 
     # Update title and PUT back
     updated_entity = get_v1.json()
-    updated_entity["title"] = (
-        f"{updated_entity.get('title', 'Untitled')} (updated title)"
-    )
+    updated_entity["title"] = f"{updated_entity.get('title', 'Untitled')} (updated title)"
     put_resp = client.put(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}",
         content=json.dumps(updated_entity),
@@ -136,9 +134,7 @@ def test_proposal_create_then_put_submit(client):
     v1 = get_v1.json()["metadata"]["version"]
 
     # Use a completed proposal with submitted status and PUT back
-    updated_complete_submit_proposal = TestDataFactory.complete_proposal(
-        prsl_id=prsl_id
-    )
+    updated_complete_submit_proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id)
 
     put_resp = client.put(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}",
@@ -179,9 +175,7 @@ def test_proposal_create_then_put_update_forbidden(client):
     # Get my proposal access record and remove(update) access from proposal access
     access_records = client.get(f"{PHT_BASE_API_URL}/proposal-access/{prsl_id}")
 
-    filtered_access = [
-        obj for obj in access_records.json() if obj.get("user_id") == TEST_USER
-    ]
+    filtered_access = [obj for obj in access_records.json() if obj.get("user_id") == TEST_USER]
     my_access_record = filtered_access[0]
     my_access_id = my_access_record["access_id"]
 
@@ -195,9 +189,7 @@ def test_proposal_create_then_put_update_forbidden(client):
 
     # Update title and PUT back
     updated_entity = get_v1.json()
-    updated_entity["title"] = (
-        f"{updated_entity.get('title', 'Untitled')} (updated title)"
-    )
+    updated_entity["title"] = f"{updated_entity.get('title', 'Untitled')} (updated title)"
     put_resp = client.put(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}",
         content=json.dumps(updated_entity),
@@ -237,9 +229,7 @@ def test_proposal_create_then_put_submit_forbidden(client):
     # Get my proposal access record and remove(update) access from proposal access
     access_records = client.get(f"{PHT_BASE_API_URL}/proposal-access/{prsl_id}")
 
-    filtered_access = [
-        obj for obj in access_records.json() if obj.get("user_id") == TEST_USER
-    ]
+    filtered_access = [obj for obj in access_records.json() if obj.get("user_id") == TEST_USER]
     my_access_record = filtered_access[0]
     my_access_id = my_access_record["access_id"]
 
@@ -251,9 +241,7 @@ def test_proposal_create_then_put_submit_forbidden(client):
         headers={"Content-Type": "application/json"},
     )
 
-    updated_complete_submit_proposal = TestDataFactory.complete_proposal(
-        prsl_id=prsl_id
-    )
+    updated_complete_submit_proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id)
 
     put_resp = client.put(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}",
@@ -401,9 +389,7 @@ def test_get_proposals_by_status(client):
 
     # All with 'draft' should be returned
     for prsl_id in created_ids_with_target_status:
-        assert (
-            prsl_id in returned_ids
-        ), f"Missing {prsl_id} from GET /status/{status_to_test}"
+        assert prsl_id in returned_ids, f"Missing {prsl_id} from GET /status/{status_to_test}"
 
     # Other statuses should not be returned
     for prsl_id in created_ids_with_other_status:

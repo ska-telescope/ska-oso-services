@@ -37,9 +37,7 @@ def test_correct_authorization_enforced(unauth_client, url, role, status):
 
 
 def test_user_extracted_from_auth(unauth_client):
-    token = mint_test_token(
-        audience=AUDIENCE, scopes={"odt:readwrite"}, roles={Role.SW_ENGINEER}
-    )
+    token = mint_test_token(audience=AUDIENCE, scopes={"odt:readwrite"}, roles={Role.SW_ENGINEER})
     response = unauth_client.post(
         f"{ODT_BASE_API_URL}/prjs",
         content=VALID_PROJECT_WITHOUT_ID_JSON,

@@ -73,14 +73,15 @@ class TestLinkingSBDefinitions:
         )
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content
-        assert (
-            response.json()["detail"]
-            == f"Observing Block '{ob_id}' not found in Project"
-        )
+        assert response.json()["detail"] == f"Observing Block '{ob_id}' not found in Project"
 
     def test_inconsistent_ob_ref_raises_error(self, client, test_project):
+        url = (
+            f"{ODT_BASE_API_URL}/prjs/{test_project.prj_id}/"
+            f"{test_project.obs_blocks[0].obs_block_id}/sbds"
+        )
         response = client.post(
-            f"{ODT_BASE_API_URL}/prjs/{test_project.prj_id}/{test_project.obs_blocks[0].obs_block_id}/sbds",
+            url,
             content=json.dumps({"telescope": "ska_mid", "ob_ref": "different-ob"}),
             headers={"Content-type": "application/json"},
         )
@@ -100,9 +101,7 @@ class TestLinkingSBDefinitions:
         obs_block_id = prj["obs_blocks"][0]["obs_block_id"]
 
         # Delete the observing block
-        delete_response = client.delete(
-            f"{ODT_BASE_API_URL}/prjs/{prj_id}/{obs_block_id}"
-        )
+        delete_response = client.delete(f"{ODT_BASE_API_URL}/prjs/{prj_id}/{obs_block_id}")
         assert delete_response.status_code == HTTPStatus.OK, delete_response.content
         updated_prj = Project.model_validate_json(delete_response.content)
         # The obs_blocks list should now not contain the deleted OB
@@ -293,9 +292,7 @@ class TestProjectAPI:
         Test that repeatedly setting the project to status=Ready just makes it Ready.
         """
         first_result = self.test_mark_project_ready(test_sbd, test_project, client)
-        url = "{}/prjs/{}/status/ready".format(
-            ODT_BASE_API_URL, first_result["entity_id"]
-        )
+        url = "{}/prjs/{}/status/ready".format(ODT_BASE_API_URL, first_result["entity_id"])
         resp = client.put(url)
         resp.raise_for_status()
         second_result = resp.json()
@@ -312,9 +309,7 @@ class TestProjectAPI:
         """
         Test that the Project status can be changed back to Draft.
         """
-        prj_id = self.test_mark_project_ready(test_sbd, test_project, client)[
-            "entity_id"
-        ]
+        prj_id = self.test_mark_project_ready(test_sbd, test_project, client)["entity_id"]
 
         draft_response = client.put(f"{ODT_BASE_API_URL}/prjs/{prj_id}/status/draft")
         draft_response.raise_for_status()

@@ -21,9 +21,7 @@ def test_create_and_get_review(client, test_panel_id, test_proposal):
     """
 
     # POST using JSON string
-    review = TestDataFactory.reviews(
-        panel_id=test_panel_id, prsl_id=test_proposal.prsl_id
-    )
+    review = TestDataFactory.reviews(panel_id=test_panel_id, prsl_id=test_proposal.prsl_id)
     post_response = client.post(
         f"{PHT_BASE_API_URL}/reviews/create",
         content=review.model_dump_json(),
@@ -31,9 +29,7 @@ def test_create_and_get_review(client, test_panel_id, test_proposal):
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     review_id = post_response.json()
-    assert isinstance(
-        review_id, str
-    ), f"Expected string, got {type(review_id)}: {review_id}"
+    assert isinstance(review_id, str), f"Expected string, got {type(review_id)}: {review_id}"
 
     # GET created proposal
     get_response = client.get(f"{PHT_BASE_API_URL}/reviews/{review_id}")
@@ -60,9 +56,7 @@ def test_review_create_then_put(client, test_panel_id, test_proposal):
     """
 
     # POST a new proposal
-    review = TestDataFactory.reviews(
-        panel_id=test_panel_id, prsl_id=test_proposal.prsl_id
-    )
+    review = TestDataFactory.reviews(panel_id=test_panel_id, prsl_id=test_proposal.prsl_id)
     review_id = review.review_id
     post_response = client.post(
         f"{PHT_BASE_API_URL}/reviews/create",
@@ -150,6 +144,4 @@ def test_get_list_reviews_for_user(client, test_panel_id):
     # Check that all created reviews are returned
     returned_ids = {p["review_id"] for p in reviews}
     for review_id in created_ids:
-        assert (
-            review_id in returned_ids
-        ), f"Missing proposal {review_id} in GET /users/reviews"
+        assert review_id in returned_ids, f"Missing proposal {review_id} in GET /users/reviews"
