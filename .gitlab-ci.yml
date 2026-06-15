@@ -42,6 +42,10 @@ k8s-test:
 # with a Podman socket so testcontainers can launch the Postgres fixture.
 # (The runner has no Docker daemon.)  Everything else — stage, image, script,
 # artifacts — is inherited from the template.
+#
+# `poetry install` installs the project itself (not just its deps) because
+# src/ska_oso_services/app.py calls importlib.metadata.version("ska-oso-services")
+# at import time, which needs the dist-info present on disk.
 python-test:
   variables:
     DOCKER_HOST: unix:///run/user/0/podman/podman.sock
@@ -52,7 +56,7 @@ python-test:
     - podman system service --time=0 unix:///run/user/0/podman/podman.sock &
     - timeout 10 sh -c 'until test -S /run/user/0/podman/podman.sock; do sleep 1; done'
     - poetry config virtualenvs.create false
-    - poetry install --no-root
+    - poetry install
 
 .info_script: &info_script
     - |-
@@ -126,7 +130,7 @@ indigo-live-auth:
     SKA_AUTH_AUDIENCE: test:pht
   before_script:
     - poetry config virtualenvs.create false
-    - poetry install --no-root
+    - poetry install
   script:
     - make python-test
   artifacts:
