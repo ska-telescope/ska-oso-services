@@ -43,6 +43,32 @@ SITES: dict[str, SiteConfig] = {
     ),
 }
 
+# A-team sources visible from SKA-Low (ICRS)
+ATEAM_SOURCES: dict[str, tuple[str, str]] = {
+    "Centaurus A": ("13h25m27.6152s", "-43d01m08.805s"),
+    "Fornax A": ("03h22m41.7890s", "-37d12m29.520s"),
+    "Pictor A": ("05h19m49.7229s", "-45d46m43.853s"),
+    "Hydra A": ("09h18m05.6685s", "-12d05m43.806s"),
+    "Virgo A": ("12h30m49.4234s", "+12d23m28.044s"),
+    "Taurus A": ("05h34m31.7760s", "+22d01m02.640s"),
+    "Cygnus A": ("19h59m28.3566s", "+40d44m02.097s"),
+    "Hercules A": ("16h51m07.9887s", "+04d59m35.547s"),
+}
+
+# Okabe-Ito palette (colour vision deficiency safe), cycled across 8 A-team sources
+_ATEAM_COLOURS = ["#E69F00", "#009E73", "#CC79A7", "#56B4E9"]
+# 8 visually distinct dash patterns, one per A-team source
+_ATEAM_LINE_STYLES = [
+    (0, (8, 2)),  # long dash
+    (0, (4, 2)),  # medium dash
+    (0, (1, 2)),  # dotted
+    (0, (4, 2, 1, 2)),  # dash-dot
+    (0, (4, 2, 1, 2, 1, 2)),  # dash-dot-dot
+    (0, (8, 2, 1, 2)),  # long-dash-dot
+    (0, (2, 2)),  # short dash
+    (0, (8, 2, 4, 2)),  # long-medium dash
+]
+
 
 def _alts(
     ra: str,
@@ -76,6 +102,7 @@ def render_svg(
     site: EarthLocation,
     min_elev: float,
     step_s: int = STEP_SECONDS_DEFAULT_VISIBILITY,
+    show_ateam: bool = True,
 ) -> bytes:
     # Anchor at the UTC time when LST = 0h so the x-axis starts at 0h.
     # LST is then computed as a linear ramp (0 → ~24.07h over one solar day)
@@ -87,6 +114,7 @@ def render_svg(
         timezone=timezone.utc
     )
 
+    target_coord = SkyCoord(ra=ra, dec=dec, unit=(u.hourangle, u.deg), frame="icrs")
     times, alt = _alts(ra, dec, site, plot_start_time_utc, step_s)
 
     # One solar day advances LST by solar_day/sidereal_day × 24h ≈ 24.066h.
@@ -121,7 +149,7 @@ def render_svg(
         antialiased=True,
         solid_capstyle="round",
         solid_joinstyle="round",
-        label="Elevation (°)",
+        label="Target",
     )
 
     # Min elevation threshold
@@ -130,7 +158,7 @@ def render_svg(
         color=T10_COLOURS["red"],
         ls="--",
         lw=1.3,
-        label=f"Min elevation ({min_elev:.0f}°)",
+        label=f"Elevation limit: {min_elev:.0f}°",
     )
 
     ax.fill_between(
@@ -142,12 +170,28 @@ def render_svg(
         alpha=0.18,
     )
 
+    if show_ateam:
+        for i, (name, (src_ra, src_dec)) in enumerate(ATEAM_SOURCES.items()):
+            ateam_coord = SkyCoord(ra=src_ra, dec=src_dec, unit=(u.hourangle, u.deg), frame="icrs")
+            sep_deg = target_coord.separation(ateam_coord).deg
+            _, src_alt = _alts(src_ra, src_dec, site, plot_start_time_utc, step_s)
+            ax.plot(
+                lst_hours,
+                np.where(src_alt >= 0, src_alt, np.nan),
+                color=_ATEAM_COLOURS[i % len(_ATEAM_COLOURS)],
+                ls=_ATEAM_LINE_STYLES[i],
+                lw=2.0,
+                alpha=0.6,
+                antialiased=True,
+                label=f"{name}  (sep = {sep_deg:.1f}°)",
+            )
+
     ax.set_xlim(0, 24)
     ax.set_ylim(0, 90)
     ax.grid(False)
 
     ax.set_title(
-        f"Target Visibility: {vis_h}h {vis_m}m above {min_elev:.0f}°",
+        f"The target is over the elevation limit of {min_elev:.0f}° for {vis_h}h {vis_m}m",
         pad=10,
     )
     ax.set_ylabel("Elevation (°)", fontsize=14, labelpad=6)
@@ -162,7 +206,12 @@ def render_svg(
         label.set_rotation(35)
         label.set_ha("right")
 
-    legend = ax.legend(loc="upper left", frameon=True)
+    legend = ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.18),
+        ncols=3,
+        frameon=True,
+    )
     legend.get_frame().set_edgecolor("#e5e7eb")
     fig.subplots_adjust(bottom=0.2)
 

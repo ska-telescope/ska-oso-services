@@ -19,17 +19,24 @@ def visibility_svg(
     ra: str = Query(..., description="RA, e.g. 05:34:31.7760"),
     dec: str = Query(..., description="Dec, e.g. 22:01:02.640"),
     array: str = Query(..., description="LOW | MID"),
+    show_ateam: bool = Query(True, description="Overlay A-team source elevations and separations"),
 ) -> Response:
-    try:
-        key = array.upper()
-        site_cfg = SITES[key]
+    key = array.upper()
+    if key not in SITES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown array '{array}'. Must be one of: {', '.join(SITES)}",
+        )
 
+    try:
+        site_cfg = SITES[key]
         svg = render_svg(
             ra=ra,
             dec=dec,
             site=site_cfg.location,
             min_elev=site_cfg.min_elev_deg,
             step_s=STEP_SECONDS_DEFAULT_VISIBILITY,
+            show_ateam=show_ateam,
         )
         return Response(content=svg, media_type="image/svg+xml")
 
