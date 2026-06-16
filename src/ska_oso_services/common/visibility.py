@@ -98,7 +98,6 @@ def _visible_duration(alt: np.ndarray, min_elev: float, step_s: int) -> tuple[in
     return seconds, hours, minutes
 
 
-# Fixed epoch used to pre-compute A-team alt arrays (elevation vs LST is date-invariant).
 _REF_EPOCH = datetime(2000, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
 
@@ -112,10 +111,13 @@ def _precompute_ateam_alts(site: EarthLocation) -> dict[str, np.ndarray]:
     }
 
 
-# Pre-computed at module load for each known site; keyed by site name ("LOW", "MID").
-_ATEAM_ALTS: dict[str, dict[str, np.ndarray]] = {
-    key: _precompute_ateam_alts(cfg.location) for key, cfg in SITES.items()
-}
+_ATEAM_ALTS: dict[str, dict[str, np.ndarray]] = {}
+
+
+def _get_ateam_alts(site_key: str) -> dict[str, np.ndarray]:
+    if site_key not in _ATEAM_ALTS:
+        _ATEAM_ALTS[site_key] = _precompute_ateam_alts(SITES[site_key].location)
+    return _ATEAM_ALTS[site_key]
 
 
 def render_svg(
@@ -201,7 +203,7 @@ def render_svg(
             ateam_coord = SkyCoord(ra=src_ra, dec=src_dec, unit=(u.hourangle, u.deg), frame="icrs")
             sep_deg = target_coord.separation(ateam_coord).deg
             src_alt = (
-                _ATEAM_ALTS[site_key][name]
+                _get_ateam_alts(site_key)[name]
                 if use_cache
                 else _alts(src_ra, src_dec, site, plot_start_time_utc, step_s)[1]
             )

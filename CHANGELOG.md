@@ -8,7 +8,7 @@ Unreleased
 **********
 * Refactored coordinate lookup module to use Sesame.
 * Accept Indigo IAM access tokens alongside MS Entra tokens.
-* Plots A-team source elevations to the target visibility plot.
+* Plot A-team source elevations to the target visibility plot.
 
 14.7.0
 **********
