@@ -6,6 +6,7 @@ matplotlib.use("Agg")
 import io
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from enum import Enum
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -56,20 +57,30 @@ ATEAM_SOURCES: dict[str, tuple[str, str]] = {
     "Cassiopeia A": ("23h23m26.0160s", "+58d48m40.680s"),
 }
 
-# Okabe-Ito palette (colour vision deficiency safe), cycled across 8 A-team sources
-_ATEAM_COLOURS = ["#E69F00", "#56B4E9", "#009E73", "#D55E00", "#CC79A7"]
-# Visually distinct dash patterns, one per A-team source
-_ATEAM_LINE_STYLES = [
-    (0, (8, 2)),  # long dash
-    (0, (4, 2)),  # medium dash
-    (0, (1, 2)),  # dotted
-    (0, (4, 2, 1, 2)),  # dash-dot
-    (0, (4, 2, 1, 2, 1, 2)),  # dash-dot-dot
-    (0, (8, 2, 1, 2)),  # long-dash-dot
-    (0, (2, 2)),  # short dash
-    (0, (8, 2, 4, 2)),  # long-medium dash
-    (0, (1, 1)),  # densely dotted
+# Okabe-Ito palette (colour vision deficiency safe) + Grey for the 9 A-team sources
+_ATEAM_COLOURS = [
+    "#000000",
+    "#E69F00",
+    "#56B4E9",
+    "#009E73",
+    "#F0E442",
+    "#0072B2",
+    "#D55E00",
+    "#CC79A7",
+    "#999999",
 ]
+
+
+class AteamLineStyle(Enum):
+    LONG_DASH = (0, (8, 2))
+    MEDIUM_DASH = (0, (4, 2))
+    DOTTED = (0, (1, 2))
+    DASH_DOT = (0, (4, 2, 1, 2))
+    DASH_DOT_DOT = (0, (4, 2, 1, 2, 1, 2))
+    LONG_DASH_DOT = (0, (8, 2, 1, 2))
+    SHORT_DASH = (0, (2, 2))
+    LONG_MEDIUM_DASH = (0, (8, 2, 4, 2))
+    DENSELY_DOTTED = (0, (1, 1))
 
 
 def _alts(
@@ -199,7 +210,9 @@ def render_svg(
 
     if show_ateam:
         use_cache = step_s == STEP_SECONDS_DEFAULT_VISIBILITY
-        for i, (name, (src_ra, src_dec)) in enumerate(ATEAM_SOURCES.items()):
+        for (name, (src_ra, src_dec)), line_style, colour in zip(
+            ATEAM_SOURCES.items(), AteamLineStyle, _ATEAM_COLOURS
+        ):
             ateam_coord = SkyCoord(ra=src_ra, dec=src_dec, unit=(u.hourangle, u.deg), frame="icrs")
             sep_deg = target_coord.separation(ateam_coord).deg
             src_alt = (
@@ -210,8 +223,8 @@ def render_svg(
             ax.plot(
                 lst_hours,
                 np.where(src_alt >= 0, src_alt, np.nan),
-                color=_ATEAM_COLOURS[i % len(_ATEAM_COLOURS)],
-                ls=_ATEAM_LINE_STYLES[i % len(_ATEAM_LINE_STYLES)],
+                color=colour,
+                ls=line_style.value,
                 lw=1.0,
                 alpha=0.6,
                 antialiased=True,
