@@ -1,4 +1,5 @@
 import logging
+from http import HTTPStatus
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
@@ -24,7 +25,7 @@ def visibility_svg(
     key = array.upper()
     if key not in SITES:
         raise HTTPException(
-            status_code=400,
+            status_code=HTTPStatus.BAD_REQUEST,
             detail=f"Unknown array '{array}'. Must be one of: {', '.join(SITES)}",
         )
 
@@ -39,4 +40,6 @@ def visibility_svg(
         return Response(content=svg, media_type="image/svg+xml")
 
     except ValueError as error:
-        raise HTTPException(status_code=400, detail=f"Invalid coordinates: {error}") from error
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=f"Invalid coordinates: {error}"
+        ) from error
