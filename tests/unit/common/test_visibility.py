@@ -4,6 +4,7 @@ from unittest import mock
 import numpy as np
 
 from ska_oso_services.common import visibility
+from ska_oso_services.common.visibility import ATEAM_SOURCES
 
 
 class TestVisibilityRenderSvg:
@@ -15,8 +16,7 @@ class TestVisibilityRenderSvg:
         svg_bytes = visibility.render_svg(
             ra="10h00m00s",
             dec="-30d00m00s",
-            site=visibility.SITES["LOW"].location,
-            min_elev=20.0,
+            site_key="LOW",
             step_s=3600,
         )
 
@@ -37,11 +37,43 @@ class TestVisibilityRenderSvg:
         svg_bytes = visibility.render_svg(
             ra="10h00m00s",
             dec="-30d00m00s",
-            site=visibility.SITES["LOW"].location,
-            min_elev=20.0,
+            site_key="LOW",
             step_s=3600,
         )
 
         assert isinstance(svg_bytes, bytes)
         assert len(svg_bytes) > 0
         assert "<svg" in svg_bytes.decode("utf-8")
+
+    @mock.patch("ska_oso_services.common.visibility.datetime")
+    def test_render_svg_ateam_sources_present_by_default(self, mock_datetime):
+        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_datetime.now.return_value = fixed_now
+
+        svg_bytes = visibility.render_svg(
+            ra="10h00m00s",
+            dec="-30d00m00s",
+            site_key="LOW",
+            step_s=3600,
+        )
+
+        svg_text = svg_bytes.decode("utf-8")
+        for name in ATEAM_SOURCES:
+            assert name in svg_text, f"Expected A-team source '{name}' in SVG legend"
+
+    @mock.patch("ska_oso_services.common.visibility.datetime")
+    def test_render_svg_ateam_sources_absent_when_disabled(self, mock_datetime):
+        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_datetime.now.return_value = fixed_now
+
+        svg_bytes = visibility.render_svg(
+            ra="10h00m00s",
+            dec="-30d00m00s",
+            site_key="LOW",
+            step_s=3600,
+            show_ateam=False,
+        )
+
+        svg_text = svg_bytes.decode("utf-8")
+        for name in ATEAM_SOURCES:
+            assert name not in svg_text, f"A-team source '{name}' should not appear in SVG"
