@@ -211,7 +211,7 @@ def render_svg(
                 lst_hours,
                 np.where(src_alt >= 0, src_alt, np.nan),
                 color=_ATEAM_COLOURS[i % len(_ATEAM_COLOURS)],
-                ls=_ATEAM_LINE_STYLES[i],
+                ls=_ATEAM_LINE_STYLES[i % len(_ATEAM_LINE_STYLES)],
                 lw=1.0,
                 alpha=0.6,
                 antialiased=True,
