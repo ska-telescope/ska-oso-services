@@ -2,12 +2,6 @@
 # each of which contain a number of jobs. Most of the jobs are defined by the centrally managed
 # templates https://gitlab.com/ska-telescope/templates-repository. In this file we overwrite parts of some
 # of the jobs, and can define our own. For more info see https://docs.gitlab.com/ee/ci/yaml/index.html
-
-# GitLab CI in conjunction with GitLab Runner can use Docker Engine to test and build any application.
-# Docker, when used with GitLab CI, runs each job in a separate and isolated container using the predefined image that is set up in .gitlab-ci.yml.
-# In this case we use the latest python docker image to build and test this project.
-image: $SKA_K8S_TOOLS_BUILD_DEPLOY
-
 default:
   tags:
     - ${SKA_K8S_RUNNER}
