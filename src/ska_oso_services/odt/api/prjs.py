@@ -248,7 +248,7 @@ def _resolve_frequency_sweep_target(inputs: FrequencySweepInputs) -> Target:
 def _resolve_basic_commissioning_target(inputs: BasicCommissioningInputs) -> Target:
     """Resolve the target for basic commissioning generation from API inputs."""
     if inputs.target_name:
-        target = get_coordinates(inputs.target_name)
+        target = get_coordinates(object_name=inputs.target_name)
         target.target_id = target_id()
         return target
 
