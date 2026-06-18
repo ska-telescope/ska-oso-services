@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 * Refactored coordinate lookup module to use Sesame.
+* Refactored constants to hardcode the location of the telescopes
 * Accept Indigo IAM access tokens alongside MS Entra tokens.
 * Plot A-team source elevations to the target visibility plot.
 
