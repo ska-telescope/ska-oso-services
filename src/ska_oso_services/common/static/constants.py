@@ -12,8 +12,17 @@ from ska_oso_services.common.osdmapper import (
     get_telescope_observing_constraint,
 )
 
-LOW_LOCATION = EarthLocation.of_site("SKA Low")
-MID_LOCATION = EarthLocation.of_site("SKA Mid")
+LOW_LOCATION = EarthLocation(
+    lat=Quantity(-26.82472208, u.deg),
+    lon=Quantity(116.7644482, u.deg),
+    height=Quantity(377.8, u.m),
+)
+
+MID_LOCATION = EarthLocation(
+    lat=Quantity(-30.7130, u.deg),
+    lon=Quantity(21.4430, u.deg),
+    height=Quantity(1000, u.m),
+)
 
 
 @cache

@@ -1,6 +1,5 @@
 # pylint: disable=no-member
 import matplotlib
-from astropy.units import Quantity
 
 matplotlib.use("Agg")
 import io
@@ -15,7 +14,12 @@ from astropy.coordinates import AltAz, EarthLocation, SkyCoord
 from astropy.time import Time
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 
-from ska_oso_services.common.static.constants import STEP_SECONDS_DEFAULT_VISIBILITY, T10_COLOURS
+from ska_oso_services.common.static.constants import (
+    LOW_LOCATION,
+    MID_LOCATION,
+    STEP_SECONDS_DEFAULT_VISIBILITY,
+    T10_COLOURS,
+)
 
 
 @dataclass(frozen=True)
@@ -27,19 +31,11 @@ class SiteConfig:
 # Sites
 SITES: dict[str, SiteConfig] = {
     "LOW": SiteConfig(
-        location=EarthLocation(
-            lat=Quantity(-26.82472208, u.deg),
-            lon=Quantity(116.7644482, u.deg),
-            height=Quantity(377.8, u.m),
-        ),
+        LOW_LOCATION,
         min_elev_deg=20.0,
     ),
     "MID": SiteConfig(
-        location=EarthLocation(
-            lat=Quantity(-30.7130, u.deg),
-            lon=Quantity(21.4430, u.deg),
-            height=Quantity(1000, u.m),
-        ),
+        MID_LOCATION,
         min_elev_deg=15.0,
     ),
 }
