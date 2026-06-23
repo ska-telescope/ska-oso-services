@@ -66,3 +66,16 @@ Gets the Service address for the postgres instance deployed by the Stackgres Ope
 {{- define "ska-oso-services.postgres-host" -}}
 {{- printf "%s.%s.svc.%s" .Values.global.oda.postgres.cluster .Values.global.oda.postgres.clusterNamespace .Values.global.cluster_domain -}}
 {{- end -}}
+
+{{/*
+Returns the standard OSO application API path of the form
+/<NAMESPACE>/oso/api/v<MAJOR_VERSION>
+unless an override is given.
+*/}}
+{{- define "ska-oso-services.api-path" -}}
+{{- if .Values.ingress.pathOverride -}}
+{{- .Values.ingress.pathOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "/%s/oso/api/v%s" .Release.Namespace "major-version"  -}}
+{{- end -}}
+{{- end -}}

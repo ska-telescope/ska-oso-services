@@ -12,6 +12,7 @@ Unreleased
 * [BREAKING] Refactored coordinate lookup module to use Sesame.
 * Accept Indigo IAM access tokens alongside MS Entra tokens.
 * Plot A-team source elevations to the target visibility plot.
+* Make API path prefix configurable through the Helm value `ingress.pathOverride`
 
 14.7.0
 **********

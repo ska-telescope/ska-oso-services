@@ -46,6 +46,13 @@ global:
           secretKeys:
             - "PGPASSWORD"
 
+ingress:
+  enabled: true
+  host: ~
+  # If this is left as null, the application and Ingress will be deployed with the standard OSO pattern.
+  # It should only be used for deployments like production, where the application has a dedicated host
+  pathOverride: ~
+
 rest:
   component: rest
   function: oso-services
@@ -90,8 +97,6 @@ rest:
       # If left as null the default secret deployed by the PHT umbrella will be used.
       secret: ~
       key: ~
-  ingress:
-    enabled: true
 
 # The following values are used by the pht_secrets.yaml template
 vault:
@@ -104,6 +109,8 @@ vault:
   - "SMTP_PASSWORD"
   - "AWS_PHT_BUCKET_NAME"
   - "OSO_CLIENT_SECRET"
+
+
 
 nodeSelector: {}
 

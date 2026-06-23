@@ -1,5 +1,5 @@
 {{ if .Values.rest.enabled }}
-{{ if .Values.rest.ingress.enabled }}
+{{ if .Values.ingress.enabled }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -15,9 +15,10 @@ metadata:
   annotations:
 spec:
   rules:
-    - http:
+    - host: {{ default "" .Values.ingress.host | quote }}
+      http:
         paths:
-          - path: /{{ .Release.Namespace }}/oso/api/v{{ template "ska-oso-services.major-version" . }}
+          - path: {{ template "ska-oso-services.api-path" . }}
             pathType: Prefix
             backend:
               service:

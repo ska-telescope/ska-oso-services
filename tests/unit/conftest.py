@@ -27,6 +27,11 @@ ODT_BASE_API_URL = f"{APP_BASE_API_URL}/odt"
 PHT_BASE_API_URL = f"{APP_BASE_API_URL}/pht"
 
 
+@pytest.fixture(autouse=True)
+def mock_api_key(monkeypatch):
+    monkeypatch.setenv("API_PATH_PREFIX", APP_BASE_API_URL)
+
+
 @pytest.fixture(scope="module")
 def dummy_calibrator_table() -> QTable:
     """
