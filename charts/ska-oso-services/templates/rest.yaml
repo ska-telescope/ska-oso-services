@@ -87,57 +87,12 @@ spec:
               {{ else }}
               name: {{ template "ska-oso-services.oda-secret-name" $ }}
               {{- end }}
-        env:
-          - name: AWS_SERVER_PUBLIC_KEY
-            valueFrom:
-              secretKeyRef:
-                {{ if .Values.rest.pht.aws_server_public_key.secret }}
-                name: {{ .Values.rest.pht.aws_server_public_key.secret }}
-                key: {{ .Values.rest.pht.aws_server_public_key.key }}
-                {{ else }}
-                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
-                key: AWS_SERVER_PUBLIC_KEY
-                {{ end }}
-          - name: AWS_SERVER_SECRET_KEY
-            valueFrom:
-              secretKeyRef:
-                {{ if .Values.rest.pht.aws_server_secret_key.secret }}
-                name: {{ .Values.rest.pht.aws_server_secret_key.secret }}
-                key: {{ .Values.rest.pht.aws_server_secret_key.key }}
-                {{ else }}
-                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
-                key: AWS_SERVER_SECRET_KEY
-                {{ end }}
-          - name: SMTP_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                {{ if .Values.rest.pht.smtp_password.secret }}
-                name: {{ .Values.rest.pht.smtp_password.secret }}
-                key: {{ .Values.rest.pht.smtp_password.key }}
-                {{ else }}
-                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
-                key: SMTP_PASSWORD
-                {{ end }}
-          - name: AWS_PHT_BUCKET_NAME
-            valueFrom:
-              secretKeyRef:
-                {{ if .Values.rest.pht.s3_bucket_name.secret }}
-                name: {{ .Values.rest.pht.s3_bucket_name.secret }}
-                key: {{ .Values.rest.pht.s3_bucket_name.key }}
-                {{ else }}
-                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
-                key: AWS_PHT_BUCKET_NAME
-                {{ end }}
-          - name: OSO_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                {{ if .Values.rest.pht.oso_client_secret.secret }}
-                name: {{ .Values.rest.pht.oso_client_secret.secret }}
-                key: {{ .Values.rest.pht.oso_client_secret.key }}
-                {{ else }}
-                name: ska-oso-services-allsecrets-{{ $.Release.Name }}
-                key: OSO_CLIENT_SECRET
-                {{ end }}
+          - secretRef:
+              {{ if $.Values.existingApplicationSecret.name }}
+              name: {{ $.Values.existingApplicationSecret.name }}
+              {{ else }}
+              name: {{ template "ska-oso-services.application-secret-name" $ }}
+              {{- end }}
         ports:
           - containerPort: 5000
         resources:

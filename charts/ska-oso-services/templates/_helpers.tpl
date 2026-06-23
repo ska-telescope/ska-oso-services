@@ -53,6 +53,11 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s-%s" $name "oda-secret" .Release.Name  -}}
 {{- end -}}
 
+{{- define "ska-oso-services.application-secret-name" -}}
+{{- $name := include "ska-oso-services.name" .}}
+{{- printf "%s-%s-%s" $name "secret" .Release.Name  -}}
+{{- end -}}
+
 {{/*
 Get the major version of the chart release
 */}}

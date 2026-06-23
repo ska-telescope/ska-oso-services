@@ -71,45 +71,25 @@ rest:
     image: ska-oso-services
     tag: ~ # Defaults to the chart appVersion if not set
     pullPolicy: IfNotPresent
-  pht:
-    aws_server_public_key:
-      # This is the resource name of a k8s secret and the key the password is stored under.
-      # If left as null the default secret deployed by the PHT umbrella will be used.
-      secret: ~
-      key: ~
-    aws_server_secret_key:
-      # This is the resource name of a k8s secret and the key the password is stored under.
-      # If left as null the default secret deployed by the PHT umbrella will be used.
-      secret: ~
-      key: ~
-    smtp_password:
-      # This is the resource name of a k8s secret and the key the password is stored under.
-      # If left as null the default secret deployed by the PHT umbrella will be used.
-      secret: ~
-      key: ~
-    s3_bucket_name:
-      # This is the resource name of a k8s secret and the key the password is stored under.
-      # If left as null the default secret deployed by the PHT umbrella will be used.
-      secret: ~
-      key: ~
-    oso_client_secret:
-      # This is the resource name of a k8s secret and the key the password is stored under.
-      # If left as null the default secret deployed by the PHT umbrella will be used.
-      secret: ~
-      key: ~
 
-# The following values are used by the pht_secrets.yaml template
+# Used by the secret.yaml file to make any non-ODA secret values available to the application
 vault:
-  enabled: true
+  enabled: true # If false then a plain k8s Secret will be created with dummy values
   mount: dev
   secretPath: "stargazers/oso-services"
   secretKeys:
-  - "AWS_SERVER_PUBLIC_KEY"
-  - "AWS_SERVER_SECRET_KEY"
-  - "SMTP_PASSWORD"
-  - "AWS_PHT_BUCKET_NAME"
-  - "OSO_CLIENT_SECRET"
+    # The key here is what will be made available as an env variable to the application, and
+    # the value is the name of the key in Vault
+    # It is configurable as some environments may manage their Vault keys differently
+    AWS_SERVER_PUBLIC_KEY: AWS_SERVER_PUBLIC_KEY
+    AWS_SERVER_SECRET_KEY: AWS_SERVER_SECRET_KEY
+    AWS_PHT_BUCKET_NAME: AWS_PHT_BUCKET_NAME
+    PHT_EMAIL_USER: SMTP_PASSWORD
+    PHT_EMAIL_PASSWORD: SMTP_PASSWORD
+    OSO_CLIENT_SECRET: OSO_CLIENT_SECRET
 
+existingApplicationSecret:
+  name: ~ # Use this to reference a Secret managed separate from this chart
 
 
 nodeSelector: {}
