@@ -43,7 +43,7 @@ async def send_email_async(email: str, prsl_id: str):
     link = f"https://example.com/respond?prsl_id={prsl_id}"
     smtp_server = "eu-smtp-outbound-1.mimecast.com"
     smtp_port = 587
-    smtp_user = os.getenv("PHT_EMAIL_PASSWORD")
+    smtp_user = os.getenv("PHT_EMAIL_USER")
     smtp_password = os.getenv("PHT_EMAIL_PASSWORD")
 
     msg = MIMEMultipart("alternative")

@@ -13,11 +13,10 @@ Unreleased
 * Accept Indigo IAM access tokens alongside MS Entra tokens.
 * Plot A-team source elevations to the target visibility plot.
 * [BREAKING] Tidied up helm values and secret/environment management
-** Helm value `rest.ingress.enabled` moved up to top level `ingress.enabled`
-** `ingress.pathOverride` value added to allow setting of API path prefix at deploy time
-** Helm value `vault.secretKeys` changed from a list to a map of application env variable name -> Vault key. Specific 
-   env variables should be overwritten if they are not stored under a different Vault key.
-** Renamed environment variable from `SMTP_PASSWORD` to `PHT_EMAIL_PASSWORD` and added `PHT_EMAIL_USER`
+  * Helm value `rest.ingress.enabled` moved up to top level `ingress.enabled`
+  * `ingress.pathOverride` value added to allow setting of API path prefix at deploy time
+  * Helm value `vault.secretKeys` changed from a list to a map of application env variable name -> Vault key. Specific env variables should be overwritten if they are not stored under a different Vault key.
+  * Renamed environment variable from `SMTP_PASSWORD` to `PHT_EMAIL_PASSWORD` and added `PHT_EMAIL_USER`
 
 14.7.0
 **********

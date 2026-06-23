@@ -1,7 +1,7 @@
 ---
 suite: ska-oso-services-oda-environment
 templates:
-  - oda-environment.yaml
+  - environment-oda.yaml
 tests:
   - it: should contain only one document.
     asserts:

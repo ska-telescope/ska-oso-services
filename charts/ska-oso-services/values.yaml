@@ -76,16 +76,16 @@ rest:
 vault:
   enabled: true # If false then a plain k8s Secret will be created with dummy values
   mount: dev
-  secretPath: "stargazers/oso-services"
-  secretKeys:
+  secretPath: "team-buttons/ska-oso-services"
+  keyMappings:
     # The key here is what will be made available as an env variable to the application, and
     # the value is the name of the key in Vault
     # It is configurable as some environments may manage their Vault keys differently
     AWS_SERVER_PUBLIC_KEY: AWS_SERVER_PUBLIC_KEY
     AWS_SERVER_SECRET_KEY: AWS_SERVER_SECRET_KEY
     AWS_PHT_BUCKET_NAME: AWS_PHT_BUCKET_NAME
-    PHT_EMAIL_USER: SMTP_PASSWORD
-    PHT_EMAIL_PASSWORD: SMTP_PASSWORD
+    PHT_EMAIL_USER: PHT_EMAIL_USER
+    PHT_EMAIL_PASSWORD: PHT_EMAIL_PASSWORD
     OSO_CLIENT_SECRET: OSO_CLIENT_SECRET
 
 existingApplicationSecret:

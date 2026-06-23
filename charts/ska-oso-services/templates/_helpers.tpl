@@ -79,8 +79,9 @@ unless an override is given.
 */}}
 {{- define "ska-oso-services.api-path" -}}
 {{- if .Values.ingress.pathOverride -}}
-{{- .Values.ingress.pathOverride | trunc 63 | trimSuffix "-" -}}
+{{- .Values.ingress.pathOverride -}}
 {{- else -}}
-{{- printf "/%s/oso/api/v%s" .Release.Namespace "major-version"  -}}
+{{- $majorVersion := include "ska-oso-services.major-version" .}}
+{{- printf "/%s/oso/api/v%s" .Release.Namespace $majorVersion  -}}
 {{- end -}}
 {{- end -}}

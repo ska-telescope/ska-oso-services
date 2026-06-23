@@ -4,7 +4,9 @@ pytest fixtures to be used by unit tests
 
 from functools import partial
 from importlib.metadata import version
+from os import environ
 from pathlib import Path
+from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
@@ -27,9 +29,10 @@ ODT_BASE_API_URL = f"{APP_BASE_API_URL}/odt"
 PHT_BASE_API_URL = f"{APP_BASE_API_URL}/pht"
 
 
-@pytest.fixture(autouse=True)
-def mock_api_key(monkeypatch):
-    monkeypatch.setenv("API_PATH_PREFIX", APP_BASE_API_URL)
+@pytest.fixture(autouse=True, scope="module")
+def mock_api_key():
+    with mock.patch.dict(environ, {"API_PATH_PREFIX": APP_BASE_API_URL}):
+        yield
 
 
 @pytest.fixture(scope="module")

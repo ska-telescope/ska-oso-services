@@ -11,7 +11,7 @@ metadata:
     intent: production
 data:
   LOG_LEVEL: {{ .Values.rest.logLevel }}
-  API_PATH_PREFIX: {{ template "ska-oso-services.api-path" . }}
+  API_PATH_PREFIX: {{ include "ska-oso-services.api-path" . | quote }}
   PIPELINE_TESTS_DEPLOYMENT: {{ .Values.pipeline_test_deployment | quote }}
   SKA_AUTH_AUDIENCE: {{ .Values.rest.authAudiences | join "," | quote }}
   SDP_SCRIPT_TMDATA: {{ .Values.global.oso.sdp_tmdata }}
