@@ -27,16 +27,13 @@ are dynamic and can't be pulled from Vault).
 However, if the ``ska-oso-services`` application is connecting to an externally managed Postgres, and a Secret is available in the namespace with the full ``PG_``
 variables, these will be taken over the ConfigMap if the Secret is passed via ``.Values.global.oda.postgres.secret.existingSecret``.
 
-PHT secrets
-------------
+Application Secrets
+--------------------
 
-PHT uses the following secrets:
-  - AWS_SERVER_PUBLIC_KEY: SKAO AWS account's public key
-  - AWS_SERVER_SECRET_KEY: SKAO AWS account's secret ket key
-  - AWS_PHT_BUCKET_NAME: S3 bucket name to be used
-  - SMTP_PASSWORD. SKAO SMTP password to use.
+There are a number of secrets defined on :doc:`configuration` that the application needs for various PHT functionality.
 
-These secrets are currently configured to be retrieved from HashiCorp Vault from under https://vault.skao.int/ui/vault/secrets/dev/kv/stargazers%2Foso-services/details?version=2
-No provisions are made yet for higher environments (subject to the further discussions withing OSO and AVIV).
+By default the Helm chart will pull these from Vault into a Kubernetes Secret, using the path and keys defined in the values.
+This Secret is then used to set environment variables for the application.
 
-When developing locally, you can override them by changing `\ska-oso-services\charts\ska-oso-services\templates\pht_secrets.yaml` and then `stringData.*`. Make sure you uninstall the chart when doing so and do not commit these secrets.
+Alternatively, the Helm value ``vault.enabled`` can be set to ``false`` and an externally managed Secret used with the value
+``existingApplicationSecret.name``
