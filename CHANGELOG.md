@@ -15,7 +15,7 @@ Unreleased
 * [BREAKING] Tidied up helm values and secret/environment management
   * Helm value `rest.ingress.enabled` moved up to top level `ingress.enabled`
   * `ingress.pathOverride` value added to allow setting of API path prefix at deploy time
-  * Helm value `vault.secretKeys` changed from a list to a map of application env variable name -> Vault key. Specific env variables should be overwritten if they are not stored under a different Vault key.
+  * Helm list value `vault.secretKeys` changed a map `vault.keyMappings` which maps the environment variable name the application needs to the Vault key. If the values in Vault are stored under a differnt key, they should be overwritten here.
   * Renamed environment variable from `SMTP_PASSWORD` to `PHT_EMAIL_PASSWORD` and added `PHT_EMAIL_USER`
 
 14.7.0

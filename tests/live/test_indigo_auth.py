@@ -9,7 +9,7 @@ from unittest import mock
 
 import pytest
 
-from tests.live.conftest import PHT_BASE_API_URL
+from tests.live.conftest import BASE_API_URL
 
 pytestmark = pytest.mark.live
 
@@ -18,9 +18,8 @@ pytestmark = pytest.mark.live
 def test_indigo_token_accepted_for_reviews(mock_uow, live_client, indigo_token):
     """Real Indigo token with pht:read is accepted at GET /reviews/users/reviews."""
     mock_uow.return_value.__enter__.return_value.rvws.query.return_value = []
-
     response = live_client.get(
-        f"{PHT_BASE_API_URL}/reviews/users/reviews",
+        f"{BASE_API_URL}/pht/reviews/users/reviews",
         headers={"Authorization": f"Bearer {indigo_token}"},
     )
 
@@ -33,7 +32,7 @@ def test_indigo_token_accepted_for_proposals(mock_uow, live_client, indigo_token
     mock_uow.return_value.__enter__.return_value.prslacc.query.return_value = []
 
     response = live_client.get(
-        f"{PHT_BASE_API_URL}/prsls/mine",
+        f"{BASE_API_URL}/pht/prsls/mine",
         headers={"Authorization": f"Bearer {indigo_token}"},
     )
 
