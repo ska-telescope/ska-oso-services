@@ -18,7 +18,7 @@ from ska_oso_services.pht.api import prsls as prsl_api
 from ska_oso_services.pht.api.prsls import get_proposals_by_status
 from ska_oso_services.pht.service import proposal_service as ps
 from ska_oso_services.pht.service.proposal_service import get_panel_prsl_ids
-from tests.unit.conftest import PHT_BASE_API_URL
+from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
     PAYLOAD_BAD_TO,
     PAYLOAD_CONNECT_FAIL,

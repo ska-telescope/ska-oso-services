@@ -6,8 +6,6 @@ Override any value via the corresponding environment variable.
 """
 
 import os
-from importlib.metadata import version
-from unittest import mock
 
 import httpx
 import pytest
@@ -22,16 +20,6 @@ DEFAULT_CLIENT_SECRET = (
 )
 DEFAULT_USERNAME = "ska-login-page-integration-test-user"
 DEFAULT_PASSWORD = "TestPassw0rd!"
-
-OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
-KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-services")
-BASE_API_URL = f"/{KUBE_NAMESPACE}/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
-
-
-@pytest.fixture(autouse=True, scope="session")
-def mock_api_key():
-    with mock.patch.dict(os.environ, {"API_PATH_PREFIX": BASE_API_URL}):
-        yield
 
 
 @pytest.fixture(scope="module")
@@ -59,7 +47,7 @@ def indigo_token() -> str:
 
 
 @pytest.fixture(scope="session")
-def live_client() -> TestClient:
+def live_client(mock_api_path_prefix) -> TestClient:  # pylint: disable=unused-argument
     """
     TestClient with no key monkeypatching — real Indigo JWKS are fetched
     and token signatures verified against them.

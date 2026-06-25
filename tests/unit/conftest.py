@@ -2,11 +2,9 @@
 pytest fixtures to be used by unit tests
 """
 
+# pylint: disable=unused-argument
 from functools import partial
-from importlib.metadata import version
-from os import environ
 from pathlib import Path
-from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
@@ -22,17 +20,6 @@ from ska_oso_pdm import SBDefinition
 from ska_oso_services import create_app
 from ska_oso_services.common.auth import Scope
 from tests.unit.util import load_string_from_file
-
-OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
-APP_BASE_API_URL = f"/ska-oso-services/oso/api/v{OSO_SERVICES_MAJOR_VERSION}"
-ODT_BASE_API_URL = f"{APP_BASE_API_URL}/odt"
-PHT_BASE_API_URL = f"{APP_BASE_API_URL}/pht"
-
-
-@pytest.fixture(autouse=True, scope="module")
-def mock_api_key():
-    with mock.patch.dict(environ, {"API_PATH_PREFIX": APP_BASE_API_URL}):
-        yield
 
 
 @pytest.fixture(scope="module")
@@ -78,7 +65,7 @@ def request_headers() -> dict:
 
 
 @pytest.fixture(scope="module")
-def client(test_app: FastAPI, headers: dict) -> TestClient:
+def client(test_app: FastAPI, headers: dict, mock_api_path_prefix) -> TestClient:
     """
     Create a test client from the app instance, without running a live server
     """
@@ -97,7 +84,7 @@ def client(test_app: FastAPI, headers: dict) -> TestClient:
 
 
 @pytest.fixture
-def client_with_uow_mock(headers: dict):
+def client_with_uow_mock(headers: dict, mock_api_path_prefix):
     """Provide a TestClient with the mock UoW dependency override applied."""
     test_app = create_app(production=False)  # Don't want to use the module scoped fixture
     mock_uow = MagicMock()

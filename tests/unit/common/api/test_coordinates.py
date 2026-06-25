@@ -6,10 +6,10 @@ from astropy.units import Quantity
 from ska_oso_pdm import GalacticCoordinates, ICRSCoordinates, RadialVelocity, Target
 
 from ska_oso_services.common.error_handling import NotFoundError
-from tests.unit.conftest import APP_BASE_API_URL
+from tests.conftest import TEST_BASE_API_URL
 from tests.unit.util import assert_json_is_equal
 
-COORDINATES_API_URL = f"{APP_BASE_API_URL}/coordinates"
+COORDINATES_API_URL = f"{TEST_BASE_API_URL}/coordinates"
 
 TEST_TARGET_WITH_VELOCITY = Target(
     name="M83",
