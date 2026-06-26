@@ -14,7 +14,7 @@ from ska_db_oda.repository.domain import ODANotFound
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.pht.api import panel_decision as api
 from src.ska_oso_services.pht.models.domain import PrslRole
-from tests.unit.conftest import PHT_BASE_API_URL
+from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
 PANEL_DECISION_API_URL = f"{PHT_BASE_API_URL}/panel/decision"

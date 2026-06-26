@@ -3,7 +3,7 @@ from unittest import mock
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import status
 
-from tests.unit.conftest import PHT_BASE_API_URL
+from tests.conftest import PHT_BASE_API_URL
 
 PROPOSAL_API_URL = f"{PHT_BASE_API_URL}/prsls"
 

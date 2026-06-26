@@ -7,7 +7,7 @@ from unittest import mock
 
 import pytest
 
-from tests.unit.conftest import PHT_BASE_API_URL
+from tests.conftest import PHT_BASE_API_URL
 
 REVIEWERS_API_URL = f"{PHT_BASE_API_URL}/reviewers"
 

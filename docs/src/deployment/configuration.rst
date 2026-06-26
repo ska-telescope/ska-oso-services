@@ -62,8 +62,13 @@ The ODA connection is configured these environment variables and corresponding H
      - Required
      - Pulled from Vault - see :doc:`secret_management`
      -
-   * - SMTP_PASSWORD
-     - The SMTP password to connect to SKAO server. Used by PHT to send emails.
+   * - PHT_EMAIL_USER
+     - The address used by the PHT to send email with invitations to proposals.
+     - Required
+     - Pulled from Vault - see :doc:`secret_management`
+     -
+   * - PHT_EMAIL_PASSWORD
+     - The password to for the PHT_EMAIL_USER.
      - Required
      - Pulled from Vault - see :doc:`secret_management`
      -

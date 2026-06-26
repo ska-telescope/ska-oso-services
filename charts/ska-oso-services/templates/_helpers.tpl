@@ -53,6 +53,11 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s-%s" $name "oda-secret" .Release.Name  -}}
 {{- end -}}
 
+{{- define "ska-oso-services.application-secret-name" -}}
+{{- $name := include "ska-oso-services.name" .}}
+{{- printf "%s-%s-%s" $name "secret" .Release.Name  -}}
+{{- end -}}
+
 {{/*
 Get the major version of the chart release
 */}}
@@ -65,4 +70,18 @@ Gets the Service address for the postgres instance deployed by the Stackgres Ope
 */}}
 {{- define "ska-oso-services.postgres-host" -}}
 {{- printf "%s.%s.svc.%s" .Values.global.oda.postgres.cluster .Values.global.oda.postgres.clusterNamespace .Values.global.cluster_domain -}}
+{{- end -}}
+
+{{/*
+Returns the standard OSO application API path of the form
+/<NAMESPACE>/oso/api/v<MAJOR_VERSION>
+unless an override is given.
+*/}}
+{{- define "ska-oso-services.api-path" -}}
+{{- if .Values.ingress.pathOverride -}}
+{{- .Values.ingress.pathOverride -}}
+{{- else -}}
+{{- $majorVersion := include "ska-oso-services.major-version" .}}
+{{- printf "/%s/oso/api/v%s" .Release.Namespace $majorVersion  -}}
+{{- end -}}
 {{- end -}}

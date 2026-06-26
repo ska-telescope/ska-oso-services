@@ -9,7 +9,7 @@ from unittest import mock
 from ska_db_oda.repository.domain import UniqueConstraintViolation
 
 from ska_oso_services.pht.api import panels as panels_api
-from tests.unit.conftest import PHT_BASE_API_URL
+from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import REVIEWERS, TestDataFactory, assert_json_is_equal
 
 PANELS_API_URL = f"{PHT_BASE_API_URL}/panels"

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from ska_oso_services.odt.api.sdp import get_params, get_versions
-from tests.unit.conftest import ODT_BASE_API_URL
+from tests.conftest import ODT_BASE_API_URL
 
 SDP_API_URL = f"{ODT_BASE_API_URL}/sdp"
 

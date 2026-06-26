@@ -3,10 +3,10 @@ from unittest import mock
 
 from ska_oso_services.validation.api.routes import ValidationResponse
 from ska_oso_services.validation.model import ValidationIssue
-from tests.unit.conftest import APP_BASE_API_URL
+from tests.conftest import TEST_BASE_API_URL
 from tests.unit.util import VALID_MID_SBDEFINITION_JSON
 
-VALIDATE_API = f"{APP_BASE_API_URL}/validate"
+VALIDATE_API = f"{TEST_BASE_API_URL}/validate"
 
 
 @mock.patch("ska_oso_services.validation.api.routes.validate_sbdefinition")

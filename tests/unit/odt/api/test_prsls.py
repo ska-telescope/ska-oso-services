@@ -13,7 +13,7 @@ from ska_db_oda.repository.domain import ODANotFound
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 
 from ska_oso_services.odt.api.prsls import ProposalProjectDetails
-from tests.unit.conftest import ODT_BASE_API_URL
+from tests.conftest import ODT_BASE_API_URL
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
 PRSLS_API_URL = f"{ODT_BASE_API_URL}/prsls"

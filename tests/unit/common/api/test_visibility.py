@@ -1,9 +1,9 @@
 from http import HTTPStatus
 from unittest import mock
 
-from tests.unit.conftest import APP_BASE_API_URL
+from tests.conftest import TEST_BASE_API_URL
 
-VISIBILITY_API_URL = f"{APP_BASE_API_URL}/visibility"
+VISIBILITY_API_URL = f"{TEST_BASE_API_URL}/visibility"
 
 _FAKE_SVG = b"<svg></svg>"
 _COMMON_PARAMS = "ra=10h00m00s&dec=-30d00m00s&array=LOW"

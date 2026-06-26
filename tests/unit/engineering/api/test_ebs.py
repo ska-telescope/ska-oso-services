@@ -14,9 +14,9 @@ from ska_oso_pdm import TelescopeType
 from ska_oso_pdm._shared import PythonArguments
 from ska_oso_pdm.execution_block import RequestResponse, ResponseWrapper
 
-from tests.unit.conftest import APP_BASE_API_URL
+from tests.conftest import TEST_BASE_API_URL
 
-EBS_API_URL = f"{APP_BASE_API_URL}/engineering/ebs"
+EBS_API_URL = f"{TEST_BASE_API_URL}/engineering/ebs"
 
 
 def make_eb(

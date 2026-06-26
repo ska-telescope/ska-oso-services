@@ -10,7 +10,7 @@ from ska_db_oda.repository.domain import ODANotFound
 from ska_oso_pdm.entity_status_history import SBDStatus
 
 from ska_oso_services.validation.model import ValidationIssue, ValidationIssueType
-from tests.unit.conftest import ODT_BASE_API_URL
+from tests.conftest import ODT_BASE_API_URL
 from tests.unit.util import (
     SBDEFINITION_WITHOUT_ID_JSON,
     VALID_MID_SBDEFINITION_JSON,

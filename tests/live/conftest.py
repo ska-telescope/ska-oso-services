@@ -6,7 +6,6 @@ Override any value via the corresponding environment variable.
 """
 
 import os
-from importlib.metadata import version
 
 import httpx
 import pytest
@@ -22,11 +21,8 @@ DEFAULT_CLIENT_SECRET = (
 DEFAULT_USERNAME = "ska-login-page-integration-test-user"
 DEFAULT_PASSWORD = "TestPassw0rd!"
 
-OSO_SERVICES_MAJOR_VERSION = version("ska-oso-services").split(".")[0]
-PHT_BASE_API_URL = f"/ska-oso-services/oso/api/v{OSO_SERVICES_MAJOR_VERSION}/pht"
 
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def indigo_token() -> str:
     """Fetch a real access token from the staging Indigo IAM instance."""
     client_id = os.environ.get("INDIGO_TEST_CLIENT_ID", DEFAULT_CLIENT_ID)
@@ -51,7 +47,7 @@ def indigo_token() -> str:
 
 
 @pytest.fixture(scope="session")
-def live_client() -> TestClient:
+def live_client(mock_api_path_prefix) -> TestClient:  # pylint: disable=unused-argument
     """
     TestClient with no key monkeypatching — real Indigo JWKS are fetched
     and token signatures verified against them.

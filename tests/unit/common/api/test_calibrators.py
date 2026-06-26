@@ -4,10 +4,10 @@ from unittest import mock
 
 from ska_oso_pdm import ICRSCoordinates, RadialVelocity, Target
 
-from tests.unit.conftest import APP_BASE_API_URL
+from tests.conftest import TEST_BASE_API_URL
 from tests.unit.util import assert_json_is_equal
 
-CALIBRATOR_API_URL = f"{APP_BASE_API_URL}/calibrators"
+CALIBRATOR_API_URL = f"{TEST_BASE_API_URL}/calibrators"
 
 mocked_return = [
     Target(
