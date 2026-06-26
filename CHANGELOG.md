@@ -7,16 +7,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 
-15.0.0
+16.0.0
 **********
-* [BREAKING] Refactored coordinate lookup module to use Sesame.
-* Accept Indigo IAM access tokens alongside MS Entra tokens.
-* Plot A-team source elevations to the target visibility plot.
 * [BREAKING] Tidied up helm values and secret/environment management
   * Helm value `rest.ingress.enabled` moved up to top level `ingress.enabled`
   * `ingress.pathOverride` value added to allow setting of API path prefix at deploy time
   * Helm list value `vault.secretKeys` changed a map `vault.keyMappings` which maps the environment variable name the application needs to the Vault key. If the values in Vault are stored under a differnt key, they should be overwritten here.
   * Renamed environment variable from `SMTP_PASSWORD` to `PHT_EMAIL_PASSWORD` and added `PHT_EMAIL_USER`
+
+15.0.0
+**********
+* [BREAKING] Refactored coordinate lookup module to use Sesame.
+* Accept Indigo IAM access tokens alongside MS Entra tokens.
+* Plot A-team source elevations to the target visibility plot.
 
 14.7.0
 **********
