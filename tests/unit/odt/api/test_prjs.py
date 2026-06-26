@@ -768,7 +768,7 @@ class TestSurveySBDefinition:
     }
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_gsm_survey_sbds")
-    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets_and_fwhm")
     def test_survey_generate_success(
         self, mock_load_pointings, mock_generate, client_with_uow_mock
     ):
@@ -783,14 +783,17 @@ class TestSurveySBDefinition:
         sbd = TestDataFactory.lowsbdefinition(without_metadata=True)
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
-        mock_load_pointings.return_value = [
-            Target(
-                target_id=f"target-{i}",
-                name=f"beam_{i}",
-                reference_coordinate=ICRSCoordinates(ra_str="0:0:0", dec_str="-90:0:0"),
-            )
-            for i in range(6)
-        ]
+        mock_load_pointings.return_value = (
+            [
+                Target(
+                    target_id=f"target-{i}",
+                    name=f"beam_{i}",
+                    reference_coordinate=ICRSCoordinates(ra_str="0:0:0", dec_str="-90:0:0"),
+                )
+                for i in range(6)
+            ],
+            [2.98] * 6,
+        )
         mock_generate.return_value = [sbd, sbd]
 
         resp = client.post(
@@ -810,7 +813,7 @@ class TestSurveySBDefinition:
             assert args[0].ob_ref == obs_block_id
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_gsm_survey_sbds")
-    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets_and_fwhm")
     def test_survey_generate_batches_targets(
         self, mock_load_pointings, mock_generate, client_with_uow_mock
     ):
@@ -829,14 +832,17 @@ class TestSurveySBDefinition:
         # num_subarray_beams=2 * num_scans=3 = 6 targets per SBD
         # batch_size=50 SBDs * 6 targets = 300 targets per batch
         # 306 targets should produce 2 batches (300 + 6)
-        mock_load_pointings.return_value = [
-            Target(
-                target_id=f"target-{i}",
-                name=f"beam_{i}",
-                reference_coordinate=ICRSCoordinates(ra_str="0:0:0", dec_str="-90:0:0"),
-            )
-            for i in range(306)
-        ]
+        mock_load_pointings.return_value = (
+            [
+                Target(
+                    target_id=f"target-{i}",
+                    name=f"beam_{i}",
+                    reference_coordinate=ICRSCoordinates(ra_str="0:0:0", dec_str="-90:0:0"),
+                )
+                for i in range(306)
+            ],
+            [2.98] * 306,
+        )
         mock_generate.return_value = [sbd]
 
         resp = client.post(
@@ -847,12 +853,12 @@ class TestSurveySBDefinition:
         assert resp.status_code == HTTPStatus.OK
         assert mock_generate.call_count == 2
 
-    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets_and_fwhm")
     def test_survey_prj_not_found(self, mock_load_pointings, client_with_uow_mock):
         """Requesting a non-existent project should return 404."""
         prj_id = "prj-999"
         client, uow_mock = client_with_uow_mock
-        mock_load_pointings.return_value = []
+        mock_load_pointings.return_value = ([], [])
         uow_mock.prjs.get.side_effect = ODANotFound(identifier=prj_id)
 
         resp = client.post(
@@ -863,14 +869,14 @@ class TestSurveySBDefinition:
         assert resp.status_code == HTTPStatus.NOT_FOUND
         assert resp.json()["detail"] == f"The requested identifier {prj_id} could not be found."
 
-    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets_and_fwhm")
     def test_survey_obs_block_not_found(self, mock_load_pointings, client_with_uow_mock):
         """Requesting a non-existent observing block should return 404."""
         client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         project.obs_blocks = []
         uow_mock.prjs.get.return_value = project
-        mock_load_pointings.return_value = []
+        mock_load_pointings.return_value = ([], [])
 
         resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateGSMSurveySBDefinitions",
@@ -880,11 +886,11 @@ class TestSurveySBDefinition:
         assert resp.status_code == HTTPStatus.NOT_FOUND
         assert resp.json()["detail"] == "Observing Block 'obs-block-00001' not found in Project"
 
-    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets_and_fwhm")
     def test_survey_oda_error(self, mock_load_pointings, client_with_uow_mock):
         """An ODA error should propagate as a 500."""
         client, uow_mock = client_with_uow_mock
-        mock_load_pointings.return_value = []
+        mock_load_pointings.return_value = ([], [])
         uow_mock.prjs.get.side_effect = IOError("test error")
 
         with pytest.raises(IOError):
@@ -896,14 +902,14 @@ class TestSurveySBDefinition:
             assert resp.json()["detail"] == "OSError('test error')"
             assert resp.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
-    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets")
+    @mock.patch("ska_oso_services.odt.api.prjs.load_pointings_as_targets_and_fwhm")
     def test_survey_passes_max_rows(self, mock_load_pointings, client_with_uow_mock):
         """When max_rows is set in SurveyInputs, it should be passed through."""
         client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         project.obs_blocks = [ObservingBlock(obs_block_id="ob-1")]
         uow_mock.prjs.get.return_value = project
-        mock_load_pointings.return_value = []
+        mock_load_pointings.return_value = ([], [])
 
         payload = {**self.SURVEY_INPUT, "max_rows": 20}
         client.post(
