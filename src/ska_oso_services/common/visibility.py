@@ -116,7 +116,7 @@ def _precompute_ateam_alts(site: EarthLocation) -> dict[str, np.ndarray]:
     start = (t_ref - (lst_ref_h / 24.0) * u.sday).to_datetime(timezone=timezone.utc)
     return {
         name: _alts(
-            SkyCoord(ra=ra, dec=dec, units=(u.hourangle, u.deg), frame="icrs"),
+            SkyCoord(ra=ra, dec=dec, unit=(u.hourangle, u.deg), frame="icrs"),
             site,
             start,
             STEP_SECONDS_DEFAULT_VISIBILITY,
