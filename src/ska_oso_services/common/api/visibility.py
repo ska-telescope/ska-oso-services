@@ -19,8 +19,8 @@ router = APIRouter(prefix="/visibility")
 def visibility_svg(
     ra: str = Query(None, description="RA, e.g. 05:34:31.7760"),
     dec: str = Query(None, description="Dec, e.g. 22:01:02.640"),
-    l: float = Query(None, description="Galactic longitude e.g. 184.5547"),
-    b: float = Query(None, description="Galactic latitude e.g. -5.7833"),
+    l:str = Query(None, description="Galactic longitude e.g. 184.5547"),
+    b: str = Query(None, description="Galactic latitude e.g. -5.7833"),
     coord_system: str = Query("ICRS", description="ICRS | Galactic"),
     array: str = Query(..., description="LOW | MID"),
     show_ateam: bool = Query(True, description="Overlay A-team source elevations and separations"),
@@ -48,8 +48,8 @@ def visibility_svg(
 
             case "GALACTIC":
                 svg = render_svg(
-                    l=l,
-                    b=b,
+                    l=float(l),
+                    b=float(b),
                     site_key=key,
                     step_s=STEP_SECONDS_DEFAULT_VISIBILITY,
                     show_ateam=show_ateam,
