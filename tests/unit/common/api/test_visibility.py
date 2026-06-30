@@ -8,6 +8,7 @@ VISIBILITY_API_URL = f"{TEST_BASE_API_URL}/visibility"
 _FAKE_SVG = b"<svg></svg>"
 _COMMON_PARAMS = "ra=10h00m00s&dec=-30d00m00s&array=LOW"
 
+
 class TestVisibilitySvgEndpoint:
     def test_returns_svg_response(self, client):
         with mock.patch(
