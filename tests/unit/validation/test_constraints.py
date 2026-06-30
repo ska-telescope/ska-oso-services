@@ -23,6 +23,7 @@ from ska_oso_services.validation.constraints import (
     has_an_incompatible_constraint,
     validate_constraints,
     validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint,
+    validate_lst_start_and_end_time_are_not_the_same,
 )
 from ska_oso_services.validation.model import ValidationContext
 from ska_oso_services.validation.sbdefinition import _get_scan_sequence
@@ -87,6 +88,19 @@ def test_validate_constraints(request, scheduling_block, issue_list_length, prob
     assert len(results) == issue_list_length
     if len(results) > 0:
         assert problematic_target in results[issue_list_length - 1].message
+
+
+def test_validate_lst_start_end_constraint_for_failure_case():
+    constraints = ObservingConstraints(
+        altitude=AltitudeConstraint(min=45.0 * u.deg),
+        lst=LSTConstraint(start=2.0 * u.hourangle, end=2.0 * u.hourangle),
+    )
+
+    result = validate_lst_start_and_end_time_are_not_the_same(
+        ValidationContext(primary_entity=constraints)
+    )
+
+    assert len(result) == 1
 
 
 def test_validate_targets_lst_and_elevation_constraint_for_sneaky_target():
