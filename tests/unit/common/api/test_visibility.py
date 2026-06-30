@@ -7,6 +7,7 @@ VISIBILITY_API_URL = f"{TEST_BASE_API_URL}/visibility"
 
 _FAKE_SVG = b"<svg></svg>"
 _COMMON_PARAMS = "ra=10h00m00s&dec=-30d00m00s&array=LOW"
+_GALATIC_PARAM = "l=184.557&b=-5.7833&array=MID&coord_system=Galactic"
 
 
 class TestVisibilitySvgEndpoint:
@@ -15,6 +16,16 @@ class TestVisibilitySvgEndpoint:
             "ska_oso_services.common.api.visibility.render_svg", return_value=_FAKE_SVG
         ):
             response = client.get(f"{VISIBILITY_API_URL}/visibility?{_COMMON_PARAMS}")
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.headers["content-type"] == "image/svg+xml"
+        assert response.content == _FAKE_SVG
+
+    def test_returns_svg_response_for_galactic(self, client):
+        with mock.patch(
+            "ska_oso_services.common.api.visibility.render_svg", return_value=_FAKE_SVG
+        ):
+            response = client.get(f"{VISIBILITY_API_URL}/visibility?{_GALATIC_PARAM}")
 
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "image/svg+xml"
