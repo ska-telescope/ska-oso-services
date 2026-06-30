@@ -17,10 +17,10 @@ router = APIRouter(prefix="/visibility")
     responses={200: {"content": {"image/svg+xml": {}}}},
 )
 def visibility_svg(
-    ra: str = Query(..., description="RA, e.g. 05:34:31.7760"),
-    dec: str = Query(..., description="Dec, e.g. 22:01:02.640"),
-    l: float = Query(..., description="Galactic longitude e.g. 184.5547"),
-    b: float = Query(..., description="Galactic latitude e.g. -05.7833"),
+    ra: str = Query(None, description="RA, e.g. 05:34:31.7760"),
+    dec: str = Query(None, description="Dec, e.g. 22:01:02.640"),
+    l: float = Query(None, description="Galactic longitude e.g. 184.5547"),
+    b: float = Query(None, description="Galactic latitude e.g. -05.7833"),
     coord_system: str = Query("ICRS", description="ICRS| Galactic"),
     array: str = Query(..., description="LOW | MID"),
     show_ateam: bool = Query(True, description="Overlay A-team source elevations and separations"),
