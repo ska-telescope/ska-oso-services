@@ -132,12 +132,15 @@ def _get_ateam_alts(site_key: str) -> dict[str, np.ndarray]:
 
 
 def render_svg(
-    ra: str,
-    dec: str,
-    site_key: str,
+    ra: str | None = None,
+    dec: str | None = None,
+    l: float | None = None,
+    b: float | None = None,
+    site_key: str = "",
     step_s: int = STEP_SECONDS_DEFAULT_VISIBILITY,
     show_ateam: bool = True,
 ) -> bytes:
+
     site_cfg = SITES[site_key]
     site = site_cfg.location
     min_elev = site_cfg.min_elev_deg
@@ -152,7 +155,23 @@ def render_svg(
         timezone=timezone.utc
     )
 
-    target_coord = SkyCoord(ra=ra, dec=dec, unit=(u.hourangle, u.deg), frame="icrs")
+    if ra is not None and dec is not None:
+        target_coord = SkyCoord(
+            ra=ra,
+            dec=dec,
+            unit=(u.hourangle, u.deg),
+            frame="icrs",
+        )
+    elif l is not None and b is not None:
+        target_coord = SkyCoord(
+            l=l,
+            b=b,
+            unit=(u.deg, u.deg),
+            frame="galactic",
+        )
+    else:
+        raise ValueError("Must provide either (ra, dec) or (l, b)")
+
     times, alt = _alts(ra, dec, site, plot_start_time_utc, step_s)
 
     # One solar day advances LST by solar_day/sidereal_day × 24h ≈ 24.066h.
