@@ -60,6 +60,7 @@ def validate_constraints(
     """
     if hasattr(constraints_context.primary_entity, "lst"):
         validators = [
+            validate_lst_start_and_end_time_are_not_the_same,
             validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constraint,
             validate_sso_targets_do_not_have_separation_constraints,
         ]
@@ -67,6 +68,34 @@ def validate_constraints(
         validators = [validate_sso_targets_do_not_have_separation_constraints]
 
     return validate(constraints_context, validators)
+
+
+@validator
+def validate_lst_start_and_end_time_are_not_the_same(
+    constraints_context: ValidationContext[ObservingConstraints],
+) -> list[ValidationIssue]:
+    """
+    function to check that the LST start and end times are not the same
+
+        :param constraints_context:a ValidationContext containing an Observing
+        Constraint to be validated
+
+    :return: a list of validation issues if the LST constraints are nonsensical
+        limits
+    """
+
+    constraints = constraints_context.primary_entity
+
+    if constraints.lst is None or constraints.lst.start != constraints.lst.end:
+        return []
+
+    else:
+        return [
+            ValidationIssue(
+                level=ValidationIssueType.ERROR,
+                message="LST start and end times cannot be the same",
+            )
+        ]
 
 
 @validator
