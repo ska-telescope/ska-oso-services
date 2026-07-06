@@ -294,13 +294,32 @@ class ConstrainedRaSweepGrouper:
     dec_queues : DeclinationQueues, optional
         Pre-computed ring data.  If not supplied, it will be derived
         from the targets passed to :meth:`group`.
+    relative_min_separation : float
+        Minimum allowed pairwise separation in units of pair-averaged FWHM.
+        Must be > 0 and <= ``relative_max_separation``.
+    relative_max_separation : float
+        Maximum allowed pairwise separation in units of pair-averaged FWHM
+        for the "at least one neighbour in band" candidate check. Must be > 0.
     """
 
     def __init__(
         self,
         dec_queues: DeclinationQueues | None = None,
+        relative_min_separation: float = DEFAULT_RELATIVE_MIN_SEPARATION,
+        relative_max_separation: float = DEFAULT_RELATIVE_MAX_SEPARATION,
     ) -> None:
         self._dec_queues = dec_queues
+        if (
+            relative_min_separation <= 0.0
+            or relative_max_separation <= 0.0
+            or relative_min_separation > relative_max_separation
+        ):
+            raise ValueError(
+                "Relative separation thresholds must satisfy: 0 < min <= max "
+                f"(got min={relative_min_separation}, max={relative_max_separation})"
+            )
+        self._relative_min_separation = float(relative_min_separation)
+        self._relative_max_separation = float(relative_max_separation)
 
     def group(
         self, targets: Sequence[RelativeSeparationGroupingTargetT], group_size: int
@@ -314,8 +333,8 @@ class ConstrainedRaSweepGrouper:
         coords = rd.coords
         ra_deg = rd.ra_deg
         dec_deg = rd.dec_deg
-        relative_min_separation = DEFAULT_RELATIVE_MIN_SEPARATION
-        relative_max_separation = DEFAULT_RELATIVE_MAX_SEPARATION
+        relative_min_separation = self._relative_min_separation
+        relative_max_separation = self._relative_max_separation
         fwhm_deg = np.asarray([float(target.fwhm_deg) for target in targets], dtype=float)
         if np.any(fwhm_deg <= 0.0):
             raise ValueError("All target fwhm_deg values must be > 0 for relative separation")
@@ -452,7 +471,8 @@ def create_grouper(
         The grouping strategy to use.
     **kwargs
         Extra keyword arguments forwarded to the grouper constructor
-        (e.g. ``dec_queues``).
+        (e.g. ``dec_queues``, ``relative_min_separation``,
+        ``relative_max_separation``).
     """
     if method == GroupingMethod.SEQUENTIAL:
         return SequentialGrouper()
