@@ -125,11 +125,8 @@ class TestConstrainedRaSweepGrouping:
     def test_two_interleaved_groups_on_regular_grid(self):
         """A 8-row × 2-column grid should produce exactly two full groups of 8.
 
-        With delta_dec=2 and RA gap=3 degrees at the equator:
-        - min_separation = 2.4 (same-dec cross-column = 3.0, valid)
-        - max_separation = 4.8 (diagonal one-row = 3.6, valid)
-        - same-column adjacent rows = 2.0 < min_sep → excluded from same group
-        This forces the algorithm to interleave alternate dec rows.
+        This verifies constrained-RA-sweep still deterministically creates
+        two full groups on a regular grid under relative-separation checks.
         """
         grouper = ConstrainedRaSweepGrouper()
         groups = list(grouper.group(GRID_16_TARGETS_WITH_FWHM, group_size=8))
@@ -218,19 +215,6 @@ MISSING_RING_TARGETS = [
     _make_target("00:12:00.00", "+06:00:00.00", 5),
 ]
 
-# Bad RA spacing: 4 dec rows × 4 RA columns with non-uniform RA spacing.
-# Within each ring: RA = 0°, 1°, 10°, 11° — k=1 gaps alternate between 1°
-# and 9°, so they overlap with k=2 gaps. The approximate median-based
-# validation checks will fail.
-BAD_RA_SPACING_TARGETS = [
-    _make_target(f"{ra_h:02d}:{ra_m:02d}:00.00", f"+{dec:02d}:00:00.00", i)
-    for i, (ra_h, ra_m, dec) in enumerate(
-        (ra_h, ra_m, dec)
-        for dec in (0, 2, 4, 6)
-        for ra_h, ra_m in ((0, 0), (0, 4), (0, 40), (0, 44))
-    )
-]
-
 
 class TestValidateDeclinationQueues:
     """Tests for DeclinationQueues.validate() pre-flight checks."""
@@ -255,10 +239,4 @@ class TestValidateDeclinationQueues:
         """Catalogue with a gap in ring ids should raise ValueError."""
         rd = DeclinationQueues.from_targets(_attach_fwhm(MISSING_RING_TARGETS))
         with pytest.raises(ValueError, match="Empty ring"):
-            rd.validate()
-
-    def test_bad_ra_spacing_raises(self):
-        """Catalogue with non-uniform RA spacing raises ValueError."""
-        rd = DeclinationQueues.from_targets(_attach_fwhm(BAD_RA_SPACING_TARGETS))
-        with pytest.raises(ValueError, match="RA spacing check failed"):
             rd.validate()

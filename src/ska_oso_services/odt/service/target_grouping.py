@@ -81,8 +81,6 @@ class DeclinationQueues:
     unique_decs: np.ndarray
     delta_dec: float
     first_bin_center_dec: float
-    min_separation: float
-    max_separation: float
     queues: list[deque[int]] = field(default_factory=list)
 
     @classmethod
@@ -112,37 +110,6 @@ class DeclinationQueues:
             indices_sorted = indices[np.argsort(ra_deg[indices])]
             queues.append(deque(indices_sorted.tolist()))
 
-        # Derive min/max separation from k-neighbour statistics.
-        # For each ring, compute the approximate angular separation
-        # between targets at offset k as delta_ra * cos(dec).
-        k_global_max: dict[int, float] = {1: 0.0, 2: 0.0, 3: 0.0}
-        k_global_min: dict[int, float] = {
-            1: float("inf"),
-            2: float("inf"),
-            3: float("inf"),
-        }
-        for q in queues:
-            if len(q) < 4:
-                continue
-            indices = list(q)
-            ring_ra = ra_deg[indices]
-            ring_dec_mean = float(np.mean(dec_deg[indices]))
-            cos_dec = float(np.cos(np.radians(ring_dec_mean)))
-            for k in (1, 2, 3):
-                if len(ring_ra) < k + 1:
-                    continue
-                seps = (ring_ra[k:] - ring_ra[:-k]) * cos_dec
-                k_global_min[k] = min(k_global_min[k], float(np.min(seps)))
-                k_global_max[k] = max(k_global_max[k], float(np.max(seps)))
-
-        if k_global_min[2] == float("inf"):
-            # Fallback for catalogues with very few targets per ring
-            min_separation = delta_dec * 1.2
-            max_separation = delta_dec * 2.4
-        else:
-            min_separation = (k_global_max[1] + k_global_min[2]) / 2.0
-            max_separation = (k_global_max[2] + k_global_min[3]) / 2.0
-
         return cls(
             coords=coords,
             ra_deg=ra_deg,
@@ -150,8 +117,6 @@ class DeclinationQueues:
             unique_decs=unique_decs,
             delta_dec=delta_dec,
             first_bin_center_dec=first_bin_center_dec,
-            min_separation=min_separation,
-            max_separation=max_separation,
             queues=queues,
         )
 
@@ -161,9 +126,6 @@ class DeclinationQueues:
         targets: Sequence[GroupingTarget],
     ) -> DeclinationQueues:
         """Construct DeclinationQueues from a sequence of per-target metadata objects.
-
-        Separation thresholds are derived automatically from the
-        k-neighbour spacing statistics of the catalogue.
 
         Parameters
         ----------
@@ -187,9 +149,6 @@ class DeclinationQueues:
         coords: SkyCoord,
     ) -> DeclinationQueues:
         """Construct DeclinationQueues from an existing SkyCoord array.
-
-        Separation thresholds are derived automatically from the
-        k-neighbour spacing statistics of the catalogue.
 
         Parameters
         ----------
@@ -244,57 +203,6 @@ class DeclinationQueues:
                 f"{dec_uniformity_tolerance:.2%}. "
                 f"The constrained-RA-sweep algorithm requires near-uniform "
                 f"declination spacing between rings."
-            )
-
-        # --- Check 3: Intra-ring RA spacing vs separation thresholds ---
-        issue_lines: list[str] = []
-        failing_dec_count = 0
-        for q in self.queues:
-            if len(q) < 4:
-                continue
-            indices = list(q)
-            ring_ra = self.ra_deg[indices]
-            ring_dec_mean = float(np.mean(self.dec_deg[indices]))
-            cos_dec = np.cos(np.radians(ring_dec_mean))
-
-            ra_gaps = np.diff(ring_ra)
-            delta_ra = float(np.median(ra_gaps))
-            approx_sep_k1 = delta_ra * cos_dec
-            approx_sep_k2 = 2.0 * delta_ra * cos_dec
-            approx_sep_k3 = 3.0 * delta_ra * cos_dec
-
-            issues: list[str] = []
-            if approx_sep_k1 >= self.min_separation:
-                issues.append(
-                    f"k=1 separation ({approx_sep_k1:.3f}°) >= "
-                    f"min_separation ({self.min_separation:.3f}°)"
-                )
-            if not (self.min_separation <= approx_sep_k2 <= self.max_separation):
-                issues.append(
-                    f"k=2 separation ({approx_sep_k2:.3f}°) not in "
-                    f"[min_separation ({self.min_separation:.3f}°), "
-                    f"max_separation ({self.max_separation:.3f}°)]"
-                )
-            if approx_sep_k3 <= self.max_separation:
-                issues.append(
-                    f"k=3 separation ({approx_sep_k3:.3f}°) <= "
-                    f"max_separation ({self.max_separation:.3f}°)"
-                )
-            if issues:
-                failing_dec_count += 1
-                issue_lines.extend(
-                    f"ring at dec≈{ring_dec_mean:.1f}°: {issue}" for issue in issues
-                )
-
-        if issue_lines:
-            shown_lines = issue_lines[:10]
-            detail = "\n  ".join(shown_lines)
-            remaining = len(issue_lines) - len(shown_lines)
-            tail = f"\n  plus {remaining} further issues" if remaining > 0 else ""
-            raise ValueError(
-                f"RA spacing check failed at {failing_dec_count} declinations. "
-                f"Every declination with at least four targets must satisfy "
-                f"the k=1/k=2/k=3 separation bounds.\n  {detail}{tail}"
             )
 
 
@@ -360,29 +268,26 @@ class ConstrainedRaSweepGrouper:
     **Algorithm**
 
     1. Form RA-sorted queues of targets at each declination ring.
-    2. Determine ``min_separation`` and ``max_separation`` such that
-       k=1 nearest neighbours in each queue are below
-       ``min_separation``, k=2 nearest neighbours are between
-       ``min_separation`` and ``max_separation``, and k=3 nearest
-       neighbours are above ``max_separation``.
+    2. Use global relative-separation thresholds based on pair-averaged
+       FWHM: ``relative_min_separation`` and ``relative_max_separation``.
     3. Seed a new group with the lowest-RA target amongst all queues.
     4. Iteratively add targets to the group until it is full or no
        candidates remain:
 
-       - A candidate must be more than ``min_separation`` from
+       - A candidate must be more than ``relative_min_separation`` from
          *every* target already in the group.
-       - A candidate must be between ``min_separation`` and
-         ``max_separation`` from *at least one* target in the group.
+       - A candidate must be between ``relative_min_separation`` and
+         ``relative_max_separation`` from *at least one* target in the group.
        - The candidate with the minimum RA is selected.
 
     5. Yield the group and repeat from step 3 until all targets are
        assigned.
 
     Note that within a completed group, some pairs of members may be
-    at k=3 distances from each other.  This is expected: each member
-    was added because it had at least one k=2-distance neighbour
-    already in the group, but it is not required to be close to every
-    other member.
+    beyond ``relative_max_separation`` from each other.  This is expected:
+    each member was added because it had at least one neighbour inside
+    the accepted relative-separation band, but it is not required to be
+    close to every other member.
 
     Parameters
     ----------
