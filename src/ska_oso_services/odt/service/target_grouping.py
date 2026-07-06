@@ -28,6 +28,8 @@ class GroupingMethod(str, Enum):
 
 
 DEC_UNIFORMITY_RELATIVE_TOLERANCE = 0.01
+DEFAULT_RELATIVE_MIN_SEPARATION = 1.0
+DEFAULT_RELATIVE_MAX_SEPARATION = 3.0
 
 
 @dataclass(frozen=True)
@@ -407,15 +409,20 @@ class ConstrainedRaSweepGrouper:
         coords = rd.coords
         ra_deg = rd.ra_deg
         dec_deg = rd.dec_deg
-        min_separation = rd.min_separation
-        max_separation = rd.max_separation
+        relative_min_separation = DEFAULT_RELATIVE_MIN_SEPARATION
+        relative_max_separation = DEFAULT_RELATIVE_MAX_SEPARATION
+        fwhm_deg = np.asarray([float(target.fwhm_deg) for target in targets], dtype=float)
+        if np.any(fwhm_deg <= 0.0):
+            raise ValueError("All target fwhm_deg values must be > 0 for relative separation")
+        # Conservative angular bound used for geometric frontier pruning.
+        max_angular_separation = relative_max_separation * float(np.max(fwhm_deg))
         # Deep-copy queues so the grouper can be called again
         queues = [deque(q) for q in rd.queues]
 
         def _edge_key(i: int, j: int) -> tuple[int, int]:
             return (i, j) if i < j else (j, i)
 
-        edge_separation: dict[tuple[int, int], float] = {}
+        edge_relative_separation: dict[tuple[int, int], float] = {}
         active_nodes: dict[int, None] = {}
 
         # --- Main grouping loop ---
@@ -429,8 +436,10 @@ class ConstrainedRaSweepGrouper:
                         continue
                 pid = q.popleft()
                 for other_pid in active_nodes:
-                    edge_separation[_edge_key(pid, other_pid)] = float(
-                        coords[pid].separation(coords[other_pid]).degree
+                    angular_sep_deg = float(coords[pid].separation(coords[other_pid]).degree)
+                    pair_avg_fwhm = 0.5 * (fwhm_deg[pid] + fwhm_deg[other_pid])
+                    edge_relative_separation[_edge_key(pid, other_pid)] = angular_sep_deg / float(
+                        pair_avg_fwhm
                     )
                 active_nodes[pid] = None
 
@@ -441,8 +450,8 @@ class ConstrainedRaSweepGrouper:
             group: list[int] = [i0]
 
             while len(group) < group_size:
-                group_dec_min = float(np.min(dec_deg[group])) - max_separation
-                group_dec_max = float(np.max(dec_deg[group])) + max_separation
+                group_dec_min = float(np.min(dec_deg[group])) - max_angular_separation
+                group_dec_max = float(np.max(dec_deg[group])) + max_angular_separation
                 group_max_ra = float(np.max(ra_deg[group]))
 
                 for q in queues:
@@ -453,14 +462,23 @@ class ConstrainedRaSweepGrouper:
                             break
 
                         last_pid = group[-1]
-                        head_sep = float(coords[head_pid].separation(coords[last_pid]).degree)
-                        if head_sep > max_separation and ra_deg[head_pid] > group_max_ra:
+                        head_sep_deg = float(coords[head_pid].separation(coords[last_pid]).degree)
+                        head_pair_avg_fwhm = 0.5 * (fwhm_deg[head_pid] + fwhm_deg[last_pid])
+                        head_relative_sep = head_sep_deg / float(head_pair_avg_fwhm)
+                        if (
+                            head_relative_sep > relative_max_separation
+                            and ra_deg[head_pid] > group_max_ra
+                        ):
                             break
 
                         pid = q.popleft()
                         for other_pid in active_nodes:
-                            edge_separation[_edge_key(pid, other_pid)] = float(
+                            angular_sep_deg = float(
                                 coords[pid].separation(coords[other_pid]).degree
+                            )
+                            pair_avg_fwhm = 0.5 * (fwhm_deg[pid] + fwhm_deg[other_pid])
+                            edge_relative_separation[_edge_key(pid, other_pid)] = (
+                                angular_sep_deg / float(pair_avg_fwhm)
                             )
                         active_nodes[pid] = None
 
@@ -475,10 +493,18 @@ class ConstrainedRaSweepGrouper:
                         for idx, a in enumerate(proposed)
                         for b in proposed[idx + 1 :]
                     ]
-                    if not all(edge_separation[pair] >= min_separation for pair in proposed_pairs):
+                    if not all(
+                        edge_relative_separation[pair] >= relative_min_separation
+                        for pair in proposed_pairs
+                    ):
                         continue
-                    sep_to_group = [edge_separation[_edge_key(n, g)] for g in group]
-                    if not any(min_separation <= sep <= max_separation for sep in sep_to_group):
+                    relative_sep_to_group = [
+                        edge_relative_separation[_edge_key(n, g)] for g in group
+                    ]
+                    if not any(
+                        relative_min_separation <= sep <= relative_max_separation
+                        for sep in relative_sep_to_group
+                    ):
                         continue
                     if ra_deg[n] < best_ra:
                         best_ra = ra_deg[n]
@@ -492,9 +518,9 @@ class ConstrainedRaSweepGrouper:
             removed = set(group)
             for n in group:
                 active_nodes.pop(n, None)
-            edge_separation = {
+            edge_relative_separation = {
                 k: v
-                for k, v in edge_separation.items()
+                for k, v in edge_relative_separation.items()
                 if k[0] not in removed and k[1] not in removed
             }
 
