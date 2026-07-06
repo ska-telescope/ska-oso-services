@@ -92,7 +92,7 @@ class CommissioningObservingMode(str, Enum):
 class GlobalSkyModelSurveyInputs(BaseModel):
     pointings_file_uri: str = Field(
         description=(
-            "The location of a csv file with `beam_name`, `ra` and `dec` columns. "
+            "The location of a csv file with `beam_name`, `ra`, `dec`, and `beam_fwhm` columns. "
             "As a first implementation, this should be a filename that corresponds to a "
             "file in the src/ska_oso_services/odt/service/commissioning/data directory."
         ),
@@ -577,7 +577,7 @@ def prjs_ob_generate_gsm_survey_sbds(
         identifier,
         obs_block_id,
     )
-    targets = load_pointings_as_targets(inputs.pointings_file_uri, max_rows=inputs.max_rows)
+    targets, _ = load_pointings_as_targets(inputs.pointings_file_uri, max_rows=inputs.max_rows)
 
     with oda as uow:
         prj = uow.prjs.get(identifier)

@@ -776,14 +776,18 @@ class TestSurveySBDefinition:
         sbd = TestDataFactory.lowsbdefinition(without_metadata=True)
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
-        mock_load_pointings.return_value = [
-            Target(
-                target_id=f"target-{i}",
-                name=f"beam_{i}",
-                reference_coordinate=ICRSCoordinates(ra_str="0:0:0", dec_str="-90:0:0"),
-            )
-            for i in range(6)
-        ]
+        n_targets = 6
+        mock_load_pointings.return_value = (
+            [
+                Target(
+                    target_id=f"target-{i}",
+                    name=f"beam_{i}",
+                    reference_coordinate=ICRSCoordinates(ra_str="0:0:0", dec_str="-90:0:0"),
+                )
+                for i in range(n_targets)
+            ],
+            [1.0] * n_targets,
+        )
         mock_generate.return_value = [sbd, sbd]
 
         resp = client.post(
@@ -822,14 +826,18 @@ class TestSurveySBDefinition:
         # num_subarray_beams=2 * num_scans=3 = 6 targets per SBD
         # batch_size=50 SBDs * 6 targets = 300 targets per batch
         # 306 targets should produce 2 batches (300 + 6)
-        mock_load_pointings.return_value = [
-            Target(
-                target_id=f"target-{i}",
-                name=f"beam_{i}",
-                reference_coordinate=ICRSCoordinates(ra_str="0:0:0", dec_str="-90:0:0"),
-            )
-            for i in range(306)
-        ]
+        n_targets = 306
+        mock_load_pointings.return_value = (
+            [
+                Target(
+                    target_id=f"target-{i}",
+                    name=f"beam_{i}",
+                    reference_coordinate=ICRSCoordinates(ra_str="0:0:0", dec_str="-90:0:0"),
+                )
+                for i in range(n_targets)
+            ],
+            [1.0] * n_targets,
+        )
         mock_generate.return_value = [sbd]
 
         resp = client.post(
@@ -845,7 +853,7 @@ class TestSurveySBDefinition:
         """Requesting a non-existent project should return 404."""
         prj_id = "prj-999"
         client, uow_mock = client_with_uow_mock
-        mock_load_pointings.return_value = []
+        mock_load_pointings.return_value = ([], [])
         uow_mock.prjs.get.side_effect = ODANotFound(identifier=prj_id)
 
         resp = client.post(
@@ -863,7 +871,7 @@ class TestSurveySBDefinition:
         project = TestDataFactory.project()
         project.obs_blocks = []
         uow_mock.prjs.get.return_value = project
-        mock_load_pointings.return_value = []
+        mock_load_pointings.return_value = ([], [])
 
         resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateGSMSurveySBDefinitions",
@@ -877,7 +885,7 @@ class TestSurveySBDefinition:
     def test_survey_oda_error(self, mock_load_pointings, client_with_uow_mock):
         """An ODA error should propagate as a 500."""
         client, uow_mock = client_with_uow_mock
-        mock_load_pointings.return_value = []
+        mock_load_pointings.return_value = ([], [])
         uow_mock.prjs.get.side_effect = IOError("test error")
 
         with pytest.raises(IOError):
@@ -896,7 +904,7 @@ class TestSurveySBDefinition:
         project = TestDataFactory.project()
         project.obs_blocks = [ObservingBlock(obs_block_id="ob-1")]
         uow_mock.prjs.get.return_value = project
-        mock_load_pointings.return_value = []
+        mock_load_pointings.return_value = ([], [])
 
         payload = {**self.SURVEY_INPUT, "max_rows": 20}
         client.post(
