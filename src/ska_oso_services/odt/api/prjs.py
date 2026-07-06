@@ -577,7 +577,7 @@ def prjs_ob_generate_gsm_survey_sbds(
         identifier,
         obs_block_id,
     )
-    targets, _ = load_pointings_as_targets(inputs.pointings_file_uri, max_rows=inputs.max_rows)
+    pointings = load_pointings_as_targets(inputs.pointings_file_uri, max_rows=inputs.max_rows)
 
     with oda as uow:
         prj = uow.prjs.get(identifier)
@@ -596,8 +596,8 @@ def prjs_ob_generate_gsm_survey_sbds(
         sbd_batch_size = 50
         target_batch_size = sbd_batch_size * num_targets_per_sbd
 
-        for batch_start in range(0, len(targets), target_batch_size):
-            batch_targets = targets[batch_start : batch_start + target_batch_size]
+        for batch_start in range(0, len(pointings), target_batch_size):
+            batch_targets = pointings[batch_start : batch_start + target_batch_size]
 
             sbds = generate_gsm_survey_sbds(
                 input_targets=batch_targets,

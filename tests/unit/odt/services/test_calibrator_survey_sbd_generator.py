@@ -4,23 +4,25 @@ from unittest import mock
 # pylint: disable=no-member
 import astropy.units as u
 from astropy.units import Quantity
-from ska_oso_pdm import ICRSCoordinates, Target
+from ska_oso_pdm import ICRSCoordinates
 
 from ska_oso_services.odt.service.gsm_survey_sbd_generator import generate_gsm_survey_sbds
+from ska_oso_services.odt.service.target_grouping import PointingTarget
 from tests.unit.util import assert_json_is_equal, load_string_from_file
 
 MODULE = "ska_oso_services.odt.service.gsm_survey_sbd_generator"
 
 
-def _make_targets(count: int) -> list[Target]:
+def _make_targets(count: int) -> list[PointingTarget]:
     return [
-        Target(
+        PointingTarget(
             target_id=f"target-{i:04d}",
             name=f"Target {i}",
             reference_coordinate=ICRSCoordinates(
                 ra_str=f"{i % 24}:00:00",
                 dec_str="-30:00:00",
             ),
+            fwhm_deg=1.0,
         )
         for i in range(count)
     ]

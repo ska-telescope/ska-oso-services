@@ -1,21 +1,23 @@
 """
 Domain service for partitioning a target catalogue into spatial groups.
 
-This module is independent of SBD construction — it operates purely on
-:class:`~ska_oso_pdm.Target` objects and yields groups of target indices.
+This module is independent of SBD construction — it operates on per-target
+metadata objects and yields groups of those same objects. Conversion of a
+group into PDM :class:`~ska_oso_pdm.Target` objects (or any other
+representation) is the responsibility of the caller.
 """
 
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Protocol
+from typing import Protocol, TypeVar
 
 import numpy as np
 from astropy.coordinates import SkyCoord
-from ska_oso_pdm import Target
+from ska_oso_pdm import ICRSCoordinates
 
 
 class GroupingMethod(str, Enum):
@@ -26,6 +28,40 @@ class GroupingMethod(str, Enum):
 
 
 DEC_UNIFORMITY_RELATIVE_TOLERANCE = 0.01
+
+
+@dataclass(frozen=True)
+class PointingTarget:
+    """Pointing payload: target fields plus beam FWHM in degrees."""
+
+    target_id: str
+    name: str
+    reference_coordinate: ICRSCoordinates
+    fwhm_deg: float
+
+
+class GroupingTarget(Protocol):
+    """Protocol for grouping algorithms that only require target coordinates."""
+
+    target_id: str
+    name: str
+    reference_coordinate: ICRSCoordinates
+
+
+class RelativeSeparationGroupingTarget(GroupingTarget, Protocol):
+    """Protocol for grouping algorithms that require relative-separation metadata."""
+
+    fwhm_deg: float
+
+
+# TypeVars parametrising the grouper protocol / implementations. A grouper
+# yields groups of the *same* target type it received, so the target type is
+# preserved through the group boundary (invariant: appears in both input and
+# output positions).
+GroupingTargetT = TypeVar("GroupingTargetT", bound=GroupingTarget)
+RelativeSeparationGroupingTargetT = TypeVar(
+    "RelativeSeparationGroupingTargetT", bound=RelativeSeparationGroupingTarget
+)
 
 
 # ---------------------------------------------------------------------------
@@ -120,17 +156,17 @@ class DeclinationQueues:
     @classmethod
     def from_targets(
         cls,
-        targets: list[Target],
+        targets: Sequence[GroupingTarget],
     ) -> DeclinationQueues:
-        """Construct DeclinationQueues from a list of Target objects.
+        """Construct DeclinationQueues from a sequence of per-target metadata objects.
 
         Separation thresholds are derived automatically from the
         k-neighbour spacing statistics of the catalogue.
 
         Parameters
         ----------
-        targets : list[Target]
-            Input target list with ICRS coordinates.
+        targets : Sequence[GroupingTarget]
+            Input targets with ICRS coordinates.
 
         Raises
         ------
@@ -265,21 +301,37 @@ class DeclinationQueues:
 # ---------------------------------------------------------------------------
 
 
-class TargetGrouper(Protocol):
-    """Common interface for target-grouping strategies."""
+class TargetGrouper(Protocol[GroupingTargetT]):
+    """Common interface for target-grouping strategies.
 
-    def group(self, targets: list[Target], group_size: int) -> Iterator[list[int]]:
-        """Yield lists of indices into *targets*, one per group."""
+    A grouper partitions its input targets into groups and yields each group
+    as a list of the *same* target type it received. Conversion of a group
+    into PDM :class:`~ska_oso_pdm.Target` objects (or any other
+    representation) is the responsibility of the caller, keeping this module
+    independent of SBD construction.
+
+    The protocol is parametrised by the target type so that groupers requiring
+    richer metadata can be distinguished from those that do not — for example
+    ``TargetGrouper[RelativeSeparationGroupingTarget]`` for a strategy that
+    needs per-target beam FWHM.
+    """
+
+    def group(
+        self, targets: Sequence[GroupingTargetT], group_size: int
+    ) -> Iterator[list[GroupingTargetT]]:
+        """Yield groups of the input targets, one list per group."""
 
 
 class SequentialGrouper:
     """Partition targets into sequential, non-overlapping chunks."""
 
-    def group(self, targets: list[Target], group_size: int) -> Iterator[list[int]]:
-        """Yield sequential chunks of target indices."""
+    def group(
+        self, targets: Sequence[GroupingTargetT], group_size: int
+    ) -> Iterator[list[GroupingTargetT]]:
+        """Yield sequential chunks of the input targets."""
         num_targets = len(targets)
         for start in range(0, num_targets, group_size):
-            yield list(range(start, min(start + group_size, num_targets)))
+            yield list(targets[start : min(start + group_size, num_targets)])
 
 
 class ConstrainedRaSweepGrouper:
@@ -343,8 +395,10 @@ class ConstrainedRaSweepGrouper:
     ) -> None:
         self._dec_queues = dec_queues
 
-    def group(self, targets: list[Target], group_size: int) -> Iterator[list[int]]:
-        """Yield groups of target indices using constrained-RA-sweep clustering."""
+    def group(
+        self, targets: Sequence[RelativeSeparationGroupingTargetT], group_size: int
+    ) -> Iterator[list[RelativeSeparationGroupingTargetT]]:
+        """Yield groups of the input targets using constrained-RA-sweep clustering."""
         if self._dec_queues is not None:
             rd = self._dec_queues
         else:
@@ -434,7 +488,7 @@ class ConstrainedRaSweepGrouper:
                     break
                 group.append(best_candidate)
 
-            yield [int(n) for n in group]
+            yield [targets[int(n)] for n in group]
             removed = set(group)
             for n in group:
                 active_nodes.pop(n, None)
@@ -447,7 +501,7 @@ class ConstrainedRaSweepGrouper:
         remaining = [q.popleft() for q in queues for _ in range(len(q))]
         if remaining:
             for start in range(0, len(remaining), group_size):
-                yield remaining[start : start + group_size]
+                yield [targets[int(n)] for n in remaining[start : start + group_size]]
 
 
 # ---------------------------------------------------------------------------
@@ -458,7 +512,7 @@ class ConstrainedRaSweepGrouper:
 def create_grouper(
     method: GroupingMethod = GroupingMethod.CONSTRAINED_RA_SWEEP,
     **kwargs,
-) -> TargetGrouper:
+) -> TargetGrouper[PointingTarget]:
     """Create a :class:`TargetGrouper` for the given method.
 
     Parameters
