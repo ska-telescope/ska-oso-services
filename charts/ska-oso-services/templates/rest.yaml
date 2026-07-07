@@ -55,6 +55,9 @@ spec:
       labels:
         {{- include "ska-oso-services.labels" . | indent 8 }}
     spec:
+      {{- if .Values.s3ServiceAccount.enabled }}
+      serviceAccountName: {{ .Values.s3ServiceAccount.name }}
+      {{- end }}
       containers:
       - name: oso-services
         image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{$.Values.rest.image.tag | default $.Chart.AppVersion}}"
@@ -77,6 +80,13 @@ spec:
               {{ else }}
               name: {{ template "ska-oso-services.application-secret-name" $ }}
               {{- end }}
+        {{- if .Values.s3ServiceAccount.enabled }}
+        env:
+          - name: AWS_PHT_BUCKET_NAME
+            value: {{ .Values.s3ServiceAccount.bucketName }}
+          - name: AWS_REGION
+            value: {{ .Values.s3ServiceAccount.region }}
+        {{- end }}
         ports:
           - containerPort: 5000
         resources:

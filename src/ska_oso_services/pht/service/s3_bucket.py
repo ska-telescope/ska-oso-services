@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 import boto3
 from botocore.client import BaseClient, Config
@@ -16,21 +17,31 @@ class S3Method(str, Enum):
 
 @dataclass(frozen=True)
 class S3Config:
-    access_key: str = os.getenv("AWS_SERVER_PUBLIC_KEY", "AWS_SERVER_PUBLIC_KEY")
-    secret_key: str = os.getenv("AWS_SERVER_SECRET_KEY", "AWS_SERVER_SECRET_KEY")
+    access_key: str | None = os.getenv("AWS_SERVER_PUBLIC_KEY") or os.getenv("AWS_ACCESS_KEY_ID")
+    secret_key: str | None = os.getenv("AWS_SERVER_SECRET_KEY") or os.getenv(
+        "AWS_SECRET_ACCESS_KEY"
+    )
+    session_token: str | None = os.getenv("AWS_SESSION_TOKEN")
     bucket: str = os.getenv("AWS_PHT_BUCKET_NAME", "AWS_PHT_BUCKET_NAME")
     region: str = os.getenv("AWS_REGION", "eu-west-2")
     expiry: int = PRESIGNED_URL_EXPIRY_TIME
 
 
 def get_aws_client(config: S3Config = S3Config()) -> BaseClient:
-    return boto3.client(
-        "s3",
-        aws_access_key_id=config.access_key,
-        aws_secret_access_key=config.secret_key,
-        region_name=config.region,
-        config=Config(signature_version="s3v4"),
-    )
+    client_kwargs: dict[str, Any] = {
+        "region_name": config.region,
+        "config": Config(signature_version="s3v4"),
+    }
+
+    # If credentials are not explicitly provided, boto3 falls back to
+    # the default AWS credential chain (for example EKS Pod Identity).
+    if config.access_key and config.secret_key:
+        client_kwargs["aws_access_key_id"] = config.access_key
+        client_kwargs["aws_secret_access_key"] = config.secret_key
+        if config.session_token:
+            client_kwargs["aws_session_token"] = config.session_token
+
+    return boto3.client("s3", **client_kwargs)
 
 
 def generate_presigned_url(
