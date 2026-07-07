@@ -174,7 +174,8 @@ class AA2_LOW(BaseModel):
 
 class Low(BaseModel):
     basic_capabilities: BasicCapabilitiesLow
-    AA2: AA2_LOW
+    AA2: Optional[AA2_LOW] = None
+    AA2_SV: Optional[AA2_LOW] = None
 
 
 class Capabilities(BaseModel):
