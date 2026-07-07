@@ -7,15 +7,15 @@ from astropy.units import Quantity
 from ska_oso_pdm import ICRSCoordinates
 
 from ska_oso_services.odt.service.gsm_survey_sbd_generator import generate_gsm_survey_sbds
-from ska_oso_services.odt.service.target_grouping import PointingTarget
+from ska_oso_services.odt.service.target_grouping import Pointing
 from tests.unit.util import assert_json_is_equal, load_string_from_file
 
 MODULE = "ska_oso_services.odt.service.gsm_survey_sbd_generator"
 
 
-def _make_targets(count: int) -> list[PointingTarget]:
+def _make_targets(count: int) -> list[Pointing]:
     return [
-        PointingTarget(
+        Pointing(
             target_id=f"target-{i:04d}",
             name=f"Target {i}",
             reference_coordinate=ICRSCoordinates(
@@ -38,7 +38,7 @@ class TestGenerateGSMSBDs:
 
         targets = _make_targets(12)
         sbds = generate_gsm_survey_sbds(
-            input_targets=targets,
+            input_pointings=targets,
             centre_frequency=Quantity(155.47, u.MHz),
             scan_duration=timedelta(minutes=5),
             num_subarray_beams=2,
@@ -54,7 +54,7 @@ class TestGenerateGSMSBDs:
 
         targets = _make_targets(6)
         sbds = generate_gsm_survey_sbds(
-            input_targets=targets,
+            input_pointings=targets,
             centre_frequency=Quantity(155.47, u.MHz),
             scan_duration=timedelta(minutes=5),
             num_subarray_beams=2,
@@ -83,7 +83,7 @@ class TestRemainderHandling:
 
         targets = _make_targets(29)
         sbds = generate_gsm_survey_sbds(
-            input_targets=targets,
+            input_pointings=targets,
             centre_frequency=Quantity(155.47, u.MHz),
             scan_duration=timedelta(minutes=5),
             num_subarray_beams=4,
@@ -107,7 +107,7 @@ class TestRemainderHandling:
 
         targets = _make_targets(29)
         sbds = generate_gsm_survey_sbds(
-            input_targets=targets,
+            input_pointings=targets,
             centre_frequency=Quantity(155.47, u.MHz),
             scan_duration=timedelta(minutes=5),
             num_subarray_beams=4,
@@ -130,7 +130,7 @@ class TestRemainderHandling:
         # 20 targets = 1 full SBD (4*3=12) + 8 remainder
         targets = _make_targets(20)
         sbds = generate_gsm_survey_sbds(
-            input_targets=targets,
+            input_pointings=targets,
             centre_frequency=Quantity(155.47, u.MHz),
             scan_duration=timedelta(minutes=5),
             num_subarray_beams=4,
@@ -153,7 +153,7 @@ class TestRemainderHandling:
 
         targets = _make_targets(12)
         sbds = generate_gsm_survey_sbds(
-            input_targets=targets,
+            input_pointings=targets,
             centre_frequency=Quantity(155.47, u.MHz),
             scan_duration=timedelta(minutes=5),
             num_subarray_beams=2,
@@ -171,7 +171,7 @@ class TestRemainderHandling:
 
         targets = _make_targets(7)  # 6 full + 1 remainder
         sbds = generate_gsm_survey_sbds(
-            input_targets=targets,
+            input_pointings=targets,
             centre_frequency=Quantity(155.47, u.MHz),
             scan_duration=timedelta(minutes=5),
             num_subarray_beams=2,

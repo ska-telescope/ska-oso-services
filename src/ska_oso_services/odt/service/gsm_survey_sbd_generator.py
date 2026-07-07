@@ -29,11 +29,7 @@ from ska_oso_pdm.sb_definition.procedures import GitScript
 from ska_oso_services.common.astro import low_frequency_to_coarse_channel
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.odt.service.sbd_generator import _sbd_internal_id
-from ska_oso_services.odt.service.target_grouping import (
-    GroupingMethod,
-    PointingTarget,
-    create_grouper,
-)
+from ska_oso_services.odt.service.target_grouping import GroupingMethod, Pointing, create_grouper
 
 DEFAULT_SUBARRAY = SubArrayLOW.AA2_ALL
 
@@ -58,8 +54,8 @@ CALIBRATOR_TARGET = Target(
 )
 
 
-def _pointing_to_target(pointing: PointingTarget) -> Target:
-    """Convert a grouped :class:`PointingTarget` into a PDM :class:`Target`.
+def _pointing_to_target(pointing: Pointing) -> Target:
+    """Convert a grouped :class:`Pointing` into a PDM :class:`Target`.
 
     The grouping service is intentionally PDM-agnostic and yields the pointing
     objects it received; conversion to PDM Targets happens here, at the point of
@@ -74,7 +70,7 @@ def _pointing_to_target(pointing: PointingTarget) -> Target:
 
 
 def generate_gsm_survey_sbds(
-    input_targets: list[PointingTarget],
+    input_pointings: list[Pointing],
     centre_frequency: Quantity,
     scan_duration: timedelta,
     num_subarray_beams: int,
@@ -102,7 +98,7 @@ def generate_gsm_survey_sbds(
     num_targets_per_sbd = num_scans * num_subarray_beams
 
     grouper = create_grouper(grouping)
-    groups = grouper.group(input_targets, num_targets_per_sbd)
+    groups = grouper.group(input_pointings, num_targets_per_sbd)
 
     for pointing_group in groups:
         target_group = [_pointing_to_target(pointing) for pointing in pointing_group]

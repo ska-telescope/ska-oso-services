@@ -33,7 +33,7 @@ DEFAULT_RELATIVE_MAX_SEPARATION = 3.0
 
 
 @dataclass(frozen=True)
-class PointingTarget:
+class Pointing:
     """Pointing payload: target fields plus beam FWHM in degrees."""
 
     target_id: str
@@ -42,28 +42,16 @@ class PointingTarget:
     fwhm_deg: float
 
 
-class GroupingTarget(Protocol):
+class TargetInfo(Protocol):
     """Protocol for grouping algorithms that only require target coordinates."""
 
-    target_id: str
-    name: str
     reference_coordinate: ICRSCoordinates
 
 
-class RelativeSeparationGroupingTarget(GroupingTarget, Protocol):
+class PointingInfo(TargetInfo, Protocol):
     """Protocol for grouping algorithms that require relative-separation metadata."""
 
     fwhm_deg: float
-
-
-# TypeVars parametrising the grouper protocol / implementations. A grouper
-# yields groups of the *same* target type it received, so the target type is
-# preserved through the group boundary (invariant: appears in both input and
-# output positions).
-GroupingTargetT = TypeVar("GroupingTargetT", bound=GroupingTarget)
-RelativeSeparationGroupingTargetT = TypeVar(
-    "RelativeSeparationGroupingTargetT", bound=RelativeSeparationGroupingTarget
-)
 
 
 # ---------------------------------------------------------------------------
@@ -123,13 +111,13 @@ class DeclinationQueues:
     @classmethod
     def from_targets(
         cls,
-        targets: Sequence[GroupingTarget],
+        targets: Sequence[PointingInfo],
     ) -> DeclinationQueues:
         """Construct DeclinationQueues from a sequence of per-target metadata objects.
 
         Parameters
         ----------
-        targets : Sequence[GroupingTarget]
+        targets : Sequence[PointingInfo]
             Input targets with ICRS coordinates.
 
         Raises
@@ -211,7 +199,10 @@ class DeclinationQueues:
 # ---------------------------------------------------------------------------
 
 
-class TargetGrouper(Protocol[GroupingTargetT]):
+T = TypeVar("T")
+
+
+class TargetGrouper(Protocol[T]):
     """Common interface for target-grouping strategies.
 
     A grouper partitions its input targets into groups and yields each group
@@ -222,29 +213,25 @@ class TargetGrouper(Protocol[GroupingTargetT]):
 
     The protocol is parametrised by the target type so that groupers requiring
     richer metadata can be distinguished from those that do not — for example
-    ``TargetGrouper[RelativeSeparationGroupingTarget]`` for a strategy that
+    ``TargetGrouper[PointingInfo]`` for a strategy that
     needs per-target beam FWHM.
     """
 
-    def group(
-        self, targets: Sequence[GroupingTargetT], group_size: int
-    ) -> Iterator[list[GroupingTargetT]]:
+    def group(self, targets: Sequence[T], group_size: int) -> Iterator[list[T]]:
         """Yield groups of the input targets, one list per group."""
 
 
-class SequentialGrouper:
+class SequentialGrouper(TargetGrouper[TargetInfo]):
     """Partition targets into sequential, non-overlapping chunks."""
 
-    def group(
-        self, targets: Sequence[GroupingTargetT], group_size: int
-    ) -> Iterator[list[GroupingTargetT]]:
+    def group(self, targets: Sequence[TargetInfo], group_size: int) -> Iterator[list[TargetInfo]]:
         """Yield sequential chunks of the input targets."""
         num_targets = len(targets)
         for start in range(0, num_targets, group_size):
             yield list(targets[start : min(start + group_size, num_targets)])
 
 
-class ConstrainedRaSweepGrouper:
+class ConstrainedRaSweepGrouper(TargetGrouper[PointingInfo]):
     """Partition targets using a greedy DEC-constrainted RA sweep.
 
     The algorithm uses greedy local heuristics to generate groups with
@@ -322,8 +309,8 @@ class ConstrainedRaSweepGrouper:
         self._relative_max_separation = float(relative_max_separation)
 
     def group(
-        self, targets: Sequence[RelativeSeparationGroupingTargetT], group_size: int
-    ) -> Iterator[list[RelativeSeparationGroupingTargetT]]:
+        self, targets: Sequence[PointingInfo], group_size: int
+    ) -> Iterator[list[PointingInfo]]:
         """Yield groups of the input targets using constrained-RA-sweep clustering."""
         if self._dec_queues is not None:
             rd = self._dec_queues
@@ -462,7 +449,7 @@ class ConstrainedRaSweepGrouper:
 def create_grouper(
     method: GroupingMethod = GroupingMethod.CONSTRAINED_RA_SWEEP,
     **kwargs,
-) -> TargetGrouper[PointingTarget]:
+) -> TargetGrouper[TargetInfo] | TargetGrouper[PointingInfo]:
     """Create a :class:`TargetGrouper` for the given method.
 
     Parameters

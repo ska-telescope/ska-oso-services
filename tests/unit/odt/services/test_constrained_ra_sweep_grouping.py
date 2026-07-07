@@ -6,7 +6,7 @@ from ska_oso_pdm import ICRSCoordinates, Target
 from ska_oso_services.odt.service.target_grouping import (
     ConstrainedRaSweepGrouper,
     DeclinationQueues,
-    PointingTarget,
+    Pointing,
 )
 
 # 8 dec rows (0°, 2°, 4°, …, 14°) × 2 RA columns (0°, 3°) = 16 targets.
@@ -99,9 +99,9 @@ GRID_16_TARGETS = [
 GRID_4_TARGETS = GRID_16_TARGETS[:4]
 
 
-def _attach_fwhm(targets: list[Target]) -> list[PointingTarget]:
+def _attach_fwhm(targets: list[Target]) -> list[Pointing]:
     return [
-        PointingTarget(
+        Pointing(
             target_id=target.target_id,
             name=target.name,
             reference_coordinate=target.reference_coordinate,

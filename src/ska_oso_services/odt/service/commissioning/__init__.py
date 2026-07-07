@@ -10,12 +10,10 @@ from ska_oso_pdm.builders.utils import target_id
 
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.odt.service.commissioning import data as commissioning_data
-from ska_oso_services.odt.service.target_grouping import PointingTarget
+from ska_oso_services.odt.service.target_grouping import Pointing
 
 
-def load_pointings_as_targets(
-    pointings_file_uri: str, max_rows: int = maxsize
-) -> list[PointingTarget]:
+def load_pointings(pointings_file_uri: str, max_rows: int = maxsize) -> list[Pointing]:
     """Load pointings and per-target beam FWHM from a commissioning CSV."""
     data_file = resources.files(commissioning_data) / pointings_file_uri
     if not data_file.is_file():
@@ -23,7 +21,7 @@ def load_pointings_as_targets(
             detail=f"Pointings file '{pointings_file_uri}' not found in commissioning data."
         )
 
-    pointings: list[PointingTarget] = []
+    pointings: list[Pointing] = []
     with resources.as_file(data_file) as path:
         with open(path, newline="", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
@@ -36,7 +34,7 @@ def load_pointings_as_targets(
                 # TODO Astropy supports vectorized operations so we could do one
                 #  SkyCoord call for all rows
                 coord = SkyCoord(ra=float(row["ra"]), dec=float(row["dec"]), unit="deg")
-                pointing = PointingTarget(
+                pointing = Pointing(
                     target_id=target_id(),
                     name=row["beam_name"],
                     reference_coordinate=ICRSCoordinates(
