@@ -1,14 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "ska-oso-services.name" . }}-postgres-environment-{{ .Release.Name }}
+  name: {{ template "ska-oso-services.resource-name" . }}-environment-oda
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-oso-services.labels" . | indent 4 }}
-    component:  {{ template "ska-oso-services.name" . }}
-    domain: environment
-    function: ska-oso-services-postgres-environment
-    intent: production
 data:
   {{ if .Values.global.oda.postgres.host }}
   PGHOST: {{ .Values.global.oda.postgres.host }}

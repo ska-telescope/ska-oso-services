@@ -1,14 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
+  name: {{ template "ska-oso-services.resource-name" . }}-environment
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-oso-services.labels" . | indent 4 }}
-    component:  {{ template "ska-oso-services.name" . }}
-    domain: environment
-    function: ska-oso-services-environment
-    intent: production
 data:
   LOG_LEVEL: {{ .Values.rest.logLevel }}
   API_PATH_PREFIX: {{ include "ska-oso-services.api-path" . | quote }}

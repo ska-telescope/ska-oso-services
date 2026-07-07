@@ -3,5 +3,3 @@ global:
 
 ska-db-oda-umbrella:
   enabled: true
-  ska-db-oda:
-    enabled: false # ska-oso-services doesn't need the ODA rest server

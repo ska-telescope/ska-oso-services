@@ -109,8 +109,6 @@ XRAY_EXECUTION_CONFIG_FILE ?= tests/xray-config.json
 # include your own private variables for custom deployment configuration
 -include PrivateRules.mak
 
-REST_POD_NAME=$(shell kubectl get pods -o name -n $(KUBE_NAMESPACE) -l app=ska-oso-services,component=rest | cut -c 5-)
-
 # install helm plugin from https://github.com/helm-unittest/helm-unittest.git
 k8s-chart-test:
 	mkdir -p charts/build; \
