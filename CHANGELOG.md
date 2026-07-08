@@ -8,6 +8,7 @@ Unreleased
 **********
 * Added LST validator to check that start and end time are not the same
 * Added support for galactic coordinates to the visibility plot endpoint
+* Updated to ODA v19.0.0 (PDM v28.0.0)
 
 16.1.0 - Unreleased
 ********************
