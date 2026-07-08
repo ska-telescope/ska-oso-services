@@ -281,7 +281,7 @@
         "continuum_imaging": {
           "image_size": 1024.0,
           "image_cellsize": 0.5,
-          "weight": "briggs -2",
+          "weight": "briggs -2.0",
           "polarisations": "I",
           "channels_out": 12
         }
