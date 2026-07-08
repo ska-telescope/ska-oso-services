@@ -1,19 +1,10 @@
-# Default values for OSO Services.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-minikube: true
-
 nameOverride: ~ # This should be set if the chart is being deployed with an alias (e.g. when multiple versions can be deployed)
 
-system: TM-mid
-telescope: SKA-mid
-subsystem: ska-oso-services
 # A permanent deployment should never set this to true, as it will
 # cause the authentication to use test public keys.
 pipeline_test_deployment: false
 
 global:
-  minikube: true
   cluster_domain: techops.internal.skao.int
   oso:
     # The TMData source URL for SDP Script data used by oso-services and oso-scripting to
@@ -42,9 +33,7 @@ global:
         vault:
           enabled: true
           mount: dev
-          secretPath: "team-buttons/ska-db-oda/credentials"
-          secretKeys:
-            - "PGPASSWORD"
+          path: "team-buttons/ska-db-oda/credentials"
 
 ingress:
   enabled: true
@@ -54,15 +43,12 @@ ingress:
   pathOverride: ~
 
 rest:
-  component: rest
-  function: oso-services
   # Accepted JWT audience values. Includes Indigo IAM audiences and the
   # legacy MS Entra app URI. Switch "test:" prefixes to "live:" for prod.
   authAudiences:
     - "test:pht"
     - "test:odt"
     - "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b"
-  domain: operations
   logLevel: INFO
   enabled: true
   engineeringApiEnabled: true
@@ -71,29 +57,42 @@ rest:
     image: ska-oso-services
     tag: ~ # Defaults to the chart appVersion if not set
     pullPolicy: IfNotPresent
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
 
 # Used by the secret.yaml file to make any non-ODA secret values available to the application
 vault:
   enabled: true # If false then a plain k8s Secret will be created with dummy values
   mount: dev
-  secretPath: "team-buttons/ska-oso-services"
-  keyMappings:
-    # The key here is what will be made available as an env variable to the application, and
-    # the value is the name of the key in Vault
-    # It is configurable as some environments may manage their Vault keys differently
-    AWS_SERVER_PUBLIC_KEY: AWS_SERVER_PUBLIC_KEY
-    AWS_SERVER_SECRET_KEY: AWS_SERVER_SECRET_KEY
-    AWS_PHT_BUCKET_NAME: AWS_PHT_BUCKET_NAME
-    PHT_EMAIL_USER: PHT_EMAIL_USER
-    PHT_EMAIL_PASSWORD: PHT_EMAIL_PASSWORD
-    OSO_CLIENT_SECRET: OSO_CLIENT_SECRET
+  path: "team-buttons/ska-oso-services"
+  s3Secrets:
+    - secretKey: AWS_ACCESS_KEY_ID
+      targetEnv: AWS_ACCESS_KEY_ID
+    - secretKey: AWS_SECRET_ACCESS_KEY
+      targetEnv: AWS_SECRET_ACCESS_KEY
+    - secretKey: AWS_PHT_BUCKET_NAME
+      targetEnv: AWS_PHT_BUCKET_NAME
+    - secretKey: AWS_REGION
+      targetEnv: AWS_REGION
+  secrets:
+    - secretKey: PHT_EMAIL_USER
+      targetEnv: PHT_EMAIL_USER
+    - secretKey: PHT_EMAIL_PASSWORD
+      targetEnv: PHT_EMAIL_PASSWORD
+    - secretKey: OSO_CLIENT_SECRET
+      targetEnv: OSO_CLIENT_SECRET
+
+s3ServiceAccount:
+  # Used in production where we authenticate with EKS Pod Identity rather than credentials from Vault
+  enabled: false
+  name: ska-oso-pht-ui
+  bucketName: services-eks-svt-cache
+  region: eu-west-2
+
 
 existingApplicationSecret:
   name: ~ # Use this to reference a Secret managed separate from this chart
 
 
-nodeSelector: {}
-
-affinity: {}
-
-tolerations: []

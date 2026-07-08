@@ -4,14 +4,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  name: {{ template "ska-oso-services.resource-name" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-oso-services.labels" . | indent 4 }}
-    component: {{ .Values.rest.component }}
-    function: {{ .Values.rest.function }}
-    domain: {{ .Values.rest.domain }}
-    intent: production
   annotations:
 spec:
   rules:
@@ -22,7 +18,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+                name: {{ template "ska-oso-services.resource-name" . }}
                 port:
                   number: 5000
 {{ end }}
@@ -30,47 +26,38 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  name: {{ template "ska-oso-services.resource-name" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-oso-services.labels" . | indent 4 }}
-    component: {{ .Values.rest.component }}
-    function: {{ .Values.rest.function }}
-    domain: {{ .Values.rest.domain }}
-    intent: production
 spec:
   ports:
   - port: 5000
   selector:
     app: {{ template "ska-oso-services.name" . }}
-    component: {{ .Values.rest.component }}
+    release: {{ .Release.Name }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  name: {{ template "ska-oso-services.resource-name" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-oso-services.labels" . | indent 4 }}
-    component: {{ .Values.rest.component }}
-    function: {{ .Values.rest.function }}
-    domain: {{ .Values.rest.domain }}
-    intent: production
 spec:
   selector:
     matchLabels:
       app: {{ template "ska-oso-services.name" . }}
-      component: {{ .Values.rest.component }}
+      release: {{ .Release.Name }}
   replicas: 1
   template:
     metadata:
       labels:
         {{- include "ska-oso-services.labels" . | indent 8 }}
-        component: {{ .Values.rest.component }}
-        function: {{ .Values.rest.function }}
-        domain: {{ .Values.rest.domain }}
-        intent: production
     spec:
+      {{- if .Values.s3ServiceAccount.enabled }}
+      serviceAccountName: {{ .Values.s3ServiceAccount.name }}
+      {{- end }}
       containers:
       - name: oso-services
         image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{$.Values.rest.image.tag | default $.Chart.AppVersion}}"
@@ -78,9 +65,9 @@ spec:
         # Command set in the Docker image
         envFrom:
           - configMapRef:
-              name: {{ template "ska-oso-services.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
+              name: {{ template "ska-oso-services.resource-name" . }}-environment
           - configMapRef:
-              name: {{ template "ska-oso-services.name" . }}-postgres-environment-{{ .Release.Name }}
+              name: {{ template "ska-oso-services.resource-name" . }}-environment-oda
           - secretRef: # This is after the configMapRef so if a user wants to get the PG_ environment variables all from a Secret they overwrite those from the ConfigMap
               {{ if $.Values.global.oda.postgres.secret.existingSecret.name }}
               name: {{ $.Values.global.oda.postgres.secret.existingSecret.name }}
@@ -93,19 +80,26 @@ spec:
               {{ else }}
               name: {{ template "ska-oso-services.application-secret-name" $ }}
               {{- end }}
+        {{- if .Values.s3ServiceAccount.enabled }}
+        env:
+          - name: AWS_PHT_BUCKET_NAME
+            value: {{ .Values.s3ServiceAccount.bucketName }}
+          - name: AWS_REGION
+            value: {{ .Values.s3ServiceAccount.region }}
+        {{- end }}
         ports:
           - containerPort: 5000
         resources:
 {{ toYaml .Values.rest.resources | indent 10 }}
-  {{- with .Values.nodeSelector }}
+  {{- with .Values.rest.nodeSelector }}
 nodeSelector:
   {{ toYaml . | indent 8 }}
   {{- end }}
-  {{- with .Values.affinity }}
+  {{- with .Values.rest.affinity }}
 affinity:
   {{ toYaml . | indent 8 }}
   {{- end }}
-  {{- with .Values.tolerations }}
+  {{- with .Values.rest.tolerations }}
 tolerations:
   {{ toYaml . | indent 8 }}
   {{- end }}

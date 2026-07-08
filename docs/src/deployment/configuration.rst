@@ -47,12 +47,12 @@ The ODA connection is configured these environment variables and corresponding H
      - Optional - default: ``oda``
      - ``global.oda.postgres.database``
      - Optional - no default in chart (overwritten in the Makefile)
-   * - AWS_SERVER_PUBLIC_KEY
+   * - AWS_ACCESS_KEY_ID
      - The aws server public key used to connect to the AWS account. Used by PHT to work with S3.
      - Required
      - Pulled from Vault - see :doc:`secret_management`
      -
-   * - AWS_SERVER_SECRET_KEY
+   * - AWS_SECRET_ACCESS_KEY
      - The aws server secret key used to connect to the AWS account. Used by PHT to work with S3.
      - Required
      - Pulled from Vault - see :doc:`secret_management`

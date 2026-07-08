@@ -11,21 +11,11 @@ Expand the name of the chart.
 {{- end -}}
 
 {{/*
-Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-If release name contains chart name it will be used as a full name.
+Standardise the name pattern for resources created by the chart
 */}}
-{{- define "ska-oso-services.fullname" -}}
-{{- if .Values.fullnameOverride -}}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $name .Release.Name -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{- end -}}
+{{- define "ska-oso-services.resource-name" -}}
+{{- $name := include "ska-oso-services.name" .}}
+{{- printf "%s-%s" $name .Release.Name -}}
 {{- end -}}
 
 {{/*
@@ -35,10 +25,7 @@ Common labels
 app: {{ template "ska-oso-services.name" . }}
 chart: {{ template "ska-oso-services.chart" . }}
 release: {{ .Release.Name }}
-heritage: {{ .Release.Service }}
-system: {{ .Values.system }}
-subsystem: {{ .Values.subsystem }}
-telescope: {{ .Values.telescope }}
+subsystem: oso
 {{- end }}
 
 {{/*
@@ -49,13 +36,13 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{- define "ska-oso-services.oda-secret-name" -}}
-{{- $name := include "ska-oso-services.name" .}}
-{{- printf "%s-%s-%s" $name "oda-secret" .Release.Name  -}}
+{{- $resourceName := include "ska-oso-services.resource-name" .}}
+{{- printf "%s-%s" $resourceName "secret-oda"  -}}
 {{- end -}}
 
 {{- define "ska-oso-services.application-secret-name" -}}
-{{- $name := include "ska-oso-services.name" .}}
-{{- printf "%s-%s-%s" $name "secret" .Release.Name  -}}
+{{- $resourceName := include "ska-oso-services.resource-name" .}}
+{{- printf "%s-%s" $resourceName "secret"  -}}
 {{- end -}}
 
 {{/*

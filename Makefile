@@ -7,9 +7,10 @@
 CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-services
+CLUSTER_DOMAIN ?= techops.internal.skao.int
 KUBE_NAMESPACE ?= ska-oso-services
 MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
-OSO_SERVICES_URL ?= http://ska-oso-services-rest-test:5000/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
+OSO_SERVICES_URL ?= http://ska-oso-services-test:5000/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 
 k8s_test_src_dir = pyproject.toml poetry.lock
 SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.14.1
@@ -30,7 +31,8 @@ IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 K8S_CHART = ska-oso-services-umbrella
 
 K8S_CHART_PARAMS += \
-  --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
+  --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT) \
+  --set global.cluster_domain=$(CLUSTER_DOMAIN)
 
 # CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline, so these variables are set for a local deployment
 # Set cluster_domain to minikube default (cluster.local) in local development
@@ -108,8 +110,6 @@ XRAY_EXECUTION_CONFIG_FILE ?= tests/xray-config.json
 
 # include your own private variables for custom deployment configuration
 -include PrivateRules.mak
-
-REST_POD_NAME=$(shell kubectl get pods -o name -n $(KUBE_NAMESPACE) -l app=ska-oso-services,component=rest | cut -c 5-)
 
 # install helm plugin from https://github.com/helm-unittest/helm-unittest.git
 k8s-chart-test:
