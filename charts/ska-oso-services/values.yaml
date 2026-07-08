@@ -33,7 +33,7 @@ global:
         vault:
           enabled: true
           mount: dev
-          path: "team-buttons/ska-db-oda/credentials"
+          secretPath: "team-buttons/ska-db-oda/credentials"
 
 ingress:
   enabled: true
