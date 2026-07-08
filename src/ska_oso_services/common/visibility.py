@@ -84,8 +84,7 @@ class AteamLineStyle(Enum):
 
 
 def _alts(
-    ra: str,
-    dec: str,
+    sky_coord: SkyCoord,
     site: EarthLocation,
     start: datetime,
     step_s: int,
@@ -95,8 +94,7 @@ def _alts(
     n = seconds_per_day // step_s + 1
 
     times = Time(start) + (np.linspace(0, seconds_per_day, n) * u.s)
-    coords = SkyCoord(ra=ra, dec=dec, unit=(u.hourangle, u.deg), frame="icrs")
-    alt = coords.transform_to(AltAz(obstime=times, location=site)).alt.to_value(u.deg)
+    alt = sky_coord.transform_to(AltAz(obstime=times, location=site)).alt.to_value(u.deg)
 
     return np.array(times.to_datetime(timezone=timezone.utc)), alt
 
@@ -117,7 +115,12 @@ def _precompute_ateam_alts(site: EarthLocation) -> dict[str, np.ndarray]:
     lst_ref_h = t_ref.sidereal_time("apparent", longitude=site.lon).hour
     start = (t_ref - (lst_ref_h / 24.0) * u.sday).to_datetime(timezone=timezone.utc)
     return {
-        name: _alts(ra, dec, site, start, STEP_SECONDS_DEFAULT_VISIBILITY)[1]
+        name: _alts(
+            SkyCoord(ra=ra, dec=dec, unit=(u.hourangle, u.deg), frame="icrs"),
+            site,
+            start,
+            STEP_SECONDS_DEFAULT_VISIBILITY,
+        )[1]
         for name, (ra, dec) in ATEAM_SOURCES.items()
     }
 
@@ -132,12 +135,15 @@ def _get_ateam_alts(site_key: str) -> dict[str, np.ndarray]:
 
 
 def render_svg(
-    ra: str,
-    dec: str,
-    site_key: str,
+    ra: str | None = None,
+    dec: str | None = None,
+    l: float | None = None,
+    b: float | None = None,
+    site_key: str = "",
     step_s: int = STEP_SECONDS_DEFAULT_VISIBILITY,
     show_ateam: bool = True,
 ) -> bytes:
+
     site_cfg = SITES[site_key]
     site = site_cfg.location
     min_elev = site_cfg.min_elev_deg
@@ -152,8 +158,24 @@ def render_svg(
         timezone=timezone.utc
     )
 
-    target_coord = SkyCoord(ra=ra, dec=dec, unit=(u.hourangle, u.deg), frame="icrs")
-    times, alt = _alts(ra, dec, site, plot_start_time_utc, step_s)
+    if ra is not None and dec is not None:
+        target_coord = SkyCoord(
+            ra=ra,
+            dec=dec,
+            unit=(u.hourangle, u.deg),
+            frame="icrs",
+        )
+    elif l is not None and b is not None:
+        target_coord = SkyCoord(
+            l=l,
+            b=b,
+            unit=(u.deg, u.deg),
+            frame="galactic",
+        )
+    else:
+        raise ValueError("Must provide either (ra, dec) or (l, b)")
+
+    times, alt = _alts(target_coord, site, plot_start_time_utc, step_s)
 
     # One solar day advances LST by solar_day/sidereal_day × 24h ≈ 24.066h.
     # Using linspace avoids the 24→0 wrap that astropy's .hour attribute produces.
@@ -218,7 +240,7 @@ def render_svg(
             src_alt = (
                 _get_ateam_alts(site_key)[name]
                 if use_cache
-                else _alts(src_ra, src_dec, site, plot_start_time_utc, step_s)[1]
+                else _alts(ateam_coord, site, plot_start_time_utc, step_s)[1]
             )
             ax.plot(
                 lst_hours,

@@ -17,8 +17,11 @@ router = APIRouter(prefix="/visibility")
     responses={200: {"content": {"image/svg+xml": {}}}},
 )
 def visibility_svg(
-    ra: str = Query(..., description="RA, e.g. 05:34:31.7760"),
-    dec: str = Query(..., description="Dec, e.g. 22:01:02.640"),
+    ra: str = Query(None, description="RA, e.g. 05:34:31.7760"),
+    dec: str = Query(None, description="Dec, e.g. 22:01:02.640"),
+    l: str = Query(None, description="Galactic longitude e.g. 184.5547"),
+    b: str = Query(None, description="Galactic latitude e.g. -5.7833"),
+    coord_system: str = Query("ICRS", description="ICRS | Galactic"),
     array: str = Query(..., description="LOW | MID"),
     show_ateam: bool = Query(True, description="Overlay A-team source elevations and separations"),
 ) -> Response:
@@ -29,15 +32,36 @@ def visibility_svg(
             detail=f"Unknown array '{array}'. Must be one of: {', '.join(SITES)}",
         )
 
+    coord_system = coord_system.upper()
+
     try:
-        svg = render_svg(
-            ra=ra,
-            dec=dec,
-            site_key=key,
-            step_s=STEP_SECONDS_DEFAULT_VISIBILITY,
-            show_ateam=show_ateam,
-        )
-        return Response(content=svg, media_type="image/svg+xml")
+        match coord_system:
+            case "ICRS":
+                svg = render_svg(
+                    ra=ra,
+                    dec=dec,
+                    site_key=key,
+                    step_s=STEP_SECONDS_DEFAULT_VISIBILITY,
+                    show_ateam=show_ateam,
+                )
+                return Response(content=svg, media_type="image/svg+xml")
+
+            case "GALACTIC":
+                svg = render_svg(
+                    l=float(l),
+                    b=float(b),
+                    site_key=key,
+                    step_s=STEP_SECONDS_DEFAULT_VISIBILITY,
+                    show_ateam=show_ateam,
+                )
+                return Response(content=svg, media_type="image/svg+xml")
+
+            case _:
+                raise HTTPException(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    detail=f"Unknown coordinate system '{coord_system}'."
+                    " Must be either ICRS or Galactic",
+                )
 
     except ValueError as error:
         raise HTTPException(
