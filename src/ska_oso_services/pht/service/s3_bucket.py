@@ -1,5 +1,4 @@
 from enum import Enum
-from functools import lru_cache
 from typing import Any
 
 import boto3
@@ -27,7 +26,6 @@ class S3Config(BaseSettings):
     expiry: int = Field(default=PRESIGNED_URL_EXPIRY_TIME, alias="PRESIGNED_URL_EXPIRY_TIME")
 
 
-@lru_cache
 def get_s3_config() -> S3Config:
     return S3Config()
 
