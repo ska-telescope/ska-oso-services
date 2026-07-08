@@ -1,6 +1,6 @@
 [project]
 name = "ska-oso-services"
-version = "16.1.0rc1"
+version = "16.1.0rc2"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
 authors = [
     { name = "Team Buttons" },
@@ -111,6 +111,7 @@ httpx = ">=0.20"
 markers = [
     "live: requires live network access to the staging Indigo IAM (deselect with '-m not live')",
 ]
+
 
 
 
