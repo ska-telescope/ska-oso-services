@@ -59,6 +59,7 @@ dev = [
     "ska-ser-xray>=0.7.0",
     "numpy<2.4.0",
     "httpx>=0.20",
+    "testcontainers>=4.14.2",
 ]
 docs = [
     "sphinxcontrib-openapi>=0.8.4",

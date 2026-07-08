@@ -93,6 +93,24 @@ test-chart-templates:
     reports:
       junit: build/reports/chart_template_tests.xml
 
+# Override the python-uv-test job from the included python.gitlab-ci.yml template.
+# Installs rootless Podman (no privileged mode required) and uses it as the
+# Docker-compatible container runtime for testcontainers.
+python-uv-test:
+  needs: []
+  variables:
+    DOCKER_HOST: unix:///run/user/0/podman/podman.sock
+    TESTCONTAINERS_RYUK_DISABLED: "true"
+    # Liquibase container uses host networking to reach the Postgres testcontainer
+    # via localhost - rootless Podman has no Docker bridge (172.17.0.1)
+    DOCKER_BRIDGE_GATEWAY: localhost
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq podman
+    - mkdir -p /run/user/0/podman
+    - podman system service --time=0 unix:///run/user/0/podman/podman.sock &
+    - timeout 10 sh -c 'until test -S /run/user/0/podman/podman.sock; do sleep 1; done'
+    - uv sync --all-groups
+
 indigo-live-auth:
   extends: python-uv-test
   allow_failure: true

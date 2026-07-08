@@ -75,9 +75,9 @@ endif
 
 K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) SKA_AUTH_AUDIENCE=test:pht uv run pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
 
-# Set python-test make target to run unit tests and not the component tests.
+# Set python-test make target to run unit and integration tests (but not component tests).
 # Use ?= so CI jobs can override (e.g. PYTHON_TEST_FILE=tests/live/).
-PYTHON_TEST_FILE ?= tests/unit/
+PYTHON_TEST_FILE ?= tests/unit/ tests/integration/
 
 # Audience accepted by the app and embedded in test tokens.
 # Use ?= so CI jobs can set a different value (e.g. for live Indigo tests).
