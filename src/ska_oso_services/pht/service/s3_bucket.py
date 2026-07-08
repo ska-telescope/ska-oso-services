@@ -1,12 +1,13 @@
-import os
-from dataclasses import dataclass
 from enum import Enum
+from functools import lru_cache
 from typing import Any
 
 import boto3
 from botocore.client import BaseClient, Config
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-PRESIGNED_URL_EXPIRY_TIME = int(os.getenv("PRESIGNED_URL_EXPIRY_TIME", "60"))
+PRESIGNED_URL_EXPIRY_TIME = 60
 
 
 class S3Method(str, Enum):
@@ -15,19 +16,24 @@ class S3Method(str, Enum):
     DELETE = "delete_object"
 
 
-@dataclass(frozen=True)
-class S3Config:
-    access_key: str | None = os.getenv("AWS_SERVER_PUBLIC_KEY") or os.getenv("AWS_ACCESS_KEY_ID")
-    secret_key: str | None = os.getenv("AWS_SERVER_SECRET_KEY") or os.getenv(
-        "AWS_SECRET_ACCESS_KEY"
-    )
-    session_token: str | None = os.getenv("AWS_SESSION_TOKEN")
-    bucket: str = os.getenv("AWS_PHT_BUCKET_NAME", "AWS_PHT_BUCKET_NAME")
-    region: str = os.getenv("AWS_REGION", "eu-west-2")
-    expiry: int = PRESIGNED_URL_EXPIRY_TIME
+class S3Config(BaseSettings):
+    model_config = SettingsConfigDict(extra="ignore", populate_by_name=True)
+
+    access_key: str | None = Field(default=None, alias="AWS_ACCESS_KEY_ID")
+    secret_key: str | None = Field(default=None, alias="AWS_SECRET_ACCESS_KEY")
+    session_token: str | None = Field(default=None, alias="AWS_SESSION_TOKEN")
+    bucket: str = Field(alias="AWS_PHT_BUCKET_NAME")
+    region: str = Field(alias="AWS_REGION")
+    expiry: int = Field(default=PRESIGNED_URL_EXPIRY_TIME, alias="PRESIGNED_URL_EXPIRY_TIME")
 
 
-def get_aws_client(config: S3Config = S3Config()) -> BaseClient:
+@lru_cache
+def get_s3_config() -> S3Config:
+    return S3Config()
+
+
+def get_aws_client(config: S3Config | None = None) -> BaseClient:
+    config = config or get_s3_config()
     client_kwargs: dict[str, Any] = {
         "region_name": config.region,
         "config": Config(signature_version="s3v4"),
@@ -48,8 +54,9 @@ def generate_presigned_url(
     key: str,
     method: S3Method,
     client: BaseClient,
-    config: S3Config = S3Config(),
+    config: S3Config | None = None,
 ) -> str:
+    config = config or get_s3_config()
     return client.generate_presigned_url(
         ClientMethod=method.value,
         Params={"Bucket": config.bucket, "Key": key},
@@ -63,7 +70,8 @@ def create_presigned_url_upload_pdf(
     """
     Generate a presigned S3 upload URL for the given filename.
     """
-    return generate_presigned_url(key, S3Method.PUT, client, S3Config(expiry=expiry))
+    config = get_s3_config().model_copy(update={"expiry": expiry})
+    return generate_presigned_url(key, S3Method.PUT, client, config)
 
 
 def create_presigned_url_download_pdf(
@@ -72,7 +80,8 @@ def create_presigned_url_download_pdf(
     """
     Generate a presigned S3 download URL for the given filename.
     """
-    return generate_presigned_url(key, S3Method.GET, client, S3Config(expiry=expiry))
+    config = get_s3_config().model_copy(update={"expiry": expiry})
+    return generate_presigned_url(key, S3Method.GET, client, config)
 
 
 def create_presigned_url_delete_pdf(
@@ -81,4 +90,5 @@ def create_presigned_url_delete_pdf(
     """
     Generate a presigned S3 delete URL for the given filename.
     """
-    return generate_presigned_url(key, S3Method.DELETE, client, S3Config(expiry=expiry))
+    config = get_s3_config().model_copy(update={"expiry": expiry})
+    return generate_presigned_url(key, S3Method.DELETE, client, config)

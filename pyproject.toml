@@ -27,6 +27,7 @@ dependencies = [
     # If updating this, also remember to update the Helm dependency in the umbrella chart
     "ska-db-oda (>=18.1.0,<19.0.0)",
     "pydantic>=2.9",
+    "pydantic-settings>=2.5",
     "fastapi[standard]>=0.115.8",
     "astroquery==0.4.9",
     "ska-ost-osd>=6.0.4",

@@ -1,7 +1,8 @@
 from unittest import mock
 
+import pytest
+
 from ska_oso_services.pht.service.s3_bucket import (
-    PRESIGNED_URL_EXPIRY_TIME,
     S3Config,
     S3Method,
     create_presigned_url_delete_pdf,
@@ -9,17 +10,34 @@ from ska_oso_services.pht.service.s3_bucket import (
     create_presigned_url_upload_pdf,
     generate_presigned_url,
     get_aws_client,
+    get_s3_config,
 )
 
 
 class TestS3BucketUtils:
+    @pytest.fixture(autouse=True)
+    def _mock_s3_env(self):
+        with mock.patch.dict(
+            "os.environ",
+            {"AWS_PHT_BUCKET_NAME": "test-bucket", "AWS_REGION": "eu-west-2"},
+            clear=False,
+        ):
+            get_s3_config.cache_clear()
+            yield
+        get_s3_config.cache_clear()
+
     def test_get_aws_client_returns_boto3_client(self):
         client = get_aws_client()
         assert client.meta.service_model.service_name == "s3"
 
     @mock.patch("boto3.client")
     def test_get_aws_client_invokes_boto3(self, mock_boto_client):
-        config = S3Config(access_key=None, secret_key=None, region="eu-west-2")
+        config = S3Config(
+            access_key=None,
+            secret_key=None,
+            bucket="test-bucket",
+            region="eu-west-2",
+        )
 
         get_aws_client(config)
 
@@ -35,6 +53,7 @@ class TestS3BucketUtils:
             access_key="test-access-key",
             secret_key="test-secret-key",
             session_token="test-session-token",
+            bucket="test-bucket",
             region="eu-west-2",
         )
 
@@ -51,7 +70,7 @@ class TestS3BucketUtils:
 
     def test_generate_presigned_url_calls_client(self):
         fake_client = mock.Mock()
-        config = S3Config(bucket="test-bucket", expiry=120)
+        config = S3Config(bucket="test-bucket", region="eu-west-2", expiry=120)
         generate_presigned_url("file.pdf", S3Method.PUT, fake_client, config)
         fake_client.generate_presigned_url.assert_called_once_with(
             ClientMethod="put_object",

@@ -33,7 +33,7 @@ global:
         vault:
           enabled: true
           mount: dev
-          secretPath: "team-buttons/ska-db-oda/credentials"
+          path: "team-buttons/ska-db-oda/credentials"
 
 ingress:
   enabled: true
@@ -66,12 +66,12 @@ rest:
 vault:
   enabled: true # If false then a plain k8s Secret will be created with dummy values
   mount: dev
-  secretPath: "team-buttons/ska-oso-services"
+  path: "team-buttons/ska-oso-services"
   s3Secrets:
-    - secretKey: AWS_SERVER_PUBLIC_KEY
-      targetEnv: AWS_SERVER_PUBLIC_KEY
-    - secretKey: AWS_SERVER_SECRET_KEY
-      targetEnv: AWS_SERVER_SECRET_KEY
+    - secretKey: AWS_ACCESS_KEY_ID
+      targetEnv: AWS_ACCESS_KEY_ID
+    - secretKey: AWS_SECRET_ACCESS_KEY
+      targetEnv: AWS_SECRET_ACCESS_KEY
     - secretKey: AWS_PHT_BUCKET_NAME
       targetEnv: AWS_PHT_BUCKET_NAME
     - secretKey: AWS_REGION
