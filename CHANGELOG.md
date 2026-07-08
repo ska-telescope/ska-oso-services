@@ -6,8 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-* Migrate from poetry to uv 
-* Added support for EKS Pod Identity auth for the S3 upload, and split Helm value `vault.keyMappings` into `vault.s3Secrets` and `vault.secrets`
+
+16.1.0 - Unreleased
+********************
+* Added support for EKS Pod Identity auth for the S3 upload
+* Split Helm value `vault.keyMappings` into `vault.s3Secrets` and `vault.secrets`
 
 16.0.0
 **********
