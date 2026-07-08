@@ -309,7 +309,7 @@ def _sdp_configuration_from_data_product_sdp(
         )
         return None
 
-    parameters_to_ignore = ["kind", "variant", "gaussian_taper"]
+    parameters_to_ignore = ["kind", "variant", "gaussian_taper", "gaussian_taper_1400_MHz"]
 
     astropy_unit_mapper = {  # Units expected by the continuum-imaging SDP script
         "image_size": "pix",
