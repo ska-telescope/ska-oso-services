@@ -87,6 +87,9 @@ SKA_AUTH_AUDIENCE ?= test:pht,test:odt
 # Use ?= so CI jobs can override the whole string if needed.
 PYTHON_VARS_BEFORE_PYTEST ?= PYTHONPATH=$(CURDIR)/$(PYTHON_SRC):/app/$(PYTHON_SRC):$(PYTHONPATH) SKA_AUTH_AUDIENCE=$(SKA_AUTH_AUDIENCE)
 
+pytest-integration:  ## Run FastAPI TestClient integration tests backed by Prism in Testcontainers
+	poetry run pytest tests/integration
+
 # Variables used by the xray make targets
 XRAY_TEST_RESULT_FILE = build/reports/report.xml
 XRAY_EXTRA_OPTS = -t pytest

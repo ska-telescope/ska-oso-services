@@ -12,3 +12,4 @@ data:
   SKA_AUTH_AUDIENCE: {{ .Values.rest.authAudiences | join "," | quote }}
   SDP_SCRIPT_TMDATA: {{ .Values.global.oso.sdp_tmdata }}
   ENGINEERING_API_ENABLED: {{ .Values.rest.engineeringApiEnabled | quote }}
+  USER_PORTAL_BASE_URL: {{ .Values.rest.userPortalBaseUrl | quote }}
