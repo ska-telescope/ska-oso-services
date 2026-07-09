@@ -145,9 +145,12 @@ dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deploymen
 
 dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deployment
 
+# Use uv run so sphinx and docs dependencies are resolved from the project venv
+DOCS_PYTHON_RUNNER = uv run python3
+
 # The docs build fails unless the ska-oso-services package is installed locally as importlib.metadata.version requires it.
 docs-pre-build:
-	uv sync --no-dev
+	uv sync --group docs
 
 k8s-pre-test:
 	@uv export --format requirements-txt --no-hashes -o tests/requirements.txt
