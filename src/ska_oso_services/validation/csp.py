@@ -294,7 +294,6 @@ def validate_low_spw_window(
     spw_index = spw_context.relevant_context["spw_index"]
 
     if start_channel < low_min_coarse_channel() or end_channel > low_max_coarse_channel():
-
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,
@@ -325,7 +324,6 @@ def validate_mid_spw_window(
     if (centre_frequency + 0.5 * spw_bandwidth) > band_data.max_frequency_hz * u.Hz or (
         centre_frequency - 0.5 * spw_bandwidth
     ) < band_data.min_frequency_hz * u.Hz:
-
         return [
             ValidationIssue(
                 level=ValidationIssueType.ERROR,

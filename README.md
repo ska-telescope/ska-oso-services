@@ -22,12 +22,14 @@ git submodule update --init --recursive
 
 ### Build and test
 
-Install dependencies with Poetry and activate the virtual environment
+Install dependencies with uv and activate the virtual environment
 
 ```
-poetry install
-eval $(poetry env activate)
+uv sync
+source .venv/bin/activate
 ```
+
+Or prefix commands with `uv run` without activating:  `uv run pytest`
 
 To build a new Docker image for the OSO services, run
 
@@ -66,7 +68,7 @@ make k8s-install-chart PIPELINE_TEST_DEPLOYMENT=true
 
 The Swagger UI should be available external to the cluster at `http://<KUBE_HOST>/<KUBE_NAMESPACE>/oso/api/v1/ui/` and the API accessible via the same URL.
 
-If using minikube, `KUBE_HOST` can be found by running `minikube ip`. 
+If using minikube, `KUBE_HOST` can be found by running `minikube ip`.
 `KUBE_NAMESPACE` is the namespace the chart was deployed to, likely `ska-oso-services`
 
 To run the component tests in a k8s pod:
@@ -106,8 +108,8 @@ As the data models used by SKA evolve, the component in the OpenAPI document sho
 
 [![Documentation Status](https://readthedocs.org/projects/ska-telescope-ska-oso-services/badge/?version=latest)](https://developer.skao.int/projects/ska-oso-services/en/latest/?badge=latest)
 
-To build the html version of the documentation, start 
-from the root directory and first install the dependency using 
-``poetry install --only docs`` and then type ``make docs-build html``. Read the documentation by pointing your browser
+To build the html version of the documentation, start
+from the root directory and first install the docs dependencies using
+``uv sync --group docs`` and then type ``make docs-build html``. Read the documentation by pointing your browser
 at ``docs/build/html/index.html``.
 

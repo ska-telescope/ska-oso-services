@@ -289,9 +289,9 @@ def test_get_proposals_batch(authrequests):
 
     proposals = batch_response.json()
     assert isinstance(proposals, list), "Expected a list of proposals"
-    assert len(proposals) == len(
-        created_ids
-    ), f"Expected {len(created_ids)} proposals, got {len(proposals)}"
+    assert len(proposals) == len(created_ids), (
+        f"Expected {len(created_ids)} proposals, got {len(proposals)}"
+    )
 
     returned_ids = {p["prsl_id"] for p in proposals}
     for prsl_id in created_ids:
@@ -393,6 +393,6 @@ def test_get_proposals_by_status(authrequests):
 
     # Other statuses should not be returned
     for prsl_id in created_ids_with_other_status:
-        assert (
-            prsl_id not in returned_ids
-        ), f"Unexpected proposal {prsl_id} in GET /status/{status_to_test}"
+        assert prsl_id not in returned_ids, (
+            f"Unexpected proposal {prsl_id} in GET /status/{status_to_test}"
+        )

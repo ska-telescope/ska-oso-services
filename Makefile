@@ -12,8 +12,8 @@ KUBE_NAMESPACE ?= ska-oso-services
 MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 OSO_SERVICES_URL ?= http://ska-oso-services-test:5000/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 
-k8s_test_src_dir = pyproject.toml poetry.lock
-SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.14.1
+k8s_test_src_dir = pyproject.toml uv.lock src tests README.md LICENSE
+SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.23.0
 K8S_TEST_IMAGE_TO_TEST=$(SKA_K8S_TOOLS_BUILD_DEPLOY)
 
 # This project brings in multiple deployments so instead of filtering
@@ -69,19 +69,11 @@ ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'staging')
 ifneq ($(ENV_CHECK),)
 endif
 
-# unset defaults so settings in pyproject.toml take effect
-PYTHON_SWITCHES_FOR_BLACK =
-PYTHON_SWITCHES_FOR_ISORT =
-PYTHON_SWITCHES_FOR_PYLINT =
-
-# Restore Black's preferred line length which otherwise would be overridden by
-# System Team makefiles' 79 character default
-PYTHON_LINE_LENGTH = 99
 
 # Set the k8s test command run inside the testing pod to only run the component
 # tests (no k8s pod deployment required for unit tests)
 
-K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) SKA_AUTH_AUDIENCE=test:pht pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
+K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) SKA_AUTH_AUDIENCE=test:pht uv run pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the component tests.
 # Use ?= so CI jobs can override (e.g. PYTHON_TEST_FILE=tests/live/).
@@ -102,7 +94,7 @@ XRAY_EXECUTION_CONFIG_FILE ?= tests/xray-config.json
 
 # include makefile to pick up the standard Make targets from the submodule
 -include .make/base.mk
--include .make/python.mk
+-include .make/python-uv.mk
 -include .make/oci.mk
 -include .make/k8s.mk
 -include .make/xray.mk
@@ -153,12 +145,15 @@ dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deploymen
 
 dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deployment
 
+# Use uv run so sphinx and docs dependencies are resolved from the project venv
+DOCS_PYTHON_RUNNER = uv run python3
+
 # The docs build fails unless the ska-oso-services package is installed locally as importlib.metadata.version requires it.
 docs-pre-build:
-	poetry install --only-root
+	uv sync --group docs
 
 k8s-pre-test:
-	@poetry export --format requirements.txt --output tests/requirements.txt --without-hashes --dev
+	@uv export --format requirements-txt --no-hashes -o tests/requirements.txt
 
 diagrams:  ## recreate PlantUML diagrams whose source has been modified
 

@@ -34,7 +34,6 @@ def generate_project(proposal: Proposal) -> Project:
     observing_blocks = []
     # Create an ObservingBlock for each group of ObservationSets
     for index, observation_set_group in enumerate(grouped_observation_sets):
-
         # Now create a ScienceProgramme for each ObservationSet in the group
         science_programmes = [
             science_programme_from_observation_set(observation_set, proposal.observation_info)

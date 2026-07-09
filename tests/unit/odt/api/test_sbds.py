@@ -241,7 +241,7 @@ class TestSBDefinitionAPI:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
         assert response.json() == {
             "detail": (
-                "There is a mismatch between the SBD " "ID for the endpoint and the JSON payload"
+                "There is a mismatch between the SBD ID for the endpoint and the JSON payload"
             )
         }
 

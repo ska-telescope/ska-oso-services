@@ -186,7 +186,6 @@ def _sbd_for_calibrator_targets(
     subarray_beams = []
 
     for subarray_beam_index in range(0, num_subarray_beams):
-
         targets_for_subarray_beam = targets[
             subarray_beam_index * num_scans : (subarray_beam_index + 1) * num_scans
         ]

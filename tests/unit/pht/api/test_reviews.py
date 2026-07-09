@@ -2,14 +2,10 @@
 Unit tests for ska_oso_pht_services.api
 """
 
-import json
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
-from unittest.mock import MagicMock, patch
 
-import pytest
-from fastapi import status
 from ska_db_oda.repository.domain import ODANotFound
 
 from tests.conftest import PHT_BASE_API_URL

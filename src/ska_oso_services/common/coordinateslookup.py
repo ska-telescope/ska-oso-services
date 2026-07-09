@@ -105,7 +105,6 @@ def get_radial_motion(object_name: str) -> RadialVelocity | None:
     result_table_simbad = Simbad.query_object(object_name)
 
     if len(result_table_simbad) != 0:
-
         # Determine if stored information is redshift or velocity
         rvz_type = _as_python_scalar(result_table_simbad["rvz_type"])
         match rvz_type:
@@ -127,7 +126,6 @@ def get_radial_motion(object_name: str) -> RadialVelocity | None:
                 radial_velocity = RadialVelocity()
 
     else:
-
         LOGGER.debug("Looking up %s in NED", object_name)
         result_table_ned = Ned.query_object(object_name)
         if len(result_table_ned) == 0:

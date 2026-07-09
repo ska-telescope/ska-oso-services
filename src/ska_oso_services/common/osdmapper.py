@@ -313,8 +313,7 @@ def get_subarray_specific_parameter_from_osd(
 
     if not subarray:
         raise ValueError(
-            f"Invalid validation array assembly {validation_array_assembly} "
-            f"for {telescope.value}"
+            f"Invalid validation array assembly {validation_array_assembly} for {telescope.value}"
         )
 
     if not hasattr(subarray, parameter):

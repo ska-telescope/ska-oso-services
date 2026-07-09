@@ -11,7 +11,7 @@ from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
 from ska_db_oda.repository.domain import ODANotFound
 
-from ska_oso_services.common.auth import Permissions, Scope
+from ska_oso_services.common.auth import Scope
 from ska_oso_services.pht.api import panel_decision as api
 from src.ska_oso_services.pht.models.domain import PrslRole
 from tests.conftest import PHT_BASE_API_URL

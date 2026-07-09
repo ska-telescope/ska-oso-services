@@ -154,7 +154,6 @@ def update_panel_decision(
             updated_decision = uow.pnlds.add(decision, auth.user_id)
 
             if updated_decision.status == PanelReviewStatus.DECIDED:
-
                 existing_prsl: Proposal = uow.prsls.get(existing_decision.prsl_id)
                 if not existing_prsl:
                     logger.info("Proposal not found for update: %s", existing_decision.prsl_id)

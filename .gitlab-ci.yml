@@ -94,7 +94,7 @@ test-chart-templates:
       junit: build/reports/chart_template_tests.xml
 
 indigo-live-auth:
-  extends: python-test
+  extends: python-uv-test
   allow_failure: true
   variables:
     PYTHON_TEST_FILE: tests/live/
@@ -107,14 +107,13 @@ xray-publish:
   - if: '$CI_COMMIT_REF_NAME != "main"'
     when: manual
   script:
-    - poetry config virtualenvs.create false
-    - poetry install --only dev
+    - uv sync --group dev
     - make xray-publish
 
 include:
   # Python
   - project: "ska-telescope/templates-repository"
-    file: "gitlab-ci/includes/python.gitlab-ci.yml"
+    file: "gitlab-ci/includes/python-uv.gitlab-ci.yml"
   # OCI
   - project: "ska-telescope/templates-repository"
     file: "gitlab-ci/includes/oci-image.gitlab-ci.yml"

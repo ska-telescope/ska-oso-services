@@ -1,14 +1,10 @@
-from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
-from typing import Any
 from unittest import mock
 
 import pytest
 
-from ska_oso_services.common.error_handling import BadRequestError, ODANotFound
 from ska_oso_services.pht.api import panels as panels_api  # for ProposalStatus enum
 from ska_oso_services.pht.api.panels import ensure_submitted_proposals_under_review
-from ska_oso_services.pht.service import panel_operations as panel_ops
 from ska_oso_services.pht.service.panel_operations import (
     assign_to_existing_panel,
     group_proposals_by_science_category,

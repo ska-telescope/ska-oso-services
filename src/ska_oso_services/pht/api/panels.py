@@ -109,7 +109,6 @@ def auto_assign_to_panel(
         name_raw = (param or "").strip()
 
         if SV_NAME.casefold() in name_raw.casefold():
-
             sv_panel_refs = get_latest_entity_by_id(
                 uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id"
             )
@@ -273,7 +272,6 @@ def auto_create_panel(
     """
 
     with oda.uow() as uow:
-
         created_names: list[str] = []
 
         # --- Science Verification panel ---
@@ -379,7 +377,6 @@ def update_panel(
     validate_duplicates(param.sci_reviewers, "reviewer_id")
 
     with oda.uow() as uow:
-
         # --------------------------------------------------------
         # 2. Determine previous vs. new proposals
         # --------------------------------------------------------
@@ -412,7 +409,6 @@ def update_panel(
         #    another panel
         # --------------------------------------------------------
         for prsl_id in new_proposal_ids:
-
             if prsl_id in previous_proposal_ids:
                 continue  # already in this panel, skip
 

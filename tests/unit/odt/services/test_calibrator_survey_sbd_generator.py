@@ -27,7 +27,6 @@ def _make_targets(count: int) -> list[Target]:
 
 
 class TestGenerateGSMSBDs:
-
     @mock.patch(f"{MODULE}._sbd_internal_id", side_effect=lambda cls: f"{cls.__name__}-001")
     def test_correct_number_of_sbds(self, _mock_id):
         """

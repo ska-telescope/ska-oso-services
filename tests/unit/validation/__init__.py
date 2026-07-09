@@ -7,7 +7,7 @@ from ska_oso_pdm import (
 )
 from ska_oso_pdm.builders.target_builder import MidTargetBuilder
 
-from ska_oso_services.common.static.constants import LOW_LOCATION
+from ska_oso_services.common.static.constants import LOW_LOCATION as LOW_LOCATION
 
 LMC_TARGET = MidTargetBuilder(  # use the Mid builder but really this target is valid for either
     name="LMC",

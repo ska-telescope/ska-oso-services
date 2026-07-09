@@ -170,7 +170,6 @@ class TestGenerateCalSweepSBD:
 
 
 class TestInterleaveMode:
-
     @mock.patch(f"{MODULE}.pick_targets")
     def test_interleave_adds_primary_between_secondaries(self, mock_pick_targets):
         """
