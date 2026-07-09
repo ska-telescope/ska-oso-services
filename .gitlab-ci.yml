@@ -94,7 +94,7 @@ test-chart-templates:
       junit: build/reports/chart_template_tests.xml
 
 indigo-live-auth:
-  extends: python-test
+  extends: python-uv-test
   allow_failure: true
   variables:
     PYTHON_TEST_FILE: tests/live/
