@@ -1,39 +1,31 @@
+# Based on https://developer.skatelescope.org/en/latest/tools/containers/base-images.html#example-dockerfile-uv
 ARG BUILD_IMAGE="artefact.skao.int/ska-build-python:0.5.0"
 ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-python:0.2.5"
 
 FROM $BUILD_IMAGE AS requirements
 
-WORKDIR /app
+WORKDIR /src
 
 COPY uv.lock pyproject.toml ./
 
-# Install dependencies only (no project code) so this layer is cached between
-# source-only changes.
 RUN uv sync --frozen --no-dev --no-install-project
 
-FROM $RUNTIME_BASE_IMAGE AS runtime
+FROM $RUNTIME_BASE_IMAGE
 
 ENV APP_USER="tango"
-ENV APP_DIR="/app"
 
-RUN adduser $APP_USER --disabled-password --home $APP_DIR
+RUN adduser $APP_USER --disabled-password
 
-WORKDIR $APP_DIR
+WORKDIR /src
 
-ENV VIRTUAL_ENV=/app/.venv \
-    PATH="/app/.venv/bin:$PATH"
+ENV VIRTUAL_ENV=/src/.venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-COPY --chown=$APP_USER:$APP_USER --from=requirements ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=requirements ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY ./src/ska_oso_services ./ska_oso_services
 
-# Copy and install the application source:
-COPY --chown=$APP_USER:$APP_USER pyproject.toml README.md uv.lock ./
-COPY --chown=$APP_USER:$APP_USER ./src ./src
-
-# Install only the project itself (deps already in .venv from requirements stage)
-RUN uv sync --frozen --no-dev --no-editable
-
-# Add source to PYTHONPATH so Python can locate the package for imports
-ENV PYTHONPATH="${PYTHONPATH}:/app/src"
+# Add source code to PYTHONPATH so Python can find the package
+ENV PYTHONPATH=${PYTHONPATH}:/src/
 
 USER ${APP_USER}
 
