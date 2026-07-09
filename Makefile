@@ -12,7 +12,7 @@ KUBE_NAMESPACE ?= ska-oso-services
 MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 OSO_SERVICES_URL ?= http://ska-oso-services-test:5000/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 
-k8s_test_src_dir = pyproject.toml uv.lock
+k8s_test_src_dir = pyproject.toml uv.lock src
 SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.23.0
 K8S_TEST_IMAGE_TO_TEST=$(SKA_K8S_TOOLS_BUILD_DEPLOY)
 
@@ -73,7 +73,7 @@ endif
 # Set the k8s test command run inside the testing pod to only run the component
 # tests (no k8s pod deployment required for unit tests)
 
-K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) SKA_AUTH_AUDIENCE=test:pht pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
+K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) SKA_AUTH_AUDIENCE=test:pht uv run pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the component tests.
 # Use ?= so CI jobs can override (e.g. PYTHON_TEST_FILE=tests/live/).
