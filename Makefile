@@ -12,7 +12,7 @@ KUBE_NAMESPACE ?= ska-oso-services
 MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 OSO_SERVICES_URL ?= http://ska-oso-services-test:5000/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 
-k8s_test_src_dir = pyproject.toml uv.lock src
+k8s_test_src_dir = pyproject.toml uv.lock src tests README.md LICENSE
 SKA_K8S_TOOLS_BUILD_DEPLOY ?= $(CAR_OCI_REGISTRY_HOST)/ska-cicd-k8s-tools-build-deploy:0.23.0
 K8S_TEST_IMAGE_TO_TEST=$(SKA_K8S_TOOLS_BUILD_DEPLOY)
 
