@@ -107,14 +107,13 @@ xray-publish:
   - if: '$CI_COMMIT_REF_NAME != "main"'
     when: manual
   script:
-    - poetry config virtualenvs.create false
-    - poetry install --only dev
+    - uv sync --group dev
     - make xray-publish
 
 include:
   # Python
   - project: "ska-telescope/templates-repository"
-    file: "gitlab-ci/includes/python.gitlab-ci.yml"
+    file: "gitlab-ci/includes/python-uv.gitlab-ci.yml"
   # OCI
   - project: "ska-telescope/templates-repository"
     file: "gitlab-ci/includes/oci-image.gitlab-ci.yml"

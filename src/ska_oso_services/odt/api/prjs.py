@@ -90,7 +90,6 @@ class CommissioningObservingMode(str, Enum):
 
 
 class GlobalSkyModelSurveyInputs(BaseModel):
-
     pointings_file_uri: str = Field(
         description=(
             "The location of a csv file with `beam_name`, `ra` and `dec` columns. "

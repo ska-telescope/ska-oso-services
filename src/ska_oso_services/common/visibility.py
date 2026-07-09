@@ -137,7 +137,7 @@ def _get_ateam_alts(site_key: str) -> dict[str, np.ndarray]:
 def render_svg(
     ra: str | None = None,
     dec: str | None = None,
-    l: float | None = None,
+    l: float | None = None,  # noqa: E741
     b: float | None = None,
     site_key: str = "",
     step_s: int = STEP_SECONDS_DEFAULT_VISIBILITY,

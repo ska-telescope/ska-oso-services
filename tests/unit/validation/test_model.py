@@ -80,9 +80,7 @@ def test_decorator_appends_source():
 
     assert result == [
         TEST_VALIDATION_ISSUE_WITH_FIELD.model_copy(
-            update={
-                "field": f"{test_source_jsonpath}" f".{TEST_VALIDATION_ISSUE_WITH_FIELD.field}"
-            }
+            update={"field": f"{test_source_jsonpath}.{TEST_VALIDATION_ISSUE_WITH_FIELD.field}"}
         ),
     ]
 

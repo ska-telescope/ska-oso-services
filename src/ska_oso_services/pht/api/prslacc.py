@@ -103,7 +103,7 @@ def get_access_by_prsl_id(
         if not proposal_access_pi:
             raise ForbiddenError(
                 detail=(
-                    "Forbidden error while getting proposal access: " "Not Principal Investigator"
+                    "Forbidden error while getting proposal access: Not Principal Investigator"
                 )
             )
 

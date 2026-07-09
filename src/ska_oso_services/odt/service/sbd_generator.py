@@ -319,13 +319,11 @@ def _sdp_configuration_from_data_product_sdp(
     for param_key, param_value in vars(dp_sdp.script_parameters).items():
         if param_key not in parameters_to_ignore:
             if isinstance(param_value, u.quantity.Quantity):
-                param_value = param_value.to(astropy_unit_mapper[param_key])
+                param_value = param_value.to(astropy_unit_mapper[param_key])  # noqa: PLW2901
             parameters[param_key] = convert_parameter(param_value)
     latest_continuum_script_version = (
         get_script_versions(SDPScript.CONTINUUM_IMAGING.value) or ["latest"]
-    )[
-        -1
-    ]  # Use 'latest' if version not found in TMData
+    )[-1]  # Use 'latest' if version not found in TMData
     return SDPConfiguration(
         sdp_script=SDPScript.CONTINUUM_IMAGING,
         script_version=latest_continuum_script_version,

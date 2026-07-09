@@ -55,7 +55,7 @@ class ValidationIssue(AppModel):
     )
     field: str = Field(
         "$",
-        description="The JSONPath for the specific part of the primary_entity " "that is invalid",
+        description="The JSONPath for the specific part of the primary_entity that is invalid",
     )
     level: ValidationIssueType = ValidationIssueType.ERROR
 

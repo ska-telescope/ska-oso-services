@@ -123,9 +123,9 @@ def test_validate_number_substations():
         substation_json
     )
     # making sure the csp_ref in the new scan matches that in the SBD
-    sbd.mccs_allocation.subarray_beams[0].scan_sequence[0].csp_configuration_ref = (
-        sbd.csp_configurations[0].config_id
-    )
+    sbd.mccs_allocation.subarray_beams[0].scan_sequence[
+        0
+    ].csp_configuration_ref = sbd.csp_configurations[0].config_id
     # reducing the number of channels so as not to trigger the station bandwidth validation error
     sbd.csp_configurations[0].lowcbf.correlation_spws[0].number_of_channels = 30
 

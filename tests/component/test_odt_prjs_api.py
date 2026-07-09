@@ -111,9 +111,9 @@ class TestLinkingSBDefinitions:
         prj_id = prj_post_response.json()["prj_id"]
         bad_ob_id = "not-an-ob"
         delete_response = authrequests.delete(f"{ODT_URL}/prjs/{prj_id}/{bad_ob_id}")
-        assert (
-            delete_response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-        ), delete_response.content
+        assert delete_response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY, (
+            delete_response.content
+        )
         assert (
             "ObservingBlock not-an-ob does not belong to Project"
             in delete_response.json()["detail"]

@@ -16,7 +16,7 @@ router = APIRouter(prefix="/coordinates")
 
 @router.get(
     "/{identifier}/{reference_frame}",
-    summary="Look up the coordinates for the given object " "identifier in astronomy catalogs.",
+    summary="Look up the coordinates for the given object identifier in astronomy catalogs.",
 )
 def get_systemcoordinates(identifier: str, reference_frame: ReferenceFrame) -> Target:
     """

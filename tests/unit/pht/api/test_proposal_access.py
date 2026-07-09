@@ -6,7 +6,7 @@ from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
 from ska_db_oda.repository.domain import UniqueConstraintViolation
 
 from tests.conftest import PHT_BASE_API_URL
-from tests.unit.util import REVIEWERS, TestDataFactory
+from tests.unit.util import TestDataFactory
 
 PROPOSAL_ACCESS_API_URL = f"{PHT_BASE_API_URL}/proposal-access"
 HEADERS = {"Content-type": "application/json"}

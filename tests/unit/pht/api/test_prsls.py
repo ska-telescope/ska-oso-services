@@ -3,9 +3,6 @@ Unit tests for ska_oso_pht_services.api
 """
 
 import copy
-import logging
-from contextlib import contextmanager
-from datetime import datetime, timezone
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock

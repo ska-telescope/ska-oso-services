@@ -36,7 +36,8 @@ def get_report() -> List[ProposalReportResponse]:
         query_param = CustomQuery()
         proposals = get_latest_entity_by_id(uow.prsls.query(proposal_query_param), "prsl_id")
         panels = get_latest_entity_by_id(
-            uow.panels.query(query_param), "panel_id"  # pylint: disable=no-member
+            uow.panels.query(query_param),
+            "panel_id",  # pylint: disable=no-member
         )
         reviews = get_latest_entity_by_id(uow.rvws.query(query_param), "review_id")
         decisions = get_latest_entity_by_id(uow.pnlds.query(query_param), "decision_id")

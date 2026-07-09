@@ -1,8 +1,6 @@
 from http import HTTPStatus
 from unittest import mock
 
-from ska_db_oda.repository.domain import ODANotFound
-
 from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import REVIEWERS, TestDataFactory
 

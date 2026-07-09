@@ -534,7 +534,6 @@ class TestProjectDeleteObservingBlock:
 
 
 class TestCalibratorSweepSBDefinition:
-
     CAL_SWEEP_INPUT = {
         "obs_start": "2026-06-15T10:00:00",
         "duration_min": 30,
@@ -562,8 +561,7 @@ class TestCalibratorSweepSBDefinition:
         mock_generate.return_value = sbd
 
         resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}"
-            "/generateCalibratorSweepSBDefinition",
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/generateCalibratorSweepSBDefinition",
             json=self.CAL_SWEEP_INPUT,
         )
 
@@ -596,8 +594,7 @@ class TestCalibratorSweepSBDefinition:
         uow_mock.prjs.get.return_value = project
 
         resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001"
-            "/generateCalibratorSweepSBDefinition",
+            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateCalibratorSweepSBDefinition",
             json=self.CAL_SWEEP_INPUT,
         )
 
@@ -643,8 +640,7 @@ class TestFrequencySweepSBDefinition:
         mock_generate.return_value = sbd
 
         resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}"
-            "/generateFrequencySweepSBDefinition",
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/generateFrequencySweepSBDefinition",
             json=self.FREQ_SWEEP_INPUT,
         )
 
@@ -691,8 +687,7 @@ class TestFrequencySweepSBDefinition:
         }
 
         resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}"
-            "/generateFrequencySweepSBDefinition",
+            f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/generateFrequencySweepSBDefinition",
             json=payload,
         )
 
@@ -724,8 +719,7 @@ class TestFrequencySweepSBDefinition:
         uow_mock.prjs.get.return_value = project
 
         resp = client.post(
-            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001"
-            "/generateFrequencySweepSBDefinition",
+            f"{PRJS_API_URL}/{project.prj_id}/obs-block-00001/generateFrequencySweepSBDefinition",
             json=self.FREQ_SWEEP_INPUT,
         )
 
@@ -758,7 +752,6 @@ class TestFrequencySweepSBDefinition:
 
 
 class TestSurveySBDefinition:
-
     SURVEY_INPUT = {
         "pointings_file_uri": "hex_relax_beams.sweet_as.csv",
         "centre_frequency_mhz": 155.47,

@@ -153,7 +153,6 @@ def validate_icrs_galactic_target_elevation_limits_are_within_their_lst_constrai
         # this is only for Galactic or ICRS targets
         target = target_lst_constraint.target
         if target.reference_coordinate.kind in (CoordinateKind.ICRS, CoordinateKind.GALACTIC):
-
             target_elevation = calculate_elevation_implied_from_lst_constraint(
                 constraints_context.telescope,
                 target_lst_constraint.target,
