@@ -4,14 +4,11 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
+16.1.0
 **********
 * Added LST validator to check that start and end time are not the same
 * Added support for galactic coordinates to the visibility plot endpoint
 * Updated to ODA v19.0.0 (PDM v28.0.0)
-
-16.1.0 - Unreleased
-********************
 * Added support for EKS Pod Identity auth for the S3 upload
 * Split Helm value `vault.keyMappings` into `vault.s3Secrets` and `vault.secrets`
 
