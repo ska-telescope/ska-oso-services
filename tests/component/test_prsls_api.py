@@ -29,7 +29,7 @@ def test_get_osd_data_success(authrequests):
 
     res = response.json()
     assert res["observatory_policy"]["cycle_number"] == 1
-    assert res["observatory_policy"]["cycle_information"]["cycle_id"] == "SKAO_2027_1"
+    assert res["observatory_policy"]["cycle_information"]["cycle_id"] == "TEST_SKAO_2027_1"
 
 
 def test_get_osd_cycles_success(authrequests):
