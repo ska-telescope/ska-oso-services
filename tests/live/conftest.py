@@ -47,7 +47,7 @@ def indigo_token() -> str:
 
 
 @pytest.fixture(scope="session")
-def live_client(mock_api_path_prefix) -> TestClient:  # pylint: disable=unused-argument
+def live_client() -> TestClient:
     """
     TestClient with no key monkeypatching — real Indigo JWKS are fetched
     and token signatures verified against them.

@@ -3,7 +3,6 @@ ska_oso_services app.py
 """
 
 import logging
-import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,15 +24,13 @@ from ska_oso_services.common.error_handling import (
     osd_error_handler,
     pydantic_validation_error_handler,
 )
+from ska_oso_services.settings import get_settings
 from ska_oso_services.validation.api.routes import router as validation_router
-
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-PRODUCTION = os.getenv("PRODUCTION", "false").lower() == "true"
 
 LOGGER = logging.getLogger(__name__)
 
 
-def create_app(production=PRODUCTION) -> FastAPI:
+def create_app(production=None) -> FastAPI:
     """
     Create the FastAPI application with required config.
 
@@ -42,14 +39,18 @@ def create_app(production=PRODUCTION) -> FastAPI:
     from exception handlers. FastAPI recommends this approach
     https://github.com/fastapi/fastapi/discussions/8027#discussioncomment-12483840
     """
-    configure_logging(level=LOG_LEVEL, tags_filter=AuditLogFilter)
+    settings = get_settings()
+    if production is None:
+        production = settings.production
+
+    configure_logging(level=settings.log_level, tags_filter=AuditLogFilter)
     LOGGER.info("Creating FastAPI app")
-    API_PATH_PREFIX = os.getenv("API_PATH_PREFIX", "")
-    LOGGER.info("API path prefix is %s", API_PATH_PREFIX)
+    api_path_prefix = settings.api_path_prefix
+    LOGGER.info("API path prefix is %s", api_path_prefix)
 
     fastapi_app = FastAPI(
-        openapi_url=f"{API_PATH_PREFIX}/openapi.json",
-        docs_url=f"{API_PATH_PREFIX}/ui",
+        openapi_url=f"{api_path_prefix}/openapi.json",
+        docs_url=f"{api_path_prefix}/ui",
         lifespan=watchdog(
             allow_unsecured=[
                 "get_systemcoordinates",
@@ -74,11 +75,11 @@ def create_app(production=PRODUCTION) -> FastAPI:
     )
 
     # Assemble the constituent APIs:
-    fastapi_app.include_router(api.common_router, prefix=API_PATH_PREFIX)
-    fastapi_app.include_router(odt.router, prefix=API_PATH_PREFIX)
-    fastapi_app.include_router(pht.router, prefix=API_PATH_PREFIX)
-    fastapi_app.include_router(engineering.router, prefix=API_PATH_PREFIX)
-    fastapi_app.include_router(validation_router, prefix=API_PATH_PREFIX)
+    fastapi_app.include_router(api.common_router, prefix=api_path_prefix)
+    fastapi_app.include_router(odt.router, prefix=api_path_prefix)
+    fastapi_app.include_router(pht.router, prefix=api_path_prefix)
+    fastapi_app.include_router(engineering.router, prefix=api_path_prefix)
+    fastapi_app.include_router(validation_router, prefix=api_path_prefix)
     fastapi_app.exception_handler(ODANotFound)(oda_not_found_handler)
     fastapi_app.exception_handler(ODAIntegrityError)(oda_integrity_error_handler)
     fastapi_app.exception_handler(ODAError)(oda_error_handler)

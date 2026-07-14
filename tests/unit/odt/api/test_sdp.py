@@ -1,17 +1,13 @@
-from pathlib import Path
+from unittest import mock
 
 import pytest
 
+import ska_oso_services.settings as settings_module
 from ska_oso_services.odt.api.sdp import get_params, get_versions
+from ska_oso_services.settings import get_settings
 from tests.conftest import ODT_BASE_API_URL
 
 SDP_API_URL = f"{ODT_BASE_API_URL}/sdp"
-
-
-@pytest.fixture(autouse=True)
-def patch_env_var(monkeypatch):
-    sdp_test_tmdata_path = "file://" + str(Path(__file__).resolve().parents[3] / "tmdata")
-    monkeypatch.setenv("SDP_SCRIPT_TMDATA", sdp_test_tmdata_path)
 
 
 class TestGetSdpScriptsAPI:
@@ -20,10 +16,14 @@ class TestGetSdpScriptsAPI:
         assert "5.1.0" in versions
         assert len(versions) == 17
 
-    def test_get_script_versions_raises_error_without_env(self, monkeypatch):
-        monkeypatch.delenv("SDP_SCRIPT_TMDATA", raising=False)
-        with pytest.raises(RuntimeError) as excinfo:
-            _ = get_versions("vis-receive")
+    def test_get_script_versions_raises_error_without_env(self):
+        with mock.patch.object(
+            settings_module,
+            "SETTINGS",
+            get_settings().model_copy(update={"sdp_script_tmdata": None}),
+        ):
+            with pytest.raises(RuntimeError) as excinfo:
+                _ = get_versions("vis-receive")
         assert "SDP_SCRIPT_TMDATA" in str(excinfo)
 
     def test_get_script_with_missing_script(self):
@@ -36,11 +36,15 @@ class TestGetSdpScriptsAPI:
         assert isinstance(response.json(), list)
         assert "5.1.0" in response.json()
 
-    def test_get_script_versions_with_bad_helm(self, monkeypatch):
-        monkeypatch.setenv("SDP_SCRIPT_TMDATA", "junk")
-        with pytest.raises(ValueError) as excinfo:
-            _ = get_versions("vis-receive")
-            assert "TMData base path error: Base path does not exist" in str(excinfo.value)
+    def test_get_script_versions_with_bad_helm(self):
+        with mock.patch.object(
+            settings_module,
+            "SETTINGS",
+            get_settings().model_copy(update={"sdp_script_tmdata": "junk"}),
+        ):
+            with pytest.raises(ValueError) as excinfo:
+                _ = get_versions("vis-receive")
+                assert "TMData base path error: Base path does not exist" in str(excinfo.value)
 
     def test_get_params_expected_output(self):
         result = get_params(name="vis-receive", version="5.1.0")

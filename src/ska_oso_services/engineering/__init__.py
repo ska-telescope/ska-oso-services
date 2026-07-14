@@ -1,15 +1,15 @@
 from http import HTTPStatus
-from os import getenv
 
 from fastapi import APIRouter
 
 from ska_oso_services.common.error_handling import _make_json_response
 from ska_oso_services.common.model import ErrorResponse
 from ska_oso_services.engineering.api import ebs
+from ska_oso_services.settings import get_settings
 
 router = APIRouter(prefix="/engineering", tags=["Engineering API"])
 
-ENGINEERING_API_ENABLED = getenv("ENGINEERING_API_ENABLED", "true").lower() == "true"
+ENGINEERING_API_ENABLED = get_settings().engineering_api_enabled
 
 
 async def engineering_api_disabled():

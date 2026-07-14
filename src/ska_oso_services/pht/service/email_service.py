@@ -1,5 +1,4 @@
 import logging
-import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -10,6 +9,7 @@ from jinja2 import Template
 
 from ska_oso_services.common.error_handling import UnprocessableEntityError
 from ska_oso_services.pht.utils.constants import HTML_TEMPLATE
+from ska_oso_services.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +43,8 @@ async def send_email_async(email: str, prsl_id: str):
     link = f"https://example.com/respond?prsl_id={prsl_id}"
     smtp_server = "eu-smtp-outbound-1.mimecast.com"
     smtp_port = 587
-    smtp_user = os.getenv("PHT_EMAIL_USER")
-    smtp_password = os.getenv("PHT_EMAIL_PASSWORD")
+    smtp_user = get_settings().email.user
+    smtp_password = get_settings().email.password
 
     msg = MIMEMultipart("alternative")
     msg["From"] = smtp_user
