@@ -31,28 +31,7 @@ with open(PROJECT_ROOT / "pyproject.toml", "rb") as fh:
     pyproject = tomli.load(fh)
 
 
-autodoc_mock_imports = [
-    "astropy",
-    "astroplan",
-    "astroquery",
-    "ska_db_oda",
-    "ska_oso_pdm",
-    "ska_ost_osd",
-    "ska_aaa_authhelpers",
-    "ska_ser_logging",
-    "fastapi",
-    "starlette",
-    "pydantic",
-    "pydantic_core",
-    "botocore",
-    "boto3",
-    "aiosmtplib",
-    "matplotlib",
-    "jwt",
-    "msal",
-    "ska_ser_skuid",
-    "ska_telmodel_client",
-]
+autodoc_mock_imports = []
 
 # -- General configuration ------------------------------------------------
 
@@ -65,6 +44,7 @@ autodoc_mock_imports = [
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx-pydantic",
     "sphinx.ext.napoleon",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",

@@ -8,3 +8,4 @@ Target Validation module (ska_oso_services.validation.target)
 .. automodule:: ska_oso_services.validation.target
    :members:
    :member-order: bysource
+   :exclude-members: ValidationContext

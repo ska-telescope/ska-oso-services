@@ -8,3 +8,4 @@ CSP Validation module (ska_oso_services.validation.csp)
 .. automodule:: ska_oso_services.validation.csp
    :members:
    :member-order: bysource
+   :exclude-members: ValidationContext

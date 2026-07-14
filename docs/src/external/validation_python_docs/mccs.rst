@@ -8,3 +8,4 @@ MCCS Validation module (ska_oso_services.validation.mccs)
 .. automodule:: ska_oso_services.validation.mccs
    :members:
    :member-order: bysource
+   :exclude-members: ValidationContext

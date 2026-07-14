@@ -7,3 +7,4 @@ Scans Validation module (ska_oso_services.validation.scan)
 
 .. automodule:: ska_oso_services.validation.scan
    :members:
+   :exclude-members: ValidationContext

@@ -7,3 +7,4 @@ Validation Model module (ska_oso_services.validation.model)
 
 .. automodule:: ska_oso_services.validation.model
    :members:
+   :no-index:
