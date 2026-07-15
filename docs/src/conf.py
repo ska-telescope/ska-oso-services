@@ -27,6 +27,11 @@ sys.path.insert(0, os.path.abspath("../.."))
 
 PROJECT_ROOT = Path(__file__).parents[2].resolve()
 
+# Required settings for importing application modules during autodoc.
+os.environ.setdefault("AWS_PHT_BUCKET_NAME", "docs-bucket")
+os.environ.setdefault("AWS_REGION", "eu-west-2")
+os.environ.setdefault("USER_PORTAL_BASE_URL", "http://portal.example.org")
+
 with open(PROJECT_ROOT / "pyproject.toml", "rb") as fh:
     pyproject = tomli.load(fh)
 
