@@ -53,7 +53,7 @@ async def call_user_portal(
 class UserPortalService:
     def __init__(self, auth: AuthContext) -> None:
         portal = get_settings().userportal
-        self.base_url = portal.base_url
+        self.base_url = str(portal.base_url).rstrip("/")
         self.timeout = portal.timeout
         self.headers = {
             "Authorization": portal.api_key,

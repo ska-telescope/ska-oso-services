@@ -20,17 +20,22 @@ PRESIGNED_URL_EXPIRY_TIME = 60
 
 
 class ConfigBase(BaseSettings):
-    model_config = SettingsConfigDict(frozen=True, extra="ignore")
+    model_config = SettingsConfigDict(
+        frozen=True,
+        extra="ignore",
+        validate_by_name=True,
+        validate_by_alias=True,
+    )
 
 
 class ODAConfig(ConfigBase):
     """Configuration for the Online Data Archive (ODA)."""
 
-    host: str | None = Field(default=None, alias="PGHOST")
+    host: str = Field(default="localhost", alias="PGHOST")
     port: int = Field(default=5432, alias="PGPORT")
     db: str = Field(default="oda", alias="PGDATABASE")
     user: str = Field(default="oda_admin", alias="PGUSER")
-    password: str | None = Field(default=None, alias="PGPASSWORD")
+    password: str = Field(default="", alias="PGPASSWORD")
 
 
 class AuthConfig(ConfigBase):
@@ -63,8 +68,8 @@ class S3Config(ConfigBase):
     access_key: str | None = Field(default=None, alias="AWS_ACCESS_KEY_ID")
     secret_key: str | None = Field(default=None, alias="AWS_SECRET_ACCESS_KEY")
     session_token: str | None = Field(default=None, alias="AWS_SESSION_TOKEN")
-    bucket: str = Field(default="pht-bucket", alias="AWS_PHT_BUCKET_NAME")
-    region: str = Field(default="us-west-2", alias="AWS_REGION")
+    bucket: str = Field(alias="AWS_PHT_BUCKET_NAME")
+    region: str = Field(alias="AWS_REGION")
     expiry: int = Field(default=PRESIGNED_URL_EXPIRY_TIME, alias="PRESIGNED_URL_EXPIRY_TIME")
 
 
@@ -87,7 +92,7 @@ class Settings(ConfigBase):
     oda: ODAConfig = Field(default_factory=ODAConfig)
     auth: AuthConfig = Field(default_factory=AuthConfig)
     email: EmailConfig = Field(default_factory=EmailConfig)
-    s3: S3Config = Field(default_factory=S3Config)
+    s3: S3Config = Field(default_factory=S3Config)  # type: ignore
     userportal: UserPortalConfig = Field(default_factory=UserPortalConfig)  # type: ignore
 
 
