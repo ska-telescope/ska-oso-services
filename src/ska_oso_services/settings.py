@@ -1,6 +1,6 @@
 from typing import Annotated, Final, Tuple
 
-from pydantic import Field, field_validator
+from pydantic import Field, HttpUrl, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 DEFAULT_AUDIENCES = (
@@ -82,6 +82,7 @@ class Settings(BaseSettings):
     api_path_prefix: str = Field(default="", alias="API_PATH_PREFIX")
     engineering_api_enabled: bool = Field(default=True, alias="ENGINEERING_API_ENABLED")
     sdp_script_tmdata: str | None = Field(default=None, alias="SDP_SCRIPT_TMDATA")
+    user_portal_base_url: HttpUrl = Field(alias="USER_PORTAL_BASE_URL")
 
     # Sub-models
     oda: ODAConfig = Field(default_factory=ODAConfig)
@@ -90,7 +91,7 @@ class Settings(BaseSettings):
     s3: S3Config = Field(default_factory=S3Config)
 
 
-SETTINGS: Final[Settings] = Settings()
+SETTINGS: Final[Settings] = Settings()  # type: ignore
 
 
 def get_settings() -> Settings:

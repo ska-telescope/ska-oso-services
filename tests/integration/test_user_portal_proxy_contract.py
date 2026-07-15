@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from uuid import uuid4
 
-import httpx
 from fastapi import HTTPException
 
 from ska_oso_services.pht.service import user_portal
