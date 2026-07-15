@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from os import getenv
 from typing import Any, Literal
 from uuid import UUID
 
@@ -7,9 +6,7 @@ import httpx
 from fastapi import HTTPException
 from ska_aaa_authhelpers.auth_context import AuthContext
 
-DEFAULT_TIMEOUT_SECONDS = 10
-USER_PORTAL_BASE_URL = getenv("USER_PORTAL_BASE_URL", "").rstrip("/")
-assert USER_PORTAL_BASE_URL
+from ska_oso_services.settings import get_settings
 
 # TODO: Replace with http.HTTPMethod once the runtime baseline is Python 3.11+.
 HttpMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
@@ -22,13 +19,14 @@ def group_name_for_proposal(prsl_id: str) -> str:
 async def call_user_portal(
     method: HttpMethod,
     url: str,
+    timeout: int,
     *,
     params: dict[str, Any] | None = None,
     json: dict[str, Any] | None = None,
     headers: dict[str, str] | None = None,
 ) -> httpx.Response:
     try:
-        async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT_SECONDS) as client:
+        async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.request(
                 method=method,
                 url=url,
@@ -54,19 +52,23 @@ async def call_user_portal(
 
 class UserPortalService:
     def __init__(self, auth: AuthContext) -> None:
+        portal = get_settings().userportal
+        self.base_url = portal.base_url
+        self.timeout = portal.timeout
         self.headers = {
-            "Authorization": f"Bearer {auth.access_token}",
+            "Authorization": portal.api_key,
             "Accept": "application/json",
             "User-Agent": "ska-oso-services:pht",
-            "X-Trace-Id": auth.trace,
+            "X-Request-Id": auth.trace,
         }
 
     async def search_users(self, query: str, limit: int) -> dict[str, Any]:
         response = await call_user_portal(
             method="GET",
-            url=f"{USER_PORTAL_BASE_URL}/api/external/v1/users/search",
+            url=f"{self.base_url}/api/external/v1/users/search",
             params={"q": query, "limit": limit},
             headers=self.headers,
+            timeout=self.timeout,
         )
         return response.json()
 
@@ -74,25 +76,28 @@ class UserPortalService:
         group_name = group_name_for_proposal(prsl_id)
         response = await call_user_portal(
             method="POST",
-            url=f"{USER_PORTAL_BASE_URL}/api/external/v1/groups/{group_name}/invites",
+            url=f"{self.base_url}/api/external/v1/groups/{group_name}/invites",
             json=invite_payload,
             headers=self.headers,
+            timeout=self.timeout,
         )
         return response.json()
 
     async def list_invites(self, prsl_id: str) -> dict[str, Any]:
         response = await call_user_portal(
             method="GET",
-            url=f"{USER_PORTAL_BASE_URL}/api/external/v1/invites",
+            url=f"{self.base_url}/api/external/v1/invites",
             params={"group_name": group_name_for_proposal(prsl_id)},
             headers=self.headers,
+            timeout=self.timeout,
         )
         return response.json()
 
     async def delete_invite(self, invite_id: UUID) -> dict[str, Any]:
         response = await call_user_portal(
             method="DELETE",
-            url=f"{USER_PORTAL_BASE_URL}/api/external/v1/invites/{invite_id}",
+            url=f"{self.base_url}/api/external/v1/invites/{invite_id}",
             headers=self.headers,
+            timeout=self.timeout,
         )
         return response.json()

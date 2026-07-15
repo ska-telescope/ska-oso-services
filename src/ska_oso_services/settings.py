@@ -19,10 +19,12 @@ DEFAULT_AUDIENCES = (
 PRESIGNED_URL_EXPIRY_TIME = 60
 
 
-class ODAConfig(BaseSettings):
-    """Configuration for the Online Data Archive (ODA)."""
-
+class ConfigBase(BaseSettings):
     model_config = SettingsConfigDict(frozen=True, extra="ignore")
+
+
+class ODAConfig(ConfigBase):
+    """Configuration for the Online Data Archive (ODA)."""
 
     host: str | None = Field(default=None, alias="PGHOST")
     port: int = Field(default=5432, alias="PGPORT")
@@ -31,10 +33,8 @@ class ODAConfig(BaseSettings):
     password: str | None = Field(default=None, alias="PGPASSWORD")
 
 
-class AuthConfig(BaseSettings):
+class AuthConfig(ConfigBase):
     """Configuration for Authentication and Authorization."""
-
-    model_config = SettingsConfigDict(frozen=True, extra="ignore")
 
     audience: Annotated[Tuple[str, ...], NoDecode] = Field(
         default=DEFAULT_AUDIENCES,
@@ -50,19 +50,15 @@ class AuthConfig(BaseSettings):
         return value
 
 
-class EmailConfig(BaseSettings):
+class EmailConfig(ConfigBase):
     """Configuration for the Email Service."""
-
-    model_config = SettingsConfigDict(frozen=True, extra="ignore")
 
     user: str | None = Field(default=None, alias="PHT_EMAIL_USER")
     password: str | None = Field(default=None, alias="PHT_EMAIL_PASSWORD")
 
 
-class S3Config(BaseSettings):
+class S3Config(ConfigBase):
     """Configuration for S3 Object Storage."""
-
-    model_config = SettingsConfigDict(frozen=True, extra="ignore", populate_by_name=True)
 
     access_key: str | None = Field(default=None, alias="AWS_ACCESS_KEY_ID")
     secret_key: str | None = Field(default=None, alias="AWS_SECRET_ACCESS_KEY")
@@ -72,23 +68,27 @@ class S3Config(BaseSettings):
     expiry: int = Field(default=PRESIGNED_URL_EXPIRY_TIME, alias="PRESIGNED_URL_EXPIRY_TIME")
 
 
-class Settings(BaseSettings):
-    """Centralized application settings."""
+class UserPortalConfig(ConfigBase):
+    base_url: HttpUrl = Field(alias="USER_PORTAL_BASE_URL")
+    api_key: str = Field(default="", alias="USER_PORTAL_API_KEY")
+    timeout: int = Field(default=10, alias="USER_PORTAL_TIMEOUT")
 
-    model_config = SettingsConfigDict(frozen=True, extra="ignore")
+
+class Settings(ConfigBase):
+    """Centralized application settings."""
 
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     production: bool = Field(default=False, alias="PRODUCTION")
     api_path_prefix: str = Field(default="", alias="API_PATH_PREFIX")
     engineering_api_enabled: bool = Field(default=True, alias="ENGINEERING_API_ENABLED")
     sdp_script_tmdata: str | None = Field(default=None, alias="SDP_SCRIPT_TMDATA")
-    user_portal_base_url: HttpUrl = Field(alias="USER_PORTAL_BASE_URL")
 
     # Sub-models
     oda: ODAConfig = Field(default_factory=ODAConfig)
     auth: AuthConfig = Field(default_factory=AuthConfig)
     email: EmailConfig = Field(default_factory=EmailConfig)
     s3: S3Config = Field(default_factory=S3Config)
+    userportal: UserPortalConfig = Field(default_factory=UserPortalConfig)  # type: ignore
 
 
 SETTINGS: Settings | None = None
@@ -97,5 +97,5 @@ SETTINGS: Settings | None = None
 def get_settings() -> Settings:
     global SETTINGS  # noqa: PLW0603
     if SETTINGS is None:
-        SETTINGS = Settings()  # type: ignore
+        SETTINGS = Settings()
     return SETTINGS
