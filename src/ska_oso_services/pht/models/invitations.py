@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
 
@@ -27,8 +27,6 @@ class UserSearchItemResponse(BaseModel):
     user_id: UUID | None = Field(validation_alias="portal_user_id")
     display_name: str
     email: str
-    status: str | None = None
-    has_iam_account: bool
 
 
 class UserSearchResponse(BaseModel):
@@ -39,20 +37,16 @@ class UserSearchResponse(BaseModel):
 
 class InviteCardResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    # Fixme: We don't want to expose all of this to callers...
     invite_id: UUID
     group_name: str
     invited_email: str
     invited_by: str
-    status: str
     claim_state: str
-    accepted_via: str | None = None
-    email_mismatch: bool
     claimed_by_user_id: UUID | None = Field(validation_alias="claimed_by_portal_user_id")
-    created_at: str
-    updated_at: str
-    expires_at: str
-    responded_at: str | None = None
+    created_at: AwareDatetime
+    updated_at: AwareDatetime
+    expires_at: AwareDatetime
+    responded_at: AwareDatetime | None = None
 
 
 class InviteListResponse(BaseModel):
