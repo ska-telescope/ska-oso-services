@@ -56,7 +56,7 @@ async def search_users(
 
 
 @router.post(
-    "/proposals/{prsl_id}/invites",
+    "/prsls/{prsl_id}/invites",
     summary="Create invite for proposal via external user portal",
     status_code=HTTPStatus.CREATED,
     dependencies=[READWRITE_PERMISSIONS],
@@ -80,7 +80,7 @@ async def create_invite(
 
 
 @router.get(
-    "/proposals/{prsl_id}/invites",
+    "/prsls/{prsl_id}/invites",
     summary="List invites for proposal via external user portal",
     dependencies=[READ_PERMISSIONS],
     response_model=InviteListResponse,
@@ -93,7 +93,7 @@ async def list_invites(
 
 
 @router.delete(
-    "/proposals/{prsl_id}/invites/{invite_id}",
+    "/prsls/{prsl_id}/invites/{invite_id}",
     summary="Delete invite for proposal via external user portal",
     dependencies=[READWRITE_PERMISSIONS],
     response_model=InviteDeleteResponse,

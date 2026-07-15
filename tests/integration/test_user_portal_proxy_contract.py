@@ -26,7 +26,7 @@ def test_search_users_happy_path_proxies_to_user_portal(integration_client):
 def test_create_invite_by_user_id_happy_path(integration_client):
     prsl_id = "prp-000001"
     response = integration_client.post(
-        f"{PHT_BASE_API_URL}/proposals/{prsl_id}/invites",
+        f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
         json={"user_id": str(uuid4())},
     )
 
@@ -39,7 +39,7 @@ def test_create_invite_by_user_id_happy_path(integration_client):
 def test_create_invite_by_email_happy_path(integration_client):
     prsl_id = "prp-000002"
     response = integration_client.post(
-        f"{PHT_BASE_API_URL}/proposals/{prsl_id}/invites",
+        f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
         json={"email": "new-user@example.org"},
     )
 
@@ -50,7 +50,7 @@ def test_create_invite_by_email_happy_path(integration_client):
 
 
 def test_list_invites_by_proposal_happy_path(integration_client):
-    response = integration_client.get(f"{PHT_BASE_API_URL}/proposals/prp-000003/invites")
+    response = integration_client.get(f"{PHT_BASE_API_URL}/prsls/prp-000003/invites")
 
     assert response.status_code == HTTPStatus.OK
     payload = response.json()
@@ -61,7 +61,7 @@ def test_list_invites_by_proposal_happy_path(integration_client):
 def test_delete_invite_happy_path(integration_client):
     invite_id = uuid4()
     response = integration_client.delete(
-        f"{PHT_BASE_API_URL}/proposals/prp-000004/invites/{invite_id}"
+        f"{PHT_BASE_API_URL}/prsls/prp-000004/invites/{invite_id}"
     )
 
     assert response.status_code == HTTPStatus.OK
@@ -97,7 +97,7 @@ def test_search_users_upstream_502_maps_to_bad_gateway(integration_client, monke
 
 def test_create_invite_invalid_payload_returns_422(integration_client):
     response = integration_client.post(
-        f"{PHT_BASE_API_URL}/proposals/prp-000005/invites",
+        f"{PHT_BASE_API_URL}/prsls/prp-000005/invites",
         json={},
     )
 
