@@ -101,6 +101,7 @@ def patch_pubkeys_for_integration():
 
 @pytest.fixture
 def integration_client(
+    fake_user_portal,
     integration_headers,
 ):
     # lazy import so that pytest_configure() can set env vars first

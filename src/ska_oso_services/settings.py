@@ -93,8 +93,9 @@ class Settings(BaseSettings):
 
 SETTINGS: Settings | None = None
 
+
 def get_settings() -> Settings:
-    global SETTINGS
+    global SETTINGS  # noqa: PLW0603
     if SETTINGS is None:
-        SETTINGS = Settings() # type: ignore
+        SETTINGS = Settings()  # type: ignore
     return SETTINGS
