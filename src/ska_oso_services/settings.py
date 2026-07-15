@@ -1,4 +1,4 @@
-from typing import Annotated, Final, Tuple
+from typing import Annotated, Tuple
 
 from pydantic import Field, HttpUrl, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -91,9 +91,10 @@ class Settings(BaseSettings):
     s3: S3Config = Field(default_factory=S3Config)
 
 
-SETTINGS: Final[Settings] = Settings()  # type: ignore
-
+SETTINGS: Settings | None = None
 
 def get_settings() -> Settings:
-    """Return the global frozen settings instance."""
+    global SETTINGS
+    if SETTINGS is None:
+        SETTINGS = Settings() # type: ignore
     return SETTINGS

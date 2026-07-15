@@ -12,7 +12,6 @@ from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token, monkeypatch_pubkeys
 from testcontainers.core.container import DockerContainer
 
-from ska_oso_services.settings import get_settings
 from tests.conftest import FAKE_USER_PORTAL_PORT
 
 USER_PORTAL_FIXTURE_SPEC = (
@@ -49,7 +48,7 @@ def fake_user_portal() -> Generator[DockerContainer, None, None]:
     container.with_bind_ports(FAKE_USER_PORTAL_PORT, FAKE_USER_PORTAL_PORT)
 
     with container as prism:
-        portal_base = get_settings().user_portal_base_url
+        portal_base = f"http://localhost:{FAKE_USER_PORTAL_PORT}"
         probe_url = f"{portal_base}/api/external/v1/users/search?q=test"
         deadline = time.time() + 30
         ready = False
