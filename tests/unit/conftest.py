@@ -17,8 +17,6 @@ from ska_aaa_authhelpers.test_helpers import mint_test_token, monkeypatch_pubkey
 from ska_db_oda.common.uow import get_uow
 from ska_oso_pdm import SBDefinition
 
-from ska_oso_services import create_app
-from ska_oso_services.common.auth import Scope
 from tests.unit.util import load_string_from_file
 
 
@@ -36,6 +34,9 @@ def test_app_fixture() -> FastAPI:
     """
     Fixture to configure a test app instance
     """
+    # lazy import so that pytest_configure() can set env vars first
+    from ska_oso_services import create_app
+
     return create_app(production=False)
 
 
@@ -44,6 +45,9 @@ def request_headers() -> dict:
     """
     Returns headers for a test request, including a test auth token
     """
+    # lazy import so that pytest_configure() can set env vars first
+    from ska_oso_services.common.auth import Scope
+
     token = mint_test_token(
         audience="test:pht",
         roles=[
@@ -65,7 +69,7 @@ def request_headers() -> dict:
 
 
 @pytest.fixture(scope="module")
-def client(test_app: FastAPI, headers: dict, mock_api_path_prefix) -> TestClient:
+def client(test_app: FastAPI, headers: dict) -> TestClient:
     """
     Create a test client from the app instance, without running a live server
     """
@@ -84,8 +88,11 @@ def client(test_app: FastAPI, headers: dict, mock_api_path_prefix) -> TestClient
 
 
 @pytest.fixture
-def client_with_uow_mock(headers: dict, mock_api_path_prefix):
+def client_with_uow_mock(headers: dict):
     """Provide a TestClient with the mock UoW dependency override applied."""
+    # lazy import so that pytest_configure() can set env vars first
+    from ska_oso_services import create_app
+
     test_app = create_app(production=False)  # Don't want to use the module scoped fixture
     mock_uow = MagicMock()
     mock_entered_uow = MagicMock()

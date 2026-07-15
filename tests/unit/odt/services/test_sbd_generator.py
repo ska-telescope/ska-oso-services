@@ -3,9 +3,6 @@ from unittest import mock
 from ska_oso_pdm import SBDefinition
 
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
-from tests.unit.odt.api.test_sdp import (
-    patch_env_var,  # noqa: F401 — autouse fixture, imported to apply SDP_SCRIPT_TMDATA to this module
-)
 from tests.unit.util import TestDataFactory, load_string_from_file
 
 

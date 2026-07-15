@@ -81,7 +81,7 @@ PYTHON_TEST_FILE ?= tests/unit/
 
 # Audience accepted by the app and embedded in test tokens.
 # Use ?= so CI jobs can set a different value (e.g. for live Indigo tests).
-SKA_AUTH_AUDIENCE ?= test:pht
+SKA_AUTH_AUDIENCE ?= test:pht,test:odt
 
 # Prepend PYTHONPATH and the test audience before pytest.
 # Use ?= so CI jobs can override the whole string if needed.

@@ -8,3 +8,4 @@ Observing Constraints Validation module (ska_oso_services.validation.constraints
 .. automodule:: ska_oso_services.validation.constraints
    :members:
    :member-order: bysource
+   :exclude-members: ValidationContext

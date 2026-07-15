@@ -2,6 +2,7 @@ from unittest import mock
 
 import pytest
 
+import ska_oso_services.settings as settings_module
 from ska_oso_services.pht.service.s3_bucket import (
     S3Config,
     S3Method,
@@ -10,21 +11,26 @@ from ska_oso_services.pht.service.s3_bucket import (
     create_presigned_url_upload_pdf,
     generate_presigned_url,
     get_aws_client,
-    get_s3_config,
 )
+from ska_oso_services.settings import get_settings
 
 
 class TestS3BucketUtils:
     @pytest.fixture(autouse=True)
-    def _mock_s3_env(self):
-        with mock.patch.dict(
-            "os.environ",
-            {"AWS_PHT_BUCKET_NAME": "test-bucket", "AWS_REGION": "eu-west-2"},
-            clear=False,
+    def _mock_s3_settings(self):
+        current = get_settings()
+        with mock.patch.object(
+            settings_module,
+            "SETTINGS",
+            get_settings().model_copy(
+                update={
+                    "s3": current.s3.model_copy(
+                        update={"bucket": "test-bucket", "region": "eu-west-2"}
+                    )
+                },
+            ),
         ):
-            get_s3_config.cache_clear()
             yield
-        get_s3_config.cache_clear()
 
     def test_get_aws_client_returns_boto3_client(self):
         client = get_aws_client()

@@ -4,14 +4,15 @@ from TMData. It uses the ska_telmodel_client library to access TMData and fetch 
 required information.
 """
 
-import os
 from typing import Any
 
 from ska_telmodel_client import TMData
 
+from ska_oso_services.settings import get_settings
+
 
 def get_tmdata() -> TMData:
-    tmdata_path = os.environ.get("SDP_SCRIPT_TMDATA")
+    tmdata_path = get_settings().sdp_script_tmdata
     if not tmdata_path:
         raise RuntimeError(
             "SDP_SCRIPT_TMDATA environment variable not set. This should "

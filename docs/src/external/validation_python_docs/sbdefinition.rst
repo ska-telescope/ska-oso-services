@@ -7,3 +7,4 @@ SBDefinition Validation module (ska_oso_services.validation.sbdefinition)
 
 .. automodule:: ska_oso_services.validation.sbdefinition
    :members:
+   :exclude-members: ValidationContext

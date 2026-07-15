@@ -1,36 +1,21 @@
 from enum import Enum
 from functools import partial
-from os import getenv
 
 from ska_aaa_authhelpers import Requires
 from ska_aaa_authhelpers.test_helpers import TEST_ISSUER, TEST_PUBLIC_KEYS
 
-DEFAULT_AUDIENCES = (
-    # We default to "live" because in the case of a misconfiguration
-    # we want to fail-safe to the most-restrictive setting.
-    # Put another way: if someone goofs up, it's better if a dev
-    # environment is accidentally accepting prod tokens than
-    # vice versa
-    "live:pht",
-    "live:odt",
-    # TODO: Remove this MS Entra once all clients are fully migrated to Indigo.
-    "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b",
-)
-
-
-def get_audience() -> tuple[str, ...]:
-    if aud := getenv("SKA_AUTH_AUDIENCE"):
-        return tuple(aud.split(","))
-    return DEFAULT_AUDIENCES
-
+from ska_oso_services.settings import get_settings
 
 # This should never be true in production, because
-if getenv("PIPELINE_TESTS_DEPLOYMENT", "false") == "true":
+if get_settings().auth.pipeline_tests_deployment:
     Permissions = partial(
-        Requires, audience=get_audience(), keys=TEST_PUBLIC_KEYS, issuer=TEST_ISSUER
+        Requires,
+        audience=get_settings().auth.audience,
+        keys=TEST_PUBLIC_KEYS,
+        issuer=TEST_ISSUER,
     )
 else:
-    Permissions = partial(Requires, audience=get_audience())
+    Permissions = partial(Requires, audience=get_settings().auth.audience)
 
 
 # Use StrEnum once we upgrade Python
