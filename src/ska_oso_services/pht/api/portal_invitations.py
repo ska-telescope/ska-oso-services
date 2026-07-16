@@ -67,22 +67,21 @@ async def create_invites(
     prsl_id: str,
     body: InviteCreateListRequest,
 ) -> InvitationsListResponse:
-    invite_payloads: list[dict[str, object]] = []
+    created_invites: list[InviteCardResponse] = []
     for invite in body.invites:
         invite_payload = invite.model_dump(mode="json", exclude_none=True)
         if "user_id" in invite_payload:
             invite_payload["portal_user_id"] = invite_payload.pop("user_id")
-        invite_payloads.append(invite_payload)
-
-    return InvitationsListResponse(
-        invites=[
-            InviteCardResponse.model_validate(item)
-            for item in await service.create_invites(
-                prsl_id=prsl_id,
-                invite_payloads=invite_payloads,
+        created_invites.append(
+            InviteCardResponse.model_validate(
+                await service.create_invite(
+                    prsl_id=prsl_id,
+                    invite_payload=invite_payload,
+                )
             )
-        ]
-    )
+        )
+
+    return InvitationsListResponse(invites=created_invites)
 
 
 @router.get(
