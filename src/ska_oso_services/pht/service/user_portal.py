@@ -83,6 +83,22 @@ class UserPortalService:
         )
         return response.json()
 
+    async def create_invites(
+        self,
+        prsl_id: str,
+        invite_payloads: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        # Fallback behavior until upstream supports a bulk create endpoint.
+        created_invites: list[dict[str, Any]] = []
+        for invite_payload in invite_payloads:
+            created_invites.append(
+                await self.create_invite(
+                    prsl_id=prsl_id,
+                    invite_payload=invite_payload,
+                )
+            )
+        return created_invites
+
     async def list_invites(self, prsl_id: str) -> dict[str, Any]:
         response = await call_user_portal(
             method="GET",

@@ -6,7 +6,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 from typing_extensions import Self
 
 
-class InviteCreateRequest(BaseModel):
+class NewInvitation(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     user_id: UUID | None = None
@@ -21,6 +21,12 @@ class InviteCreateRequest(BaseModel):
         return self
 
 
+class InviteCreateListRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    invites: list[NewInvitation] = Field(min_length=1)
+
+
 class UserSearchItemResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -30,7 +36,7 @@ class UserSearchItemResponse(BaseModel):
 
 
 class UserSearchResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="forbid")
 
     results: list[UserSearchItemResponse]
 
@@ -49,14 +55,14 @@ class InviteCardResponse(BaseModel):
     responded_at: AwareDatetime | None = None
 
 
-class InviteListResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    items: list[InviteCardResponse]
-    next_cursor: str | None = None
-
-
 class InviteDeleteResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     status: str
+
+
+class InvitationsListResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    invites: list[InviteCardResponse]
+    next_cursor: str | None = None

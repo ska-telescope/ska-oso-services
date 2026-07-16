@@ -27,26 +27,55 @@ def test_create_invite_by_user_id_happy_path(integration_client):
     prsl_id = "prp-000001"
     response = integration_client.post(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
-        json={"user_id": str(uuid4())},
+        json={"invites": [{"user_id": str(uuid4())}]},
     )
 
     assert response.status_code == HTTPStatus.CREATED
     payload = response.json()
-    assert "invite_id" in payload
-    assert isinstance(payload.get("group_name"), str)
+    assert isinstance(payload, dict)
+    assert "invites" in payload
+    assert isinstance(payload["invites"], list)
+    assert len(payload["invites"]) == 1
+    assert "invite_id" in payload["invites"][0]
+    assert isinstance(payload["invites"][0].get("group_name"), str)
 
 
 def test_create_invite_by_email_happy_path(integration_client):
     prsl_id = "prp-000002"
     response = integration_client.post(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
-        json={"email": "new-user@example.org"},
+        json={"invites": [{"email": "new-user@example.org"}]},
     )
 
     assert response.status_code == HTTPStatus.CREATED
     payload = response.json()
-    assert "invite_id" in payload
-    assert isinstance(payload.get("group_name"), str)
+    assert isinstance(payload, dict)
+    assert "invites" in payload
+    assert isinstance(payload["invites"], list)
+    assert len(payload["invites"]) == 1
+    assert "invite_id" in payload["invites"][0]
+    assert isinstance(payload["invites"][0].get("group_name"), str)
+
+
+def test_create_invites_bulk_happy_path(integration_client):
+    prsl_id = "prp-000006"
+    response = integration_client.post(
+        f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
+        json={
+            "invites": [
+                {"user_id": str(uuid4())},
+                {"email": "bulk-user@example.org"},
+            ]
+        },
+    )
+
+    assert response.status_code == HTTPStatus.CREATED
+    payload = response.json()
+    assert isinstance(payload, dict)
+    assert "invites" in payload
+    assert isinstance(payload["invites"], list)
+    assert len(payload["invites"]) == 2
+    assert all("invite_id" in item for item in payload["invites"])
 
 
 def test_list_invites_by_proposal_happy_path(integration_client):
@@ -54,8 +83,8 @@ def test_list_invites_by_proposal_happy_path(integration_client):
 
     assert response.status_code == HTTPStatus.OK
     payload = response.json()
-    assert "items" in payload
-    assert isinstance(payload["items"], list)
+    assert "invites" in payload
+    assert isinstance(payload["invites"], list)
 
 
 def test_delete_invite_happy_path(integration_client):
@@ -98,7 +127,7 @@ def test_search_users_upstream_502_maps_to_bad_gateway(integration_client, monke
 def test_create_invite_invalid_payload_returns_422(integration_client):
     response = integration_client.post(
         f"{PHT_BASE_API_URL}/prsls/prp-000005/invites",
-        json={},
+        json={"invites": []},
     )
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY

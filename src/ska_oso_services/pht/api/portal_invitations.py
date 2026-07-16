@@ -8,10 +8,10 @@ from ska_aaa_authhelpers.auth_context import AuthContext
 
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.pht.models.invitations import (
+    InvitationsListResponse,
     InviteCardResponse,
-    InviteCreateRequest,
+    InviteCreateListRequest,
     InviteDeleteResponse,
-    InviteListResponse,
     UserSearchResponse,
 )
 from ska_oso_services.pht.service import user_portal
@@ -57,25 +57,31 @@ async def search_users(
 
 @router.post(
     "/prsls/{prsl_id}/invites",
-    summary="Create invite for proposal via external user portal",
+    summary="Create invites for proposal via external user portal",
     status_code=HTTPStatus.CREATED,
     dependencies=[READWRITE_PERMISSIONS],
-    response_model=InviteCardResponse,
+    response_model=InvitationsListResponse,
 )
-async def create_invite(
+async def create_invites(
     service: Annotated[user_portal.UserPortalService, Depends(get_user_portal_service_readwrite)],
     prsl_id: str,
-    body: InviteCreateRequest,
-) -> InviteCardResponse:
-    invite_payload = body.model_dump(mode="json", exclude_none=True)
-    if "user_id" in invite_payload:
-        invite_payload["portal_user_id"] = invite_payload.pop("user_id")
+    body: InviteCreateListRequest,
+) -> InvitationsListResponse:
+    invite_payloads: list[dict[str, object]] = []
+    for invite in body.invites:
+        invite_payload = invite.model_dump(mode="json", exclude_none=True)
+        if "user_id" in invite_payload:
+            invite_payload["portal_user_id"] = invite_payload.pop("user_id")
+        invite_payloads.append(invite_payload)
 
-    return InviteCardResponse.model_validate(
-        await service.create_invite(
-            prsl_id=prsl_id,
-            invite_payload=invite_payload,
-        )
+    return InvitationsListResponse(
+        invites=[
+            InviteCardResponse.model_validate(item)
+            for item in await service.create_invites(
+                prsl_id=prsl_id,
+                invite_payloads=invite_payloads,
+            )
+        ]
     )
 
 
@@ -83,13 +89,17 @@ async def create_invite(
     "/prsls/{prsl_id}/invites",
     summary="List invites for proposal via external user portal",
     dependencies=[READ_PERMISSIONS],
-    response_model=InviteListResponse,
+    response_model=InvitationsListResponse,
 )
 async def list_invites(
     service: Annotated[user_portal.UserPortalService, Depends(get_user_portal_service_read)],
     prsl_id: str,
-) -> InviteListResponse:
-    return InviteListResponse.model_validate(await service.list_invites(prsl_id=prsl_id))
+) -> InvitationsListResponse:
+    payload = await service.list_invites(prsl_id=prsl_id)
+    return InvitationsListResponse(
+        invites=[InviteCardResponse.model_validate(item) for item in payload.get("items", [])],
+        next_cursor=payload.get("next_cursor"),
+    )
 
 
 @router.delete(
