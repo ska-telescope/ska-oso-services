@@ -116,6 +116,7 @@ indigo-live-auth:
   allow_failure: true
   variables:
     PYTHON_TEST_FILE: tests/live/
+    USER_PORTAL_BASE_URL: http://userportal.example.org
     API_PATH_PREFIX: /ska-oso-services/oso/api/v0
     SKA_AUTH_AUDIENCE: test:pht
     AWS_PHT_BUCKET_NAME: test-bucket
