@@ -69,9 +69,7 @@ async def create_invites(
 ) -> InvitationsListResponse:
     created_invites: list[InviteCardResponse] = []
     for invite in body.invites:
-        invite_payload = invite.model_dump(mode="json", exclude_none=True)
-        if "user_id" in invite_payload:
-            invite_payload["portal_user_id"] = invite_payload.pop("user_id")
+        invite_payload = invite.model_dump(mode="json", by_alias=True, exclude_none=True)
         created_invites.append(
             InviteCardResponse.model_validate(
                 await service.create_invite(

@@ -9,7 +9,7 @@ from typing_extensions import Self
 class NewInvitation(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    user_id: UUID | None = None
+    user_id: UUID | None = Field(default=None, serialization_alias="portal_user_id")
     email: str | None = None
 
     @model_validator(mode="after")
