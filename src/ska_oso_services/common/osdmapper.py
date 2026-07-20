@@ -11,13 +11,10 @@ from pydantic import AliasChoices, BaseModel, Field, dataclasses
 from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
 from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
-
-
-
-
 from ska_ost_osd.osd.common.error_handling import OSDModelError
 from ska_ost_osd.osd.models.models import OSDQueryParams
 from ska_ost_osd.osd.routers.api import get_cycle_list, get_osd
+from ska_telmodel_client import TMData
 
 from ska_oso_services.common.error_handling import OSDError
 from ska_oso_services.common.model import AppModel
@@ -81,8 +78,7 @@ class LowSubarray(Subarray):
     number_subarray_beams: int
 
 
-@dataclasses.dataclass
-class Constraints:
+class Constraints(BaseModel):
     sun_avoidance_angle_deg: float
     moon_avoidance_angle_deg: float
     jupiter_avoidance_angle_deg: float
@@ -150,7 +146,6 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
     ]
 
     receiver_information = mid_response["basic_capabilities"]["receiver_information"]
-    constraints = mid_response["constraints"]
 
     def frequency_band_from_receiver_information_for_band(receiver_information):
         band5b_subbands = (
@@ -166,7 +161,7 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
             frequency_band_from_receiver_information_for_band(receiver_info)
             for receiver_info in receiver_information
         ],
-        constraints=Constraints(**constraints),
+        constraints=_get_telescope_constraints(telescope=TelescopeType.SKA_MID),
         subarrays=subarrays,
     )
 
@@ -187,14 +182,30 @@ def _get_low_telescope_configuration() -> LowConfiguration:
 
     quality_attribute_metrics = low_response["quality_attribute_metrics"]
     receiver_information = low_response["basic_capabilities"]
-    constraints = low_response["constraints"]
 
     return LowConfiguration(
         frequency_band=LowFrequencyBand(**receiver_information),
-        constraints=Constraints(**constraints),
+        constraints=_get_telescope_constraints(telescope=TelescopeType.SKA_LOW),
         quality_attribute_metrics=LowQualityAttributeMetrics(**quality_attribute_metrics),
         subarrays=subarrays,
     )
+
+
+def _get_telescope_constraints(telescope: TelescopeType) -> Constraints:
+    if telescope == TelescopeType.SKA_MID:
+        path_prefix = "ska1_mid/mid_"
+    else:
+        path_prefix = "ska1_low/low_"
+
+    tmdata = get_osd_tmdata()
+    default_constraints_dict = tmdata[f"{path_prefix}defaults.json"].get_dict()["constraints"]
+    capabilities_constraints_dict = tmdata[f"{path_prefix}capabilities.json"].get_dict()[
+        "constraints"
+    ]
+
+    constraints = Constraints(**{**capabilities_constraints_dict, **default_constraints_dict})
+
+    return constraints
 
 
 @cache
@@ -212,6 +223,16 @@ def get_osd_cycles():
         raise OSDError(error)
     data = osd_data.model_dump()["result_data"] if hasattr(osd_data, "model_dump") else osd_data
     return data
+
+
+@cache
+def get_osd_tmdata():
+    """
+    Wrapper function to fetch tmdata from the OSD that is not integrated into the
+    OSD source code
+    """
+    tmdata = TMData([f"car:ost/ska-ost-osd?{OSD_VERSION}"], update=True)
+    return tmdata
 
 
 @cache
