@@ -25,13 +25,14 @@ dependencies = [
     "ska-ser-logging>=0.4.1",
     # PDM dependency is pulled in via the ODA rather than being explicitly set here
     # If updating this, also remember to update the Helm dependency in the umbrella chart
-    "ska-db-oda>=19.0.0",
+    "ska-db-oda>=19.1.1",
     "pydantic>=2.9",
     "pydantic-settings>=2.5",
     "fastapi[standard]>=0.115.8",
     "astroquery==0.4.9",
-    "ska-ost-osd>=6.0.4",
+    "ska-ost-osd>=6.0.7",
     "ska-telmodel-client>=1.30.0",
+    "ska-ser-skuid>=6.0.0,<7.0.0",
     "aiosmtplib>=4.0.1",
     "boto3>=1.38.13",
     "ska-aaa-authhelpers>=1.5.0",
