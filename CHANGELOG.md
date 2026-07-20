@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-* Adds APIs for invitations, e.g. POST /pht/prsl/prp-1/inivtes
+* Adds APIs for invitations, e.g. POST /pht/prsl/prp-1/invites
 
 16.1.0
 **********
