@@ -63,6 +63,4 @@ class InviteDeleteResponse(BaseModel):
 
 class InvitationsListResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
-
     invites: list[InviteCardResponse]
-    next_cursor: str | None = None
