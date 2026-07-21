@@ -32,7 +32,7 @@ from ska_oso_services.common.error_handling import (
 )
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.odt.service.calibrator_sweep_sbd_generator import generate_cal_sweep_sbd
-from ska_oso_services.odt.service.commissioning import load_pointings_as_targets
+from ska_oso_services.odt.service.commissioning import load_pointings
 from ska_oso_services.odt.service.frequency_sweep_calibrator import generate_frequency_sweep
 from ska_oso_services.odt.service.gsm_survey_sbd_generator import generate_gsm_survey_sbds
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
@@ -92,7 +92,7 @@ class CommissioningObservingMode(str, Enum):
 class GlobalSkyModelSurveyInputs(BaseModel):
     pointings_file_uri: str = Field(
         description=(
-            "The location of a csv file with `beam_name`, `ra` and `dec` columns. "
+            "The location of a csv file with `beam_name`, `ra`, `dec`, and `beam_fwhm` columns. "
             "As a first implementation, this should be a filename that corresponds to a "
             "file in the src/ska_oso_services/odt/service/commissioning/data directory."
         ),
@@ -577,7 +577,7 @@ def prjs_ob_generate_gsm_survey_sbds(
         identifier,
         obs_block_id,
     )
-    targets = load_pointings_as_targets(inputs.pointings_file_uri, max_rows=inputs.max_rows)
+    pointings = load_pointings(inputs.pointings_file_uri, max_rows=inputs.max_rows)
 
     with oda as uow:
         prj = uow.prjs.get(identifier)
@@ -596,11 +596,11 @@ def prjs_ob_generate_gsm_survey_sbds(
         sbd_batch_size = 50
         target_batch_size = sbd_batch_size * num_targets_per_sbd
 
-        for batch_start in range(0, len(targets), target_batch_size):
-            batch_targets = targets[batch_start : batch_start + target_batch_size]
+        for batch_start in range(0, len(pointings), target_batch_size):
+            batch_targets = pointings[batch_start : batch_start + target_batch_size]
 
             sbds = generate_gsm_survey_sbds(
-                input_targets=batch_targets,
+                input_pointings=batch_targets,
                 centre_frequency=Quantity(inputs.centre_frequency_mhz, u.MHz),
                 scan_duration=timedelta(minutes=inputs.scan_duration_min),
                 num_subarray_beams=inputs.num_subarray_beams,

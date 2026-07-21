@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 * Adds APIs for invitations, e.g. POST /pht/prsl/prp-1/invites
+* GSM survey constrained RA-sweep grouping now uses pairwise separation relative to beam FWHM
 
 16.1.0
 **********

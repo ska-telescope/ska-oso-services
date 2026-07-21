@@ -3,9 +3,11 @@
 import pytest
 from ska_oso_pdm import ICRSCoordinates, Target
 
+from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.odt.service.target_grouping import (
     ConstrainedRaSweepGrouper,
     DeclinationQueues,
+    Pointing,
 )
 
 # 8 dec rows (0°, 2°, 4°, …, 14°) × 2 RA columns (0°, 3°) = 16 targets.
@@ -98,67 +100,109 @@ GRID_16_TARGETS = [
 GRID_4_TARGETS = GRID_16_TARGETS[:4]
 
 
+def _attach_fwhm(targets: list[Target]) -> list[Pointing]:
+    return [
+        Pointing(
+            target_id=target.target_id,
+            name=target.name,
+            reference_coordinate=target.reference_coordinate,
+            fwhm_deg=1.0,
+        )
+        for target in targets
+    ]
+
+
+GRID_16_TARGETS_WITH_FWHM = _attach_fwhm(GRID_16_TARGETS)
+GRID_4_TARGETS_WITH_FWHM = _attach_fwhm(GRID_4_TARGETS)
+
+
+def _group_target_ids(groups: list[list[Target]]) -> list[str]:
+    return [target.target_id for group in groups for target in group]
+
+
 class TestConstrainedRaSweepGrouping:
     """Tests for the ConstrainedRaSweepGrouper.group method."""
 
     def test_two_interleaved_groups_on_regular_grid(self):
         """A 8-row × 2-column grid should produce exactly two full groups of 8.
 
-        With delta_dec=2 and RA gap=3 degrees at the equator:
-        - min_separation = 2.4 (same-dec cross-column = 3.0, valid)
-        - max_separation = 4.8 (diagonal one-row = 3.6, valid)
-        - same-column adjacent rows = 2.0 < min_sep → excluded from same group
-        This forces the algorithm to interleave alternate dec rows.
+        This verifies constrained-RA-sweep still deterministically creates
+        two full groups on a regular grid under relative-separation checks.
         """
         grouper = ConstrainedRaSweepGrouper()
-        groups = list(grouper.group(GRID_16_TARGETS, group_size=8))
+        groups = list(grouper.group(GRID_16_TARGETS_WITH_FWHM, group_size=8))
 
         assert len(groups) == 2
         assert all(len(g) == 8 for g in groups)
 
     def test_full_coverage_no_duplicates(self):
-        """Every target index must appear exactly once across all groups."""
+        """Every target id must appear exactly once across all groups."""
         grouper = ConstrainedRaSweepGrouper()
-        groups = list(grouper.group(GRID_16_TARGETS, group_size=8))
+        groups = list(grouper.group(GRID_16_TARGETS_WITH_FWHM, group_size=8))
 
-        all_indices = [idx for g in groups for idx in g]
-        assert sorted(all_indices) == list(range(len(GRID_16_TARGETS)))
+        all_target_ids = _group_target_ids(groups)
+        expected_target_ids = [target.target_id for target in GRID_16_TARGETS_WITH_FWHM]
+        assert sorted(all_target_ids) == sorted(expected_target_ids)
 
     def test_group_size_respected(self):
         """No group should exceed the requested group_size."""
         grouper = ConstrainedRaSweepGrouper()
-        groups = list(grouper.group(GRID_16_TARGETS, group_size=4))
+        groups = list(grouper.group(GRID_16_TARGETS_WITH_FWHM, group_size=4))
 
         assert all(len(g) <= 4 for g in groups)
         # All targets must still be covered
-        all_indices = [idx for g in groups for idx in g]
-        assert sorted(all_indices) == list(range(len(GRID_16_TARGETS)))
+        all_target_ids = _group_target_ids(groups)
+        expected_target_ids = [target.target_id for target in GRID_16_TARGETS_WITH_FWHM]
+        assert sorted(all_target_ids) == sorted(expected_target_ids)
 
     def test_deterministic(self):
         """Running twice on the same input produces identical groups."""
         grouper = ConstrainedRaSweepGrouper()
-        groups_a = list(grouper.group(GRID_16_TARGETS, group_size=8))
-        groups_b = list(grouper.group(GRID_16_TARGETS, group_size=8))
+        groups_a = list(grouper.group(GRID_16_TARGETS_WITH_FWHM, group_size=8))
+        groups_b = list(grouper.group(GRID_16_TARGETS_WITH_FWHM, group_size=8))
 
         assert groups_a == groups_b
 
     def test_small_catalogue_single_partial_group(self):
         """Fewer targets than group_size should yield a single partial group."""
         grouper = ConstrainedRaSweepGrouper()
-        groups = list(grouper.group(GRID_4_TARGETS, group_size=8))
+        groups = list(grouper.group(GRID_4_TARGETS_WITH_FWHM, group_size=8))
 
-        all_indices = [idx for g in groups for idx in g]
-        assert sorted(all_indices) == list(range(4))
+        all_target_ids = _group_target_ids(groups)
+        expected_target_ids = [target.target_id for target in GRID_4_TARGETS_WITH_FWHM]
+        assert sorted(all_target_ids) == sorted(expected_target_ids)
 
     def test_precomputed_dec_queues(self):
         """ConstrainedRaSweepGrouper accepts pre-computed DeclinationQueues."""
-        rd = DeclinationQueues.from_targets(GRID_16_TARGETS)
+        rd = DeclinationQueues.from_targets(GRID_16_TARGETS_WITH_FWHM)
         grouper = ConstrainedRaSweepGrouper(dec_queues=rd)
-        groups = list(grouper.group(GRID_16_TARGETS, group_size=8))
+        groups = list(grouper.group(GRID_16_TARGETS_WITH_FWHM, group_size=8))
 
         # Still must cover all targets
-        all_indices = [idx for g in groups for idx in g]
-        assert sorted(all_indices) == list(range(len(GRID_16_TARGETS)))
+        all_target_ids = _group_target_ids(groups)
+        expected_target_ids = [target.target_id for target in GRID_16_TARGETS_WITH_FWHM]
+        assert sorted(all_target_ids) == sorted(expected_target_ids)
+
+    def test_invalid_relative_separation_thresholds_raise_bad_request(self):
+        with pytest.raises(
+            BadRequestError, match="Relative separation thresholds must satisfy: 0 < min <= max"
+        ):
+            ConstrainedRaSweepGrouper(relative_min_separation=2.0, relative_max_separation=1.0)
+
+    def test_non_positive_fwhm_raises_bad_request(self):
+        invalid_targets = [
+            Pointing(
+                target_id=target.target_id,
+                name=target.name,
+                reference_coordinate=target.reference_coordinate,
+                fwhm_deg=0.0 if i == 0 else 1.0,
+            )
+            for i, target in enumerate(GRID_4_TARGETS)
+        ]
+
+        grouper = ConstrainedRaSweepGrouper()
+        with pytest.raises(BadRequestError, match="All target fwhm_deg values must be > 0"):
+            list(grouper.group(invalid_targets, group_size=4))
 
 
 def _make_target(ra_str: str, dec_str: str, idx: int) -> Target:
@@ -193,47 +237,28 @@ MISSING_RING_TARGETS = [
     _make_target("00:12:00.00", "+06:00:00.00", 5),
 ]
 
-# Bad RA spacing: 4 dec rows × 4 RA columns with non-uniform RA spacing.
-# Within each ring: RA = 0°, 1°, 10°, 11° — k=1 gaps alternate between 1°
-# and 9°, so they overlap with k=2 gaps. The approximate median-based
-# validation checks will fail.
-BAD_RA_SPACING_TARGETS = [
-    _make_target(f"{ra_h:02d}:{ra_m:02d}:00.00", f"+{dec:02d}:00:00.00", i)
-    for i, (ra_h, ra_m, dec) in enumerate(
-        (ra_h, ra_m, dec)
-        for dec in (0, 2, 4, 6)
-        for ra_h, ra_m in ((0, 0), (0, 4), (0, 40), (0, 44))
-    )
-]
-
 
 class TestValidateDeclinationQueues:
     """Tests for DeclinationQueues.validate() pre-flight checks."""
 
     def test_valid_catalogue_passes(self):
         """The regular GRID_16_TARGETS should pass validation without error."""
-        rd = DeclinationQueues.from_targets(GRID_16_TARGETS)
+        rd = DeclinationQueues.from_targets(GRID_16_TARGETS_WITH_FWHM)
         rd.validate()
 
     def test_non_uniform_dec_raises(self):
         """Catalogue with irregular dec spacing should raise ValueError."""
-        rd = DeclinationQueues.from_targets(NON_UNIFORM_DEC_TARGETS)
+        rd = DeclinationQueues.from_targets(_attach_fwhm(NON_UNIFORM_DEC_TARGETS))
         with pytest.raises(ValueError, match="Declination spacing is not uniform"):
             rd.validate()
 
     def test_non_uniform_dec_can_relax_tolerance(self):
         """Callers can override the default declination spacing tolerance."""
-        rd = DeclinationQueues.from_targets(NON_UNIFORM_DEC_TARGETS)
+        rd = DeclinationQueues.from_targets(_attach_fwhm(NON_UNIFORM_DEC_TARGETS))
         rd.validate(dec_uniformity_tolerance=0.03)
 
     def test_missing_ring_raises(self):
         """Catalogue with a gap in ring ids should raise ValueError."""
-        rd = DeclinationQueues.from_targets(MISSING_RING_TARGETS)
+        rd = DeclinationQueues.from_targets(_attach_fwhm(MISSING_RING_TARGETS))
         with pytest.raises(ValueError, match="Empty ring"):
-            rd.validate()
-
-    def test_bad_ra_spacing_raises(self):
-        """Catalogue with non-uniform RA spacing raises ValueError."""
-        rd = DeclinationQueues.from_targets(BAD_RA_SPACING_TARGETS)
-        with pytest.raises(ValueError, match="RA spacing check failed"):
             rd.validate()

@@ -9,6 +9,14 @@
       "branch": "master"
     }
   },
+  "observing_constraints": {
+    "altitude": {
+      "min": {
+        "value": 20.0,
+        "unit": "deg"
+      }
+    }
+  },
   "targets": [
     {
       "target_id": "target-0000",
@@ -203,7 +211,7 @@
       }
     },
     {
-      "target_id": "calibrator-00000",
+      "target_id": "gsmcalibrator-00000",
       "name": "Polaris Australis",
       "pointing_pattern": {
         "active": "SinglePointParameters",
@@ -1370,7 +1378,7 @@
         "scan_sequence": [
           {
             "scan_definition_id": "ScanDefinition-001",
-            "target_ref": "calibrator-00000",
+            "target_ref": "gsmcalibrator-00000",
             "csp_configuration_ref": "csp-configuration-12345",
             "scan_intent": "Calibrator",
             "pointing_correction": "MAINTAIN",
@@ -1382,7 +1390,7 @@
           },
           {
             "scan_definition_id": "ScanDefinition-001",
-            "target_ref": "calibrator-00000",
+            "target_ref": "gsmcalibrator-00000",
             "csp_configuration_ref": "csp-configuration-12345",
             "scan_intent": "Calibrator",
             "pointing_correction": "MAINTAIN",
@@ -1394,7 +1402,7 @@
           },
           {
             "scan_definition_id": "ScanDefinition-001",
-            "target_ref": "calibrator-00000",
+            "target_ref": "gsmcalibrator-00000",
             "csp_configuration_ref": "csp-configuration-12345",
             "scan_intent": "Calibrator",
             "pointing_correction": "MAINTAIN",
