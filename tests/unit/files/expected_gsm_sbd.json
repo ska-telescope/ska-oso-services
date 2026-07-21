@@ -9,6 +9,14 @@
       "branch": "master"
     }
   },
+  "observing_constraints": {
+    "altitude": {
+      "min": {
+        "value": 20.0,
+        "unit": "deg"
+      }
+    }
+  },
   "targets": [
     {
       "target_id": "target-0000",

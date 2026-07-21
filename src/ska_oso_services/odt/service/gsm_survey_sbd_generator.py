@@ -15,8 +15,10 @@ from astropy import units as u
 from astropy.units import Quantity
 from ska_oso_pdm import ICRSCoordinates, SBDefinition, SubArrayLOW, Target, TelescopeType
 from ska_oso_pdm.sb_definition import (
+    AltitudeConstraint,
     CSPConfiguration,
     MCCSAllocation,
+    ObservingConstraints,
     ScanDefinition,
     SDPConfiguration,
     SDPScript,
@@ -32,6 +34,7 @@ from ska_oso_services.odt.service.sbd_generator import _sbd_internal_id
 from ska_oso_services.odt.service.target_grouping import GroupingMethod, Pointing, create_grouper
 
 DEFAULT_SUBARRAY = SubArrayLOW.AA2_ALL
+DEFAULT_MINIMUM_ALTITUDE = 20.0 * u.deg
 
 
 def _low_default_subarray_parameters() -> tuple[list[int], Quantity]:
@@ -262,6 +265,9 @@ def _sbd_for_calibrator_targets(
     return SBDefinition(
         telescope=TelescopeType.SKA_LOW,
         activities=_default_activities(),
+        observing_constraints=ObservingConstraints(
+            altitude=AltitudeConstraint(min=DEFAULT_MINIMUM_ALTITUDE)
+        ),
         mccs_allocation=mccs_allocation,
         csp_configurations=[csp_configuration],
         sdp_configurations=sdp_configurations,

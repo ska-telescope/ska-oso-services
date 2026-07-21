@@ -47,6 +47,8 @@ class TestGenerateGSMSBDs:
         )
 
         assert len(sbds) == 2
+        assert all(sbd.observing_constraints.altitude.min.value == 20.0 for sbd in sbds)
+        assert all(sbd.observing_constraints.altitude.min.unit == "deg" for sbd in sbds)
 
     @mock.patch(f"{MODULE}._sbd_internal_id", side_effect=lambda cls: f"{cls.__name__}-001")
     def test_first_sbd_json(self, _mock_id):
