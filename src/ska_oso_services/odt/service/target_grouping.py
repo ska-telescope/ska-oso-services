@@ -1,21 +1,25 @@
 """
 Domain service for partitioning a target catalogue into spatial groups.
 
-This module is independent of SBD construction — it operates purely on
-:class:`~ska_oso_pdm.Target` objects and yields groups of target indices.
+This module is independent of SBD construction — it operates on per-target
+metadata objects and yields groups of those same objects. Conversion of a
+group into PDM :class:`~ska_oso_pdm.Target` objects (or any other
+representation) is the responsibility of the caller.
 """
 
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Protocol
+from typing import Protocol, TypeVar
 
 import numpy as np
 from astropy.coordinates import SkyCoord
-from ska_oso_pdm import Target
+from ska_oso_pdm import ICRSCoordinates
+
+from ska_oso_services.common.error_handling import BadRequestError
 
 
 class GroupingMethod(str, Enum):
@@ -26,6 +30,30 @@ class GroupingMethod(str, Enum):
 
 
 DEC_UNIFORMITY_RELATIVE_TOLERANCE = 0.01
+DEFAULT_RELATIVE_MIN_SEPARATION = 1.0
+DEFAULT_RELATIVE_MAX_SEPARATION = 3.0
+
+
+@dataclass(frozen=True)
+class Pointing:
+    """Pointing payload: target fields plus beam FWHM in degrees."""
+
+    target_id: str
+    name: str
+    reference_coordinate: ICRSCoordinates
+    fwhm_deg: float
+
+
+class TargetInfo(Protocol):
+    """Protocol for grouping algorithms that only require target coordinates."""
+
+    reference_coordinate: ICRSCoordinates
+
+
+class PointingInfo(TargetInfo, Protocol):
+    """Protocol for grouping algorithms that require relative-separation metadata."""
+
+    fwhm_deg: float
 
 
 # ---------------------------------------------------------------------------
@@ -43,8 +71,6 @@ class DeclinationQueues:
     unique_decs: np.ndarray
     delta_dec: float
     first_bin_center_dec: float
-    min_separation: float
-    max_separation: float
     queues: list[deque[int]] = field(default_factory=list)
 
     @classmethod
@@ -74,37 +100,6 @@ class DeclinationQueues:
             indices_sorted = indices[np.argsort(ra_deg[indices])]
             queues.append(deque(indices_sorted.tolist()))
 
-        # Derive min/max separation from k-neighbour statistics.
-        # For each ring, compute the approximate angular separation
-        # between targets at offset k as delta_ra * cos(dec).
-        k_global_max: dict[int, float] = {1: 0.0, 2: 0.0, 3: 0.0}
-        k_global_min: dict[int, float] = {
-            1: float("inf"),
-            2: float("inf"),
-            3: float("inf"),
-        }
-        for q in queues:
-            if len(q) < 4:
-                continue
-            indices = list(q)
-            ring_ra = ra_deg[indices]
-            ring_dec_mean = float(np.mean(dec_deg[indices]))
-            cos_dec = float(np.cos(np.radians(ring_dec_mean)))
-            for k in (1, 2, 3):
-                if len(ring_ra) < k + 1:
-                    continue
-                seps = (ring_ra[k:] - ring_ra[:-k]) * cos_dec
-                k_global_min[k] = min(k_global_min[k], float(np.min(seps)))
-                k_global_max[k] = max(k_global_max[k], float(np.max(seps)))
-
-        if k_global_min[2] == float("inf"):
-            # Fallback for catalogues with very few targets per ring
-            min_separation = delta_dec * 1.2
-            max_separation = delta_dec * 2.4
-        else:
-            min_separation = (k_global_max[1] + k_global_min[2]) / 2.0
-            max_separation = (k_global_max[2] + k_global_min[3]) / 2.0
-
         return cls(
             coords=coords,
             ra_deg=ra_deg,
@@ -112,25 +107,20 @@ class DeclinationQueues:
             unique_decs=unique_decs,
             delta_dec=delta_dec,
             first_bin_center_dec=first_bin_center_dec,
-            min_separation=min_separation,
-            max_separation=max_separation,
             queues=queues,
         )
 
     @classmethod
     def from_targets(
         cls,
-        targets: list[Target],
+        targets: Sequence[PointingInfo],
     ) -> DeclinationQueues:
-        """Construct DeclinationQueues from a list of Target objects.
-
-        Separation thresholds are derived automatically from the
-        k-neighbour spacing statistics of the catalogue.
+        """Construct DeclinationQueues from a sequence of per-target metadata objects.
 
         Parameters
         ----------
-        targets : list[Target]
-            Input target list with ICRS coordinates.
+        targets : Sequence[PointingInfo]
+            Input targets with ICRS coordinates.
 
         Raises
         ------
@@ -149,9 +139,6 @@ class DeclinationQueues:
         coords: SkyCoord,
     ) -> DeclinationQueues:
         """Construct DeclinationQueues from an existing SkyCoord array.
-
-        Separation thresholds are derived automatically from the
-        k-neighbour spacing statistics of the catalogue.
 
         Parameters
         ----------
@@ -208,81 +195,45 @@ class DeclinationQueues:
                 f"declination spacing between rings."
             )
 
-        # --- Check 3: Intra-ring RA spacing vs separation thresholds ---
-        issue_lines: list[str] = []
-        failing_dec_count = 0
-        for q in self.queues:
-            if len(q) < 4:
-                continue
-            indices = list(q)
-            ring_ra = self.ra_deg[indices]
-            ring_dec_mean = float(np.mean(self.dec_deg[indices]))
-            cos_dec = np.cos(np.radians(ring_dec_mean))
-
-            ra_gaps = np.diff(ring_ra)
-            delta_ra = float(np.median(ra_gaps))
-            approx_sep_k1 = delta_ra * cos_dec
-            approx_sep_k2 = 2.0 * delta_ra * cos_dec
-            approx_sep_k3 = 3.0 * delta_ra * cos_dec
-
-            issues: list[str] = []
-            if approx_sep_k1 >= self.min_separation:
-                issues.append(
-                    f"k=1 separation ({approx_sep_k1:.3f}°) >= "
-                    f"min_separation ({self.min_separation:.3f}°)"
-                )
-            if not (self.min_separation <= approx_sep_k2 <= self.max_separation):
-                issues.append(
-                    f"k=2 separation ({approx_sep_k2:.3f}°) not in "
-                    f"[min_separation ({self.min_separation:.3f}°), "
-                    f"max_separation ({self.max_separation:.3f}°)]"
-                )
-            if approx_sep_k3 <= self.max_separation:
-                issues.append(
-                    f"k=3 separation ({approx_sep_k3:.3f}°) <= "
-                    f"max_separation ({self.max_separation:.3f}°)"
-                )
-            if issues:
-                failing_dec_count += 1
-                issue_lines.extend(
-                    f"ring at dec≈{ring_dec_mean:.1f}°: {issue}" for issue in issues
-                )
-
-        if issue_lines:
-            shown_lines = issue_lines[:10]
-            detail = "\n  ".join(shown_lines)
-            remaining = len(issue_lines) - len(shown_lines)
-            tail = f"\n  plus {remaining} further issues" if remaining > 0 else ""
-            raise ValueError(
-                f"RA spacing check failed at {failing_dec_count} declinations. "
-                f"Every declination with at least four targets must satisfy "
-                f"the k=1/k=2/k=3 separation bounds.\n  {detail}{tail}"
-            )
-
 
 # ---------------------------------------------------------------------------
 # TargetGrouper protocol and implementations
 # ---------------------------------------------------------------------------
 
 
-class TargetGrouper(Protocol):
-    """Common interface for target-grouping strategies."""
-
-    def group(self, targets: list[Target], group_size: int) -> Iterator[list[int]]:
-        """Yield lists of indices into *targets*, one per group."""
+T = TypeVar("T")
 
 
-class SequentialGrouper:
+class TargetGrouper(Protocol[T]):
+    """Common interface for target-grouping strategies.
+
+    A grouper partitions its input targets into groups and yields each group
+    as a list of the *same* target type it received. Conversion of a group
+    into PDM :class:`~ska_oso_pdm.Target` objects (or any other
+    representation) is the responsibility of the caller, keeping this module
+    independent of SBD construction.
+
+    The protocol is parametrised by the target type so that groupers requiring
+    richer metadata can be distinguished from those that do not — for example
+    ``TargetGrouper[PointingInfo]`` for a strategy that
+    needs per-target beam FWHM.
+    """
+
+    def group(self, targets: Sequence[T], group_size: int) -> Iterator[list[T]]:
+        """Yield groups of the input targets, one list per group."""
+
+
+class SequentialGrouper(TargetGrouper[TargetInfo]):
     """Partition targets into sequential, non-overlapping chunks."""
 
-    def group(self, targets: list[Target], group_size: int) -> Iterator[list[int]]:
-        """Yield sequential chunks of target indices."""
+    def group(self, targets: Sequence[TargetInfo], group_size: int) -> Iterator[list[TargetInfo]]:
+        """Yield sequential chunks of the input targets."""
         num_targets = len(targets)
         for start in range(0, num_targets, group_size):
-            yield list(range(start, min(start + group_size, num_targets)))
+            yield list(targets[start : min(start + group_size, num_targets)])
 
 
-class ConstrainedRaSweepGrouper:
+class ConstrainedRaSweepGrouper(TargetGrouper[PointingInfo]):
     """Partition targets using a greedy DEC-constrainted RA sweep.
 
     The algorithm uses greedy local heuristics to generate groups with
@@ -306,45 +257,63 @@ class ConstrainedRaSweepGrouper:
     **Algorithm**
 
     1. Form RA-sorted queues of targets at each declination ring.
-    2. Determine ``min_separation`` and ``max_separation`` such that
-       k=1 nearest neighbours in each queue are below
-       ``min_separation``, k=2 nearest neighbours are between
-       ``min_separation`` and ``max_separation``, and k=3 nearest
-       neighbours are above ``max_separation``.
+    2. Use global relative-separation thresholds based on pair-averaged
+       FWHM: ``relative_min_separation`` and ``relative_max_separation``.
     3. Seed a new group with the lowest-RA target amongst all queues.
     4. Iteratively add targets to the group until it is full or no
        candidates remain:
 
-       - A candidate must be more than ``min_separation`` from
+       - A candidate must be more than ``relative_min_separation`` from
          *every* target already in the group.
-       - A candidate must be between ``min_separation`` and
-         ``max_separation`` from *at least one* target in the group.
+       - A candidate must be between ``relative_min_separation`` and
+         ``relative_max_separation`` from *at least one* target in the group.
        - The candidate with the minimum RA is selected.
 
     5. Yield the group and repeat from step 3 until all targets are
        assigned.
 
     Note that within a completed group, some pairs of members may be
-    at k=3 distances from each other.  This is expected: each member
-    was added because it had at least one k=2-distance neighbour
-    already in the group, but it is not required to be close to every
-    other member.
+    beyond ``relative_max_separation`` from each other.  This is expected:
+    each member was added because it had at least one neighbour inside
+    the accepted relative-separation band, but it is not required to be
+    close to every other member.
 
     Parameters
     ----------
     dec_queues : DeclinationQueues, optional
         Pre-computed ring data.  If not supplied, it will be derived
         from the targets passed to :meth:`group`.
+    relative_min_separation : float
+        Minimum allowed pairwise separation in units of pair-averaged FWHM.
+        Must be > 0 and <= ``relative_max_separation``.
+    relative_max_separation : float
+        Maximum allowed pairwise separation in units of pair-averaged FWHM
+        for the "at least one neighbour in band" candidate check. Must be > 0.
     """
 
     def __init__(
         self,
         dec_queues: DeclinationQueues | None = None,
+        relative_min_separation: float = DEFAULT_RELATIVE_MIN_SEPARATION,
+        relative_max_separation: float = DEFAULT_RELATIVE_MAX_SEPARATION,
     ) -> None:
         self._dec_queues = dec_queues
+        if (
+            relative_min_separation <= 0.0
+            or relative_max_separation <= 0.0
+            or relative_min_separation > relative_max_separation
+        ):
+            raise BadRequestError(
+                "Relative separation thresholds must satisfy: 0 < min <= max "
+                f"(got min={relative_min_separation}, max={relative_max_separation})"
+            )
+        self._relative_min_separation = float(relative_min_separation)
+        self._relative_max_separation = float(relative_max_separation)
 
-    def group(self, targets: list[Target], group_size: int) -> Iterator[list[int]]:
-        """Yield groups of target indices using constrained-RA-sweep clustering."""
+    def group(
+        self, targets: Sequence[PointingInfo], group_size: int
+    ) -> Iterator[list[PointingInfo]]:
+        """Yield groups of the input targets using constrained-RA-sweep clustering."""
         if self._dec_queues is not None:
             rd = self._dec_queues
         else:
@@ -353,15 +322,22 @@ class ConstrainedRaSweepGrouper:
         coords = rd.coords
         ra_deg = rd.ra_deg
         dec_deg = rd.dec_deg
-        min_separation = rd.min_separation
-        max_separation = rd.max_separation
+        relative_min_separation = self._relative_min_separation
+        relative_max_separation = self._relative_max_separation
+        fwhm_deg = np.asarray([float(target.fwhm_deg) for target in targets], dtype=float)
+        if np.any(fwhm_deg <= 0.0):
+            raise BadRequestError(
+                "All target fwhm_deg values must be > 0 for relative separation"
+            )
+        # Conservative angular bound used for geometric frontier pruning.
+        max_angular_separation = relative_max_separation * float(np.max(fwhm_deg))
         # Deep-copy queues so the grouper can be called again
         queues = [deque(q) for q in rd.queues]
 
         def _edge_key(i: int, j: int) -> tuple[int, int]:
             return (i, j) if i < j else (j, i)
 
-        edge_separation: dict[tuple[int, int], float] = {}
+        edge_relative_separation: dict[tuple[int, int], float] = {}
         active_nodes: dict[int, None] = {}
 
         # --- Main grouping loop ---
@@ -375,8 +351,10 @@ class ConstrainedRaSweepGrouper:
                         continue
                 pid = q.popleft()
                 for other_pid in active_nodes:
-                    edge_separation[_edge_key(pid, other_pid)] = float(
-                        coords[pid].separation(coords[other_pid]).degree
+                    angular_sep_deg = float(coords[pid].separation(coords[other_pid]).degree)
+                    pair_avg_fwhm = 0.5 * (fwhm_deg[pid] + fwhm_deg[other_pid])
+                    edge_relative_separation[_edge_key(pid, other_pid)] = angular_sep_deg / float(
+                        pair_avg_fwhm
                     )
                 active_nodes[pid] = None
 
@@ -387,8 +365,8 @@ class ConstrainedRaSweepGrouper:
             group: list[int] = [i0]
 
             while len(group) < group_size:
-                group_dec_min = float(np.min(dec_deg[group])) - max_separation
-                group_dec_max = float(np.max(dec_deg[group])) + max_separation
+                group_dec_min = float(np.min(dec_deg[group])) - max_angular_separation
+                group_dec_max = float(np.max(dec_deg[group])) + max_angular_separation
                 group_max_ra = float(np.max(ra_deg[group]))
 
                 for q in queues:
@@ -399,14 +377,23 @@ class ConstrainedRaSweepGrouper:
                             break
 
                         last_pid = group[-1]
-                        head_sep = float(coords[head_pid].separation(coords[last_pid]).degree)
-                        if head_sep > max_separation and ra_deg[head_pid] > group_max_ra:
+                        head_sep_deg = float(coords[head_pid].separation(coords[last_pid]).degree)
+                        head_pair_avg_fwhm = 0.5 * (fwhm_deg[head_pid] + fwhm_deg[last_pid])
+                        head_relative_sep = head_sep_deg / float(head_pair_avg_fwhm)
+                        if (
+                            head_relative_sep > relative_max_separation
+                            and ra_deg[head_pid] > group_max_ra
+                        ):
                             break
 
                         pid = q.popleft()
                         for other_pid in active_nodes:
-                            edge_separation[_edge_key(pid, other_pid)] = float(
+                            angular_sep_deg = float(
                                 coords[pid].separation(coords[other_pid]).degree
+                            )
+                            pair_avg_fwhm = 0.5 * (fwhm_deg[pid] + fwhm_deg[other_pid])
+                            edge_relative_separation[_edge_key(pid, other_pid)] = (
+                                angular_sep_deg / float(pair_avg_fwhm)
                             )
                         active_nodes[pid] = None
 
@@ -421,10 +408,18 @@ class ConstrainedRaSweepGrouper:
                         for idx, a in enumerate(proposed)
                         for b in proposed[idx + 1 :]
                     ]
-                    if not all(edge_separation[pair] >= min_separation for pair in proposed_pairs):
+                    if not all(
+                        edge_relative_separation[pair] >= relative_min_separation
+                        for pair in proposed_pairs
+                    ):
                         continue
-                    sep_to_group = [edge_separation[_edge_key(n, g)] for g in group]
-                    if not any(min_separation <= sep <= max_separation for sep in sep_to_group):
+                    relative_sep_to_group = [
+                        edge_relative_separation[_edge_key(n, g)] for g in group
+                    ]
+                    if not any(
+                        relative_min_separation <= sep <= relative_max_separation
+                        for sep in relative_sep_to_group
+                    ):
                         continue
                     if ra_deg[n] < best_ra:
                         best_ra = ra_deg[n]
@@ -434,20 +429,20 @@ class ConstrainedRaSweepGrouper:
                     break
                 group.append(best_candidate)
 
-            yield [int(n) for n in group]
+            yield [targets[int(n)] for n in group]
             removed = set(group)
             for n in group:
                 active_nodes.pop(n, None)
-            edge_separation = {
+            edge_relative_separation = {
                 k: v
-                for k, v in edge_separation.items()
+                for k, v in edge_relative_separation.items()
                 if k[0] not in removed and k[1] not in removed
             }
 
         remaining = [q.popleft() for q in queues for _ in range(len(q))]
         if remaining:
             for start in range(0, len(remaining), group_size):
-                yield remaining[start : start + group_size]
+                yield [targets[int(n)] for n in remaining[start : start + group_size]]
 
 
 # ---------------------------------------------------------------------------
@@ -458,7 +453,7 @@ class ConstrainedRaSweepGrouper:
 def create_grouper(
     method: GroupingMethod = GroupingMethod.CONSTRAINED_RA_SWEEP,
     **kwargs,
-) -> TargetGrouper:
+) -> TargetGrouper[TargetInfo] | TargetGrouper[PointingInfo]:
     """Create a :class:`TargetGrouper` for the given method.
 
     Parameters
@@ -467,7 +462,8 @@ def create_grouper(
         The grouping strategy to use.
     **kwargs
         Extra keyword arguments forwarded to the grouper constructor
-        (e.g. ``dec_queues``).
+        (e.g. ``dec_queues``, ``relative_min_separation``,
+        ``relative_max_separation``).
     """
     if method == GroupingMethod.SEQUENTIAL:
         return SequentialGrouper()

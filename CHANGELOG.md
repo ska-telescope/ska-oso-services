@@ -4,6 +4,10 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+**********
+* GSM survey constrained RA-sweep grouping now uses pairwise separation relative to beam FWHM
+
 16.1.0
 **********
 * Added LST validator to check that start and end time are not the same

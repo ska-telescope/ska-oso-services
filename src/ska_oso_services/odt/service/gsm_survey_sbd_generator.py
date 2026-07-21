@@ -15,8 +15,10 @@ from astropy import units as u
 from astropy.units import Quantity
 from ska_oso_pdm import ICRSCoordinates, SBDefinition, SubArrayLOW, Target, TelescopeType
 from ska_oso_pdm.sb_definition import (
+    AltitudeConstraint,
     CSPConfiguration,
     MCCSAllocation,
+    ObservingConstraints,
     ScanDefinition,
     SDPConfiguration,
     SDPScript,
@@ -29,9 +31,10 @@ from ska_oso_pdm.sb_definition.procedures import GitScript
 from ska_oso_services.common.astro import low_frequency_to_coarse_channel
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
 from ska_oso_services.odt.service.sbd_generator import _sbd_internal_id
-from ska_oso_services.odt.service.target_grouping import GroupingMethod, create_grouper
+from ska_oso_services.odt.service.target_grouping import GroupingMethod, Pointing, create_grouper
 
 DEFAULT_SUBARRAY = SubArrayLOW.AA2_ALL
+DEFAULT_MINIMUM_ALTITUDE = 20.0 * u.deg
 
 
 def _low_default_subarray_parameters() -> tuple[list[int], Quantity]:
@@ -48,14 +51,29 @@ def _low_default_subarray_parameters() -> tuple[list[int], Quantity]:
 
 
 CALIBRATOR_TARGET = Target(
-    target_id="calibrator-00000",
+    target_id="gsmcalibrator-00000",
     name="Polaris Australis",
     reference_coordinate=ICRSCoordinates(ra_str="21:08:46.8636", dec_str="-88:57:23.398"),
 )
 
 
+def _pointing_to_target(pointing: Pointing) -> Target:
+    """Convert a grouped :class:`Pointing` into a PDM :class:`Target`.
+
+    The grouping service is intentionally PDM-agnostic and yields the pointing
+    objects it received; conversion to PDM Targets happens here, at the point of
+    SBD construction. The beam FWHM carried by the pointing is not part of the
+    PDM Target and is dropped in this conversion.
+    """
+    return Target(
+        target_id=pointing.target_id,
+        name=pointing.name,
+        reference_coordinate=pointing.reference_coordinate,
+    )
+
+
 def generate_gsm_survey_sbds(
-    input_targets: list[Target],
+    input_pointings: list[Pointing],
     centre_frequency: Quantity,
     scan_duration: timedelta,
     num_subarray_beams: int,
@@ -83,22 +101,20 @@ def generate_gsm_survey_sbds(
     num_targets_per_sbd = num_scans * num_subarray_beams
 
     grouper = create_grouper(grouping)
-    groups = grouper.group(input_targets, num_targets_per_sbd)
+    groups = grouper.group(input_pointings, num_targets_per_sbd)
 
-    for group_indices in groups:
-        targets_for_sbd = [input_targets[i] for i in group_indices]
+    for pointing_group in groups:
+        target_group = [_pointing_to_target(pointing) for pointing in pointing_group]
 
-        if len(targets_for_sbd) == num_targets_per_sbd:
+        if len(target_group) == num_targets_per_sbd:
             sbd_beams = num_subarray_beams
             sbd_scans = num_scans
         else:
-            sbd_beams, sbd_scans = _compute_remainder_layout(
-                len(targets_for_sbd), num_subarray_beams
-            )
+            sbd_beams, sbd_scans = _compute_remainder_layout(len(target_group), num_subarray_beams)
 
         sbds.append(
             _sbd_for_calibrator_targets(
-                targets_for_sbd,
+                target_group,
                 csp_configuration,
                 scan_duration,
                 sbd_beams,
@@ -249,6 +265,9 @@ def _sbd_for_calibrator_targets(
     return SBDefinition(
         telescope=TelescopeType.SKA_LOW,
         activities=_default_activities(),
+        observing_constraints=ObservingConstraints(
+            altitude=AltitudeConstraint(min=DEFAULT_MINIMUM_ALTITUDE)
+        ),
         mccs_allocation=mccs_allocation,
         csp_configurations=[csp_configuration],
         sdp_configurations=sdp_configurations,
