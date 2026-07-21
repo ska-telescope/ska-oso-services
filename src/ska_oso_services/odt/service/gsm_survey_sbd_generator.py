@@ -51,7 +51,7 @@ def _low_default_subarray_parameters() -> tuple[list[int], Quantity]:
 
 
 CALIBRATOR_TARGET = Target(
-    target_id="calibrator-00000",
+    target_id="gsmcalibrator-00000",
     name="Polaris Australis",
     reference_coordinate=ICRSCoordinates(ra_str="21:08:46.8636", dec_str="-88:57:23.398"),
 )
