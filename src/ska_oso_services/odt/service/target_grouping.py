@@ -19,6 +19,8 @@ import numpy as np
 from astropy.coordinates import SkyCoord
 from ska_oso_pdm import ICRSCoordinates
 
+from ska_oso_services.common.error_handling import BadRequestError
+
 
 class GroupingMethod(str, Enum):
     """Strategy used to partition targets into SBD groups."""
@@ -301,7 +303,7 @@ class ConstrainedRaSweepGrouper(TargetGrouper[PointingInfo]):
             or relative_max_separation <= 0.0
             or relative_min_separation > relative_max_separation
         ):
-            raise ValueError(
+            raise BadRequestError(
                 "Relative separation thresholds must satisfy: 0 < min <= max "
                 f"(got min={relative_min_separation}, max={relative_max_separation})"
             )
@@ -324,7 +326,9 @@ class ConstrainedRaSweepGrouper(TargetGrouper[PointingInfo]):
         relative_max_separation = self._relative_max_separation
         fwhm_deg = np.asarray([float(target.fwhm_deg) for target in targets], dtype=float)
         if np.any(fwhm_deg <= 0.0):
-            raise ValueError("All target fwhm_deg values must be > 0 for relative separation")
+            raise BadRequestError(
+                "All target fwhm_deg values must be > 0 for relative separation"
+            )
         # Conservative angular bound used for geometric frontier pruning.
         max_angular_separation = relative_max_separation * float(np.max(fwhm_deg))
         # Deep-copy queues so the grouper can be called again

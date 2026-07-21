@@ -3,6 +3,7 @@
 import pytest
 from ska_oso_pdm import ICRSCoordinates, Target
 
+from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.odt.service.target_grouping import (
     ConstrainedRaSweepGrouper,
     DeclinationQueues,
@@ -181,6 +182,27 @@ class TestConstrainedRaSweepGrouping:
         all_target_ids = _group_target_ids(groups)
         expected_target_ids = [target.target_id for target in GRID_16_TARGETS_WITH_FWHM]
         assert sorted(all_target_ids) == sorted(expected_target_ids)
+
+    def test_invalid_relative_separation_thresholds_raise_bad_request(self):
+        with pytest.raises(
+            BadRequestError, match="Relative separation thresholds must satisfy: 0 < min <= max"
+        ):
+            ConstrainedRaSweepGrouper(relative_min_separation=2.0, relative_max_separation=1.0)
+
+    def test_non_positive_fwhm_raises_bad_request(self):
+        invalid_targets = [
+            Pointing(
+                target_id=target.target_id,
+                name=target.name,
+                reference_coordinate=target.reference_coordinate,
+                fwhm_deg=0.0 if i == 0 else 1.0,
+            )
+            for i, target in enumerate(GRID_4_TARGETS)
+        ]
+
+        grouper = ConstrainedRaSweepGrouper()
+        with pytest.raises(BadRequestError, match="All target fwhm_deg values must be > 0"):
+            list(grouper.group(invalid_targets, group_size=4))
 
 
 def _make_target(ra_str: str, dec_str: str, idx: int) -> Target:
