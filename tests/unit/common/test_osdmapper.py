@@ -13,7 +13,7 @@ from ska_oso_services.common.osdmapper import (
     get_low_basic_capability_parameter_from_osd,
     get_mid_frequency_band_data_from_osd,
     get_subarray_specific_parameter_from_osd,
-    get_telescope_observing_constraint,
+    get_telescope_observing_constraint, SPFRxParameters,
 )
 
 
@@ -107,3 +107,8 @@ def test_configuration_from_osd_returns_low_cbf_metrics():
     cbf = value.ska_low.quality_attribute_metrics.cbf
 
     assert cbf.processors_ready_percent is not None, "processors_ready_percent must be present"
+
+
+def test_configuration_configuration_from_osd_returns_mid_spfrx_defaults():
+    value = configuration_from_osd()
+    assert type(value.ska_mid.spfrx_parameters) is SPFRxParameters

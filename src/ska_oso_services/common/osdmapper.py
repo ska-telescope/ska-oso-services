@@ -3,14 +3,19 @@ This module calls the OSD and converts the relevant parts into the
 configuration needed for the application.
 """
 
+import copy
 from functools import cache
 from importlib.metadata import version
 from typing import Union
 
 from pydantic import AliasChoices, BaseModel, Field, dataclasses
 from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
+from ska_oso_pdm._shared.spfrx import (
+    NoiseDiodeMode,
+    TargetSPFRxConfiguration,
+)
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
-from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
+from ska_oso_pdm.sb_definition.csp.midcbf import CSPSPFRxConfiguration, ReceiverBand
 from ska_ost_osd.osd.common.error_handling import OSDModelError
 from ska_ost_osd.osd.models.models import OSDQueryParams
 from ska_ost_osd.osd.routers.api import get_cycle_list, get_osd
@@ -86,6 +91,26 @@ class Constraints(BaseModel):
     max_elevation_deg: float
 
 
+class PeriodicNoiseDiode(BaseModel):
+    mode: str = NoiseDiodeMode.PERIODIC
+    period_ms: float
+    duty_cycle_ms: float
+    phase_shift_ms: float
+
+
+class PseudoRandomNoiseDiode(BaseModel):
+    mode: str = NoiseDiodeMode.PSEUDO_RANDOM
+    binary_polynomial: int
+    seed: int
+    dwell_ms: float
+
+
+class SPFRxParameters(BaseModel):
+    target_spfrx_defaults: TargetSPFRxConfiguration
+    noise_diode_defaults: list[PeriodicNoiseDiode | PseudoRandomNoiseDiode]
+    csp_spfrx_defaults: CSPSPFRxConfiguration
+
+
 @dataclasses.dataclass
 class LowCBFMetrics:
     processors_ready_percent: float
@@ -100,6 +125,7 @@ class MidConfiguration(AppModel):
     frequency_band: list[MidFrequencyBand]
     constraints: Constraints
     subarrays: list[Subarray]
+    spfrx_parameters: SPFRxParameters
 
 
 class LowConfiguration(AppModel):
@@ -125,13 +151,14 @@ def configuration_from_osd() -> Configuration:
      the lower level, as the interface is easier to use. Both of these
      things are likely to change in the future.
     """
+    tmdata = get_osd_tmdata()
     return Configuration(
-        ska_mid=_get_mid_telescope_configuration(),
-        ska_low=_get_low_telescope_configuration(),
+        ska_mid=_get_mid_telescope_configuration(tmdata=tmdata),
+        ska_low=_get_low_telescope_configuration(tmdata=tmdata),
     )
 
 
-def _get_mid_telescope_configuration() -> MidConfiguration:
+def _get_mid_telescope_configuration(tmdata: TMData) -> MidConfiguration:
 
     mid_response = get_osd_data(capabilities="mid", source=OSD_SOURCE, osd_version=OSD_VERSION)[
         "capabilities"
@@ -161,12 +188,13 @@ def _get_mid_telescope_configuration() -> MidConfiguration:
             frequency_band_from_receiver_information_for_band(receiver_info)
             for receiver_info in receiver_information
         ],
-        constraints=_get_telescope_constraints(telescope=TelescopeType.SKA_MID),
+        constraints=_get_telescope_constraints(telescope=TelescopeType.SKA_MID, tmdata=tmdata),
         subarrays=subarrays,
+        spfrx_parameters=_get_spfrx_params(tmdata=tmdata),
     )
 
 
-def _get_low_telescope_configuration() -> LowConfiguration:
+def _get_low_telescope_configuration(tmdata: TMData) -> LowConfiguration:
 
     low_response = get_osd_data(capabilities="low", source=OSD_SOURCE, osd_version=OSD_VERSION)[
         "capabilities"
@@ -185,19 +213,18 @@ def _get_low_telescope_configuration() -> LowConfiguration:
 
     return LowConfiguration(
         frequency_band=LowFrequencyBand(**receiver_information),
-        constraints=_get_telescope_constraints(telescope=TelescopeType.SKA_LOW),
+        constraints=_get_telescope_constraints(telescope=TelescopeType.SKA_LOW, tmdata=tmdata),
         quality_attribute_metrics=LowQualityAttributeMetrics(**quality_attribute_metrics),
         subarrays=subarrays,
     )
 
 
-def _get_telescope_constraints(telescope: TelescopeType) -> Constraints:
+def _get_telescope_constraints(telescope: TelescopeType, tmdata: TMData) -> Constraints:
     if telescope == TelescopeType.SKA_MID:
         path_prefix = "ska1_mid/mid_"
     else:
         path_prefix = "ska1_low/low_"
 
-    tmdata = get_osd_tmdata()
     default_constraints_dict = tmdata[f"{path_prefix}defaults.json"].get_dict()["constraints"]
     capabilities_constraints_dict = tmdata[f"{path_prefix}capabilities.json"].get_dict()[
         "constraints"
@@ -206,6 +233,28 @@ def _get_telescope_constraints(telescope: TelescopeType) -> Constraints:
     constraints = Constraints(**{**capabilities_constraints_dict, **default_constraints_dict})
 
     return constraints
+
+
+def _get_spfrx_params(tmdata: TMData) -> SPFRxParameters:
+    default_params = tmdata["ska1_mid/mid_defaults.json"].get_dict()
+
+    noise_diode = default_params["defaults"]["target"]["dish_spfrx_params"]["noise_diode"]
+
+    csp_spfrx_params = default_params["defaults"]["csp_configuration"]["spfrx"]
+
+    target_spfrx_params = copy.copy(default_params)["defaults"]["target"]["dish_spfrx_params"]
+    target_spfrx_params.pop("noise_diode", None)
+
+    spfrx = SPFRxParameters(
+        target_spfrx_defaults=TargetSPFRxConfiguration(**target_spfrx_params),
+        noise_diode_defaults=[
+            PeriodicNoiseDiode(**noise_diode["periodic"]),
+            PseudoRandomNoiseDiode(**noise_diode["pseudo_random"]),
+        ],
+        csp_spfrx_defaults=CSPSPFRxConfiguration(**csp_spfrx_params),
+    )
+
+    return spfrx
 
 
 @cache
