@@ -74,9 +74,20 @@ class S3Config(ConfigBase):
 
 
 class UserPortalConfig(ConfigBase):
-    base_url: HttpUrl = Field(alias="USER_PORTAL_BASE_URL", description="The base URL for the SKAO User Portal in this environment.")
-    api_key: str = Field(default="", alias="USER_PORTAL_API_KEY", description="API key used to authenticate to the SKAO User Portal API")
-    timeout: int = Field(default=10, alias="USER_PORTAL_TIMEOUT", description="How long to wait (in seconds) before HTTP requests to the User Portal API time out")
+    base_url: HttpUrl = Field(
+        alias="USER_PORTAL_BASE_URL",
+        description="The base URL for the SKAO User Portal in this environment.",
+    )
+    api_key: str = Field(
+        default="",
+        alias="USER_PORTAL_API_KEY",
+        description="API key used to authenticate to the SKAO User Portal API",
+    )
+    timeout: int = Field(
+        default=10,
+        alias="USER_PORTAL_TIMEOUT",
+        description="How long to wait (in seconds) before User Portal requests time out",
+    )
 
 
 class Settings(ConfigBase):
