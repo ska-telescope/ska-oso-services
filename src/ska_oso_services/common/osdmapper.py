@@ -3,7 +3,6 @@ This module calls the OSD and converts the relevant parts into the
 configuration needed for the application.
 """
 
-import copy
 from functools import cache
 from importlib.metadata import version
 from typing import Union
@@ -104,7 +103,8 @@ class PseudoRandomNoiseDiode(BaseModel):
     seed: int
     dwell_ms: float
 
-class TargetSPFRx (TargetSPFRxConfiguration):
+
+class TargetSPFRx(TargetSPFRxConfiguration):
     noise_diode_options: list[PeriodicNoiseDiode | PseudoRandomNoiseDiode]
 
 
