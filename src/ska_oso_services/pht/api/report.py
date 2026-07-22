@@ -6,9 +6,10 @@ from ska_aaa_authhelpers.roles import Role
 from ska_db_oda.repository.domain import CustomQuery
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.auth import Permissions, Scope
+from ska_oso_services.common.auth import Scope
 from ska_oso_services.pht.models.schemas import ProposalReportResponse
 from ska_oso_services.pht.service.report_processing import join_proposals_panels_reviews_decisions
+from ska_oso_services.pht.service.security import Security, SecurityService
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,11 @@ router = APIRouter(prefix="/report", tags=["PHT API - Report"])
     summary="Create a report for admin/coordinator",
     response_model=list[ProposalReportResponse],
     dependencies=[
-        Permissions(roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER], scopes=[Scope.PHT_READ])
+        Security(
+            roles={Role.INTERNAL},
+            scopes={Scope.PHT_READ},
+            groups={SecurityService.PHT_ADMIN_GROUP},
+        )
     ],
 )
 def get_report() -> List[ProposalReportResponse]:

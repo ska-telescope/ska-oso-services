@@ -73,30 +73,30 @@ def assert_user_has_permission_for_proposal(
     return rows
 
 
-def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
-    """
-    Return sorted unique proposal IDs accessible to a user.
+# def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
+#     """
+#     Return sorted unique proposal IDs accessible to a user.
 
-    The function queries the `proposal-access` table for all access rows
-    that match the given user and then selects the latest entity per access_id,
-    finally deduplicating and sorting by proposal id.
+#     The function queries the `proposal-access` table for all access rows
+#     that match the given user and then selects the latest entity per access_id,
+#     finally deduplicating and sorting by proposal id.
 
-    Args:
-        uow: Unit-of-work
-        user_id: The user identifier from the token of the authenticated user.
+#     Args:
+#         uow: Unit-of-work
+#         user_id: The user identifier from the token of the authenticated user.
 
-    Returns:
-        List[str]: Sorted list of proposal IDs (may be empty).
+#     Returns:
+#         List[str]: Sorted list of proposal IDs (may be empty).
 
-    Notes:
-        - No permission filtering beyond existence of access rows,
-            given that every entry has the basic `view` access
-        - Uses `get_latest_entity_by_id(rows, "access_id")`
-            to retrive the latest version.
-    """
-    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
-    rows = get_latest_entity_by_id(rows_init, ACCESS_ID) or []
-    return sorted({row.prsl_id for row in rows})
+#     Notes:
+#         - No permission filtering beyond existence of access rows,
+#             given that every entry has the basic `view` access
+#         - Uses `get_latest_entity_by_id(rows, "access_id")`
+#             to retrive the latest version.
+#     """
+#     rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
+#     rows = get_latest_entity_by_id(rows_init, ACCESS_ID) or []
+#     return sorted({row.prsl_id for row in rows})
 
 
 def merge_latest_with_preference(

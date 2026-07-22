@@ -28,13 +28,13 @@ dependencies = [
     "ska-db-oda>=19.0.0",
     "pydantic>=2.9",
     "pydantic-settings>=2.5",
-    "fastapi[standard]>=0.115.8",
+    "fastapi[standard]==0.139.0",
     "astroquery==0.4.9",
-    "ska-ost-osd>=6.0.4",
+    "ska-ost-osd>=6.0.9",
     "ska-telmodel-client>=1.30.0",
     "aiosmtplib>=4.0.1",
     "boto3>=1.38.13",
-    "ska-aaa-authhelpers>=1.5.0",
+    "ska-aaa-authhelpers>=2.0.0",
     # Need to pin as otherwise pip cannot resolve the dependencies in the tests.
     # This dependency comes through the osd > telmodel, so reasses when updating those.
     "argcomplete>=1.9.4",
@@ -42,6 +42,7 @@ dependencies = [
     "astroplan>=0.10.1",
     "matplotlib>=3.10.7",
     "numpy<2.4",
+    "ska-ser-skuid>=6,<7",
 ]
 
 [project.urls]

@@ -369,6 +369,44 @@ class TestProposalAPI:
         assert resp.json() == []
 
 
+class TestProposalReadAccessFromClaims:
+    def test_grants_read_for_proposal_member_group(self):
+        auth = SimpleNamespace(
+            user_id="u1",
+            roles={prsl_api.Role.ANY},
+            groups={"app:pht:prp-123"},
+        )
+
+        assert prsl_api._has_proposal_read_access(auth, "prp-123") is True
+
+    def test_grants_read_for_proposal_pi_group(self):
+        auth = SimpleNamespace(
+            user_id="u1",
+            roles={prsl_api.Role.ANY},
+            groups={"app:pht:prp-123/pi"},
+        )
+
+        assert prsl_api._has_proposal_read_access(auth, "prp-123") is True
+
+    def test_grants_read_for_global_admin_group(self):
+        auth = SimpleNamespace(
+            user_id="u1",
+            roles={prsl_api.Role.ANY},
+            groups={"app:pht:ops_proposal_admin"},
+        )
+
+        assert prsl_api._has_proposal_read_access(auth, "prp-123") is True
+
+    def test_denies_read_for_unrecognized_groups(self):
+        auth = SimpleNamespace(
+            user_id="u1",
+            roles={prsl_api.Role.ANY},
+            groups={"some:other:group", "foo"},
+        )
+
+        assert prsl_api._has_proposal_read_access(auth, "prp-123") is False
+
+
 class TestGetProposalReview:
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_reviews_for_proposal_with_wrong_id(self, mock_oda, client):
@@ -1040,33 +1078,33 @@ EMAIL_TEST_CASES = [
 
 class TestGetUserEmail:
     @pytest.mark.parametrize("email, mock_return, expected_response", EMAIL_TEST_CASES)
-    @mock.patch("ska_oso_services.pht.utils.ms_graph.make_graph_call")
+    @mock.patch(f"{PRSL_MODULE}.UserPortalService.search_users", new_callable=mock.AsyncMock)
     def test_get_user_by_email_success(
-        self, mock_make_graph_call, email, mock_return, expected_response, client
+        self, mock_search_users, email, mock_return, expected_response, client_get
     ):
-        mock_make_graph_call.return_value = mock_return
+        mock_search_users.return_value = {"items": mock_return}
 
-        response = client.get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
+        response = client_get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == expected_response
 
-    @mock.patch("ska_oso_services.pht.utils.ms_graph.make_graph_call")
-    def test_get_user_by_email_user_not_found(self, mock_make_graph_call, client):
+    @mock.patch(f"{PRSL_MODULE}.UserPortalService.search_users", new_callable=mock.AsyncMock)
+    def test_get_user_by_email_user_not_found(self, mock_search_users, client_get):
         email = "no_user@example.com"
-        mock_make_graph_call.return_value = []
+        mock_search_users.return_value = {"items": []}
 
-        response = client.get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
+        response = client_get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert response.json() == {"detail": f"User not found with email: {email}"}
 
-    @mock.patch("ska_oso_services.pht.utils.ms_graph.make_graph_call")
-    def test_get_user_by_invalid_email_user_not_found(self, mock_make_graph_call, client):
+    @mock.patch(f"{PRSL_MODULE}.UserPortalService.search_users", new_callable=mock.AsyncMock)
+    def test_get_user_by_invalid_email_user_not_found(self, mock_search_users, client_get):
         email = "invalid*address@example.com"
-        mock_make_graph_call.return_value = []
+        mock_search_users.return_value = {"items": []}
 
-        response = client.get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
+        response = client_get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert response.json() == {"detail": f"User not found with email: {email}"}

@@ -1035,31 +1035,36 @@ wheels = [
 
 [[package]]
 name = "fastapi"
-version = "0.115.14"
+version = "0.139.0"
 source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
 dependencies = [
+    { name = "annotated-doc" },
     { name = "pydantic" },
     { name = "starlette" },
     { name = "typing-extensions" },
+    { name = "typing-inspection" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ca/53/8c38a874844a8b0fa10dd8adf3836ac154082cf88d3f22b544e9ceea0a15/fastapi-0.115.14.tar.gz", hash = "sha256:b1de15cdc1c499a4da47914db35d0e4ef8f1ce62b624e94e0e5824421df99739", size = 296263, upload-time = "2025-06-26T15:29:08.21Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/af/a5f50ccfa659ec1802cb4ca842c23f06d906a8cc9aef6016a2caeea3d4ed/fastapi-0.139.0.tar.gz", hash = "sha256:99ab7b2d92223c76d6cf10757ab3f89d45b38267fc20b2a136cf02f6beac3145", size = 423016, upload-time = "2026-07-01T16:35:33.436Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/53/50/b1222562c6d270fea83e9c9075b8e8600b8479150a18e4516a6138b980d1/fastapi-0.115.14-py3-none-any.whl", hash = "sha256:6c0c8bf9420bd58f565e585036d971872472b4f7d3f6c73b698e10cffdefb3ca", size = 95514, upload-time = "2025-06-26T15:29:06.49Z" },
+    { url = "https://files.pythonhosted.org/packages/9e/7c/8e3c6ad324ea5cb36604fc3f968554887891c316d9dfde57761611d907ad/fastapi-0.139.0-py3-none-any.whl", hash = "sha256:cf15e1e9e667ddb0ad63811e60bd11390d1aac838ca4a7a23f421807b2308189", size = 130339, upload-time = "2026-07-01T16:35:32.19Z" },
 ]
 
 [package.optional-dependencies]
 standard = [
     { name = "email-validator" },
     { name = "fastapi-cli", extra = ["standard"] },
+    { name = "fastar" },
     { name = "httpx" },
     { name = "jinja2" },
+    { name = "pydantic-extra-types" },
+    { name = "pydantic-settings" },
     { name = "python-multipart" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
 [[package]]
 name = "fastapi-cli"
-version = "0.0.29"
+version = "0.0.32"
 source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
 dependencies = [
     { name = "rich-toolkit" },
@@ -1067,9 +1072,9 @@ dependencies = [
     { name = "typer" },
     { name = "uvicorn", extra = ["standard"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6d/82/986d498e3b4c41b043bd14ece562fc1a766b56aa1bfd980ae10717c9bc46/fastapi_cli-0.0.29.tar.gz", hash = "sha256:d1140852664a91754da6db4db1e750ace4059f1a21adcf9b161ad4310271a621", size = 23948, upload-time = "2026-07-08T12:45:03.19Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/eb/3b534c6f8e157f9ddbf2a153512307c886cad0b258739c200dd8ff8c4452/fastapi_cli-0.0.32.tar.gz", hash = "sha256:38024d2345275e1b37ce8848727a580d84901b570e96b3256d9d36a9a5039424", size = 26636, upload-time = "2026-07-16T12:16:58.678Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/02/13/0786e5265018238f9a014270ff89d84b02065c2303df9bfac6857ab54bab/fastapi_cli-0.0.29-py3-none-any.whl", hash = "sha256:05bf08e0e527e3649a50c44bd1e0a2c13575c6cf9a939ff70013f288afc074de", size = 13191, upload-time = "2026-07-08T12:45:02.378Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/53/56ae5ae17bb0a5d89d1d31e5320eb1865553ebbfbde91cdc4c221245f2a8/fastapi_cli-0.0.32-py3-none-any.whl", hash = "sha256:8dcc286fa32f01bbd3f65dd09cfd5a2540ed5f2230b77db7fd30978d6165f3c4", size = 14670, upload-time = "2026-07-16T12:16:57.297Z" },
 ]
 
 [package.optional-dependencies]
@@ -2511,18 +2516,6 @@ wheels = [
 ]
 
 [[package]]
-name = "py-machineid"
-version = "0.6.0"
-source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
-dependencies = [
-    { name = "winregistry", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/14/ca/10f1afc01f0648207b3648af16ebf913bb6401de9b7efc945e2489d7ce37/py-machineid-0.6.0.tar.gz", hash = "sha256:00c38d8521d429a4539bdd92967234db28a1a2b4b263062b351ca002332e633f", size = 4558, upload-time = "2024-07-04T14:41:40.4Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/54/1f146aed749192d1638fc6878dee444189e8873861e340f8a3ffe15b16f3/py_machineid-0.6.0-py3-none-any.whl", hash = "sha256:63214f8a98737311716b29d279716dc121a6495f16486caf5c032433f81cdfd6", size = 4864, upload-time = "2024-07-04T14:41:37.966Z" },
-]
-
-[[package]]
 name = "pycparser"
 version = "3.0"
 source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
@@ -2665,6 +2658,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ac/ad/5565071e937d8e752842ac241463944c9eb14c87e2d269f2658a5bd05e98/pydantic_core-2.46.4-pp311-pypy311_pp73-musllinux_1_1_armv7l.whl", hash = "sha256:d396ec2b979760aaf3218e76c24e65bd0aca24983298653b3a9d7a45f9e47b30", size = 2310000, upload-time = "2026-05-06T13:37:56.694Z" },
     { url = "https://files.pythonhosted.org/packages/4f/c3/66883a5cec183e7fba4d024b4cbbe61851a63750ef606b0afecc46d1f2bf/pydantic_core-2.46.4-pp311-pypy311_pp73-musllinux_1_1_x86_64.whl", hash = "sha256:86e1a4418c6cd97d60c95c71164158eaf7324fae7b0923264016baa993eba6fc", size = 2361286, upload-time = "2026-05-06T13:40:05.667Z" },
     { url = "https://files.pythonhosted.org/packages/4b/2d/69abac8f838090bbecd5df894befb2c2619e7996a98ddb949db9f3b93225/pydantic_core-2.46.4-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:d51026d73fcfd93610abc7b27789c26b313920fcfb20e27462d74a7f8b06e983", size = 2193071, upload-time = "2026-05-06T13:38:08.682Z" },
+]
+
+[[package]]
+name = "pydantic-extra-types"
+version = "2.11.1"
+source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/66/71/dba38ee2651f84f7842206adbd2233d8bbdb59fb85e9fa14232486a8c471/pydantic_extra_types-2.11.1.tar.gz", hash = "sha256:46792d2307383859e923d8fcefa82108b1a141f8a9c0198982b3832ab5ef1049", size = 172002, upload-time = "2026-03-16T08:08:03.92Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/17/c1/3226e6d7f5a4f736f38ac11a6fbb262d701889802595cdb0f53a885ac2e0/pydantic_extra_types-2.11.1-py3-none-any.whl", hash = "sha256:1722ea2bddae5628ace25f2aa685b69978ef533123e5638cfbddb999e0100ec1", size = 79526, upload-time = "2026-03-16T08:08:02.533Z" },
 ]
 
 [[package]]
@@ -3541,48 +3547,52 @@ wheels = [
 
 [[package]]
 name = "ska-aaa-authhelpers"
-version = "1.5.1"
+version = "2.0.0"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
+    { name = "fastapi" },
     { name = "joserfc" },
     { name = "starlette-context" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-aaa-authhelpers/1.5.1/ska_aaa_authhelpers-1.5.1.tar.gz", hash = "sha256:7799cc6ed6f9d36b04189c0e4b464abd2f37f8e7d8076c5120c673ede09fa75e" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-aaa-authhelpers/2.0.0/ska_aaa_authhelpers-2.0.0.tar.gz", hash = "sha256:34185e87b6d2dfd709c93384edbd56c8e2da2a0a4a01bff03170f2fe09856a86" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-aaa-authhelpers/1.5.1/ska_aaa_authhelpers-1.5.1-py3-none-any.whl", hash = "sha256:7c78da11caded6f903c69afd56b6555b9914e60afb77623fe07930e82462a0c3" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-aaa-authhelpers/2.0.0/ska_aaa_authhelpers-2.0.0-py3-none-any.whl", hash = "sha256:e7e22362e2d3fdb0e18c9a5866d65c5be5fcfd4ea502a13aa6867221be540271" },
 ]
 
 [[package]]
 name = "ska-db-oda"
-version = "19.0.0"
+version = "19.2.2"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "fire" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.5", source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
     { name = "python-dateutil" },
     { name = "requests" },
     { name = "ska-oso-pdm" },
     { name = "ska-ser-logging" },
     { name = "ska-ser-skuid" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.0.0/ska_db_oda-19.0.0.tar.gz", hash = "sha256:166e5ae299df9806b356b0d4ba63d4aa2f4071205bbbc7a80089aa8a490fc688" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.2.2/ska_db_oda-19.2.2.tar.gz", hash = "sha256:6811978eb9ac10a0a37c29c3ba48085c2b4bde127665bbf7f7e098b57beb1484" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.0.0/ska_db_oda-19.0.0-py3-none-any.whl", hash = "sha256:59b2da60bf0926a08cc423b5435e1df49fffe98d79abede27233c0f4c3c257f0" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.2.2/ska_db_oda-19.2.2-py3-none-any.whl", hash = "sha256:3256301438c883ea57aab19856c5fb6ee3a146b11a50dc4378f1706ba6a77a4a" },
 ]
 
 [[package]]
 name = "ska-oso-pdm"
-version = "28.0.0"
+version = "28.1.0"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "astropy" },
     { name = "packaging" },
     { name = "pydantic", extra = ["email"] },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.0.0/ska_oso_pdm-28.0.0.tar.gz", hash = "sha256:86135d1b0d682b2970d8bb3d7d281a614b2e5a476e369059e0fbe9b84c2b6760" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.1.0/ska_oso_pdm-28.1.0.tar.gz", hash = "sha256:a84759b3b755439264f19255252df5732ea49b967430360ff8b0c46d01961a7f" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.0.0/ska_oso_pdm-28.0.0-py3-none-any.whl", hash = "sha256:818b2fbb33ebc7c2c76a15dd278d4a5be6e8d8e827abd8cc57190b83e11dbcf7" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.1.0/ska_oso_pdm-28.1.0-py3-none-any.whl", hash = "sha256:99b06985206d8debab0d51a74dd902dd9899a9479f140313e5300c0814deefc2" },
 ]
 
 [[package]]
@@ -3608,6 +3618,7 @@ dependencies = [
     { name = "ska-db-oda" },
     { name = "ska-ost-osd" },
     { name = "ska-ser-logging" },
+    { name = "ska-ser-skuid" },
     { name = "ska-telmodel-client" },
 ]
 
@@ -3643,17 +3654,18 @@ requires-dist = [
     { name = "astroplan", specifier = ">=0.10.1" },
     { name = "astroquery", specifier = "==0.4.9" },
     { name = "boto3", specifier = ">=1.38.13" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.115.8" },
+    { name = "fastapi", extras = ["standard"], specifier = "==0.139.0" },
     { name = "matplotlib", specifier = ">=3.10.7" },
     { name = "msal", specifier = ">=1.33.0" },
     { name = "numpy", specifier = "<2.4" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pydantic-settings", specifier = ">=2.5" },
     { name = "python-dateutil", specifier = ">=2.8.2" },
-    { name = "ska-aaa-authhelpers", specifier = ">=1.5.0" },
+    { name = "ska-aaa-authhelpers", specifier = ">=2.0.0" },
     { name = "ska-db-oda", specifier = ">=19.0.0" },
-    { name = "ska-ost-osd", specifier = ">=6.0.4" },
+    { name = "ska-ost-osd", specifier = ">=6.0.9" },
     { name = "ska-ser-logging", specifier = ">=0.4.1" },
+    { name = "ska-ser-skuid", specifier = ">=6,<7" },
     { name = "ska-telmodel-client", specifier = ">=1.30.0" },
 ]
 
@@ -3682,7 +3694,7 @@ docs = [
 
 [[package]]
 name = "ska-ost-osd"
-version = "6.0.5"
+version = "6.0.9"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "astropy" },
@@ -3693,9 +3705,9 @@ dependencies = [
     { name = "ska-ser-logging" },
     { name = "ska-telmodel-client" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/6.0.5/ska_ost_osd-6.0.5.tar.gz", hash = "sha256:9ea651b5a47009a3f0251a804832dd5bdd1972cdb900791240d399bc05bafcfd" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/6.0.9/ska_ost_osd-6.0.9.tar.gz", hash = "sha256:8bfd578eb2a109b2ef930ae10a040c0679867ef31fd6b8faf6583c783ef81d3b" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/6.0.5/ska_ost_osd-6.0.5-py3-none-any.whl", hash = "sha256:a3bf871efc0b4c6e11d40b80e1a9e49cb74708cc377b7ce85578f92af0e6bc18" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/6.0.9/ska_ost_osd-6.0.9-py3-none-any.whl", hash = "sha256:60e43b81ef3a09ddf9377f26e49d68067b14984408071564dbc44dbf337ca286" },
 ]
 
 [[package]]
@@ -3724,15 +3736,14 @@ wheels = [
 
 [[package]]
 name = "ska-ser-skuid"
-version = "5.2.0"
+version = "6.0.0"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
-    { name = "annotated-types" },
-    { name = "py-machineid" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/5.2.0/ska_ser_skuid-5.2.0.tar.gz", hash = "sha256:c57b16720eee383298c4664e8144d1f875178a56e6a14f8d3f48cbf65dc399a3" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/6.0.0/ska_ser_skuid-6.0.0.tar.gz", hash = "sha256:5806b2e296db627070a409127a95b4e28a0df6ea60676843f7f1d4ff04897e15" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/5.2.0/ska_ser_skuid-5.2.0-py3-none-any.whl", hash = "sha256:aeadc8148392b76c3ab211eace2ee08319c8fcd89359fbd1fbb0801451f6f692" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/6.0.0/ska_ser_skuid-6.0.0-py3-none-any.whl", hash = "sha256:7c394bb9d6fba3687883822554c63ffd6710459ba10f6b95b88661eaaef2b125" },
 ]
 
 [[package]]
@@ -4518,15 +4529,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a5/8f/aea9c71cc92bf9b6cc0f7f70df8f0b420636b6c96ef4feee1e16f80f75dd/websockets-16.0-pp311-pypy311_pp73-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:0298d07ee155e2e9fda5be8a9042200dd2e3bb0b8a38482156576f863a9d457c", size = 176968, upload-time = "2026-01-10T09:23:41.031Z" },
     { url = "https://files.pythonhosted.org/packages/9a/3f/f70e03f40ffc9a30d817eef7da1be72ee4956ba8d7255c399a01b135902a/websockets-16.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:a653aea902e0324b52f1613332ddf50b00c06fdaf7e92624fbf8c77c78fa5767", size = 178735, upload-time = "2026-01-10T09:23:42.259Z" },
     { url = "https://files.pythonhosted.org/packages/6f/28/258ebab549c2bf3e64d2b0217b973467394a9cea8c42f70418ca2c5d0d2e/websockets-16.0-py3-none-any.whl", hash = "sha256:1637db62fad1dc833276dded54215f2c7fa46912301a24bd94d45d46a011ceec", size = 171598, upload-time = "2026-01-10T09:23:45.395Z" },
-]
-
-[[package]]
-name = "winregistry"
-version = "2.1.5"
-source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/58/b4/57c8cd9c3a50b0b71ab924377a12326c528f822c35cc60d192dec423e3b0/winregistry-2.1.5.tar.gz", hash = "sha256:05525ecac026dbdd2d20428a532354138dc6711de8a8f8efdc40484131627ba8", size = 9862, upload-time = "2026-04-02T06:56:59.471Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/69/9b/5e05038bfe8e2109b83bfd7237668d5cd26f038380ed9cf4db4b441966d1/winregistry-2.1.5-py3-none-any.whl", hash = "sha256:84e597b8f06c985a6be397e8c75400c2d72797d24134eb740b7b2f3de13089c1", size = 8892, upload-time = "2026-04-02T06:56:58.401Z" },
 ]
 
 [[package]]

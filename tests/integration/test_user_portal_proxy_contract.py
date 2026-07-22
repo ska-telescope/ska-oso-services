@@ -1,9 +1,13 @@
+import asyncio
 from http import HTTPStatus
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 from fastapi import HTTPException
 
 from ska_oso_services.pht.service import user_portal
+from ska_oso_services.pht.service.user_portal import UserPortalService
 from tests.conftest import PHT_BASE_API_URL
 
 
@@ -131,3 +135,47 @@ def test_create_invite_invalid_payload_returns_422(integration_client):
     )
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_service_create_groups_happy_path(fake_user_portal):
+    del fake_user_portal
+    prsl_id = "prp-000007"
+    service = UserPortalService(auth=SimpleNamespace(trace="integration-trace-id"))
+
+    payload = asyncio.run(service.create_groups(prsl_id=prsl_id))
+
+    assert payload["group_name"] == user_portal.group_name_for_proposal(prsl_id)
+    assert payload["display_name"] == prsl_id
+
+
+def test_service_create_memberships_happy_path(fake_user_portal):
+    del fake_user_portal
+    prsl_id = "prp-000008"
+    portal_user_id = uuid4()
+    service = UserPortalService(auth=SimpleNamespace(trace="integration-trace-id"))
+    expected_payload = {"status": "ok"}
+    mock_call = AsyncMock(return_value=type("Resp", (), {"json": lambda self: expected_payload})())
+
+    original_call = user_portal.call_user_portal
+    user_portal.call_user_portal = mock_call
+
+    try:
+        payload = asyncio.run(
+            service.create_memberships(
+                prsl_id=prsl_id,
+                portal_user_id=portal_user_id,
+            )
+        )
+    finally:
+        user_portal.call_user_portal = original_call
+
+    assert payload == expected_payload
+    mock_call.assert_awaited_once_with(
+        method="PUT",
+        url=(
+            f"{service.base_url}/api/external/v1/groups/"
+            f"{user_portal.group_name_for_proposal(prsl_id)}/members/{portal_user_id}"
+        ),
+        headers=service.headers,
+        timeout=service.timeout,
+    )

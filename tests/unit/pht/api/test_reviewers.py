@@ -6,6 +6,10 @@ from http import HTTPStatus
 from unittest import mock
 
 import pytest
+from ska_aaa_authhelpers.roles import Role
+from ska_aaa_authhelpers.test_helpers import mint_test_token
+
+from ska_oso_services.common.auth import Scope
 
 from tests.conftest import PHT_BASE_API_URL
 
@@ -13,56 +17,17 @@ REVIEWERS_API_URL = f"{PHT_BASE_API_URL}/reviewers"
 
 
 class TestGetReviewersEndpoint:
-    @pytest.mark.parametrize(
-        "sci_mock, tech_mock, expected_response",
-        [
-            (
-                [
-                    {
-                        "@odata.type": "#microsoft.graph.user",
-                        "id": "1",
-                        "mail": "sci1@example.com",
-                    }
-                ],
-                [
-                    {
-                        "@odata.type": "#microsoft.graph.user",
-                        "id": "2",
-                        "mail": "tech1@example.com",
-                    }
-                ],
-                {
-                    "sci_reviewers": [
-                        {
-                            "@odata.type": "#microsoft.graph.user",
-                            "id": "1",
-                            "mail": "sci1@example.com",
-                        }
-                    ],
-                    "tech_reviewers": [
-                        {
-                            "@odata.type": "#microsoft.graph.user",
-                            "id": "2",
-                            "mail": "tech1@example.com",
-                        }
-                    ],
-                },
-            ),
-            (
-                [],
-                [],
-                {"sci_reviewers": [], "tech_reviewers": []},
-            ),
-        ],
-    )
-    @mock.patch("ska_oso_services.pht.utils.ms_graph.make_graph_call")
-    def test_get_reviewers_success(
-        self, mock_make_graph_call, sci_mock, tech_mock, expected_response, client
-    ):
-        mock_make_graph_call.side_effect = [sci_mock, tech_mock]
+    def test_get_reviewers_not_implemented(self, client):
+        token = mint_test_token(
+            audience="test:pht",
+            roles=[Role.INTERNAL],
+            scopes=[Scope.PHT_READ],
+            groups=["app:pht:ops_proposal_admin"],
+        )
+        response = client.get(
+            f"{REVIEWERS_API_URL}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
 
-        response = client.get(f"{REVIEWERS_API_URL}")
-
-        assert response.status_code == HTTPStatus.OK
-        assert response.json() == expected_response
-        assert mock_make_graph_call.call_count == 2
+        assert response.status_code == HTTPStatus.NOT_IMPLEMENTED
+        assert response.json() == {"detail": "Not Implemented"}

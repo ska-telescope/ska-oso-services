@@ -18,7 +18,7 @@ from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
 PANEL_DECISION_API_URL = f"{PHT_BASE_API_URL}/panel/decision"
-SEC_OBJ = api.get_panel_decisions_for_user.__annotations__["auth"].__metadata__[0]
+SEC_OBJ = api.legacy_get_panel_decisions_for_user.__annotations__["security"].__metadata__[0]
 SEC_DEP = SEC_OBJ.dependency
 
 MODULE = "ska_oso_services.pht.api.panel_decision"
