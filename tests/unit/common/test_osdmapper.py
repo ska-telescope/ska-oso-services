@@ -112,4 +112,4 @@ def test_configuration_from_osd_returns_low_cbf_metrics():
 
 def test_configuration_configuration_from_osd_returns_mid_spfrx_defaults():
     value = configuration_from_osd()
-    assert type(value.ska_mid.spfrx_parameters) is SPFRxParameters
+    assert type(value.ska_mid.spfrx_defaults) is SPFRxParameters

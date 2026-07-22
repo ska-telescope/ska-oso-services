@@ -104,11 +104,13 @@ class PseudoRandomNoiseDiode(BaseModel):
     seed: int
     dwell_ms: float
 
+class TargetSPFRx (TargetSPFRxConfiguration):
+    noise_diode_options: list[PeriodicNoiseDiode | PseudoRandomNoiseDiode]
+
 
 class SPFRxParameters(BaseModel):
-    target_spfrx_defaults: TargetSPFRxConfiguration
-    noise_diode_defaults: list[PeriodicNoiseDiode | PseudoRandomNoiseDiode]
-    csp_spfrx_defaults: CSPSPFRxConfiguration
+    target_spfrx: TargetSPFRx
+    csp_spfrx: CSPSPFRxConfiguration
 
 
 @dataclasses.dataclass
@@ -125,7 +127,7 @@ class MidConfiguration(AppModel):
     frequency_band: list[MidFrequencyBand]
     constraints: Constraints
     subarrays: list[Subarray]
-    spfrx_parameters: SPFRxParameters
+    spfrx_defaults: SPFRxParameters
 
 
 class LowConfiguration(AppModel):
@@ -190,7 +192,7 @@ def _get_mid_telescope_configuration(tmdata: TMData) -> MidConfiguration:
         ],
         constraints=_get_telescope_constraints(telescope=TelescopeType.SKA_MID, tmdata=tmdata),
         subarrays=subarrays,
-        spfrx_parameters=_get_spfrx_params(tmdata=tmdata),
+        spfrx_defaults=_get_spfrx_defaults(tmdata=tmdata),
     )
 
 
@@ -235,26 +237,25 @@ def _get_telescope_constraints(telescope: TelescopeType, tmdata: TMData) -> Cons
     return constraints
 
 
-def _get_spfrx_params(tmdata: TMData) -> SPFRxParameters:
-    default_params = tmdata["ska1_mid/mid_defaults.json"].get_dict()
+def _get_spfrx_defaults(tmdata: TMData) -> SPFRxParameters:
+    defaults = tmdata["ska1_mid/mid_defaults.json"].get_dict()["defaults"]
 
-    noise_diode = default_params["defaults"]["target"]["dish_spfrx_params"]["noise_diode"]
+    dish_spfrx_params = defaults["target"]["dish_spfrx_params"]
+    noise_diode = dish_spfrx_params["noise_diode"]
 
-    csp_spfrx_params = default_params["defaults"]["csp_configuration"]["spfrx"]
+    noise_diode_options = [
+        PeriodicNoiseDiode(**noise_diode["periodic"]),
+        PseudoRandomNoiseDiode(**noise_diode["pseudo_random"]),
+    ]
 
-    target_spfrx_params = copy.copy(default_params)["defaults"]["target"]["dish_spfrx_params"]
-    target_spfrx_params.pop("noise_diode", None)
+    target_spfrx_params = {
+        key: value for key, value in dish_spfrx_params.items() if key != "noise_diode"
+    }
 
-    spfrx = SPFRxParameters(
-        target_spfrx_defaults=TargetSPFRxConfiguration(**target_spfrx_params),
-        noise_diode_defaults=[
-            PeriodicNoiseDiode(**noise_diode["periodic"]),
-            PseudoRandomNoiseDiode(**noise_diode["pseudo_random"]),
-        ],
-        csp_spfrx_defaults=CSPSPFRxConfiguration(**csp_spfrx_params),
+    return SPFRxParameters(
+        target_spfrx=TargetSPFRx(**target_spfrx_params, noise_diode_options=noise_diode_options),
+        csp_spfrx=CSPSPFRxConfiguration(**defaults["csp_configuration"]["spfrx"]),
     )
-
-    return spfrx
 
 
 @cache
