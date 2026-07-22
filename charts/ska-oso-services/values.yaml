@@ -82,10 +82,6 @@ vault:
     - secretKey: AWS_REGION
       targetEnv: AWS_REGION
   secrets:
-    - secretKey: PHT_EMAIL_USER
-      targetEnv: PHT_EMAIL_USER
-    - secretKey: PHT_EMAIL_PASSWORD
-      targetEnv: PHT_EMAIL_PASSWORD
     - secretKey: OSO_CLIENT_SECRET
       targetEnv: OSO_CLIENT_SECRET
 

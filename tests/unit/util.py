@@ -407,10 +407,6 @@ class TestDataFactory:
         return proposal_access
 
     @staticmethod
-    def email_payload(email="test@example.com", prsl_id="SKAO123"):
-        return {"email": email, "prsl_id": prsl_id}
-
-    @staticmethod
     def proposal_by_category(prsl_id, science_category, *, info_as="dict"):
         """Module-level helper so it’s usable inside @parametrize."""
         if info_as == "dict":
@@ -431,9 +427,4 @@ SBDEFINITION_WITHOUT_METADATA_JSON = TestDataFactory.sbdefinition(
 
 VALID_PROJECT_WITHOUT_ID_JSON = TestDataFactory.project(prj_id=None).model_dump_json()
 
-# proposal entry
-PAYLOAD_SUCCESS = TestDataFactory.email_payload()
-PAYLOAD_CONNECT_FAIL = TestDataFactory.email_payload("connectfail@example.com", "PRSL999")
-PAYLOAD_BAD_TO = TestDataFactory.email_payload("badto@example.com", "PRSLBAD")
-PAYLOAD_GENERIC_FAIL = TestDataFactory.email_payload("genericfail@example.com", "GENERICFAIL")
 REVIEWERS = json.loads(load_string_from_file("get_reviewers.json"))

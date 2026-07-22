@@ -8,8 +8,6 @@ from types import SimpleNamespace
 from unittest import mock
 
 import pytest
-from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRefused
-from fastapi import status
 
 from ska_oso_services.pht.api import prsls as prsl_api
 from ska_oso_services.pht.api.prsls import get_proposals_by_status
@@ -17,10 +15,6 @@ from ska_oso_services.pht.service import proposal_service as ps
 from ska_oso_services.pht.service.proposal_service import get_panel_prsl_ids
 from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
-    PAYLOAD_BAD_TO,
-    PAYLOAD_CONNECT_FAIL,
-    PAYLOAD_GENERIC_FAIL,
-    PAYLOAD_SUCCESS,
     TestDataFactory,
     assert_json_is_equal,
 )
@@ -670,79 +664,6 @@ class TestProposalBatch:
         )
         assert response.status_code == 200
         assert response.json() == []
-
-
-class TestProposalEmailAPI:
-    @mock.patch(f"{PRSL_MODULE}.send_email_async", autospec=True)
-    def test_send_email_success(self, mock_send, client):
-        """
-        Check that a successful email send returns status 200 and success message.
-        """
-        mock_send.return_value = True
-
-        response = client.post(
-            f"{PROPOSAL_API_URL}/send-email/",
-            json=PAYLOAD_SUCCESS,
-            headers={"Content-type": "application/json"},
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {"message": "Email sent successfully"}
-        mock_send.assert_called_once()
-
-    @mock.patch(
-        "ska_oso_services.pht.service.email_service.aiosmtplib.send",
-        new_callable=mock.AsyncMock,
-    )
-    def test_send_email_connection_failure(self, mock_smtp_send, client):
-        """
-        Check that a SMTPConnectError returns status 503.
-        """
-        mock_smtp_send.side_effect = SMTPConnectError(b"Connection failed")
-        response = client.post(
-            f"{PROPOSAL_API_URL}/send-email/",
-            json=PAYLOAD_CONNECT_FAIL,
-            headers={"Content-type": "application/json"},
-        )
-
-        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
-        assert "SMTP connection failed" in response.text
-
-    @mock.patch(
-        "ska_oso_services.pht.service.email_service.aiosmtplib.send",
-        new_callable=mock.AsyncMock,
-    )
-    def test_send_email_recipients_refused(self, mock_smtp_send, client):
-        """
-        Check that SMTPRecipientsRefused returns status 400.
-        """
-        mock_smtp_send.side_effect = SMTPRecipientsRefused({})
-        response = client.post(
-            f"{PROPOSAL_API_URL}/send-email/",
-            json=PAYLOAD_BAD_TO,
-            headers={"Content-type": "application/json"},
-        )
-
-        assert "Unable to send email for this recipient." in response.text
-
-    @mock.patch(
-        "ska_oso_services.pht.service.email_service.aiosmtplib.send",
-        new_callable=mock.AsyncMock,
-    )
-    def test_send_email_generic_smtp_exception(self, mock_smtp_send, client):
-        """
-        Check that generic SMTPException returns 502.
-        """
-        mock_smtp_send.side_effect = SMTPException("Some SMTP error")
-
-        response = client.post(
-            f"{PROPOSAL_API_URL}/send-email/",
-            json=PAYLOAD_GENERIC_FAIL,
-            headers={"Content-type": "application/json"},
-        )
-
-        assert response.status_code == status.HTTP_502_BAD_GATEWAY
-        assert "SMTP send failed" in response.text
 
 
 class TestGetProposalsByStatus:

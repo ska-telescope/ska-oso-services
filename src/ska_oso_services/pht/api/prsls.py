@@ -4,7 +4,7 @@ from http import HTTPStatus
 from typing import Annotated
 
 from botocore.exceptions import BotoCoreError, ClientError
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Response
 from pydantic import ValidationError
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
@@ -28,7 +28,6 @@ from ska_oso_services.common.osdmapper import get_osd_cycles, get_osd_data
 from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
-from ska_oso_services.pht.service.email_service import send_email_async
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
     get_panel_prsl_ids,
@@ -44,12 +43,15 @@ from ska_oso_services.pht.service.s3_bucket import (
     create_presigned_url_upload_pdf,
     get_aws_client,
 )
+from ska_oso_services.pht.service.user_portal import UserPortalService
 from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL, SV_NAME
 from ska_oso_services.pht.utils.ms_graph import (
     extract_profile_from_access_token,
     get_users_by_mail,
 )
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
+
+from .portal_invitations import get_user_portal_service_readwrite
 
 logger = logging.getLogger(__name__)
 
@@ -505,18 +507,27 @@ def validate_proposal(prsl: Proposal) -> dict:
 
 @router.post(
     "/send-email/",
-    summary="Send an async email",
+    summary="Send a proposal invitation email",
+    deprecated=True,
     dependencies=[Permissions(roles=[Role.ANY], scopes=[Scope.PHT_READWRITE])],
 )
 async def send_email(
     request: EmailRequest,
-):
+    service: Annotated[UserPortalService, Depends(get_user_portal_service_readwrite)],
+    response: Response,
+) -> dict:
     """
-    Endpoint to send SKAO email asynchronously via SMTP.
+    Deprecated. Use POST /pht/prsls/{prsl_id}/invites instead.
 
+    Sends a proposal invitation via the user portal service.
     """
+    response.headers["Deprecation"] = "true"
+    response.headers["Link"] = f'</pht/prsls/{request.prsl_id}/invites>; rel="successor-version"'
 
-    await send_email_async(request.email, request.prsl_id)
+    await service.create_invite(
+        prsl_id=request.prsl_id,
+        invite_payload={"email": request.email},
+    )
     return {"message": "Email sent successfully"}
 
 

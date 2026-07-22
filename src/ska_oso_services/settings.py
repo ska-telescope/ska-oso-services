@@ -55,13 +55,6 @@ class AuthConfig(ConfigBase):
         return value
 
 
-class EmailConfig(ConfigBase):
-    """Configuration for the Email Service."""
-
-    user: str | None = Field(default=None, alias="PHT_EMAIL_USER")
-    password: str | None = Field(default=None, alias="PHT_EMAIL_PASSWORD")
-
-
 class S3Config(ConfigBase):
     """Configuration for S3 Object Storage."""
 
@@ -102,7 +95,6 @@ class Settings(ConfigBase):
     # Sub-models
     oda: ODAConfig = Field(default_factory=ODAConfig)
     auth: AuthConfig = Field(default_factory=AuthConfig)
-    email: EmailConfig = Field(default_factory=EmailConfig)
     s3: S3Config = Field(default_factory=S3Config)  # type: ignore
     userportal: UserPortalConfig = Field(default_factory=UserPortalConfig)  # type: ignore
 
