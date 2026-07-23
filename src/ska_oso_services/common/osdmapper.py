@@ -314,7 +314,7 @@ def get_telescope_observing_constraint(telescope: TelescopeType, parameter: str)
     else:
         constraints = osd.ska_low.constraints
 
-    if not hasattr(constraints, parameter):
+    if parameter not in type(constraints).model_fields:
         raise ValueError(f"{parameter} is not a valid observing constraint for {telescope.value}")
 
     return getattr(constraints, parameter)
@@ -391,7 +391,7 @@ def get_subarray_specific_parameter_from_osd(
             f"Invalid validation array assembly {validation_array_assembly} for {telescope.value}"
         )
 
-    if not hasattr(subarray, parameter):
+    if parameter not in type(subarray).model_fields:
         raise ValueError(
             f"{parameter} is not available for validation for "
             f"{telescope.value} array assembly {validation_array_assembly.value}"
