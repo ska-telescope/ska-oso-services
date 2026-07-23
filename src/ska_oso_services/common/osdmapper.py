@@ -398,3 +398,13 @@ def get_subarray_specific_parameter_from_osd(
         )
 
     return getattr(subarray, parameter)
+
+
+def get_default_pdm_target_spfrx() -> TargetSPFRxConfiguration:
+    target_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx
+    return TargetSPFRxConfiguration(**target_spfrx.model_dump(exclude={"noise_diode"}))
+
+
+def get_defaults_pdm_csp_spfrx() -> CSPSPFRxConfiguration:
+    csp_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.csp_spfrx
+    return csp_spfrx
