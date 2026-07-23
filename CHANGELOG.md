@@ -8,6 +8,8 @@ Unreleased
 **********
 * Adds APIs for invitations, e.g. POST /pht/prsl/prp-1/invites
 * GSM survey constrained RA-sweep grouping now uses pairwise separation relative to beam FWHM
+* Adds APIs for members, e.g. POST /pht/prsl/prp-1/members
+
 
 16.1.0
 **********
