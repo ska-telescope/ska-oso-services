@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 * GSM survey constrained RA-sweep grouping now uses pairwise separation relative to beam FWHM
-* Updated `\configuration` endpoint to return SPFRx defaults
+* Updated `/configuration` endpoint to return SPFRx defaults
 
 16.1.0
 **********
