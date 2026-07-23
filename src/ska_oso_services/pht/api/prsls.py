@@ -51,7 +51,7 @@ from ska_oso_services.pht.utils.ms_graph import (
 )
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
-from .portal_invitations import get_user_portal_service_readwrite
+from .user_portal import get_user_portal_service_readwrite
 
 logger = logging.getLogger(__name__)
 
