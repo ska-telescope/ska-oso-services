@@ -2497,18 +2497,6 @@ wheels = [
 ]
 
 [[package]]
-name = "py-machineid"
-version = "0.6.0"
-source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
-dependencies = [
-    { name = "winregistry", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/14/ca/10f1afc01f0648207b3648af16ebf913bb6401de9b7efc945e2489d7ce37/py-machineid-0.6.0.tar.gz", hash = "sha256:00c38d8521d429a4539bdd92967234db28a1a2b4b263062b351ca002332e633f", size = 4558, upload-time = "2024-07-04T14:41:40.4Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/54/1f146aed749192d1638fc6878dee444189e8873861e340f8a3ffe15b16f3/py_machineid-0.6.0-py3-none-any.whl", hash = "sha256:63214f8a98737311716b29d279716dc121a6495f16486caf5c032433f81cdfd6", size = 4864, upload-time = "2024-07-04T14:41:37.966Z" },
-]
-
-[[package]]
 name = "pycparser"
 version = "3.0"
 source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
@@ -3515,40 +3503,43 @@ wheels = [
 
 [[package]]
 name = "ska-db-oda"
-version = "19.0.0"
+version = "19.2.0"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "fire" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.5", source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
     { name = "python-dateutil" },
     { name = "requests" },
     { name = "ska-oso-pdm" },
     { name = "ska-ser-logging" },
     { name = "ska-ser-skuid" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.0.0/ska_db_oda-19.0.0.tar.gz", hash = "sha256:166e5ae299df9806b356b0d4ba63d4aa2f4071205bbbc7a80089aa8a490fc688" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.2.0/ska_db_oda-19.2.0.tar.gz", hash = "sha256:8c8156bed6b4def1a7aeaf85815332bb339f02c47772fb3f92280a6fe2ff0b00" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.0.0/ska_db_oda-19.0.0-py3-none-any.whl", hash = "sha256:59b2da60bf0926a08cc423b5435e1df49fffe98d79abede27233c0f4c3c257f0" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.2.0/ska_db_oda-19.2.0-py3-none-any.whl", hash = "sha256:6fb39e69df665963b312a45feee28465a69cc59377c274f6e103c837b77593f9" },
 ]
 
 [[package]]
 name = "ska-oso-pdm"
-version = "28.0.0"
+version = "28.1.0"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "astropy" },
     { name = "packaging" },
     { name = "pydantic", extra = ["email"] },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.0.0/ska_oso_pdm-28.0.0.tar.gz", hash = "sha256:86135d1b0d682b2970d8bb3d7d281a614b2e5a476e369059e0fbe9b84c2b6760" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.1.0/ska_oso_pdm-28.1.0.tar.gz", hash = "sha256:a84759b3b755439264f19255252df5732ea49b967430360ff8b0c46d01961a7f" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.0.0/ska_oso_pdm-28.0.0-py3-none-any.whl", hash = "sha256:818b2fbb33ebc7c2c76a15dd278d4a5be6e8d8e827abd8cc57190b83e11dbcf7" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.1.0/ska_oso_pdm-28.1.0-py3-none-any.whl", hash = "sha256:99b06985206d8debab0d51a74dd902dd9899a9479f140313e5300c0814deefc2" },
 ]
 
 [[package]]
 name = "ska-oso-services"
-version = "16.1.0rc2"
+version = "16.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiosmtplib" },
@@ -3569,6 +3560,7 @@ dependencies = [
     { name = "ska-db-oda" },
     { name = "ska-ost-osd" },
     { name = "ska-ser-logging" },
+    { name = "ska-ser-skuid" },
     { name = "ska-telmodel-client" },
 ]
 
@@ -3611,9 +3603,10 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.5" },
     { name = "python-dateutil", specifier = ">=2.8.2" },
     { name = "ska-aaa-authhelpers", specifier = ">=1.5.0" },
-    { name = "ska-db-oda", specifier = ">=19.0.0" },
-    { name = "ska-ost-osd", specifier = ">=6.0.4" },
+    { name = "ska-db-oda", specifier = ">=19.0.1" },
+    { name = "ska-ost-osd", specifier = ">=6.0.7" },
     { name = "ska-ser-logging", specifier = ">=0.4.1" },
+    { name = "ska-ser-skuid", specifier = ">=6.0.0,<7.0.0" },
     { name = "ska-telmodel-client", specifier = ">=1.30.0" },
 ]
 
@@ -3641,7 +3634,7 @@ docs = [
 
 [[package]]
 name = "ska-ost-osd"
-version = "6.0.5"
+version = "6.0.7"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "astropy" },
@@ -3652,9 +3645,9 @@ dependencies = [
     { name = "ska-ser-logging" },
     { name = "ska-telmodel-client" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/6.0.5/ska_ost_osd-6.0.5.tar.gz", hash = "sha256:9ea651b5a47009a3f0251a804832dd5bdd1972cdb900791240d399bc05bafcfd" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/6.0.7/ska_ost_osd-6.0.7.tar.gz", hash = "sha256:a05e71b84587e88166cba96a3bc685a14c5c24386b818e14b606b23326b1db83" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/6.0.5/ska_ost_osd-6.0.5-py3-none-any.whl", hash = "sha256:a3bf871efc0b4c6e11d40b80e1a9e49cb74708cc377b7ce85578f92af0e6bc18" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/6.0.7/ska_ost_osd-6.0.7-py3-none-any.whl", hash = "sha256:f233a8940c93d6b3cf3532de06a0abd39982d146cb1e92d3a3ed5ddcad39bf28" },
 ]
 
 [[package]]
@@ -3683,15 +3676,14 @@ wheels = [
 
 [[package]]
 name = "ska-ser-skuid"
-version = "5.2.0"
+version = "6.0.0"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
-    { name = "annotated-types" },
-    { name = "py-machineid" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/5.2.0/ska_ser_skuid-5.2.0.tar.gz", hash = "sha256:c57b16720eee383298c4664e8144d1f875178a56e6a14f8d3f48cbf65dc399a3" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/6.0.0/ska_ser_skuid-6.0.0.tar.gz", hash = "sha256:5806b2e296db627070a409127a95b4e28a0df6ea60676843f7f1d4ff04897e15" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/5.2.0/ska_ser_skuid-5.2.0-py3-none-any.whl", hash = "sha256:aeadc8148392b76c3ab211eace2ee08319c8fcd89359fbd1fbb0801451f6f692" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/6.0.0/ska_ser_skuid-6.0.0-py3-none-any.whl", hash = "sha256:7c394bb9d6fba3687883822554c63ffd6710459ba10f6b95b88661eaaef2b125" },
 ]
 
 [[package]]
@@ -4461,15 +4453,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a5/8f/aea9c71cc92bf9b6cc0f7f70df8f0b420636b6c96ef4feee1e16f80f75dd/websockets-16.0-pp311-pypy311_pp73-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:0298d07ee155e2e9fda5be8a9042200dd2e3bb0b8a38482156576f863a9d457c", size = 176968, upload-time = "2026-01-10T09:23:41.031Z" },
     { url = "https://files.pythonhosted.org/packages/9a/3f/f70e03f40ffc9a30d817eef7da1be72ee4956ba8d7255c399a01b135902a/websockets-16.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:a653aea902e0324b52f1613332ddf50b00c06fdaf7e92624fbf8c77c78fa5767", size = 178735, upload-time = "2026-01-10T09:23:42.259Z" },
     { url = "https://files.pythonhosted.org/packages/6f/28/258ebab549c2bf3e64d2b0217b973467394a9cea8c42f70418ca2c5d0d2e/websockets-16.0-py3-none-any.whl", hash = "sha256:1637db62fad1dc833276dded54215f2c7fa46912301a24bd94d45d46a011ceec", size = 171598, upload-time = "2026-01-10T09:23:45.395Z" },
-]
-
-[[package]]
-name = "winregistry"
-version = "2.1.5"
-source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/58/b4/57c8cd9c3a50b0b71ab924377a12326c528f822c35cc60d192dec423e3b0/winregistry-2.1.5.tar.gz", hash = "sha256:05525ecac026dbdd2d20428a532354138dc6711de8a8f8efdc40484131627ba8", size = 9862, upload-time = "2026-04-02T06:56:59.471Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/69/9b/5e05038bfe8e2109b83bfd7237668d5cd26f038380ed9cf4db4b441966d1/winregistry-2.1.5-py3-none-any.whl", hash = "sha256:84e597b8f06c985a6be397e8c75400c2d72797d24134eb740b7b2f3de13089c1", size = 8892, upload-time = "2026-04-02T06:56:58.401Z" },
 ]
 
 [[package]]

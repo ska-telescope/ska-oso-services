@@ -9,6 +9,7 @@ from ska_oso_services.common.osdmapper import (
     LowCBFMetrics,
     LowQualityAttributeMetrics,
     MidFrequencyBand,
+    SPFRxParameters,
     configuration_from_osd,
     get_low_basic_capability_parameter_from_osd,
     get_mid_frequency_band_data_from_osd,
@@ -62,10 +63,14 @@ def test_get_subarray_specific_parameter_fails_with_invalid_mid_subarray_value()
         )
 
 
-def test_get_subarray_specific_parameter_fails_for_invalid_parameter():
+@pytest.mark.parametrize(
+    "parameter",
+    ["not a parameter", "model_dump", "model_fields", "model_config"],
+)
+def test_get_subarray_specific_parameter_fails_for_invalid_parameter(parameter):
     with pytest.raises(ValueError):
         get_subarray_specific_parameter_from_osd(
-            TelescopeType.SKA_LOW, SubArrayLOW.AA2_ALL, "not a parameter"
+            TelescopeType.SKA_LOW, SubArrayLOW.AA2_ALL, parameter
         )
 
 
@@ -94,9 +99,13 @@ def test_get_telescope_observing_constraint_returns_constraints_for_low():
     assert value == 30.0
 
 
-def test_get_telescope_observing_constraint_fails_for_invalid_parameter():
+@pytest.mark.parametrize(
+    "parameter",
+    ["not_a_parameter", "model_dump", "model_fields", "model_config"],
+)
+def test_get_telescope_observing_constraint_fails_for_invalid_parameter(parameter):
     with pytest.raises(ValueError):
-        get_telescope_observing_constraint(TelescopeType.SKA_LOW, "not_a_parameter")
+        get_telescope_observing_constraint(TelescopeType.SKA_LOW, parameter)
 
 
 def test_configuration_from_osd_returns_low_cbf_metrics():
@@ -107,3 +116,8 @@ def test_configuration_from_osd_returns_low_cbf_metrics():
     cbf = value.ska_low.quality_attribute_metrics.cbf
 
     assert cbf.processors_ready_percent is not None, "processors_ready_percent must be present"
+
+
+def test_configuration_configuration_from_osd_returns_mid_spfrx_defaults():
+    value = configuration_from_osd()
+    assert type(value.ska_mid.spfrx_defaults) is SPFRxParameters
