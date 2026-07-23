@@ -402,7 +402,7 @@ def get_subarray_specific_parameter_from_osd(
 
 def get_default_pdm_target_spfrx() -> TargetSPFRxConfiguration:
     target_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx
-    return TargetSPFRxConfiguration(**target_spfrx.model_dump(exclude={"noise_diode"}))
+    return TargetSPFRxConfiguration(**target_spfrx.model_dump(exclude={"noise_diode_options"}))
 
 
 def get_defaults_pdm_csp_spfrx() -> CSPSPFRxConfiguration:
