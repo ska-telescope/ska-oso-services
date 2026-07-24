@@ -138,7 +138,7 @@ async def list_members(
 
 
 @router.get(
-    "/prsls/{prsl_id}/outstanding",
+    "/prsls/{prsl_id}/invited",
     summary="List outstanding invites for proposal via external user portal",
     dependencies=[READ_PERMISSIONS],
     response_model=InvitationsListResponse,
