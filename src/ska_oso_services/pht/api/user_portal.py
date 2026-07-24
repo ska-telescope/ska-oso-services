@@ -92,10 +92,17 @@ async def list_invites(
     service: Annotated[user_portal.UserPortalService, Depends(get_user_portal_service_read)],
     prsl_id: str,
 ) -> InvitationsListResponse:
-    payload = await service.list_invites(prsl_id=prsl_id)
+    members_payload = await service.list_invites(prsl_id=prsl_id)
+
+    invited = [
+        InviteCardResponse.model_validate(item)
+        for item in members_payload.get("items", [])
+        if item.get("claim_state") != "accepted"
+    ]
+    
     return InvitationsListResponse(
-        invites=[InviteCardResponse.model_validate(item) for item in payload.get("items", [])],
-        next_cursor=payload.get("next_cursor"),
+        invites=invited,
+        next_cursor=members_payload.get("next_cursor"),
     )
 
 
@@ -133,28 +140,5 @@ async def list_members(
     ]
     return InvitationsListResponse(
         invites=members,
-        next_cursor=members_payload.get("next_cursor"),
-    )
-
-
-@router.get(
-    "/prsls/{prsl_id}/invited",
-    summary="List outstanding invites for proposal via external user portal",
-    dependencies=[READ_PERMISSIONS],
-    response_model=InvitationsListResponse,
-)
-async def list_outstanding(
-    service: Annotated[user_portal.UserPortalService, Depends(get_user_portal_service_read)],
-    prsl_id: str,
-) -> InvitationsListResponse:
-    members_payload = await service.list_invites(prsl_id=prsl_id)
-
-    outstanding = [
-        InviteCardResponse.model_validate(item)
-        for item in members_payload.get("items", [])
-        if item.get("claim_state") != "accepted"
-    ]
-    return InvitationsListResponse(
-        invites=outstanding,
         next_cursor=members_payload.get("next_cursor"),
     )
