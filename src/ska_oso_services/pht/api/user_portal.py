@@ -99,7 +99,7 @@ async def list_invites(
         for item in members_payload.get("items", [])
         if item.get("claim_state") != "accepted"
     ]
-    
+
     return InvitationsListResponse(
         invites=invited,
         next_cursor=members_payload.get("next_cursor"),
