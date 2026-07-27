@@ -258,16 +258,6 @@ def prjs_post(
             prj.obs_blocks = [empty_observing_block()]
         if prj.author is None:
             prj.author = DEFAULT_AUTHOR.model_copy(deep=True)
-    # Ensure the identifier is None so the ODA doesn't try to perform an update
-    if prj.prj_id is not None:
-        raise BadRequestError(
-            detail=(
-                "prj_id given in the body of the POST request. Identifier"
-                " generation for new entities is the responsibility of the ODA,"
-                " which will fetch them from SKUID, so they should not be given in"
-                " this request."
-            ),
-        )
 
     with oda as uow:
         updated_prj = uow.prjs.add(prj, user=auth.user_id)

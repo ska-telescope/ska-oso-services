@@ -109,17 +109,6 @@ def sbds_post(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=validation_resp.model_dump(mode="json"),
         )
-
-    # Ensure the identifier is None so the ODA doesn't try to perform an update
-    if sbd.sbd_id is not None:
-        raise BadRequestError(
-            detail=(
-                "sbd_id given in the body of the POST request. Identifier"
-                " generation for new entities is the responsibility of the ODA,"
-                " which will fetch them from SKUID, so they should not be given in"
-                " this request."
-            ),
-        )
     with oda as uow:
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
         uow.commit()
