@@ -8,6 +8,7 @@ Unreleased
 **********
 * GSM survey constrained RA-sweep grouping now uses pairwise separation relative to beam FWHM
 * Updated `/configuration` endpoint to return SPFRx defaults
+* Add `/{prj_id}/{obs_block_id}/generateBasicCommissioningSBDefinition` API
 
 16.1.0
 **********

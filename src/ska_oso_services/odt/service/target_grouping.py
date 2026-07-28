@@ -326,9 +326,7 @@ class ConstrainedRaSweepGrouper(TargetGrouper[PointingInfo]):
         relative_max_separation = self._relative_max_separation
         fwhm_deg = np.asarray([float(target.fwhm_deg) for target in targets], dtype=float)
         if np.any(fwhm_deg <= 0.0):
-            raise BadRequestError(
-                "All target fwhm_deg values must be > 0 for relative separation"
-            )
+            raise BadRequestError("All target fwhm_deg values must be > 0 for relative separation")
         # Conservative angular bound used for geometric frontier pruning.
         max_angular_separation = relative_max_separation * float(np.max(fwhm_deg))
         # Deep-copy queues so the grouper can be called again
