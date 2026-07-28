@@ -129,11 +129,13 @@ class TestSBDefinitionAPI:
         assert_json_is_equal(response.text, test_sbd.model_dump_json())
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbdefinition")
-    def test_sbds_post_given_sbd_id_raises_error(self, mock_validate, client):
+    def test_sbds_post_existing_sbd_id_raises_error(self, mock_validate, client_with_uow_mock):
         """
         Check the sbds_post method returns a validation error if the user
-        gives an sbd_id in the body, as we don't want to just silently overwrite this
+        gives an sbd_id that already exists, as we don't want to just silently overwrite this
         """
+        client, uow_mock = client_with_uow_mock
+        uow_mock.sbds.__contains__.return_value = True
         mock_validate.return_value = []
 
         response = client.post(
@@ -142,14 +144,8 @@ class TestSBDefinitionAPI:
             headers={"Content-type": "application/json"},
         )
 
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert response.json() == {
-            "detail": (
-                "sbd_id given in the body of the POST request. Identifier generation"
-                " for new entities is the responsibility of the ODA, which will fetch"
-                " them from SKUID, so they should not be given in this request."
-            )
-        }
+        assert response.status_code == HTTPStatus.CONFLICT
+        assert response.json() == {"detail": "sbd_id already present in the ODA."}
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbdefinition")
     def test_sbds_post_value_error(self, mock_validate, client):

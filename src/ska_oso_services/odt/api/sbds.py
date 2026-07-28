@@ -17,7 +17,7 @@ from ska_oso_pdm.sb_definition import SBDefinition
 from starlette.responses import Response
 
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.common.error_handling import BadRequestError, UnprocessableEntityError
+from ska_oso_services.common.error_handling import DuplicateError, UnprocessableEntityError
 from ska_oso_services.validation.model import ValidationContext, ValidationResponse
 from ska_oso_services.validation.sbdefinition import validate_sbdefinition
 
@@ -110,17 +110,10 @@ def sbds_post(
             detail=validation_resp.model_dump(mode="json"),
         )
 
-    # Ensure the identifier is None so the ODA doesn't try to perform an update
-    if sbd.sbd_id is not None:
-        raise BadRequestError(
-            detail=(
-                "sbd_id given in the body of the POST request. Identifier"
-                " generation for new entities is the responsibility of the ODA,"
-                " which will fetch them from SKUID, so they should not be given in"
-                " this request."
-            ),
-        )
     with oda as uow:
+        if sbd.sbd_id is not None and sbd.sbd_id in uow.sbds:
+            raise DuplicateError(detail=("sbd_id already present in the ODA."))
+
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
         uow.commit()
 

@@ -128,26 +128,23 @@ class TestProjectPost:
         args, _ = uow_mock.prjs.add.call_args
         assert len(args[0].obs_blocks) == 1
 
-    def test_prjs_post_given_prj_id_raises_error(self, client):
+    def test_prjs_post_existing_prj_id_raises_error(self, client_with_uow_mock):
         """
         Check the prjs_post method returns a validation error if the user
-        gives a prj_id in the body, as we don't want to just silently overwrite this
+        gives a prj_id that already exists, as we don't want to just silently overwrite this
         """
+
+        client, uow_mock = client_with_uow_mock
+        uow_mock.prjs.__contains__.return_value = True
+
         result = client.post(
             f"{PRJS_API_URL}",
             data=TestDataFactory.project().model_dump_json(),
             headers={"Content-type": "application/json"},
         )
 
-        assert result.status_code == HTTPStatus.BAD_REQUEST
-        assert result.json() == {
-            "detail": (
-                "prj_id given in the body of the POST request. Identifier"
-                " generation for new entities is the responsibility of"
-                " the ODA, which will fetch them from SKUID, so they"
-                " should not be given in this request."
-            )
-        }
+        assert result.status_code == HTTPStatus.CONFLICT
+        assert result.json() == {"detail": "prj_id already present in the ODA."}
 
     # TODO validate sbd_ids exist?
     # TODO extract to service layer

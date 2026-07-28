@@ -19,7 +19,7 @@ from ska_db_oda.common.uow import UnitOfWork
 from ska_db_oda.repository.status import Status
 from ska_oso_pdm import ICRSCoordinates, SubArrayLOW, Target, TelescopeType
 from ska_oso_pdm.builders.utils import target_id
-from ska_oso_pdm.project import Author, ObservingBlock, Project
+from ska_oso_pdm.project import ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 from ska_ser_skuid import EntityType, mint_skuid
 
@@ -27,6 +27,7 @@ from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.coordinateslookup import ReferenceFrame, get_coordinates
 from ska_oso_services.common.error_handling import (
     BadRequestError,
+    DuplicateError,
     NotFoundError,
     UnprocessableEntityError,
 )
@@ -41,9 +42,6 @@ from ska_oso_services.odt.service.gsm_survey_sbd_generator import generate_gsm_s
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
-
-
-DEFAULT_AUTHOR = Author(pis=[], cois=[])
 
 
 DEFAULT_SB_DEFINITION = SBDefinition(
@@ -314,29 +312,18 @@ def prjs_post(
     """
     LOGGER.debug("POST PRJ")
     if prj is None:
-        prj = Project(
-            obs_blocks=[empty_observing_block()],
-            author=DEFAULT_AUTHOR.model_copy(deep=True),
-        )
+        prj = Project(obs_blocks=[empty_observing_block()])
     else:
         if not prj.obs_blocks:
             prj.obs_blocks = [empty_observing_block()]
-        if prj.author is None:
-            prj.author = DEFAULT_AUTHOR.model_copy(deep=True)
-    # Ensure the identifier is None so the ODA doesn't try to perform an update
-    if prj.prj_id is not None:
-        raise BadRequestError(
-            detail=(
-                "prj_id given in the body of the POST request. Identifier"
-                " generation for new entities is the responsibility of the ODA,"
-                " which will fetch them from SKUID, so they should not be given in"
-                " this request."
-            ),
-        )
 
     with oda as uow:
+        if prj.prj_id is not None and prj.prj_id in uow.prjs:
+            raise DuplicateError(detail=("prj_id already present in the ODA."))
+
         updated_prj = uow.prjs.add(prj, user=auth.user_id)
         uow.commit()
+
     return updated_prj
 
 
