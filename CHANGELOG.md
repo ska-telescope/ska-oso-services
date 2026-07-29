@@ -8,6 +8,7 @@ Unreleased
 **********
 * GSM survey constrained RA-sweep grouping now uses pairwise separation relative to beam FWHM
 * Updated `/configuration` endpoint to return SPFRx defaults
+* Add `/{prj_id}/{obs_block_id}/generateBasicCommissioningSBDefinition` API
 
 16.1.0
 **********
@@ -36,6 +37,7 @@ Unreleased
 * Constrained RA-sweep grouping for GSM survey SBDs
 * Adds `POST /engineering/ebs/` with to allow ExecutionBlocks to be created with some initial data, such as labels
 * Adds `PATCH /engineering/ebs/{eb_id}/labels` to allow labels to be added to ExecutionBlocks after creation
+* Allow SKUIDs to be included in POST APIs to enable client side generation
 
 14.6.0
 **********

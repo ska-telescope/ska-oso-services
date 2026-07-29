@@ -19,7 +19,7 @@ from ska_db_oda.common.uow import UnitOfWork
 from ska_db_oda.repository.status import Status
 from ska_oso_pdm import ICRSCoordinates, SubArrayLOW, Target, TelescopeType
 from ska_oso_pdm.builders.utils import target_id
-from ska_oso_pdm.project import Author, ObservingBlock, Project
+from ska_oso_pdm.project import ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
 from ska_ser_skuid import EntityType, mint_skuid
 
@@ -27,10 +27,14 @@ from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.coordinateslookup import ReferenceFrame, get_coordinates
 from ska_oso_services.common.error_handling import (
     BadRequestError,
+    DuplicateError,
     NotFoundError,
     UnprocessableEntityError,
 )
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
+from ska_oso_services.odt.service.basic_commissioning_sbd_generator import (
+    generate_basic_commissioning_sbd,
+)
 from ska_oso_services.odt.service.calibrator_sweep_sbd_generator import generate_cal_sweep_sbd
 from ska_oso_services.odt.service.commissioning import load_pointings
 from ska_oso_services.odt.service.frequency_sweep_calibrator import generate_frequency_sweep
@@ -38,9 +42,6 @@ from ska_oso_services.odt.service.gsm_survey_sbd_generator import generate_gsm_s
 from ska_oso_services.odt.service.sbd_generator import generate_sbds
 
 LOGGER = logging.getLogger(__name__)
-
-
-DEFAULT_AUTHOR = Author(pis=[], cois=[])
 
 
 DEFAULT_SB_DEFINITION = SBDefinition(
@@ -141,6 +142,44 @@ class CalibratorSweepInputs(BaseModel):
     )
 
 
+class BasicCommissioningInputs(BaseModel):
+    name: str | None = None
+
+    duration_min: float = 5
+
+    target_name: str | None = Field(
+        default=None,
+        description="Target name to query the catalogue for. "
+        "This will take precedent over ra_str and dec_str",
+    )
+    ra_str: str | None = Field(
+        default=None,
+        description="Right ascension of the target if not using the "
+        "target_name for a catalogue lookup",
+    )
+    dec_str: str | None = Field(
+        default=None,
+        description="Declination of the target if not using the target_name "
+        "for a catalogue lookup",
+    )
+    coarse_channel_start: int = 64
+    coarse_channel_bandwidth: int = 96
+
+    mode: CommissioningObservingMode = Field(
+        default=CommissioningObservingMode.VIS,
+        description="Should be 'VIS' or 'PST', to indicate whether a "
+        "PST beam should be added to the observation",
+    )
+
+    stations: list[int] = Field(
+        default_factory=lambda: get_subarray_specific_parameter_from_osd(
+            TelescopeType.SKA_LOW, SubArrayLOW.AA1_ALL, "receptors"
+        ),
+        description="List of station IDs to set in the SBDefinition. "
+        "Will default to the AA1 stations if not given.",
+    )
+
+
 class FrequencySweepInputs(BaseModel):
     """Input parameters for frequency sweep SBDefinition generation."""
 
@@ -202,6 +241,31 @@ def _resolve_frequency_sweep_target(inputs: FrequencySweepInputs) -> Target:
     )
 
 
+def _resolve_basic_commissioning_target(inputs: BasicCommissioningInputs) -> Target:
+    """Resolve the target for basic commissioning generation from API inputs."""
+    if inputs.target_name:
+        target = get_coordinates(object_name=inputs.target_name)
+        target.target_id = target_id()
+        return target
+
+    if inputs.ra_str is not None and inputs.dec_str is not None:
+        return Target(
+            target_id=target_id(),
+            name=inputs.target_name or inputs.name or "basic-commissioning-target",
+            reference_coordinate=ICRSCoordinates(
+                ra_str=inputs.ra_str,
+                dec_str=inputs.dec_str,
+            ),
+        )
+
+    raise BadRequestError(
+        detail=(
+            "Provide either target_name for catalog lookup, or both ra_str "
+            "and dec_str for manual target coordinates."
+        )
+    )
+
+
 @router.get(
     "/{identifier}",
     summary="Get Project by identifier",
@@ -248,29 +312,18 @@ def prjs_post(
     """
     LOGGER.debug("POST PRJ")
     if prj is None:
-        prj = Project(
-            obs_blocks=[empty_observing_block()],
-            author=DEFAULT_AUTHOR.model_copy(deep=True),
-        )
+        prj = Project(obs_blocks=[empty_observing_block()])
     else:
         if not prj.obs_blocks:
             prj.obs_blocks = [empty_observing_block()]
-        if prj.author is None:
-            prj.author = DEFAULT_AUTHOR.model_copy(deep=True)
-    # Ensure the identifier is None so the ODA doesn't try to perform an update
-    if prj.prj_id is not None:
-        raise BadRequestError(
-            detail=(
-                "prj_id given in the body of the POST request. Identifier"
-                " generation for new entities is the responsibility of the ODA,"
-                " which will fetch them from SKUID, so they should not be given in"
-                " this request."
-            ),
-        )
 
     with oda as uow:
+        if prj.prj_id is not None and prj.prj_id in uow.prjs:
+            raise DuplicateError(detail=("prj_id already present in the ODA."))
+
         updated_prj = uow.prjs.add(prj, user=auth.user_id)
         uow.commit()
+
     return updated_prj
 
 
@@ -532,6 +585,65 @@ def prjs_ob_generate_sbds_frequency_sweep(
             target_dwell=timedelta(minutes=inputs.target_dwell_min),
             coarse_channel_start=inputs.coarse_channel_start,
             coarse_channel_end=inputs.coarse_channel_end,
+            coarse_channel_bandwidth=inputs.coarse_channel_bandwidth,
+            pst_mode=inputs.mode == CommissioningObservingMode.PST,
+            stations=inputs.stations,
+        )
+
+        sbd.ob_ref = obs_block.obs_block_id
+        uow.sbds.add(sbd, user=auth.user_id)
+
+        updated_prj = uow.prjs.get(prj.prj_id)
+        uow.commit()
+
+    return updated_prj
+
+
+@router.post(
+    "/{identifier}/{obs_block_id}/generateBasicCommissioningSBDefinition",
+    summary="Generate a basic commissioning SBDefinition for an ObservingBlock",
+    description=(
+        "Generates a single SBDefinition for the Low Commissioning basic "
+        "commissioning use case. The generated SBDefinition is persisted in the "
+        "ODA and linked to the specified ObservingBlock within the Project."
+    ),
+)
+def prjs_ob_generate_sbds_basic_commissioning(
+    auth: Annotated[
+        AuthContext,
+        Permissions(roles=API_ROLES, scopes={Scope.ODT_READWRITE}),
+    ],
+    oda: UnitOfWork,
+    identifier: str,
+    obs_block_id: str,
+    inputs: BasicCommissioningInputs,
+) -> Project:
+    """
+    Generate a basic commissioning SBDefinition and store it in the given
+    ObservingBlock within a Project.
+    """
+    LOGGER.debug(
+        "POST PRJS generate Basic Commissioning SBDefinition for prj_id: %s and obs_block_id: %s",
+        identifier,
+        obs_block_id,
+    )
+    with oda as uow:
+        prj = uow.prjs.get(identifier)
+        try:
+            obs_block = next(
+                obs_block for obs_block in prj.obs_blocks if obs_block.obs_block_id == obs_block_id
+            )
+        except StopIteration:
+            # pylint: disable=raise-missing-from
+            raise NotFoundError(detail=f"Observing Block '{obs_block_id}' not found in Project")
+
+        target = _resolve_basic_commissioning_target(inputs)
+
+        sbd = generate_basic_commissioning_sbd(
+            name=inputs.name,
+            target=target,
+            duration=timedelta(minutes=inputs.duration_min),
+            coarse_channel_start=inputs.coarse_channel_start,
             coarse_channel_bandwidth=inputs.coarse_channel_bandwidth,
             pst_mode=inputs.mode == CommissioningObservingMode.PST,
             stations=inputs.stations,
