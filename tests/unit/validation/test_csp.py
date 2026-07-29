@@ -1,4 +1,4 @@
-from ska_oso_pdm import ValidationArrayAssembly
+from ska_oso_pdm import TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm.builders import LowSBDefinitionBuilder, MidSBDefinitionBuilder
 from ska_oso_pdm.sb_definition import CSPConfiguration
 from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
@@ -34,6 +34,35 @@ band_5b_json = """
         ]
       }
     }
+"""
+
+band_5b_subband3_json = """
+{
+  "config_id": "csp-configuration-12754",
+  "name": "Config 12754",
+  "midcbf": {
+    "frequency_band": "5b",
+    "band5b_subband": 3,
+    "subbands": [
+      {
+        "frequency_slice_offset": {
+          "value": 0,
+          "unit": "MHz"
+        },
+        "correlation_spws": [
+          {
+            "spw_id": 1,
+            "number_of_channels": 52080,
+            "centre_frequency": 12500000000,
+            "time_integration_factor": 1,
+            "zoom_factor": 0,
+            "logical_fsp_ids": []
+          }
+        ]
+      }
+    ]
+  }
+}
 """
 
 
@@ -84,6 +113,20 @@ def test_mid_telescope_csp_configuration_passes_for_valid_setup_band_5b_edition(
         primary_entity=sbd.csp_configurations[0],
         telescope=sbd.telescope,
         array_assembly=ValidationArrayAssembly.AA1,
+    )
+
+    result = validate_csp(input_context)
+    assert result == []
+
+
+def test_mid_telescope_csp_configuration_passes_for_valid_setup_band_5b_subband3():
+
+    csp_config = CSPConfiguration.model_validate_json(band_5b_subband3_json)
+
+    input_context = ValidationContext(
+        primary_entity=csp_config,
+        telescope=TelescopeType.SKA_MID,
+        array_assembly=ValidationArrayAssembly.AA05,
     )
 
     result = validate_csp(input_context)
