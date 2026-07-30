@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from ska_oso_services.pht.api import (
+    calibrators,
     panel_decision,
     panels,
     prslacc,
@@ -11,6 +12,7 @@ from ska_oso_services.pht.api import (
 )
 
 router = APIRouter(prefix="/pht")
+router.include_router(calibrators.router)
 router.include_router(prsls.router)
 router.include_router(reviewers.router)
 router.include_router(reviews.router)
