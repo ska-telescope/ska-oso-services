@@ -41,15 +41,15 @@ OBSERVATORY_CALIBRATION_STRATEGIES: dict[str, CalibrationStrategy] = {
     strat.calibration_strategy_id: strat
     for strat in (
         CalibrationStrategy(
-            calibration_strategy_id="closest",
+            calibration_strategy_id=CalibratorChoice.CLOSEST.value,
             when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
             calibrator_choice=CalibratorChoice.CLOSEST,
             duration_ms=timedelta(minutes=10),
         ),
         CalibrationStrategy(
-            calibration_strategy_id="highest_elevation",
+            calibration_strategy_id=CalibratorChoice.CLOSEST.value,
             when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
-            calibrator_choice=CalibratorChoice.HIGHEST_ELEVATION,
+            calibrator_choice=CalibratorChoice.CLOSEST,
             duration_ms=timedelta(minutes=10),
         ),
     )
