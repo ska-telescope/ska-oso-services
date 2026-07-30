@@ -7,7 +7,7 @@ from astropy.units import Quantity
 from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.sb_definition import CSPConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
-from ska_oso_pdm.sb_definition.csp.midcbf import CorrelationSPWConfiguration
+from ska_oso_pdm.sb_definition.csp.midcbf import CorrelationSPWConfiguration, ReceiverBand
 
 from ska_oso_services.common.astro import (
     low_centre_frequency_to_coarse_channel_end,
@@ -352,10 +352,33 @@ def validate_mid_fsps(
     )
 
     n_fsps = 0
+
+    frequency_band = csp_config.midcbf.frequency_band
+
     for subband in csp_config.midcbf.subbands:
         frequency_offset = subband.frequency_slice_offset
+
         for spw in subband.correlation_spws:
-            centre_frequency = spw.centre_frequency * u.Hz
+            if frequency_band == ReceiverBand.BAND_5B:
+                band_5b_subband = csp_config.midcbf.band5b_subband
+                subband_osd = get_mid_frequency_band_data_from_osd(frequency_band, band_5b_subband)
+
+                if subband_osd.sideband == "high":
+                    factor = -1.0
+                elif subband_osd.sideband == "low":
+                    factor = 1.0
+                else:
+                    raise ValueError(
+                        f"{subband_osd.sideband} not supported, (should be 'high' or 'low')"
+                    )
+
+                centre_frequency = factor * (
+                    spw.centre_frequency * u.Hz - subband_osd.lo_frequency_hz * u.Hz
+                )
+
+            else:
+                centre_frequency = spw.centre_frequency * u.Hz
+
             spw_bandwidth = calculate_continuum_spw_bandwidth(
                 ValidationContext(primary_entity=spw, telescope=csp_context.telescope)
             )
