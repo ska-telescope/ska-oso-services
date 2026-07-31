@@ -21,7 +21,7 @@ LOGGER = logging.getLogger(__name__)
 router = APIRouter(tags=["PPT API - Proposal Preparation"])
 
 
-@router.get(
+@router.post(
     "/calibrators",
     summary="Return a list of calibrators for a Target given a strategy",
     dependencies=[Permissions(roles={Role.ANY}, scopes=Scope)],
