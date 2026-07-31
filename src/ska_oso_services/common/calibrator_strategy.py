@@ -47,9 +47,9 @@ OBSERVATORY_CALIBRATION_STRATEGIES: dict[str, CalibrationStrategy] = {
             duration_ms=timedelta(minutes=10),
         ),
         CalibrationStrategy(
-            calibration_strategy_id=CalibratorChoice.CLOSEST.value,
+            calibration_strategy_id=CalibratorChoice.HIGHEST_ELEVATION.value,
             when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
-            calibrator_choice=CalibratorChoice.CLOSEST,
+            calibrator_choice=CalibratorChoice.HIGHEST_ELEVATION,
             duration_ms=timedelta(minutes=10),
         ),
     )

@@ -6,12 +6,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Adds `/calibrators` endpoint for PHT that returns the appropriate calibrators for a given strategy
 
 16.2.0
 **********
 * GSM survey constrained RA-sweep grouping now uses pairwise separation relative to beam FWHM
 * Updated `/configuration` endpoint to return SPFRx defaults
-* Add `/{prj_id}/{obs_block_id}/generateBasicCommissioningSBDefinition` API
+* Added `/{prj_id}/{obs_block_id}/generateBasicCommissioningSBDefinition` API
 * [BUGFIX] Fixes validation of band 5b CSP configurations
 
 16.1.0
