@@ -11,7 +11,7 @@ from astropy.coordinates import AltAz, Angle, SkyCoord
 from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from astropy.time import Time
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from ska_oso_pdm import ICRSCoordinates, RadialVelocity, Target, TelescopeType
 from ska_oso_pdm._shared import TimedeltaMs
 
@@ -43,7 +43,7 @@ class ClosestCalibrator(BestCalibrator):
     class to hold the closest calibrators
     """
 
-    separation: Angle
+    separation: Angle = Field(exclude=True)
 
 
 class HighestCalibrator(BestCalibrator):
@@ -51,7 +51,7 @@ class HighestCalibrator(BestCalibrator):
     class to hold the highest calibrators
     """
 
-    elevation: Angle
+    elevation: Angle = Field(exclude=True)
 
 
 def to_pdm_targets(table: QTable) -> List[Target]:
