@@ -5,7 +5,6 @@ These functions map to the API paths, with the returned value being the API resp
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
-from http import HTTPStatus
 from sys import maxsize
 from typing import Annotated, Optional
 
@@ -13,7 +12,7 @@ from typing import Annotated, Optional
 import astropy.units as u
 from astropy.time import Time
 from astropy.units import Quantity
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from ska_aaa_authhelpers import AuthContext, Role
 from ska_db_oda.common.uow import UnitOfWork
@@ -33,7 +32,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
-from ska_oso_services.odt.api.sbds import validate
+from ska_oso_services.odt.api.sbds import validate_and_raise_exception
 from ska_oso_services.odt.service.basic_commissioning_sbd_generator import (
     generate_basic_commissioning_sbd,
 )
@@ -530,12 +529,7 @@ def prjs_ob_generate_sbds_cal_sweep(
             pst_mode=inputs.mode == CommissioningObservingMode.PST,
             stations=inputs.stations,
         )
-        validation_resp = validate(sbd)
-        if not validation_resp.valid:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail=validation_resp.model_dump(mode="json"),
-            )
+        validate_and_raise_exception(sbd)
 
         sbd.ob_ref = obs_block.obs_block_id
 
@@ -597,12 +591,7 @@ def prjs_ob_generate_sbds_frequency_sweep(
             pst_mode=inputs.mode == CommissioningObservingMode.PST,
             stations=inputs.stations,
         )
-        validation_resp = validate(sbd)
-        if not validation_resp.valid:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail=validation_resp.model_dump(mode="json"),
-            )
+        validate_and_raise_exception(sbd)
 
         sbd.ob_ref = obs_block.obs_block_id
         uow.sbds.add(sbd, user=auth.user_id)
@@ -662,12 +651,7 @@ def prjs_ob_generate_sbds_basic_commissioning(
             pst_mode=inputs.mode == CommissioningObservingMode.PST,
             stations=inputs.stations,
         )
-        validation_resp = validate(sbd)
-        if not validation_resp.valid:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail=validation_resp.model_dump(mode="json"),
-            )
+        validate_and_raise_exception(sbd)
 
         sbd.ob_ref = obs_block.obs_block_id
         uow.sbds.add(sbd, user=auth.user_id)

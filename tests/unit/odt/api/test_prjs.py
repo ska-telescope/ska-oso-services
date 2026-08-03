@@ -544,7 +544,8 @@ class TestCalibratorSweepSBDefinition:
     }
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_cal_sweep_sbd")
-    def test_cal_sweep_generate_success(self, mock_generate, client_with_uow_mock):
+    @mock.patch("ska_oso_services.odt.api.prjs.validate_and_raise_exception")
+    def test_cal_sweep_generate_success(self, mock_validate, mock_generate, client_with_uow_mock):
         """
         A valid request should persist the generated SBD and return the
         updated Project.
@@ -557,6 +558,7 @@ class TestCalibratorSweepSBDefinition:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         mock_generate.return_value = sbd
+        mock_validate.return_value = None
 
         resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/generateCalibratorSweepSBDefinition",
@@ -627,7 +629,10 @@ class TestFrequencySweepSBDefinition:
     }
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_frequency_sweep")
-    def test_frequency_sweep_generate_success_ra_dec(self, mock_generate, client_with_uow_mock):
+    @mock.patch("ska_oso_services.odt.api.prjs.validate_and_raise_exception")
+    def test_frequency_sweep_generate_success_ra_dec(
+        self, mock_validate, mock_generate, client_with_uow_mock
+    ):
         client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
         obs_block_id = "ob-1"
@@ -636,6 +641,7 @@ class TestFrequencySweepSBDefinition:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         mock_generate.return_value = sbd
+        mock_validate.return_value = None
 
         resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/generateFrequencySweepSBDefinition",
@@ -658,8 +664,9 @@ class TestFrequencySweepSBDefinition:
 
     @mock.patch("ska_oso_services.odt.api.prjs.get_coordinates")
     @mock.patch("ska_oso_services.odt.api.prjs.generate_frequency_sweep")
+    @mock.patch("ska_oso_services.odt.api.prjs.validate_and_raise_exception")
     def test_frequency_sweep_generate_success_target_name_lookup(
-        self, mock_generate, mock_get_coordinates, client_with_uow_mock
+        self, mock_validate, mock_generate, mock_get_coordinates, client_with_uow_mock
     ):
         client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
@@ -669,6 +676,7 @@ class TestFrequencySweepSBDefinition:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         mock_generate.return_value = sbd
+        mock_validate.return_value = None
 
         resolved_target = Target(
             target_id="target-123",
@@ -762,8 +770,9 @@ class TestBasicCommissioningSBDefinition:
     }
 
     @mock.patch("ska_oso_services.odt.api.prjs.generate_basic_commissioning_sbd")
+    @mock.patch("ska_oso_services.odt.api.prjs.validate_and_raise_exception")
     def test_basic_commissioning_generate_success_ra_dec(
-        self, mock_generate, client_with_uow_mock
+        self, mock_validate, mock_generate, client_with_uow_mock
     ):
         client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
@@ -773,6 +782,7 @@ class TestBasicCommissioningSBDefinition:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         mock_generate.return_value = sbd
+        mock_validate.return_value = None
 
         resp = client.post(
             f"{PRJS_API_URL}/{project.prj_id}/{obs_block_id}/generateBasicCommissioningSBDefinition",
@@ -795,8 +805,9 @@ class TestBasicCommissioningSBDefinition:
 
     @mock.patch("ska_oso_services.odt.api.prjs.get_coordinates")
     @mock.patch("ska_oso_services.odt.api.prjs.generate_basic_commissioning_sbd")
+    @mock.patch("ska_oso_services.odt.api.prjs.validate_and_raise_exception")
     def test_basic_commissioning_generate_success_target_name_lookup(
-        self, mock_generate, mock_get_coordinates, client_with_uow_mock
+        self, mock_validate, mock_generate, mock_get_coordinates, client_with_uow_mock
     ):
         client, uow_mock = client_with_uow_mock
         project = TestDataFactory.project()
@@ -806,6 +817,7 @@ class TestBasicCommissioningSBDefinition:
         uow_mock.prjs.get.return_value = project
         uow_mock.sbds.add.return_value = sbd
         mock_generate.return_value = sbd
+        mock_validate.return_value = None
 
         resolved_target = Target(
             target_id="target-123",

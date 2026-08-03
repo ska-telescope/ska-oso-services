@@ -144,7 +144,7 @@ def test_low_target_below_osd_min_elevation():
     assert len(result) == 1
     assert (
         result[0].message
-        == "Maximum elevation (44.74 degrees) is less than the limit (45.0 degrees) "
+        == "Maximum elevation (44.74 degrees) is less than the limit (45.0 degrees)"
     )
     assert result[0].level == ValidationIssueType.ERROR
 

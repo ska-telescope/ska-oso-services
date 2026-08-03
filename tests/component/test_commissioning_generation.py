@@ -175,6 +175,42 @@ class TestBasicCommissioningSBDefinitionGeneration:
         get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}")
         assert get_response.status_code == HTTPStatus.OK
 
+    def test_basic_commissioning_target_name_47_tuc_returns_validation_error(self, authrequests):
+        """
+        Target name '47 Tuc' should fail commissioning SBD validation and return 400.
+        """
+        project = TestDataFactory.project_with_two_low_targets(prj_id=None, prsl_ref=None)
+        post_response = authrequests.post(
+            f"{ODT_URL}/prjs",
+            data=project.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert post_response.status_code == HTTPStatus.OK, post_response.text
+        prj_id = post_response.json()["prj_id"]
+        obs_block_id = post_response.json()["obs_blocks"][0]["obs_block_id"]
+
+        basic_commissioning_input = {
+            "name": "47 Tuc Commissioning",
+            "duration_min": 5,
+            "target_name": "47 Tuc",
+            "ra_str": None,
+            "dec_str": None,
+            "coarse_channel_start": 64,
+            "coarse_channel_bandwidth": 96,
+            "mode": "VIS",
+        }
+        generate_response = authrequests.post(
+            f"{ODT_URL}/prjs/{prj_id}/{obs_block_id}/generateBasicCommissioningSBDefinition",
+            json=basic_commissioning_input,
+        )
+
+        assert generate_response.status_code == HTTPStatus.BAD_REQUEST, generate_response.text
+        assert (
+            generate_response.json()["detail"] == "SBDefinition validation failed with issues "
+            "['$.targets.0: Maximum elevation (44.74 degrees) "
+            "is less than the limit (45.0 degrees)']"
+        )
+
 
 class TestGSMSurveySBDefinitionGeneration:
     def test_gsm_survey_sbds_generated_and_persisted(self, authrequests):
