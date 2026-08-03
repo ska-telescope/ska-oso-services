@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+16.3.0
+**********
 * Adds `/calibrators` endpoint for PHT that returns the appropriate calibrators for a given strategy
 * [BUGFIX] Fixes bugs in `generateBasicCommissioningSBDefinition` where reference frame was not passed into function and correct defaults not set
 
