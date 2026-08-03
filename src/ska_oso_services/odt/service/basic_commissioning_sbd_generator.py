@@ -2,10 +2,17 @@
 from datetime import timedelta
 
 import astropy.units as u
-from ska_oso_pdm import Beam, SBDefinition, Target, TiedArrayBeams
+from ska_oso_pdm import (
+    Beam,
+    PythonArguments,
+    SBDefinition,
+    Target,
+    TiedArrayBeams,
+    ValidationArrayAssembly,
+)
 from ska_oso_pdm.builders import LowSBDefinitionBuilder, MCCSAllocationBuilder
 from ska_oso_pdm.builders.utils import csp_configuration_id, scan_definition_id
-from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition
+from ska_oso_pdm.sb_definition import CSPConfiguration, ScanDefinition, SDPConfiguration, SDPScript
 from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 
@@ -26,12 +33,6 @@ def generate_basic_commissioning_sbd(
     on the given target and CSP set up.
 
     If pst_mode is True then a single on-axis PST beam will be added to the scan.
-
-    Note this doesn't create an SDPConfiguration in the SBD for any SDP scripts.
-    In this case ska-oso-scripting
-    will create default scripts using the latest script parameters.
-    To customise this, add an SDPConfiguration
-    to the result of this function
     """
 
     if name is None:
@@ -40,16 +41,26 @@ def generate_basic_commissioning_sbd(
             f"Channel start {coarse_channel_start} BW {coarse_channel_bandwidth}"
         )
     sbd: SBDefinition = LowSBDefinitionBuilder(
+        name=name,
         metadata=None,
         mccs_allocation=MCCSAllocationBuilder(stations=stations),
         targets=[target],
         csp_configurations=[],
+        sdp_configurations=[
+            SDPConfiguration(
+                sdp_script=SDPScript.VIS_RECEIVE, script_version="latest", script_parameters={}
+            )
+        ],
+        validate_against=ValidationArrayAssembly.AA1,
     )
+
+    # Remove subarray_id arg that the builder adds - probably should be removed from the builder
+    sbd.activities["observe"].function_args["init"] = PythonArguments()
 
     # Then the CSP Configuration
     csp_configuration = CSPConfiguration(
         config_id=csp_configuration_id(),
-        name=f"{name} CSPConfiguration",
+        name="CSPConfiguration",
         lowcbf=LowCBFConfiguration(
             do_pst=False,
             correlation_spws=[
@@ -92,6 +103,7 @@ def generate_basic_commissioning_sbd(
         target_ref=target.target_id,
         csp_configuration_ref=csp_configuration.config_id,
         scan_duration_ms=duration,
+        scan_intent="Science",
     )
 
     sbd.mccs_allocation.subarray_beams[0].scan_sequence.append(scan)
