@@ -103,12 +103,7 @@ def sbds_post(
     sbd_id and metadata populated.
     """
     LOGGER.debug("POST SBD")
-    validation_resp = validate(sbd)
-    if not validation_resp.valid:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail=validation_resp.model_dump(mode="json"),
-        )
+    validate_and_raise_exception(sbd)
 
     with oda as uow:
         if sbd.sbd_id is not None and sbd.sbd_id in uow.sbds:
@@ -138,12 +133,7 @@ def sbds_put(
     in the underlying data store to create a new version.
     """
     LOGGER.debug("POST SBD sbd_id: %s", identifier)
-    validation_resp = validate(sbd)
-    if not validation_resp.valid:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail=validation_resp.model_dump(mode="json"),
-        )
+    validate_and_raise_exception(sbd)
 
     if sbd.sbd_id != identifier:
         raise UnprocessableEntityError(
@@ -236,9 +226,22 @@ def sbds_status_set_draft(
         return uow.status.get_current_status(entity_id=identifier)
 
 
-def validate(sbd: SBDefinition) -> ValidationResponse:
+def validate_and_raise_exception(sbd: SBDefinition) -> None:
     """
-    Validate SB Definition by running custom validation steps
+    Validate SBDefinition and raises a HTTPException if invalid.
+
+    This should be used in APIs where the SBD is expected to be valid and it is an exceptional
+    case if not (as opposed to the /validate endpoint where an invalid result is still
+    returned as a 200).
     """
     validate_result = validate_sbdefinition(ValidationContext(primary_entity=sbd))
-    return ValidationResponse(issues=validate_result)
+    validation_resp = ValidationResponse(issues=validate_result)
+    if not validation_resp.valid:
+        message = (
+            f"SBDefinition validation failed with issues "
+            f"{[f'{issue.field}: {issue.message}' for issue in validation_resp.issues]}"
+        )
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=message,
+        )

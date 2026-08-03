@@ -32,6 +32,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
+from ska_oso_services.odt.api.sbds import validate_and_raise_exception
 from ska_oso_services.odt.service.basic_commissioning_sbd_generator import (
     generate_basic_commissioning_sbd,
 )
@@ -244,7 +245,7 @@ def _resolve_frequency_sweep_target(inputs: FrequencySweepInputs) -> Target:
 def _resolve_basic_commissioning_target(inputs: BasicCommissioningInputs) -> Target:
     """Resolve the target for basic commissioning generation from API inputs."""
     if inputs.target_name:
-        target = get_coordinates(object_name=inputs.target_name)
+        target = get_coordinates(inputs.target_name, ReferenceFrame.equatorial)
         target.target_id = target_id()
         return target
 
@@ -528,6 +529,7 @@ def prjs_ob_generate_sbds_cal_sweep(
             pst_mode=inputs.mode == CommissioningObservingMode.PST,
             stations=inputs.stations,
         )
+        validate_and_raise_exception(sbd)
 
         sbd.ob_ref = obs_block.obs_block_id
 
@@ -589,6 +591,7 @@ def prjs_ob_generate_sbds_frequency_sweep(
             pst_mode=inputs.mode == CommissioningObservingMode.PST,
             stations=inputs.stations,
         )
+        validate_and_raise_exception(sbd)
 
         sbd.ob_ref = obs_block.obs_block_id
         uow.sbds.add(sbd, user=auth.user_id)
@@ -648,6 +651,7 @@ def prjs_ob_generate_sbds_basic_commissioning(
             pst_mode=inputs.mode == CommissioningObservingMode.PST,
             stations=inputs.stations,
         )
+        validate_and_raise_exception(sbd)
 
         sbd.ob_ref = obs_block.obs_block_id
         uow.sbds.add(sbd, user=auth.user_id)
