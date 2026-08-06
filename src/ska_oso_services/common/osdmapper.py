@@ -3,15 +3,18 @@ This module calls the OSD and converts the relevant parts into the
 configuration needed for the application.
 """
 
-import copy
 from functools import cache
 from importlib.metadata import version
 from typing import Union
 
+from astropy import units as u
 from pydantic import AliasChoices, BaseModel, Field, dataclasses
 from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm._shared.spfrx import (
     NoiseDiodeMode,
+    PeriodicNoiseDiodeConfig,
+    PseudoRandomNoiseDiodeConfig,
+    SPFRxNoiseDiodeDurationUnits,
     TargetSPFRxConfiguration,
 )
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
@@ -27,6 +30,8 @@ from ska_oso_services.common.model import AppModel
 SUPPORTED_COMMON_ARRAY_ASSEMBLIES = ["AA0.5", "AA1", "AA2"]
 MID_ARRAY_ASSEMBLIES = ["Mid_ITF"]
 LOW_ARRAY_ASSEMBLIES = ["AA2_SV", "Low_ITF"]
+
+NOISE_DIODE_MODE_OFF = "off"  # hack until OFF is added to the PDM NoiseDiodeMode enum
 
 OSD_VERSION = version("ska-ost-osd")
 OSD_SOURCE = "car"
@@ -409,35 +414,56 @@ def get_subarray_specific_parameter_from_osd(
 
 
 def get_default_pdm_target_spfrx() -> TargetSPFRxConfiguration:
-    target_spfrx = copy.copy(configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx)
-
+    target_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx.model_copy()
     default_noise_diode_mode = target_spfrx.default_noise_diode_mode
 
-    if default_noise_diode_mode not in [
-        "off",
-        NoiseDiodeMode.PERIODIC.value,
-        NoiseDiodeMode.PSEUDO_RANDOM.value,
-    ]:
-        raise ValueError(
-            f"default noise diode mode {default_noise_diode_mode} is not supported,"
-            f"options are 'off',{NoiseDiodeMode.PERIODIC.value} and "
-            f"{NoiseDiodeMode.PSEUDO_RANDOM.value} please update the tmdata file accordingly"
-        )
+    if default_noise_diode_mode == NOISE_DIODE_MODE_OFF:
+        diode = None
+    else:
+        try:
+            mode = NoiseDiodeMode(default_noise_diode_mode)
+        except ValueError:
+            raise ValueError(
+                f"default noise diode mode {default_noise_diode_mode} is not supported, "
+                f"options are {NOISE_DIODE_MODE_OFF}, "
+                f"{', '.join(m.value for m in NoiseDiodeMode)}, please update the tmdata "
+                "file accordingly"
+            ) from None
 
-    try:
         diode = next(
             noise_diode
             for noise_diode in target_spfrx.noise_diode_options
-            if noise_diode.mode == default_noise_diode_mode
+            if noise_diode.mode == mode
         )
-    except StopIteration:
-        diode = None
 
-    target_spfrx.noise_diode = diode
+    target_spfrx.noise_diode = _noise_diode_osd_to_pdm(diode)
 
     return TargetSPFRxConfiguration(
         **target_spfrx.model_dump(exclude={"noise_diode_options", "default_noise_diode_mode"})
     )
+
+
+def _noise_diode_osd_to_pdm(diode):
+    """
+    Private function that maps the non quantity OSD noise diode option to PDM
+    noise diode config model with astropy Quantities
+    """
+    if diode is None:
+        return None
+    converted = {
+        (key.removesuffix("_ms") if key.endswith("_ms") else key): (
+            u.Quantity(value=value, unit=SPFRxNoiseDiodeDurationUnits.MILLISECONDS)
+            if key.endswith("_ms")
+            else value
+        )
+        for key, value in diode.model_dump().items()
+    }
+
+    if diode.mode == NoiseDiodeMode.PERIODIC:
+        return PeriodicNoiseDiodeConfig(**converted)
+    if diode.mode == NoiseDiodeMode.PSEUDO_RANDOM:
+        return PseudoRandomNoiseDiodeConfig(**converted)
+    raise ValueError(f"no config mapping for noise diode mode {diode.mode!r}")
 
 
 def get_defaults_pdm_csp_spfrx() -> CSPSPFRxConfiguration:
