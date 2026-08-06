@@ -139,3 +139,16 @@ def test_off_mode_sets_diode_to_none(mock_config):
     result = get_default_pdm_target_spfrx()
 
     assert result.noise_diode is not None
+
+
+@patch("ska_oso_services.common.osdmapper.configuration_from_osd")
+def test_an_invalid_default_causes_a_value_error(mock_config):
+    updated_target_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx
+    modified = updated_target_spfrx.model_copy(update={"default_noise_diode_mode": "blah"})
+
+    mock_config.return_value = SimpleNamespace(
+        ska_mid=SimpleNamespace(spfrx_defaults=SimpleNamespace(target_spfrx=modified))
+    )
+
+    with pytest.raises(ValueError):
+        get_default_pdm_target_spfrx()
