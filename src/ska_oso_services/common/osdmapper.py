@@ -3,6 +3,7 @@ This module calls the OSD and converts the relevant parts into the
 configuration needed for the application.
 """
 
+import copy
 from functools import cache
 from importlib.metadata import version
 from typing import Union
@@ -106,6 +107,7 @@ class PseudoRandomNoiseDiode(BaseModel):
 
 class TargetSPFRx(TargetSPFRxConfiguration):
     noise_diode_options: list[PeriodicNoiseDiode | PseudoRandomNoiseDiode]
+    default_noise_diode_mode: str
 
 
 class SPFRxParameters(BaseModel):
@@ -248,12 +250,18 @@ def _get_spfrx_defaults(tmdata: TMData) -> SPFRxParameters:
         PseudoRandomNoiseDiode(**noise_diode["pseudo_random"]),
     ]
 
+    default_mode = dish_spfrx_params["noise_diode"]["mode"]
+
     target_spfrx_params = {
         key: value for key, value in dish_spfrx_params.items() if key != "noise_diode"
     }
 
     return SPFRxParameters(
-        target_spfrx=TargetSPFRx(**target_spfrx_params, noise_diode_options=noise_diode_options),
+        target_spfrx=TargetSPFRx(
+            **target_spfrx_params,
+            noise_diode_options=noise_diode_options,
+            default_noise_diode_mode=default_mode,
+        ),
         csp_spfrx=CSPSPFRxConfiguration(**defaults["csp_configuration"]["spfrx"]),
     )
 
@@ -401,8 +409,35 @@ def get_subarray_specific_parameter_from_osd(
 
 
 def get_default_pdm_target_spfrx() -> TargetSPFRxConfiguration:
-    target_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx
-    return TargetSPFRxConfiguration(**target_spfrx.model_dump(exclude={"noise_diode_options"}))
+    target_spfrx = copy.copy(configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx)
+
+    default_noise_diode_mode = target_spfrx.default_noise_diode_mode
+
+    if default_noise_diode_mode not in [
+        "off",
+        NoiseDiodeMode.PERIODIC.value,
+        NoiseDiodeMode.PSEUDO_RANDOM.value,
+    ]:
+        raise ValueError(
+            f"default noise diode mode {default_noise_diode_mode} is not supported,"
+            f"options are 'off',{NoiseDiodeMode.PERIODIC.value} and "
+            f"{NoiseDiodeMode.PSEUDO_RANDOM.value} please update the tmdata file accordingly"
+        )
+
+    try:
+        diode = next(
+            noise_diode
+            for noise_diode in target_spfrx.noise_diode_options
+            if noise_diode.mode == default_noise_diode_mode
+        )
+    except StopIteration:
+        diode = None
+
+    target_spfrx.noise_diode = diode
+
+    return TargetSPFRxConfiguration(
+        **target_spfrx.model_dump(exclude={"noise_diode_options", "default_noise_diode_mode"})
+    )
 
 
 def get_defaults_pdm_csp_spfrx() -> CSPSPFRxConfiguration:
