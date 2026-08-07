@@ -6,6 +6,7 @@ import ska_oso_services.settings as settings_module
 from ska_oso_services.pht.service.s3_bucket import (
     S3Config,
     S3Method,
+    build_proposal_s3_key,
     create_presigned_url_delete_pdf,
     create_presigned_url_download_pdf,
     create_presigned_url_upload_pdf,
@@ -83,6 +84,17 @@ class TestS3BucketUtils:
             Params={"Bucket": "test-bucket", "Key": "file.pdf"},
             ExpiresIn=120,
         )
+
+    @pytest.mark.parametrize(
+        "prsl_id,filename,expected",
+        [
+            ("prp-abc123", "file.pdf", "prp-abc123/file.pdf"),
+            ("prp-abc123", "/nested/file.pdf", "prp-abc123/nested/file.pdf"),
+            ("prp-abc123/", "file.pdf", "prp-abc123/file.pdf"),
+        ],
+    )
+    def test_build_proposal_s3_key(self, prsl_id, filename, expected):
+        assert build_proposal_s3_key(prsl_id, filename) == expected
 
     def test_create_presigned_url_upload_pdf_delegates(self):
         mock_client = mock.Mock()

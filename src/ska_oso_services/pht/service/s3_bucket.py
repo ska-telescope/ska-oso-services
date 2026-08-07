@@ -13,6 +13,11 @@ class S3Method(str, Enum):
     DELETE = "delete_object"
 
 
+def build_proposal_s3_key(prsl_id: str, filename: str) -> str:
+    """Build a proposal-scoped S3 key for PHT proposal documents."""
+    return f"{str(prsl_id).strip('/')}/{filename.lstrip('/')}"
+
+
 def get_aws_client(config: S3Config | None = None) -> BaseClient:
     config = config or get_settings().s3
     client_kwargs: dict[str, Any] = {

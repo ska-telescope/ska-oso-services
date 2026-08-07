@@ -32,6 +32,7 @@ from ska_oso_services.pht.service.proposal_service import (
 )
 from ska_oso_services.pht.service.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
+    build_proposal_s3_key,
     create_presigned_url_delete_pdf,
     create_presigned_url_download_pdf,
     create_presigned_url_upload_pdf,
@@ -511,6 +512,7 @@ def create_upload_pdf_url(
         raise UnprocessableEntityError(detail=validation_resp)
 
     logger.debug("POST Upload Signed URL for: %s", filename)
+    key = build_proposal_s3_key(prsl_id, filename)
 
     try:
         s3_client = get_aws_client()
@@ -523,7 +525,7 @@ def create_upload_pdf_url(
 
     try:
         return create_presigned_url_upload_pdf(
-            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+            key=key, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
         )
     # TODO: Andrey to look into this and determine the correct code or if not needed
     except ClientError as client_err:
@@ -551,6 +553,7 @@ def create_download_pdf_url(
     """
     security.proposals.allowed_to_view(prsl_id)
     logger.debug("POST Download Signed URL for: %s", filename)
+    key = build_proposal_s3_key(prsl_id, filename)
 
     try:
         s3_client = get_aws_client()
@@ -563,7 +566,7 @@ def create_download_pdf_url(
 
     try:
         return create_presigned_url_download_pdf(
-            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+            key=key, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
         )
     # TODO: Andrey to look into this when secrets are available
     # and determine the correct code or if not needed
@@ -590,6 +593,7 @@ def create_delete_pdf_url(
     """
     security.proposals.allowed_to_edit(prsl_id)
     logger.debug("POST Delete Signed URL for: %s", filename)
+    key = build_proposal_s3_key(prsl_id, filename)
 
     try:
         s3_client = get_aws_client()
@@ -602,7 +606,7 @@ def create_delete_pdf_url(
 
     try:
         return create_presigned_url_delete_pdf(
-            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+            key=key, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
         )
     # TODO: Andrey to look into this when secrets are available
     # and determine the correct code or if not needed
