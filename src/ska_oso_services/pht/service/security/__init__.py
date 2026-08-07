@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import Depends
 from ska_aaa_authhelpers import AuthContext, Requires, Role
 from ska_aaa_authhelpers.security import DEFAULT_ISSUERS, DEFAULT_PUBLIC_KEYS, KeysType
+
 from ska_oso_services.settings import get_settings
 
 from .facts import PHT_ADMIN_GROUP, Facts

@@ -6,6 +6,8 @@ import ska_oso_services.settings as settings_module
 from ska_oso_services.pht.service.s3_bucket import (
     S3Config,
     S3Method,
+    build_content_disposition,
+    get_s3_object_key,
     create_presigned_url_delete_pdf,
     create_presigned_url_download_pdf,
     create_presigned_url_upload_pdf,
@@ -82,6 +84,44 @@ class TestS3BucketUtils:
             ClientMethod="put_object",
             Params={"Bucket": "test-bucket", "Key": "file.pdf"},
             ExpiresIn=120,
+        )
+
+    @pytest.mark.parametrize(
+        "prsl_id,filename,expected",
+        [
+            ("prp-abc123", "file.pdf", "prp-abc123/file.pdf"),
+            ("prp-abc123", "/nested/file.pdf", "prp-abc123/nested/file.pdf"),
+            ("prp-abc123/", "file.pdf", "prp-abc123/file.pdf"),
+        ],
+    )
+    def test_build_proposal_s3_key(self, prsl_id, filename, expected):
+        assert get_s3_object_key(prsl_id, filename) == expected
+
+    def test_build_content_disposition(self):
+        got = build_content_disposition("Science Proposal Final.pdf")
+        assert "attachment; filename=" in got
+        assert "Science Proposal Final.pdf" in got
+
+    def test_create_presigned_url_upload_pdf_sets_content_disposition(self):
+        mock_client = mock.Mock()
+        create_presigned_url_upload_pdf(
+            "upload.pdf",
+            mock_client,
+            content_disposition='attachment; filename="upload.pdf"',
+        )
+        kwargs = mock_client.generate_presigned_url.call_args.kwargs
+        assert kwargs["Params"]["ContentDisposition"] == 'attachment; filename="upload.pdf"'
+
+    def test_create_presigned_url_download_pdf_sets_response_content_disposition(self):
+        mock_client = mock.Mock()
+        create_presigned_url_download_pdf(
+            "download.pdf",
+            mock_client,
+            response_content_disposition='attachment; filename="download.pdf"',
+        )
+        kwargs = mock_client.generate_presigned_url.call_args.kwargs
+        assert kwargs["Params"]["ResponseContentDisposition"] == (
+            'attachment; filename="download.pdf"'
         )
 
     def test_create_presigned_url_upload_pdf_delegates(self):

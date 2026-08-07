@@ -1,12 +1,14 @@
 import copy
 import logging
+import sys
+from enum import Enum
 from http import HTTPStatus
 from typing import Annotated, Literal
 from uuid import UUID
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
-from pydantic import ValidationError
+from pydantic import ValidationError, StringConstraints
 from ska_aaa_authhelpers import Role
 from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal import Proposal
@@ -32,6 +34,8 @@ from ska_oso_services.pht.service.proposal_service import (
 )
 from ska_oso_services.pht.service.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
+    build_content_disposition,
+    get_s3_object_key,
     create_presigned_url_delete_pdf,
     create_presigned_url_download_pdf,
     create_presigned_url_upload_pdf,
@@ -48,20 +52,25 @@ router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 
 ProposalID = ShortSkuid[Literal[EntityType.PRP]]
 
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+
+    class StrEnum(str, Enum):
+        """Python 3.10-compatible fallback for StrEnum."""
+
 
 @router.get(
     "/osd/cycles",
     summary="Retrieve OSD data for all available cycles",
-)
-def get_all_osd_cycles(
-    security: Annotated[
-        SecurityService,
+    dependencies=(
         Security(
             roles={Role.ANY},
             scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
         ),
-    ],
-) -> list[OsdDataModel]:
+    ),
+)
+def get_all_osd_cycles() -> list[OsdDataModel]:
     """
     This queries the OSD data for all available cycles.
 
@@ -71,7 +80,6 @@ def get_all_osd_cycles(
         list[OsdDataModel]: a list of the OSD data for all cycles.
 
     """
-    del security
     logger.debug("GET OSD data for all cycles")
     cycle_list = get_osd_cycles()
 
@@ -98,16 +106,15 @@ def get_all_osd_cycles(
 @router.get(
     "/osd/{cycle}",
     summary="Retrieve OSD data for a given cycle",
-)
-def get_osd_by_cycle(
-    cycle: int,
-    security: Annotated[
-        SecurityService,
+    dependencies=(
         Security(
             roles={Role.ANY},
             scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
         ),
-    ],
+    ),
+)
+def get_osd_by_cycle(
+    cycle: int,
 ) -> OsdDataModel:
     """
     This queries the OSD data by cycle id.
@@ -118,7 +125,6 @@ def get_osd_by_cycle(
         OsdDataModel: The OSD data validated against the defined schema.
 
     """
-    del security
     # TODO: We may need to consider moving this to common
     logger.debug("GET OSD data cycle: %s", cycle)
     data = get_osd_data(cycle_id=cycle, source="car")
@@ -486,13 +492,19 @@ async def send_email(
     return {"message": "Email sent successfully"}
 
 
+class ProposalDocument(StrEnum):
+    SCIENCE = "science"
+    TECHNICAL = "technical"
+
+
 @router.post(
-    "/{prsl_id}/s3/upload/{filename}",
+    "/{prsl_id}/s3/upload/{document_type}",
     summary="Create upload PDF URL",
 )
 def create_upload_pdf_url(
     prsl_id: ProposalID,
-    filename: str,
+    filename: Annotated[str, StringConstraints(pattern=r"^[^/\\]+$", min_length=1, max_length=256)],
+    document_type: ProposalDocument,
     security: Annotated[SecurityService, Security(roles={Role.ANY}, scopes={Scope.PHT_READWRITE})],
 ) -> str:
     """
@@ -500,17 +512,9 @@ def create_upload_pdf_url(
 
     """
     security.proposals.allowed_to_edit(prsl_id)
-    # Catch simple things someone may add to the filename
-    if not filename or "/" in filename or "\\" in filename:
-        validation_resp = {
-            "error": "Invalid filename",
-            "reason": "Filename must not contain slashes or be empty",
-            "field": "filename",
-            "value": filename,
-        }
-        raise UnprocessableEntityError(detail=validation_resp)
-
-    logger.debug("POST Upload Signed URL for: %s", filename)
+    logger.debug("POST Upload Signed URL for slot: %s", document_type)
+    key = get_s3_object_key(prsl_id, document_type.value)
+    content_disposition = build_content_disposition(filename)
 
     try:
         s3_client = get_aws_client()
@@ -523,7 +527,10 @@ def create_upload_pdf_url(
 
     try:
         return create_presigned_url_upload_pdf(
-            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+            key=key,
+            client=s3_client,
+            expiry=PRESIGNED_URL_EXPIRY_TIME,
+            content_disposition=content_disposition,
         )
     # TODO: Andrey to look into this and determine the correct code or if not needed
     except ClientError as client_err:
@@ -535,22 +542,23 @@ def create_upload_pdf_url(
 
 
 @router.post(
-    "/{prsl_id}/s3/download/{filename}",
+    "/{prsl_id}/s3/download/{document_type}",
     summary="Create download PDF URL",
 )
 def create_download_pdf_url(
     prsl_id: ProposalID,
-    filename: str,
+    document_type: ProposalDocument,
     security: Annotated[
         SecurityService, Security(roles={Role.ANY}, scopes={Scope.PHT_READ, Scope.PHT_READWRITE})
     ],
 ) -> str:
     """
-    Generate a presigned S3 download URL for the given filename.
+    Generate a presigned S3 download URL for a proposal document slot.
 
     """
     security.proposals.allowed_to_view(prsl_id)
-    logger.debug("POST Download Signed URL for: %s", filename)
+    logger.debug("POST Download Signed URL slot: %s", document_type)
+    key = get_s3_object_key(prsl_id, document_type.value)
 
     try:
         s3_client = get_aws_client()
@@ -563,7 +571,9 @@ def create_download_pdf_url(
 
     try:
         return create_presigned_url_download_pdf(
-            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+            key=key,
+            client=s3_client,
+            expiry=PRESIGNED_URL_EXPIRY_TIME,
         )
     # TODO: Andrey to look into this when secrets are available
     # and determine the correct code or if not needed
@@ -576,20 +586,21 @@ def create_download_pdf_url(
 
 
 @router.post(
-    "/{prsl_id}/s3/delete/{filename}",
+    "/{prsl_id}/s3/delete/{document_type}",
     summary="Create delete PDF URL",
 )
 def create_delete_pdf_url(
     prsl_id: ProposalID,
-    filename: str,
+    document_type: ProposalDocument,
     security: Annotated[SecurityService, Security(roles={Role.ANY}, scopes={Scope.PHT_READWRITE})],
 ) -> str:
     """
-    Generate a presigned S3 delete URL for the given filename.
+    Generate a presigned S3 delete URL for a proposal document slot.
 
     """
     security.proposals.allowed_to_edit(prsl_id)
-    logger.debug("POST Delete Signed URL for: %s", filename)
+    logger.debug("POST Delete Signed URL slot: %s", document_type)
+    key = get_s3_object_key(prsl_id, document_type.value)
 
     try:
         s3_client = get_aws_client()
@@ -602,7 +613,7 @@ def create_delete_pdf_url(
 
     try:
         return create_presigned_url_delete_pdf(
-            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+            key=key, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
         )
     # TODO: Andrey to look into this when secrets are available
     # and determine the correct code or if not needed

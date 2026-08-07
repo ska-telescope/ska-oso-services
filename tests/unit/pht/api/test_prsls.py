@@ -484,9 +484,7 @@ class TestPutProposalAPI:
         ],
     )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_proposal_put_forbidden(
-        self, mock_uow, proposal_status, permissions, client
-    ):
+    def test_proposal_put_forbidden(self, mock_uow, proposal_status, permissions, client):
         """
         Check the prsls_put method returns forbidden when the user has no permission
         """

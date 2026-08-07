@@ -3,14 +3,11 @@ Unit tests for ska_oso_pht_services.api
 """
 
 from http import HTTPStatus
-from unittest import mock
 
-import pytest
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
 
 from ska_oso_services.common.auth import Scope
-
 from tests.conftest import PHT_BASE_API_URL
 
 REVIEWERS_API_URL = f"{PHT_BASE_API_URL}/reviewers"
