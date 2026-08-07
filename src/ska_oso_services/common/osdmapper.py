@@ -11,6 +11,9 @@ from pydantic import AliasChoices, BaseModel, Field, dataclasses
 from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm._shared.spfrx import (
     NoiseDiodeMode,
+    PeriodicNoiseDiodeConfig,
+    PseudoRandomNoiseDiodeConfig,
+    SPFRxNoiseDiodeDurationUnits,
     TargetSPFRxConfiguration,
 )
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
@@ -26,6 +29,12 @@ from ska_oso_services.common.model import AppModel
 SUPPORTED_COMMON_ARRAY_ASSEMBLIES = ["AA0.5", "AA1", "AA2"]
 MID_ARRAY_ASSEMBLIES = ["Mid_ITF"]
 LOW_ARRAY_ASSEMBLIES = ["AA2_SV", "Low_ITF"]
+
+# tmdata's default noise diode mode is a tri-state string ("periodic",
+# "pseudo_random", "off"), but PDM's NoiseDiodeMode enum only covers the first
+# two - PDM already models "no noise diode" as `noise_diode=None` rather than
+# a third mode - so "off" is handled separately below.
+NOISE_DIODE_MODE_OFF = "off"
 
 OSD_VERSION = version("ska-ost-osd")
 OSD_SOURCE = "car"
@@ -106,6 +115,7 @@ class PseudoRandomNoiseDiode(BaseModel):
 
 class TargetSPFRx(TargetSPFRxConfiguration):
     noise_diode_options: list[PeriodicNoiseDiode | PseudoRandomNoiseDiode]
+    default_noise_diode_mode: str
 
 
 class SPFRxParameters(BaseModel):
@@ -248,12 +258,18 @@ def _get_spfrx_defaults(tmdata: TMData) -> SPFRxParameters:
         PseudoRandomNoiseDiode(**noise_diode["pseudo_random"]),
     ]
 
+    default_mode = noise_diode["mode"]
+
     target_spfrx_params = {
         key: value for key, value in dish_spfrx_params.items() if key != "noise_diode"
     }
 
     return SPFRxParameters(
-        target_spfrx=TargetSPFRx(**target_spfrx_params, noise_diode_options=noise_diode_options),
+        target_spfrx=TargetSPFRx(
+            **target_spfrx_params,
+            noise_diode_options=noise_diode_options,
+            default_noise_diode_mode=default_mode,
+        ),
         csp_spfrx=CSPSPFRxConfiguration(**defaults["csp_configuration"]["spfrx"]),
     )
 
@@ -402,7 +418,49 @@ def get_subarray_specific_parameter_from_osd(
 
 def get_default_pdm_target_spfrx() -> TargetSPFRxConfiguration:
     target_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx
-    return TargetSPFRxConfiguration(**target_spfrx.model_dump(exclude={"noise_diode_options"}))
+    default_mode = target_spfrx.default_noise_diode_mode
+
+    valid_modes = [NOISE_DIODE_MODE_OFF, *(m.value for m in NoiseDiodeMode)]
+    if default_mode not in valid_modes:
+        raise ValueError(
+            f"default noise diode mode {default_mode} is not supported, "
+            f"options are {', '.join(valid_modes)}, please update the tmdata "
+            "file accordingly"
+        )
+
+    options_by_mode = {option.mode.value: option for option in target_spfrx.noise_diode_options}
+    diode = None if default_mode == NOISE_DIODE_MODE_OFF else options_by_mode[default_mode]
+
+    data = target_spfrx.model_dump(exclude={"noise_diode_options", "default_noise_diode_mode"})
+    data["noise_diode"] = _noise_diode_osd_to_pdm(diode)
+
+    return TargetSPFRxConfiguration(**data)
+
+
+def _noise_diode_osd_to_pdm(diode):
+    """
+    Private function that maps the non quantity OSD noise diode option to a PDM
+    noise diode config model, converting `*_ms` fields to the {"value", "unit"}
+    dicts that PDM's Quantity fields validate directly.
+    """
+    if diode is None:
+        return None
+
+    converted = {}
+    for field, value in diode.model_dump().items():
+        if field.endswith("_ms"):
+            converted[field.removesuffix("_ms")] = {
+                "value": value,
+                "unit": SPFRxNoiseDiodeDurationUnits.MILLISECONDS,
+            }
+        else:
+            converted[field] = value
+
+    if diode.mode == NoiseDiodeMode.PERIODIC:
+        return PeriodicNoiseDiodeConfig(**converted)
+    if diode.mode == NoiseDiodeMode.PSEUDO_RANDOM:
+        return PseudoRandomNoiseDiodeConfig(**converted)
+    raise ValueError(f"no config mapping for noise diode mode {diode.mode!r}")
 
 
 def get_defaults_pdm_csp_spfrx() -> CSPSPFRxConfiguration:
