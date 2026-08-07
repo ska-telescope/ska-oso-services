@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Updates `/configuration` endpoint to return a default noise diode mode
+* Updates the SBD generation from proposals to use the default noise diode mode
 
 16.3.0
 **********
