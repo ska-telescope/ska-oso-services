@@ -8,11 +8,15 @@ from types import SimpleNamespace
 from unittest import mock
 
 import pytest
+from ska_aaa_authhelpers.roles import Role
+from ska_aaa_authhelpers.test_helpers import mint_test_token
 
+from ska_oso_services.common.auth import Scope
 from ska_oso_services.pht.api import prsls as prsl_api
 from ska_oso_services.pht.api.prsls import get_proposals_by_status
 from ska_oso_services.pht.service import proposal_service as ps
 from ska_oso_services.pht.service.proposal_service import get_panel_prsl_ids
+from ska_oso_services.pht.service.security.facts import Facts
 from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
     TestDataFactory,
@@ -28,48 +32,6 @@ def has_validation_error(detail, field: str) -> bool:
 
 MODULE = "ska_oso_services.pht.service.proposal_service"
 PRSL_MODULE = "ska_oso_services.pht.api.prsls"
-
-
-class TestListAccess:
-    @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
-    @mock.patch(f"{MODULE}.CustomQuery", autospec=True)
-    def test_list_ids_happy_path(self, mock_cq, mock_latest):
-        user_id = "user-123"
-        q = object()
-        mock_cq.return_value = q
-
-        uow = mock.MagicMock()
-
-        # Initial raw rows
-        rows_init = [
-            TestDataFactory.proposal_access(access_id="seed", user_id=user_id, prsl_id="seed-prsl")
-        ]
-        uow.prslacc.query.return_value = rows_init
-        mock_latest.return_value = [
-            TestDataFactory.proposal_access(access_id="a2", user_id=user_id, prsl_id="prp-tb"),
-            TestDataFactory.proposal_access(access_id="a1", user_id=user_id, prsl_id="prp-ta"),
-            TestDataFactory.proposal_access(access_id="a3", user_id=user_id, prsl_id="prp-ta"),
-        ]
-
-        response = ps.list_accessible_proposal_ids(uow, user_id)
-
-        assert response == ["prp-ta", "prp-tb"]
-
-        mock_cq.assert_called_once_with(user_id=user_id)
-        uow.prslacc.query.assert_called_once_with(q)
-        mock_latest.assert_called_once_with(rows_init, "access_id")
-
-    @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
-    @mock.patch(f"{MODULE}.CustomQuery", autospec=True)
-    def test_list_ids_none_paths(self, mock_cq, mock_latest):
-        uow = mock.MagicMock()
-        uow.prslacc.query.return_value = None
-        mock_latest.return_value = None
-
-        got = ps.list_accessible_proposal_ids(uow, "u")
-
-        assert got == []
-        mock_latest.assert_called_once_with([], "access_id")
 
 
 class TestOSD:
@@ -229,13 +191,20 @@ class TestOSD:
 
 
 class TestProposalAPI:
+    @mock.patch(f"{PRSL_MODULE}.UserPortalService.create_membership", new_callable=mock.AsyncMock)
+    @mock.patch(
+        f"{PRSL_MODULE}.UserPortalService.create_proposal_groups",
+        new_callable=mock.AsyncMock,
+    )
     @mock.patch("ska_oso_services.pht.api.prsls.oda.uow", autospec=True)
-    def test_create_proposal(self, mock_oda, client):
+    def test_create_proposal(self, mock_oda, mock_create_groups, mock_create_membership, client):
         """
         Check the proposal_create method returns the expected prsl_id and status code.
         """
 
         proposal_obj = TestDataFactory.proposal()
+        mock_create_groups.return_value = SimpleNamespace(admin="app:pht:prp-test/w/a")
+        mock_create_membership.return_value = {}
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.add.return_value = proposal_obj
@@ -250,11 +219,21 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.OK
         assert response.json()["prsl_id"] == proposal_obj.prsl_id
 
+    @mock.patch(f"{PRSL_MODULE}.UserPortalService.create_membership", new_callable=mock.AsyncMock)
+    @mock.patch(
+        f"{PRSL_MODULE}.UserPortalService.create_proposal_groups",
+        new_callable=mock.AsyncMock,
+    )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_create_proposal_value_error_raises_bad_request(self, mock_oda, client):
+    def test_create_proposal_value_error_raises_bad_request(
+        self, mock_oda, mock_create_groups, mock_create_membership, client
+    ):
         """
         Simulate ValueError in proposal creation and ensure it raises BadRequestError.
         """
+
+        mock_create_groups.return_value = SimpleNamespace(admin="app:pht:prp-test/w/a")
+        mock_create_membership.return_value = {}
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.add.side_effect = ValueError("mock-failure")
@@ -271,12 +250,8 @@ class TestProposalAPI:
         data = response.json()
         assert "Failed when attempting to create a proposal" in data["detail"]
 
-    @mock.patch(
-        f"{MODULE}.assert_user_has_permission_for_proposal",
-        autospec=True,
-    )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_get_proposal_not_found(self, mock_oda, mock_acl, client):
+    def test_get_proposal_not_found(self, mock_oda, client):
         """
         Ensure KeyError during get() raises NotFoundError.
         """
@@ -293,19 +268,13 @@ class TestProposalAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
         mock_oda.return_value.__exit__.return_value = None
 
-        mock_acl.return_value = None
-
         response = client.get(f"{PROPOSAL_API_URL}/{proposal_id}")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert "Could not find proposal" in response.json()["detail"]
 
-    @mock.patch(
-        f"{MODULE}.assert_user_has_permission_for_proposal",
-        autospec=True,
-    )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_get_proposal_success(self, mock_oda, mock_acl, client):
+    def test_get_proposal_success(self, mock_oda, client):
         """
         Ensure valid proposal ID returns the Proposal object.
         """
@@ -323,8 +292,6 @@ class TestProposalAPI:
         mock_oda.return_value.__enter__.return_value = uow_mock
         mock_oda.return_value.__exit__.return_value = None
 
-        mock_acl.return_value = None
-
         response = client.get(f"{PROPOSAL_API_URL}/{proposal_id}")
 
         assert response.status_code == HTTPStatus.OK
@@ -332,13 +299,19 @@ class TestProposalAPI:
         assert data["prsl_id"] == proposal_id
         assert data["proposal_info"]["title"] == proposal.proposal_info.title
 
-    @mock.patch(f"{PRSL_MODULE}.list_accessible_proposal_ids", autospec=True)
+    @mock.patch(
+        "ska_oso_services.pht.service.security.facts.Facts.get_all_proposals_and_panels",
+        autospec=True,
+    )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_get_proposal_list_success(self, mock_uow, mock_list_ids, client_get):
+    def test_get_proposal_list_success(self, mock_uow, mock_memberships, client_get):
         # Arrange
         proposal_objs = [TestDataFactory.proposal(), TestDataFactory.proposal()]
         proposal_ids = [p.prsl_id for p in proposal_objs]
-        mock_list_ids.return_value = proposal_ids
+        mock_memberships.return_value = SimpleNamespace(
+            proposals={pid: object() for pid in proposal_ids},
+            panels={},
+        )
 
         uow = mock.MagicMock()
         uow.prsls.get.side_effect = lambda pid: next(
@@ -354,12 +327,15 @@ class TestProposalAPI:
         data = resp.json()
         assert isinstance(data, list)
         assert len(data) == len(proposal_objs)
-        mock_list_ids.assert_called_once()
+        mock_memberships.assert_called_once()
 
-    @mock.patch(f"{PRSL_MODULE}.list_accessible_proposal_ids", autospec=True)
+    @mock.patch(
+        "ska_oso_services.pht.service.security.facts.Facts.get_all_proposals_and_panels",
+        autospec=True,
+    )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_get_proposal_list_empty(self, mock_uow, mock_list_ids, client_get):
-        mock_list_ids.return_value = []
+    def test_get_proposal_list_empty(self, mock_uow, mock_memberships, client_get):
+        mock_memberships.return_value = SimpleNamespace(proposals={}, panels={})
 
         mock_uow.return_value.__enter__.return_value = mock.MagicMock()
         mock_uow.return_value.__exit__.return_value = None
@@ -374,37 +350,37 @@ class TestProposalReadAccessFromClaims:
         auth = SimpleNamespace(
             user_id="u1",
             roles={prsl_api.Role.ANY},
-            groups={"app:pht:prp-123"},
+            principals={"app:pht:prp-123"},
         )
 
-        assert prsl_api._has_proposal_read_access(auth, "prp-123") is True
+        assert Facts(auth).is_member_of("prp-123") is True
 
     def test_grants_read_for_proposal_pi_group(self):
         auth = SimpleNamespace(
             user_id="u1",
             roles={prsl_api.Role.ANY},
-            groups={"app:pht:prp-123/pi"},
+            principals={"app:pht:prp-123/w/a"},
         )
 
-        assert prsl_api._has_proposal_read_access(auth, "prp-123") is True
+        assert Facts(auth).is_pi("prp-123") is True
 
     def test_grants_read_for_global_admin_group(self):
         auth = SimpleNamespace(
             user_id="u1",
             roles={prsl_api.Role.ANY},
-            groups={"app:pht:ops_proposal_admin"},
+            principals={"app:pht:ops_proposal_admin"},
         )
 
-        assert prsl_api._has_proposal_read_access(auth, "prp-123") is True
+        assert Facts(auth).is_pht_admin() is True
 
     def test_denies_read_for_unrecognized_groups(self):
         auth = SimpleNamespace(
             user_id="u1",
             roles={prsl_api.Role.ANY},
-            groups={"some:other:group", "foo"},
+            principals={"some:other:group", "foo"},
         )
 
-        assert prsl_api._has_proposal_read_access(auth, "prp-123") is False
+        assert Facts(auth).is_member_of("prp-123") is False
 
 
 class TestGetProposalReview:
@@ -447,6 +423,19 @@ class TestGetProposalReview:
 
 
 class TestPutProposalAPI:
+    @staticmethod
+    def _non_member_headers() -> dict[str, str]:
+        token = mint_test_token(
+            audience="test:pht",
+            roles=[Role.ANY],
+            scopes=[Scope.PHT_READ, Scope.PHT_READWRITE],
+            groups=[],
+        )
+        return {
+            "Content-type": "application/json",
+            "Authorization": f"Bearer {token}",
+        }
+
     @pytest.mark.parametrize(
         "proposal_status,permissions",
         [
@@ -456,12 +445,8 @@ class TestPutProposalAPI:
             ("draft", ["update"]),
         ],
     )
-    @mock.patch(
-        f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
-        autospec=True,
-    )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_proposal_put_success(self, mock_uow, mock_acl, proposal_status, permissions, client):
+    def test_proposal_put_success(self, mock_uow, proposal_status, permissions, client):
         """
         Check the prsls_put method returns the expected response
         """
@@ -479,8 +464,6 @@ class TestPutProposalAPI:
         uow_mock.prsls.add.return_value = proposal_obj
         uow_mock.prsls.get.return_value = proposal_obj
         mock_uow().__enter__.return_value = uow_mock
-
-        mock_acl.return_value = [TestDataFactory.proposal_access(permissions=permissions)]
 
         result = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
@@ -500,13 +483,9 @@ class TestPutProposalAPI:
             ("draft", []),
         ],
     )
-    @mock.patch(
-        f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
-        autospec=True,
-    )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_proposal_put_forbidden(
-        self, mock_uow, mock_acl, proposal_status, permissions, client
+        self, mock_uow, proposal_status, permissions, client
     ):
         """
         Check the prsls_put method returns forbidden when the user has no permission
@@ -526,12 +505,10 @@ class TestPutProposalAPI:
         uow_mock.prsls.get.return_value = proposal_obj
         mock_uow().__enter__.return_value = uow_mock
 
-        mock_acl.return_value = [TestDataFactory.proposal_access(permissions=permissions)]
-
         result = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
             data=proposal_obj.model_dump_json(),
-            headers={"Content-type": "application/json"},
+            headers=self._non_member_headers(),
         )
 
         assert result.status_code == HTTPStatus.FORBIDDEN
@@ -564,17 +541,13 @@ class TestPutProposalAPI:
         result = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
             data=proposal_obj.model_dump_json(),
-            headers={"Content-type": "application/json"},
+            headers=self._non_member_headers(),
         )
 
         assert result.status_code == HTTPStatus.FORBIDDEN
 
-    @mock.patch(
-        f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
-        autospec=True,
-    )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_update_proposal_not_found(self, mock_uow, mock_acl, client):
+    def test_update_proposal_not_found(self, mock_uow, client):
         """
         Should return 404 if proposal doesn't exist.
         """
@@ -585,8 +558,6 @@ class TestPutProposalAPI:
         uow_mock.prsls.get.return_value = None  # not found
         mock_uow.return_value.__enter__.return_value = uow_mock
 
-        mock_acl.return_value = [TestDataFactory.proposal_access(permissions=["update"])]
-
         response = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
             data=proposal_obj.model_dump_json(),
@@ -596,19 +567,13 @@ class TestPutProposalAPI:
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert "not found" in response.json()["detail"].lower()
 
-    @mock.patch(
-        f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
-        autospec=True,
-    )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_update_proposal_id_mismatch(self, mock_uow, mock_acl, client):
+    def test_update_proposal_id_mismatch(self, mock_uow, client):
         """
         Should raise 422 when ID in path != payload.
         """
         proposal_obj = TestDataFactory.proposal()
         path_id = "diff-id"
-
-        mock_acl.return_value = [TestDataFactory.proposal_access(permissions=["update"])]
 
         response = client.put(
             f"{PROPOSAL_API_URL}/{path_id}",
@@ -619,12 +584,8 @@ class TestPutProposalAPI:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
         assert "do not match" in response.json()["detail"].lower()
 
-    @mock.patch(
-        f"{PRSL_MODULE}.assert_user_has_permission_for_proposal",
-        autospec=True,
-    )
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_update_proposal_validation_error(self, mock_oda, mock_acl, client):
+    def test_update_proposal_validation_error(self, mock_oda, client):
         """
         Should return 400 if .add() raises ValueError.
         """
@@ -635,8 +596,6 @@ class TestPutProposalAPI:
         uow_mock.prsls.get.return_value = proposal_obj
         uow_mock.prsls.add.side_effect = ValueError("Invalid proposal content")
         mock_oda.return_value.__enter__.return_value = uow_mock
-
-        mock_acl.return_value = [TestDataFactory.proposal_access(permissions=["update"])]
 
         response = client.put(
             f"{PROPOSAL_API_URL}/{proposal_id}",
@@ -705,220 +664,66 @@ class TestProposalBatch:
 
 
 class TestGetProposalsByStatus:
-    # -----------------------------------------------------------
-    # SW ENGINEER: UNDER_REVIEW wins, then SUBMITTED
-    # -----------------------------------------------------------
+    @staticmethod
+    def _security(user_id: str, is_admin: bool, panels: dict[str, object]):
+        return SimpleNamespace(
+            auth=SimpleNamespace(user_id=user_id),
+            facts=SimpleNamespace(
+                is_pht_admin=lambda: is_admin,
+                get_all_proposals_and_panels=lambda: SimpleNamespace(proposals={}, panels=panels),
+            ),
+            proposals=SimpleNamespace(allowed_to_view=lambda *args: None),
+        )
+
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_privileged_engineer_prefers_under_review_then_submitted(self, mock_uow, mock_latest):
-        p_1st_same = TestDataFactory.complete_proposal(prsl_id="prsl-1", status="under review")
+    def test_admin_prefers_under_review_then_submitted(self, mock_uow, mock_latest):
+        p_ur = TestDataFactory.complete_proposal(prsl_id="prsl-1", status="under review")
         p_sub_same = TestDataFactory.complete_proposal(prsl_id="prsl-1", status="submitted")
         p_sub_other = TestDataFactory.complete_proposal(prsl_id="prsl-2", status="submitted")
 
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
-        uow.prsls.query.side_effect = [
-            [p_1st_same],
-            [p_sub_other, p_sub_same],
-        ]
+        uow.prsls.query.side_effect = [[p_ur], [p_sub_other, p_sub_same]]
         mock_latest.side_effect = lambda rows, key: rows or []
 
-        auth = SimpleNamespace(
-            user_id="u1",
-            roles={prsl_api.Role.SW_ENGINEER},
-            groups=set(),
-        )
+        security = self._security(user_id="admin", is_admin=True, panels={})
+        result = get_proposals_by_status(security=security)
 
-        result = get_proposals_by_status(auth=auth)
         assert [p.prsl_id for p in result] == ["prsl-1", "prsl-2"]
 
-        calls = uow.prsls.query.call_args_list
-        assert len(calls) == 2
-        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        assert getattr(calls[1].args[0], "status") == prsl_api.ProposalStatus.SUBMITTED
-        assert mock_latest.call_count == 2
-
-    # -----------------------------------------------------------
-    # Empty lists: []
-    # -----------------------------------------------------------
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_privileged_empty(self, mock_uow, mock_latest):
-        uow = mock.MagicMock()
-        mock_uow.return_value.__enter__.return_value = uow
-
-        uow.prsls.query.side_effect = [[], []]
-        mock_latest.side_effect = lambda rows, key: rows or []
-
-        auth = SimpleNamespace(
-            user_id="u1",
-            roles={prsl_api.Role.SW_ENGINEER},
-            groups=set(),
-        )
-
-        result = get_proposals_by_status(auth=auth)
-        assert result == []
-
-        calls = uow.prsls.query.call_args_list
-        assert len(calls) == 2
-        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        assert getattr(calls[1].args[0], "status") == prsl_api.ProposalStatus.SUBMITTED
-        assert mock_latest.call_count == 2
-
-    # -----------------------------------------------------------
-    # Reviewer: ONLY UNDER_REVIEW and ONLY prsl_ids they review
-    # -----------------------------------------------------------
-    @mock.patch(f"{PRSL_MODULE}.get_reviewer_prsl_ids", autospec=True)
-    @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
-    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_reviewer_only_under_review_and_filtered_by_reviews(
-        self, mock_uow, mock_latest, mock_get_review_ids
-    ):
-        mock_get_review_ids.return_value = {"prsl-2"}
-
+    def test_panel_member_filters_to_panel_proposals(self, mock_uow, mock_latest):
         p_1 = TestDataFactory.complete_proposal(prsl_id="prsl-1", status="under review")
         p_2 = TestDataFactory.complete_proposal(prsl_id="prsl-2", status="under review")
 
+        panel = SimpleNamespace(proposals=[SimpleNamespace(prsl_id="prsl-2")])
+
         uow = mock.MagicMock()
+        uow.panels.get.return_value = panel
         mock_uow.return_value.__enter__.return_value = uow
-
-        uow.prsls.query.side_effect = [
-            [p_1, p_2],
-        ]
-
+        uow.prsls.query.side_effect = [[p_1, p_2], []]
         mock_latest.side_effect = lambda rows, key: rows or []
 
-        auth = SimpleNamespace(
-            user_id="rev-1",
-            roles=set(),
-            groups={prsl_api.PrslRole.SCIENCE_REVIEWER},
-        )
-
-        result = get_proposals_by_status(auth=auth)
+        security = self._security(user_id="member", is_admin=False, panels={"pnl-1": object()})
+        result = get_proposals_by_status(security=security)
 
         assert [p.prsl_id for p in result] == ["prsl-2"]
 
-        calls = uow.prsls.query.call_args_list
-        assert len(calls) == 1
-        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        mock_get_review_ids.assert_called_once_with(
-            mock_uow.return_value.__enter__.return_value, "rev-1"
-        )
-        assert mock_latest.call_count == 1
-
-    # -----------------------------------------------------------
-    # Reviewer with no reviews : []
-    # -----------------------------------------------------------
-    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_reviewer_with_no_reviews_returns_empty_and_no_prsls_query(self, mock_uow):
-        uow = mock.MagicMock()
-        mock_uow.return_value.__enter__.return_value = uow
-
-        # No reviews for this reviewer
-        uow.rvws.query.return_value = []
-
-        auth = SimpleNamespace(
-            user_id="rev-2",
-            roles=set(),
-            groups={prsl_api.PrslRole.SCIENCE_REVIEWER},
-        )
-
-        result = get_proposals_by_status(auth=auth)
-        assert result == []
-
-        uow.prsls.query.assert_not_called()
-
-    # -----------------------------------------------------------
-    # Review Chair: ONLY UNDER_REVIEW (latest), no SUBMITTED query
-    # -----------------------------------------------------------
-    @mock.patch(f"{PRSL_MODULE}.get_panel_prsl_ids", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_review_chair_only_under_review(self, mock_uow, mock_latest, mock_panel_ids):
-        p_ur_a = TestDataFactory.complete_proposal(prsl_id="prp-ta", status="under review")
-        p_ur_b = TestDataFactory.complete_proposal(prsl_id="prp-tb", status="under review")
-
+    def test_non_admin_without_panels_gets_empty(self, mock_uow, mock_latest):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
-
-        # Chair path queries only UNDER_REVIEW
-        uow.prsls.query.side_effect = [[p_ur_a, p_ur_b]]
-
+        uow.prsls.query.side_effect = [[], []]
         mock_latest.side_effect = lambda rows, key: rows or []
 
-        # Panel contains both proposals
-        mock_panel_ids.return_value = {"prp-ta", "prp-tb"}
+        security = self._security(user_id="none", is_admin=False, panels={})
+        result = get_proposals_by_status(security=security)
 
-        auth = SimpleNamespace(
-            user_id="chair-1",
-            roles=set(),
-            groups={prsl_api.PrslRole.OPS_REVIEW_CHAIR},
-        )
-
-        result = get_proposals_by_status(auth=auth)
-
-        assert [p.prsl_id for p in result] == ["prp-ta", "prp-tb"]
-
-        calls = uow.prsls.query.call_args_list
-        assert len(calls) == 1
-        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-
-        # where panel prsl_ids intercept
-        mock_panel_ids.assert_called_once_with(uow, prsl_api.SV_NAME)
-        assert mock_latest.call_count == 1
-
-    # -----------------------------------------------------------
-    # Admin
-    # -----------------------------------------------------------
-    @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
-    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_admin_behaves_like_privileged(self, mock_uow, mock_latest):
-        p_1st = TestDataFactory.complete_proposal(prsl_id="prp-tx", status="under review")
-        p_sub = TestDataFactory.complete_proposal(prsl_id="prp-ty", status="submitted")
-
-        uow = mock.MagicMock()
-        mock_uow.return_value.__enter__.return_value = uow
-
-        uow.prsls.query.side_effect = [
-            [p_1st],
-            [p_sub],
-        ]
-        mock_latest.side_effect = lambda rows, key: rows or []
-
-        auth = SimpleNamespace(
-            user_id="admin-1",
-            roles=set(),
-            groups={prsl_api.PrslRole.OPS_PROPOSAL_ADMIN},
-        )
-
-        result = get_proposals_by_status(auth=auth)
-        assert [p.prsl_id for p in result] == ["prp-tx", "prp-ty"]
-
-        calls = uow.prsls.query.call_args_list
-        assert len(calls) == 2
-        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        assert getattr(calls[1].args[0], "status") == prsl_api.ProposalStatus.SUBMITTED
-        assert mock_latest.call_count == 2
-
-    # -----------------------------------------------------------
-    # No access : []
-    # -----------------------------------------------------------
-    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_no_access_returns_empty_and_no_queries(self, mock_uow):
-        uow = mock.MagicMock()
-        mock_uow.return_value.__enter__.return_value = uow
-
-        auth = SimpleNamespace(
-            user_id="none-1",
-            roles=set(),
-            groups=set(),
-        )
-
-        result = get_proposals_by_status(auth=auth)
         assert result == []
-        uow.prsls.query.assert_not_called()
-        uow.rvws.query.assert_not_called()
 
 
 class TestGetReviewerPrslIds:

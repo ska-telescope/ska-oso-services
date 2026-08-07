@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Response
 from ska_aaa_authhelpers.roles import Role
@@ -19,6 +19,7 @@ from ska_oso_services.pht.service.security import Security, SecurityService
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
+
 
 router = APIRouter(tags=["PMT API - Panel Decision"])
 
@@ -79,7 +80,7 @@ def list_panel_decisions(
         )
 
 
-@router.post("/panels/{pnl_id}/decisions", summary="Create a panel decision")
+@router.post("/panels/{pnl_id}/decisions/{prsl_id}", summary="Create a panel decision")
 def create_panel_decision(
     pnl_id: str,
     decision: PanelDecision,
@@ -103,11 +104,12 @@ def create_panel_decision(
 
 
 @router.get(
-    "/panels/{pnl_id}/decisions/{decision_id}",
+    "/panels/{pnl_id}/decisions/{prsl_id}/{decision_id}",
     summary="Retrieve a panel decision",
 )
 def get_panel_decision(
     pnl_id: str,
+    prsl_id: str,
     decision_id: str,
     security: Annotated[
         SecurityService,
@@ -123,7 +125,7 @@ def get_panel_decision(
 
 
 @router.put(
-    "/panels/{pnl_id}/decisions/{decision_id}",
+    "/panels/{pnl_id}/decisions/{prsl_id}/{decision_id}",
     summary="Update a panel decision",
 )
 def update_panel_decision(
