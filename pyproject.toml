@@ -28,7 +28,7 @@ dependencies = [
     "ska-db-oda>=19.0.0",
     "pydantic>=2.9",
     "pydantic-settings>=2.5",
-    "fastapi[standard]==0.139.0",
+    "fastapi[standard]<0.137",
     "astroquery==0.4.9",
     "ska-ost-osd>=6.0.9",
     "ska-telmodel-client>=1.30.0",

@@ -204,7 +204,12 @@ def legacy_get_panel_decision(
         existing = uow.pnlds.get(decision_id)
     if not existing:
         raise NotFoundError(detail=f"Decision not found: {decision_id}")
-    return get_panel_decision(pnl_id=existing.panel_id, decision_id=decision_id, security=security)
+    return get_panel_decision(
+        pnl_id=existing.panel_id,
+        prsl_id=existing.prsl_id,
+        decision_id=decision_id,
+        security=security,
+    )
 
 
 @router.put(

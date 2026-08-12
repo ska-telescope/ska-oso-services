@@ -131,8 +131,7 @@ def update_review(
         existing = uow.rvws.get(review_id)
         if not existing:
             raise NotFoundError(detail=f"Review not found: {review_id}")
-        if existing.reviewer_id != security.auth.user_id and not security.facts.is_pht_admin():
-            raise BadRequestError(detail="You do not have permission to update this review.")
+        security.reviews.allowed_to_edit(existing)
         try:
             updated = uow.rvws.add(review, security.auth.user_id)
             uow.commit()

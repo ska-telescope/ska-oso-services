@@ -7,12 +7,12 @@ from ska_oso_services.pht.service.s3_bucket import (
     S3Config,
     S3Method,
     build_content_disposition,
-    get_s3_object_key,
     create_presigned_url_delete_pdf,
     create_presigned_url_download_pdf,
     create_presigned_url_upload_pdf,
     generate_presigned_url,
     get_aws_client,
+    get_s3_object_key,
 )
 from ska_oso_services.settings import get_settings
 

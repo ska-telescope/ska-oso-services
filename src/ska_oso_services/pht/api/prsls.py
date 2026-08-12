@@ -8,7 +8,7 @@ from uuid import UUID
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
-from pydantic import ValidationError, StringConstraints
+from pydantic import StringConstraints, ValidationError
 from ska_aaa_authhelpers import Role
 from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal import Proposal
@@ -35,11 +35,11 @@ from ska_oso_services.pht.service.proposal_service import (
 from ska_oso_services.pht.service.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
     build_content_disposition,
-    get_s3_object_key,
     create_presigned_url_delete_pdf,
     create_presigned_url_download_pdf,
     create_presigned_url_upload_pdf,
     get_aws_client,
+    get_s3_object_key,
 )
 from ska_oso_services.pht.service.security import Security, SecurityService
 from ska_oso_services.pht.service.user_portal import UserPortalService
@@ -164,11 +164,14 @@ async def create_proposal(
         proposal.prsl_id = ShortSkuid[Literal[EntityType.PRP]](proposal.prsl_id)
 
     try:
+        # Portal calls must happen outside the UoW to avoid holding an open
+        # DB transaction across async I/O, which corrupts the session state.
+        groups = await portal.create_proposal_groups(proposal.prsl_id)
+        await portal.create_membership(groups.admin, UUID(security.auth.user_id))
+
         with oda.uow() as uow:
-            groups = await portal.create_proposal_groups(proposal.prsl_id)
-            # The one who created the group becomes the PI automatically:
-            await portal.create_membership(groups.admin, UUID(security.auth.user_id))
             created_prsl = uow.prsls.add(proposal, security.auth.user_id)
+            uow.commit()
         logger.info("Proposal successfully created with ID %s", created_prsl.prsl_id)
         return created_prsl
     except ValueError as err:
@@ -503,7 +506,9 @@ class ProposalDocument(StrEnum):
 )
 def create_upload_pdf_url(
     prsl_id: ProposalID,
-    filename: Annotated[str, StringConstraints(pattern=r"^[^/\\]+$", min_length=1, max_length=256)],
+    filename: Annotated[
+        str, StringConstraints(pattern=r"^[^/\\]+$", min_length=1, max_length=256)
+    ],
     document_type: ProposalDocument,
     security: Annotated[SecurityService, Security(roles={Role.ANY}, scopes={Scope.PHT_READWRITE})],
 ) -> str:

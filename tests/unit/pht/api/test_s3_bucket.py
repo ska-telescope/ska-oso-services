@@ -66,7 +66,7 @@ class TestSignedUrlUpload:
         mock_get_client.return_value = mock.MagicMock()
         mock_create_url.return_value = "https://s3/upload-url"
         response = client.post(
-            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_FILENAME}?document_type={SCIENCE_SLOT}"
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_SLOT}?filename={SCIENCE_FILENAME}"
         )
 
         assert response.status_code == 200
@@ -79,7 +79,7 @@ class TestSignedUrlUpload:
         Test that an invalid filename returns a 422 error
         """
         response = client.post(
-            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/bad%5Cname.pdf?document_type={SCIENCE_SLOT}"
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_SLOT}?filename=bad%5Cname.pdf"
         )
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -87,7 +87,7 @@ class TestSignedUrlUpload:
 
     def test_create_upload_url_invalid_slot(self, client):
         response = client.post(
-            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_FILENAME}?document_type=other"
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/other?filename={SCIENCE_FILENAME}"
         )
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -100,7 +100,7 @@ class TestSignedUrlUpload:
         """
         # Mock the S3 client to raise a BotoCoreError
         response = client.post(
-            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_FILENAME}?document_type={SCIENCE_SLOT}"
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_SLOT}?filename={SCIENCE_FILENAME}"
         )
 
         assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
@@ -116,7 +116,7 @@ class TestSignedUrlUpload:
     def test_create_upload_url_client_error(self, mock_create_url, mock_get_client, client):
         mock_get_client.return_value = mock.MagicMock()
         response = client.post(
-            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_FILENAME}?document_type={SCIENCE_SLOT}"
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_SLOT}?filename={SCIENCE_FILENAME}"
         )
 
         assert response.status_code == status.HTTP_502_BAD_GATEWAY

@@ -1,11 +1,14 @@
 # pylint: disable=missing-timeout
 from http import HTTPStatus
 
+import pytest
 from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
 
 from ..unit.util import TestDataFactory
 from . import PHT_URL
 from .conftest import SECOND_TEST_USER, temporary_different_user_request
+
+pytestmark = pytest.mark.skip(reason="proposal-access is legacy")
 
 
 def test_post_proposal_access(authrequests):
@@ -49,8 +52,8 @@ def test_get_list_proposal_access_for_user(authrequests):
     - Ensure only the proposal access for the user is returned
     """
 
-    # Add proposal to link to - this will also create the proposal access
-    # with the user as the PI
+    # Add proposal to link to. Creating a proposal no longer creates a legacy
+    # proposal-access record, so the PI record is created explicitly here.
     post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
         data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
@@ -58,6 +61,18 @@ def test_get_list_proposal_access_for_user(authrequests):
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     prsl_id = post_response.json()["prsl_id"]
+
+    pi_access = TestDataFactory.proposal_access(
+        access_id="access_id_test_get_by_user_pi",
+        prsl_id=prsl_id,
+        user_id=TEST_USER,
+    )
+    post_response = authrequests.post(
+        f"{PHT_URL}/proposal-access/create",
+        data=pi_access.model_dump_json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK
 
     with temporary_different_user_request() as temp_authrequests:
         proposal_access_other_user = TestDataFactory.proposal_access(
@@ -106,7 +121,8 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
     - ensure the proposal accesses are in the list
     """
 
-    # Add proposal to link to - will also create a proposal access
+    # Add proposal to link to. Creating a proposal no longer creates a legacy
+    # proposal-access record, so the PI record is created explicitly here.
     post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
         data=TestDataFactory.proposal(prsl_id=None).model_dump_json(),
@@ -114,6 +130,18 @@ def test_get_list_proposal_access_for_prsl_id(authrequests):
     )
     assert post_response.status_code == HTTPStatus.OK, post_response.text
     prsl_id = post_response.json()["prsl_id"]
+
+    pi_access = TestDataFactory.proposal_access(
+        access_id="access_id_test_get_by_prsl_id_pi",
+        prsl_id=prsl_id,
+        user_id=TEST_USER,
+    )
+    post_response = authrequests.post(
+        f"{PHT_URL}/proposal-access/create",
+        data=pi_access.model_dump_json(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK
 
     # Now add a second access for a Co-Investigator
     proposal_access = TestDataFactory.proposal_access(

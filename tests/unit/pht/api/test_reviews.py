@@ -6,8 +6,11 @@ from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
 
+from ska_aaa_authhelpers.roles import Role
+from ska_aaa_authhelpers.test_helpers import mint_test_token
 from ska_db_oda.repository.domain import ODANotFound
 
+from ska_oso_services.common.auth import Scope
 from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
@@ -214,6 +217,41 @@ class TestGetReviewAPI:
 
         assert result.status_code == HTTPStatus.OK
         assert_json_is_equal(result.text, review_obj.model_dump_json())
+
+    @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
+    def test_update_review_forbidden_for_non_owning_reviewer(self, mock_uow, client):
+        """
+        Should return 403 if the caller is neither the assigned reviewer nor a
+        PHT admin. Science vs technical review type is not relevant here - the
+        rule is based purely on reviewer_id and panel/admin membership.
+        """
+        review_obj = TestDataFactory.reviews(reviewer_id="someone-else")
+        review_id = review_obj.review_id
+
+        uow_mock = mock.MagicMock()
+        uow_mock.rvws.get.return_value = review_obj
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        # caller is a member of the panel (so they can view/GET it) but is not
+        # the reviewer this review is assigned to, and is not a PHT admin
+        non_owning_token = mint_test_token(
+            audience="test:pht",
+            roles=[Role.ANY],
+            scopes=[Scope.PHT_READWRITE],
+            groups=[f"app:pht:{review_obj.panel_id}"],
+        )
+
+        response = client.put(
+            f"{REVIEWS_API_URL}/{review_id}",
+            data=review_obj.model_dump_json(),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {non_owning_token}",
+            },
+        )
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+        assert "reviewer" in response.json()["detail"]
 
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_update_review_not_found(self, mock_uow, client):

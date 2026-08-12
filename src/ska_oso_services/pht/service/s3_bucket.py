@@ -3,12 +3,13 @@ from typing import Any, Literal
 from urllib.parse import quote
 
 import boto3
-from ska_ser_skuid import EntityType, ShortSkuid
 from botocore.client import BaseClient, Config
+from ska_ser_skuid import EntityType, ShortSkuid
 
 from ska_oso_services.settings import PRESIGNED_URL_EXPIRY_TIME, S3Config, get_settings
 
 ProposalID = ShortSkuid[Literal[EntityType.PRP]]
+
 
 class S3Method(str, Enum):
     GET = "get_object"

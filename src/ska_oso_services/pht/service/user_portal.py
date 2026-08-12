@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any, Literal, NamedTuple
+from urllib.parse import quote
 from uuid import UUID, uuid1
 
 import httpx
@@ -126,7 +127,7 @@ class UserPortalService:
         response = await call_user_portal(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups",
-            json={"name": group_name, "description": description},
+            json={"group_name": group_name, "display_name": description},
             headers=self.headers,
             timeout=self.timeout,
         )
@@ -138,8 +139,9 @@ class UserPortalService:
         user_id: UUID,
     ) -> dict[str, Any]:
         response = await call_user_portal(
-            method="PUT",
-            url=(f"{self.base_url}/api/external/v1/groups/{group_name}/members/{user_id}"),
+            method="POST",
+            url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members",
+            json={"portal_user_id": str(user_id)},
             headers=self.headers,
             timeout=self.timeout,
         )
@@ -151,7 +153,7 @@ class UserPortalService:
         group_name = get_group_name(prsl_id)
         response = await call_user_portal(
             method="POST",
-            url=f"{self.base_url}/api/external/v1/groups/{group_name}/invites",
+            url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/invites",
             json=invite_payload,
             headers=self.headers,
             timeout=self.timeout,

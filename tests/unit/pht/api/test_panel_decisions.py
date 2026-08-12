@@ -3,7 +3,6 @@ Unit tests for ska_oso_pht_services.api
 """
 
 from http import HTTPStatus
-from types import SimpleNamespace
 from unittest import mock
 
 import pytest
@@ -13,7 +12,7 @@ from ska_db_oda.repository.domain import ODANotFound
 
 from ska_oso_services.common.auth import Scope
 from ska_oso_services.pht.api import panel_decision as api
-from src.ska_oso_services.pht.models.domain import PrslRole
+from ska_oso_services.pht.service.security import SecurityService
 from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
@@ -69,7 +68,7 @@ class Testpanel_decisionAPI:
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         data = response.json()
-        assert "Failed when attempting to create a Decision" in data["detail"]
+        assert "Failed to create decision" in data["detail"]
 
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_get_panel_decision_not_found(self, mock_oda, client):
@@ -138,24 +137,29 @@ class Testpanel_decisionAPI:
             headers={"Authorization": f"Bearer {bad_token}"},
         )
         assert resp.status_code == HTTPStatus.FORBIDDEN
-        assert "permission" in resp.json()["detail"].lower()
+        assert "authorization groups must include" in resp.json()["detail"].lower()
 
-    @mock.patch("ska_oso_services.pht.api.panel_decision.Permissions.__call__", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
-    def test_get_panel_decision_list_none(self, mock_oda, mock_perm_call, client):
+    def test_get_panel_decision_list_none(self, mock_oda, client):
         """
         Should return empty list if no panel decisions are found.
-        Requires ADMIN + CHAIR + SW_DEV in groups.
+        Requires the PHT admin group.
         """
-        mock_perm_call.return_value = SimpleNamespace(
-            groups={PrslRole.OPS_PROPOSAL_ADMIN, PrslRole.OPS_REVIEW_CHAIR}
+        admin_token = mint_test_token(
+            audience="test:pht",
+            roles=[Role.ANY],
+            scopes=[Scope.PHT_READWRITE],
+            groups=[SecurityService.PHT_ADMIN_GROUP],
         )
 
         uow_mock = mock.MagicMock()
         uow_mock.pnlds.query.return_value = []
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        response = client.get(f"{PANEL_DECISION_API_URL}/")
+        response = client.get(
+            f"{PANEL_DECISION_API_URL}/",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
 

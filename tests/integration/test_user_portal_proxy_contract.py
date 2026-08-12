@@ -1,7 +1,7 @@
 import asyncio
 from http import HTTPStatus
-from types import SimpleNamespace
 from unittest.mock import AsyncMock
+from urllib.parse import quote
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -140,19 +140,22 @@ def test_create_invite_invalid_payload_returns_422(integration_client):
 def test_service_create_groups_happy_path(fake_user_portal):
     del fake_user_portal
     prsl_id = "prp-000007"
-    service = UserPortalService(auth=SimpleNamespace(trace="integration-trace-id"))
+    service = UserPortalService(x_request_id="integration-trace-id")
+    group_name = user_portal.get_group_name(prsl_id)
 
-    payload = asyncio.run(service.create_groups(prsl_id=prsl_id))
+    payload = asyncio.run(service.create_group(group_name, description=prsl_id))
 
-    assert payload["group_name"] == user_portal.group_name_for_proposal(prsl_id)
-    assert payload["display_name"] == prsl_id
+    # Prism mocks the schema, not the request, so it won't echo our group_name back.
+    assert isinstance(payload["group_name"], str)
+    assert isinstance(payload["display_name"], str)
 
 
 def test_service_create_memberships_happy_path(fake_user_portal):
     del fake_user_portal
     prsl_id = "prp-000008"
     portal_user_id = uuid4()
-    service = UserPortalService(auth=SimpleNamespace(trace="integration-trace-id"))
+    service = UserPortalService(x_request_id="integration-trace-id")
+    group_name = user_portal.get_group_name(prsl_id)
     expected_payload = {"status": "ok"}
     mock_call = AsyncMock(return_value=type("Resp", (), {"json": lambda self: expected_payload})())
 
@@ -161,9 +164,9 @@ def test_service_create_memberships_happy_path(fake_user_portal):
 
     try:
         payload = asyncio.run(
-            service.create_memberships(
-                prsl_id=prsl_id,
-                portal_user_id=portal_user_id,
+            service.create_membership(
+                group_name=group_name,
+                user_id=portal_user_id,
             )
         )
     finally:
@@ -171,11 +174,9 @@ def test_service_create_memberships_happy_path(fake_user_portal):
 
     assert payload == expected_payload
     mock_call.assert_awaited_once_with(
-        method="PUT",
-        url=(
-            f"{service.base_url}/api/external/v1/groups/"
-            f"{user_portal.group_name_for_proposal(prsl_id)}/members/{portal_user_id}"
-        ),
+        method="POST",
+        url=(f"{service.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members"),
+        json={"portal_user_id": str(portal_user_id)},
         headers=service.headers,
         timeout=service.timeout,
     )

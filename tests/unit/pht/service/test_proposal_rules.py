@@ -3,8 +3,13 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 from ska_aaa_authhelpers import AuthContext, AuthFailError
+from ska_aaa_authhelpers.roles import Role
 
-from ska_oso_services.pht.service.security.facts import Facts
+from ska_oso_services.pht.service.security.facts import (
+    PHT_ADMIN_GROUP,
+    Facts,
+    get_group_name,
+)
 from ska_oso_services.pht.service.security.rules.proposals import ProposalRules
 
 
@@ -183,3 +188,69 @@ def test_allowed_to_view_other_members(facts, expectation):
 
     with expectation:
         rules.allowed_to_view_other_members("prp-1")
+
+
+PRSL_ID = "prp-test123456789"
+_AUDIENCE = "test:pht"
+
+
+def _rules_from_group(group: str) -> ProposalRules:
+    """Build ProposalRules with an AuthContext carrying the given group principals."""
+    user_id = "test-user"
+    with_subgroups = []
+    subgroups = group.split("/")
+    for p in range(1, len(subgroups) + 1):
+        with_subgroups.append("/".join(subgroups[:p]))
+
+    auth = AuthContext(
+        user_id=user_id,
+        principals=with_subgroups + [user_id],
+        groups=with_subgroups,
+        scopes=["pht:read", "pht:readwrite"],
+        roles=[Role.ANY],
+        audience=_AUDIENCE,
+        token_claims={},
+        access_token="",
+    )
+    return ProposalRules(Facts(auth))
+
+
+class TestProposalRulesWithGroups:
+    def test_pht_admin_group_bypasses_all_checks(self):
+        rules = _rules_from_group(PHT_ADMIN_GROUP)
+        rules.allowed_to_view(PRSL_ID)
+        rules.allowed_to_edit(PRSL_ID)
+        rules.allowed_to_submit(PRSL_ID)
+
+    def test_pi_group_allows_view_edit_submit(self):
+        rules = _rules_from_group(get_group_name(PRSL_ID, admin=True))
+        rules.allowed_to_view(PRSL_ID)
+        rules.allowed_to_edit(PRSL_ID)
+        rules.allowed_to_submit(PRSL_ID)
+
+    def test_write_group_allows_view_edit_not_submit(self):
+        rules = _rules_from_group(get_group_name(PRSL_ID, write=True))
+        rules.allowed_to_view(PRSL_ID)
+        rules.allowed_to_edit(PRSL_ID)
+        with pytest.raises(AuthFailError):
+            rules.allowed_to_submit(PRSL_ID)
+
+    def test_read_group_allows_view_not_edit(self):
+        rules = _rules_from_group(get_group_name(PRSL_ID))
+        rules.allowed_to_view(PRSL_ID)
+        with pytest.raises(AuthFailError):
+            rules.allowed_to_edit(PRSL_ID)
+
+    def test_no_relevant_group_denies_all(self):
+        rules = _rules_from_group("role/sci_community")
+        with pytest.raises(AuthFailError):
+            rules.allowed_to_view(PRSL_ID)
+        with pytest.raises(AuthFailError):
+            rules.allowed_to_edit(PRSL_ID)
+        with pytest.raises(AuthFailError):
+            rules.allowed_to_submit(PRSL_ID)
+
+    def test_group_for_one_proposal_does_not_grant_access_to_another(self):
+        rules = _rules_from_group(get_group_name(PRSL_ID, admin=True))
+        with pytest.raises(AuthFailError):
+            rules.allowed_to_view("prp-other1")

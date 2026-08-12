@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import Depends
 from ska_aaa_authhelpers import AuthContext, Requires, Role
 from ska_aaa_authhelpers.security import DEFAULT_ISSUERS, DEFAULT_PUBLIC_KEYS, KeysType
+from ska_aaa_authhelpers.test_helpers import TEST_ISSUER, TEST_PUBLIC_KEYS
 
 from ska_oso_services.settings import get_settings
 
@@ -32,12 +33,19 @@ def Security(
     groups: Iterable[str] = (),
     app_ids: Iterable[str | UUID] = (),
     audience: str | Iterable[str] | None = None,
-    keys: KeysType = DEFAULT_PUBLIC_KEYS,
-    issuer: str | Iterable[str] = DEFAULT_ISSUERS,
+    keys: KeysType | None = None,
+    issuer: str | Iterable[str] | None = None,
 ):
     configured_audience = audience if audience is not None else get_settings().auth.audience
     if not configured_audience:
         configured_audience = DEFAULT_AUDIENCE
+
+    if get_settings().auth.pipeline_tests_deployment:
+        effective_keys = keys if keys is not None else TEST_PUBLIC_KEYS
+        effective_issuer = issuer if issuer is not None else TEST_ISSUER
+    else:
+        effective_keys = keys if keys is not None else DEFAULT_PUBLIC_KEYS
+        effective_issuer = issuer if issuer is not None else DEFAULT_ISSUERS
 
     auth_dependency = Requires(
         roles=set(roles),
@@ -45,8 +53,8 @@ def Security(
         groups=set(groups),
         app_ids=set(app_ids),
         audience=configured_audience,
-        keys=keys,
-        issuer=issuer,
+        keys=effective_keys,
+        issuer=effective_issuer,
     )
 
     def _dependency(auth: Annotated[AuthContext, auth_dependency]) -> SecurityService:
