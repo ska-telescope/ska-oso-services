@@ -18,6 +18,21 @@ REVIEWS_API_URL = f"{PHT_BASE_API_URL}/reviews"
 
 
 class TestReviewCreateAPI:
+    def setup_method(self):
+        # Patch Facts methods so that all create requests are allowed in unit API mocks
+        self.patch_member = mock.patch(
+            "ska_oso_services.pht.service.security.facts.Facts.is_member_of", return_value=True
+        )
+        self.patch_me = mock.patch(
+            "ska_oso_services.pht.service.security.facts.Facts.is_me", return_value=True
+        )
+        self.patch_member.start()
+        self.patch_me.start()
+
+    def teardown_method(self):
+        self.patch_member.stop()
+        self.patch_me.stop()
+
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_create_review_creates_new_success(self, mock_oda, client):
         """

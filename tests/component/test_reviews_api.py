@@ -9,6 +9,8 @@ to a deployment of ska-oso-services in the same cluster
 import json
 from http import HTTPStatus
 
+from ska_aaa_authhelpers.test_helpers import TEST_USER
+
 from ..unit.util import TestDataFactory
 from . import PHT_URL
 
@@ -116,7 +118,7 @@ def test_get_list_reviews_for_user(authrequests, test_panel_id):
         review = TestDataFactory.reviews(
             prsl_id=prsl_id,
             panel_id=test_panel_id,
-            reviewer_id="test_user",
+            reviewer_id=TEST_USER,
         )
         review_json = review.model_dump_json()
 

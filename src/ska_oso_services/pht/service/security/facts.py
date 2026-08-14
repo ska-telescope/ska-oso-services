@@ -81,6 +81,9 @@ class Facts:
                 raise ValueError("Something is wrong with _group_regex")
         return ProposalsAndPanels(proposals, panels)
 
+    def is_me(self, user_id: str) -> bool:
+        return self.auth.user_id == user_id
+
     def is_pht_admin(self) -> bool:
         # Could Role.SCI_COMMUNITY folks ever
         # be added to the PHT admin group?

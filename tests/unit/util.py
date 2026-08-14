@@ -9,6 +9,7 @@ from random import randint
 from types import SimpleNamespace
 
 from deepdiff import DeepDiff
+from ska_aaa_authhelpers.test_helpers import TEST_USER
 from ska_db_oda.repository.domain import set_identifier
 from ska_oso_pdm.builders import low_imaging_sb, mid_imaging_sb
 from ska_oso_pdm.project import Project
@@ -153,7 +154,7 @@ class TestDataFactory:
         panel_id: str | None = None,
         review_id: str | None = None,
         prsl_id: str | None = None,
-        reviewer_id="string",
+        reviewer_id=TEST_USER,
     ) -> PanelReview:
         """
         Load a valid proposal review object from file and override review_id,
@@ -362,7 +363,7 @@ class TestDataFactory:
     def proposal_report(
         prsl_id: str = "prp-t0009test",
         panel_id: str = "pnl-t0004test",
-        reviewer_id: str = "rev-t0002test",
+        reviewer_id: str = TEST_USER,
         review_id: str = "rvw-t0002test",
     ):
         data = {

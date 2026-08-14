@@ -30,12 +30,10 @@ def create_review(
         Security(
             roles={Role.ANY},
             scopes={Scope.PHT_READWRITE},
-            groups={SecurityService.PHT_ADMIN_GROUP},
         ),
     ],
 ) -> str:
-    # A review is created by panel administrators
-    security.panels.allowed_to_administer(reviews.panel_id)
+    security.reviews.allowed_to_create(reviews)
     try:
         with oda.uow() as uow:
             query_param = CustomQuery(
@@ -75,7 +73,7 @@ def get_review(
         review = uow.rvws.get(review_id)
     if not review:
         raise NotFoundError(detail=f"Review not found: {review_id}")
-    security.panels.allowed_to_view(review.panel_id)
+    security.reviews.allowed_to_view(review)
     return review
 
 
@@ -94,10 +92,12 @@ def get_reviews_for_user(
 ) -> list[PanelReview]:
     logger.debug("GET Review LIST query for the user: %s", security.auth.user_id)
     with oda.uow() as uow:
-        if security.facts.is_pht_admin():
-            return get_latest_entity_by_id(uow.rvws.query(CustomQuery()), "review_id") or []
         query_param = CustomQuery(reviewer_id=security.auth.user_id)
-        return get_latest_entity_by_id(uow.rvws.query(query_param), "review_id") or []
+        rows = uow.rvws.query(query_param)
+        reviews = get_latest_entity_by_id(rows, "review_id") or []
+    for r in reviews:
+        security.reviews.allowed_to_view(r)
+    return reviews
 
 
 @router.put(
@@ -129,8 +129,6 @@ def update_review(
         if not existing:
             logger.info("Review not found for update: %s", review_id)
             raise NotFoundError(detail=f"Review not found: {review_id}")
-
-        security.panels.allowed_to_view(existing.panel_id)
         security.reviews.allowed_to_edit(existing)
         try:
             updated_review = uow.rvws.add(review, security.auth.user_id)

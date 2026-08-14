@@ -288,7 +288,7 @@ def get_proposals_for_user(
 )
 def get_proposal(
     prsl_id: ShortSkuid[Literal[EntityType.PRP]],
-    sec: Annotated[
+    security: Annotated[
         SecurityService,
         Security(
             roles={Role.ANY},
@@ -306,7 +306,7 @@ def get_proposal(
 
     """
     logger.debug("GET PROPOSAL prsl_id: %s", prsl_id)
-    sec.proposals.allowed_to_view(prsl_id)
+    security.proposals.allowed_to_view(prsl_id)
 
     try:
         with oda.uow() as uow:
@@ -382,7 +382,8 @@ def get_reviews_for_proposal(
         query = CustomQuery(prsl_fk=int_skuid(prsl_id).uid)
         reviews = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
 
-    security.reviews.allowed_to_view(*(r.review_id for r in reviews))
+    for r in reviews:
+        security.reviews.allowed_to_view(r)
     return reviews
 
 

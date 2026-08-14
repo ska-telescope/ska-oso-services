@@ -4,11 +4,9 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 from ska_db_oda.repository.domain import CustomQuery
-from ska_oso_pdm.proposal import Proposal, ProposalAccess
-from ska_ser_skuid import int_skuid
+from ska_oso_pdm.proposal import Proposal
 
-from ska_oso_services.common.error_handling import ForbiddenError
-from ska_oso_services.pht.utils.constants import ACCESS_ID, SV_NAME
+from ska_oso_services.pht.utils.constants import SV_NAME
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
