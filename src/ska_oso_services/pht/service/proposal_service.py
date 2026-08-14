@@ -42,63 +42,6 @@ def transform_update_proposal(data: Proposal) -> Proposal:
     )
 
 
-def assert_user_has_permission_for_proposal(
-    uow,
-    user_id: str,
-    prsl_id: str,
-) -> list[ProposalAccess]:
-    """Asserts if the authenticated user has access to a
-        specific proposal or raise ForbiddenError.
-
-    Args:
-        uow: Unit-of-work.
-        user_id: The user identifier to check.
-        prsl_id: Proposal identifier.
-
-    Raises:
-        ForbiddenError: If user has no access row for the given proposal.
-    Returns:
-        list[access]
-    """
-    rows = (
-        get_latest_entity_by_id(
-            uow.prslacc.query(CustomQuery(user_id=user_id, prsl_fk=int_skuid(prsl_id).uid)),
-            ACCESS_ID,
-        )
-        or []
-    )
-    access = rows[0] if rows else None
-    if not access:
-        raise ForbiddenError(detail=f"You do not have access to this proposal with id:{prsl_id}")
-    return rows
-
-
-# def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
-#     """
-#     Return sorted unique proposal IDs accessible to a user.
-
-#     The function queries the `proposal-access` table for all access rows
-#     that match the given user and then selects the latest entity per access_id,
-#     finally deduplicating and sorting by proposal id.
-
-#     Args:
-#         uow: Unit-of-work
-#         user_id: The user identifier from the token of the authenticated user.
-
-#     Returns:
-#         List[str]: Sorted list of proposal IDs (may be empty).
-
-#     Notes:
-#         - No permission filtering beyond existence of access rows,
-#             given that every entry has the basic `view` access
-#         - Uses `get_latest_entity_by_id(rows, "access_id")`
-#             to retrive the latest version.
-#     """
-#     rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
-#     rows = get_latest_entity_by_id(rows_init, ACCESS_ID) or []
-#     return sorted({row.prsl_id for row in rows})
-
-
 def merge_latest_with_preference(
     *proposal_lists: Iterable["Proposal"],
 ) -> list["Proposal"]:
@@ -112,20 +55,6 @@ def merge_latest_with_preference(
             if prsl_id and prsl_id not in picked:
                 picked[prsl_id] = proposal
     return list(picked.values())
-
-
-# def get_reviewer_prsl_ids(uow, reviewer_id: str) -> set[str]:
-#     """
-#     Get all proposals a reviewer can access
-#     """
-#     rows = uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)) or []
-#     # TODO: extend the below to account for multiple panels.
-#     # It will not be needed once we implement delete option in ODA
-#     # such that once a reviewer is removed from a panel, the review created is deleted
-#     panel_prsl_id = uow.panels.query(CustomQuery(name="Science verification"))[
-#         0
-#     ].proposals
-#     return {getattr(r, "prsl_id", None) for r in rows if getattr(r, "prsl_id", None)}
 
 
 def get_panel_prsl_ids(uow, panel_name: str) -> set[str]:
