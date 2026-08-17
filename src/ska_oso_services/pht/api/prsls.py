@@ -207,9 +207,11 @@ def get_proposals_by_status(
     groups = set(getattr(auth, "groups", ()))
 
     has_role = Role.SW_ENGINEER in roles
-    is_admin = PrslRole.OPS_PROPOSAL_ADMIN in groups
+    is_admin = Role.OPS_PROPOSAL_ADMIN in roles
+    # No ska_aaa_authhelpers Role equivalent exists for the review chair, so this
+    # remains a group-based check, consistent with reviews.py and panel_decision.py.
     is_chair = PrslRole.OPS_REVIEW_CHAIR in groups
-    has_review_group = PrslRole.SCIENCE_REVIEWER in groups or PrslRole.TECHNICAL_REVIEWER in groups
+    has_review_group = Role.OPS_REVIEWER_SCIENCE in roles or Role.OPS_REVIEWER_TECHNICAL in roles
 
     if not (has_role or is_admin or is_chair or has_review_group):
         logger.info("No access roles/groups; returning 0 proposals.")

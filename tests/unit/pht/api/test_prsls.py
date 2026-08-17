@@ -832,8 +832,8 @@ class TestGetProposalsByStatus:
 
         auth = SimpleNamespace(
             user_id="rev-1",
-            roles=set(),
-            groups={prsl_api.PrslRole.SCIENCE_REVIEWER},
+            roles={prsl_api.Role.OPS_REVIEWER_SCIENCE},
+            groups=set(),
         )
 
         result = get_proposals_by_status(auth=auth)
@@ -861,8 +861,8 @@ class TestGetProposalsByStatus:
 
         auth = SimpleNamespace(
             user_id="rev-2",
-            roles=set(),
-            groups={prsl_api.PrslRole.SCIENCE_REVIEWER},
+            roles={prsl_api.Role.OPS_REVIEWER_SCIENCE},
+            groups=set(),
         )
 
         result = get_proposals_by_status(auth=auth)
@@ -929,8 +929,8 @@ class TestGetProposalsByStatus:
 
         auth = SimpleNamespace(
             user_id="admin-1",
-            roles=set(),
-            groups={prsl_api.PrslRole.OPS_PROPOSAL_ADMIN},
+            roles={prsl_api.Role.OPS_PROPOSAL_ADMIN},
+            groups=set(),
         )
 
         result = get_proposals_by_status(auth=auth)
@@ -941,6 +941,53 @@ class TestGetProposalsByStatus:
         assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
         assert getattr(calls[1].args[0], "status") == prsl_api.ProposalStatus.SUBMITTED
         assert mock_latest.call_count == 2
+
+    # -----------------------------------------------------------
+    # Indigo IAM roles: app:pht:ops_proposal_admin, app:pht:ops_reviewer_science,
+    # app:pht:ops_reviewer_technical each individually grant access
+    # -----------------------------------------------------------
+    @pytest.mark.parametrize(
+        "role",
+        [
+            prsl_api.Role.OPS_PROPOSAL_ADMIN,
+            prsl_api.Role.OPS_REVIEWER_SCIENCE,
+            prsl_api.Role.OPS_REVIEWER_TECHNICAL,
+        ],
+    )
+    @mock.patch(f"{PRSL_MODULE}.get_reviewer_prsl_ids", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
+    def test_indigo_roles_grant_reviewable_proposal_access(
+        self, mock_uow, mock_latest, mock_get_review_ids, role
+    ):
+        """
+        Indigo IAM issues ska_aaa_authhelpers.Role.OPS_PROPOSAL_ADMIN,
+        Role.OPS_REVIEWER_SCIENCE and Role.OPS_REVIEWER_TECHNICAL via the
+        app:pht:ops_proposal_admin, app:pht:ops_reviewer_science and
+        app:pht:ops_reviewer_technical groups respectively. Confirm each role
+        alone (with no group membership) is sufficient to view proposals
+        available for review.
+        """
+        p_under_review = TestDataFactory.complete_proposal(prsl_id="prsl-1", status="under review")
+        p_submitted = TestDataFactory.complete_proposal(prsl_id="prsl-2", status="submitted")
+
+        uow = mock.MagicMock()
+        mock_uow.return_value.__enter__.return_value = uow
+        mock_latest.side_effect = lambda rows, key: rows or []
+        mock_get_review_ids.return_value = {"prsl-1"}
+
+        if role is prsl_api.Role.OPS_PROPOSAL_ADMIN:
+            uow.prsls.query.side_effect = [[p_under_review], [p_submitted]]
+            expected_prsl_ids = ["prsl-1", "prsl-2"]
+        else:
+            uow.prsls.query.side_effect = [[p_under_review]]
+            expected_prsl_ids = ["prsl-1"]
+
+        auth = SimpleNamespace(user_id="user-1", roles={role}, groups=set())
+
+        result = get_proposals_by_status(auth=auth)
+
+        assert [p.prsl_id for p in result] == expected_prsl_ids
 
     # -----------------------------------------------------------
     # No access : []
