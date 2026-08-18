@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+16.3.2
+******
 * [BUGFIX] Updates mccs validation to reflect 0 based indexing of substations
 
 16.3.1
