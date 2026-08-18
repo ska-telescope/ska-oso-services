@@ -90,7 +90,7 @@ def validate_number_substations(
 
         if mccs_context.array_assembly == ValidationArrayAssembly.AA05:
             number_of_stations = len(
-                [station for station in subarray_beam.apertures if station.substation_id == 1]
+                [station for station in subarray_beam.apertures if station.substation_id == 0]
             )
             total_number_of_substations = len(subarray_beam.apertures) - number_of_stations
 
