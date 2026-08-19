@@ -265,8 +265,7 @@ components:
         through the invite flow instead, which waits on provisioning.'
       properties:
         portal_user_id:
-          format: uuid
-          title: Portal User Id
+          title: username
           type: string
       required:
       - portal_user_id

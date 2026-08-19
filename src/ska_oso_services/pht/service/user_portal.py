@@ -118,7 +118,7 @@ class UserPortalService:
         read, _, admin = await self._create_entity_groups(
             pnl_id,
             read_desc=f"Members of panel ({pnl_id})",
-            write_desc=f"Panel members with additional privileges ({pnl_id})",
+            write_desc=f"UNUSED middle tier of panel membership ({pnl_id})",
             admin_desc=f"Chair(s) of panel ({pnl_id})",
         )
         return PanelGroupsTuple(read=read, admin=admin)

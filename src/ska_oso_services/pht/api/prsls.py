@@ -4,7 +4,6 @@ import sys
 from enum import Enum
 from http import HTTPStatus
 from typing import Annotated, Literal
-from uuid import UUID
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
@@ -167,7 +166,7 @@ async def create_proposal(
         # Portal calls must happen outside the UoW to avoid holding an open
         # DB transaction across async I/O, which corrupts the session state.
         groups = await portal.create_proposal_groups(proposal.prsl_id)
-        await portal.create_membership(groups.admin, UUID(security.auth.user_id))
+        await portal.create_membership(groups.admin, security.auth.user_id)
 
         with oda.uow() as uow:
             created_prsl = uow.prsls.add(proposal, security.auth.user_id)
