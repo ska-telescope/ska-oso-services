@@ -37,14 +37,12 @@ class ProposalsAndPanels(NamedTuple):
     proposals: dict[ProposalID, Membership]
     panels: dict[PanelID, Membership]
 
-
 class Facts:
     auth: AuthContext
-
     _group_regex = re.compile(
         r"^app:pht:"
-        f"(?P<skuid>(?:{EntityType.PRP}|{EntityType.PNL})-[a-z1-9]+)"
-        r"(?P<write>/w(?P<admin>/a)?)?$"
+        f"(?P<skuid>(?:{EntityType.PRP}|{EntityType.PNL})-[a-hj-kmnp-tv-z0-9]+)"
+        r"(?P<write>/w)?(?P<admin>/a)?$"
     )
 
     def __init__(self, auth: AuthContext) -> None:
