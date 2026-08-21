@@ -1,7 +1,12 @@
 import pytest
 from ska_aaa_authhelpers import AuthContext, Role
 
-from ska_oso_services.pht.service.security.facts import Facts, Membership, get_group_name
+from ska_oso_services.pht.service.security.facts import (
+    Facts,
+    Membership,
+    get_group_name,
+    get_group_skuid,
+)
 
 USER_ID = "a1baebc7-2d1a-4a35-ac07-478d2fc6af95"
 
@@ -31,6 +36,38 @@ def make_auth_context(
 )
 def test_get_group_name(skuid, admin, write, expected):
     assert get_group_name(skuid, admin=admin, write=write) == expected
+
+
+@pytest.mark.parametrize(
+    ("group_name", "expected"),
+    [
+        pytest.param("app:pht:prp-abc123", "prp-abc123", id="base-group"),
+        pytest.param("app:pht:prp-abc123/w", "prp-abc123", id="write-group"),
+        pytest.param("app:pht:prp-abc123/w/a", "prp-abc123", id="admin-group"),
+        pytest.param("app:pht:pnl-xyz999/w/a", "pnl-xyz999", id="panel-admin-group"),
+    ],
+)
+def test_get_group_skuid(group_name, expected):
+    assert get_group_skuid(group_name) == expected
+
+
+@pytest.mark.parametrize(
+    "group_name",
+    [
+        pytest.param("app:pht:ops_proposal_admin", id="not-a-skuid-group"),
+        pytest.param("app:other:prp-abc123/w", id="non-pht-group"),
+        pytest.param("not-a-group-at-all", id="malformed-group"),
+        pytest.param(" app:pht:prp-abc123/w/a ", id="untrimmed-whitespace"),
+    ],
+)
+def test_get_group_skuid_raises_on_unrecognised_group_name(group_name):
+    with pytest.raises(ValueError, match="Not a valid PHT group name"):
+        get_group_skuid(group_name)
+
+
+def test_get_group_skuid_does_not_match_a_similarly_prefixed_skuid():
+    # "prp-abc123" must not be mistaken for a match of "prp-abc1234".
+    assert get_group_skuid("app:pht:prp-abc1234/w/a") != "prp-abc123"
 
 
 @pytest.mark.parametrize(

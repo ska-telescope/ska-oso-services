@@ -93,9 +93,7 @@ def test_list_invites_by_proposal_happy_path(integration_client):
 
 def test_delete_invite_happy_path(integration_client):
     invite_id = uuid4()
-    response = integration_client.delete(
-        f"{PHT_BASE_API_URL}/prsls/prp-000004/invites/{invite_id}"
-    )
+    response = integration_client.delete(f"{PHT_BASE_API_URL}/prsls/prp-123/invites/{invite_id}")
 
     assert response.status_code == HTTPStatus.OK
     assert response.json().get("status")

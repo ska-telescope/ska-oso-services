@@ -61,6 +61,7 @@ dev = [
     "numpy<2.4.0",
     "httpx>=0.20",
     "testcontainers>=4.14.2",
+    "anyio>=4.14.1",
 ]
 docs = [
     "sphinxcontrib-openapi>=0.8.4",
@@ -76,6 +77,7 @@ docs = [
 ]
 
 [tool.pytest.ini_options]
+anyio_mode = "auto"
 markers = [
     "live: requires live network access to the staging Indigo IAM (deselect with '-m not live')",
 ]

@@ -7,6 +7,7 @@ from ska_aaa_authhelpers import Role
 from ska_ser_skuid import EntityType, ShortSkuid
 
 from ska_oso_services.common.auth import Scope
+from ska_oso_services.common.error_handling import NotFoundError
 from ska_oso_services.pht.models.invitations import (
     InvitationsListResponse,
     InviteCardResponse,
@@ -16,6 +17,7 @@ from ska_oso_services.pht.models.invitations import (
 )
 from ska_oso_services.pht.service import user_portal
 from ska_oso_services.pht.service.security import Security, SecurityService
+from ska_oso_services.pht.service.security.facts import get_group_skuid
 
 ProposalID = ShortSkuid[Literal[EntityType.PRP]]
 
@@ -107,6 +109,11 @@ async def delete_invite(
     prsl_id: ProposalID,
     invite_id: UUID,
 ) -> InviteDeleteResponse:
+    invite = InviteCardResponse.model_validate(await service.get_invite(invite_id))
+    if get_group_skuid(invite.group_name) != prsl_id:
+        # invite_id does not belong to prsl_id, so this path does not resolve to a resource
+        raise NotFoundError(detail=f"Invite {invite_id} not found for proposal {prsl_id}")
+
     security.proposals.allowed_to_administer(prsl_id)
 
     return InviteDeleteResponse.model_validate(await service.delete_invite(invite_id=invite_id))

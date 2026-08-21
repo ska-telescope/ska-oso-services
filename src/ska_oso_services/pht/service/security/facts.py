@@ -27,6 +27,21 @@ def get_group_name(skuid: ShortSkuid, admin=False, write=False) -> str:
         return f"app:pht:{skuid}"
 
 
+_GROUP_REGEX = re.compile(
+    r"^app:pht:"
+    f"(?P<skuid>(?:{EntityType.PRP}|{EntityType.PNL})-[a-hj-kmnp-tv-z0-9]+)"
+    r"(?P<write>/w)?(?P<admin>/a)?$"
+)
+
+
+def get_group_skuid(group_name: str) -> str:
+    """Extract the proposal/panel skuid a group belongs to, ignoring its /w or /w/a tier."""
+    if match := _GROUP_REGEX.match(group_name):
+        return match.group("skuid")
+    else:
+        raise ValueError(f"Not a valid PHT group name: {group_name!r}")
+
+
 class Membership(NamedTuple):
     skuid: ShortSkuid
     is_admin: bool
@@ -37,20 +52,16 @@ class ProposalsAndPanels(NamedTuple):
     proposals: dict[ProposalID, Membership]
     panels: dict[PanelID, Membership]
 
+
 class Facts:
     auth: AuthContext
-    _group_regex = re.compile(
-        r"^app:pht:"
-        f"(?P<skuid>(?:{EntityType.PRP}|{EntityType.PNL})-[a-hj-kmnp-tv-z0-9]+)"
-        r"(?P<write>/w)?(?P<admin>/a)?$"
-    )
 
     def __init__(self, auth: AuthContext) -> None:
         self.auth = auth
 
     def _iter_pht_groups(self) -> Generator[Membership, None, None]:
         for grp in self.auth.principals:
-            if match := self._group_regex.match(grp.strip()):
+            if match := _GROUP_REGEX.match(grp.strip()):
                 skuid = match.group("skuid")
                 has_write = bool(match.group("write"))
                 is_admin = bool(match.group("admin"))

@@ -160,6 +160,15 @@ class UserPortalService:
         )
         return response.json()
 
+    async def get_invite(self, invite_id: UUID) -> dict[str, Any]:
+        response = await call_user_portal(
+            method="GET",
+            url=f"{self.base_url}/api/external/v1/invites/{invite_id}",
+            headers=self.headers,
+            timeout=self.timeout,
+        )
+        return response.json()
+
     async def list_invites(self, prsl_id: ShortSkuid[Literal[et.PRP]]) -> dict[str, Any]:
         response = await call_user_portal(
             method="GET",

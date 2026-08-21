@@ -3624,6 +3624,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "anyio" },
     { name = "deepdiff" },
     { name = "httpx" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }, marker = "python_full_version < '3.11'" },
@@ -3671,6 +3672,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anyio", specifier = ">=4.14.1" },
     { name = "deepdiff", specifier = ">=7.0.0" },
     { name = "httpx", specifier = ">=0.20" },
     { name = "numpy", specifier = "<2.4.0" },
