@@ -28,7 +28,7 @@ def test_search_users_happy_path_proxies_to_user_portal(integration_client):
 
 
 def test_create_invite_by_user_id_happy_path(integration_client):
-    prsl_id = "prp-000001"
+    prsl_id = "prp-1"
     response = integration_client.post(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
         json={"invites": [{"user_id": str(uuid4())}]},
@@ -45,7 +45,7 @@ def test_create_invite_by_user_id_happy_path(integration_client):
 
 
 def test_create_invite_by_email_happy_path(integration_client):
-    prsl_id = "prp-000002"
+    prsl_id = "prp-2"
     response = integration_client.post(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
         json={"invites": [{"email": "new-user@example.org"}]},
@@ -62,7 +62,7 @@ def test_create_invite_by_email_happy_path(integration_client):
 
 
 def test_create_invites_bulk_happy_path(integration_client):
-    prsl_id = "prp-000006"
+    prsl_id = "prp-6"
     response = integration_client.post(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
         json={
@@ -83,7 +83,7 @@ def test_create_invites_bulk_happy_path(integration_client):
 
 
 def test_list_invites_by_proposal_happy_path(integration_client):
-    response = integration_client.get(f"{PHT_BASE_API_URL}/prsls/prp-000003/invites")
+    response = integration_client.get(f"{PHT_BASE_API_URL}/prsls/prp-3/invites")
 
     assert response.status_code == HTTPStatus.OK
     payload = response.json()
@@ -128,7 +128,7 @@ def test_search_users_upstream_502_maps_to_bad_gateway(integration_client, monke
 
 def test_create_invite_invalid_payload_returns_422(integration_client):
     response = integration_client.post(
-        f"{PHT_BASE_API_URL}/prsls/prp-000005/invites",
+        f"{PHT_BASE_API_URL}/prsls/prp-5/invites",
         json={"invites": []},
     )
 
@@ -137,7 +137,7 @@ def test_create_invite_invalid_payload_returns_422(integration_client):
 
 def test_service_create_groups_happy_path(fake_user_portal):
     del fake_user_portal
-    prsl_id = "prp-000007"
+    prsl_id = "prp-7"
     service = UserPortalService(x_request_id="integration-trace-id")
     group_name = user_portal.get_group_name(prsl_id)
 
@@ -150,8 +150,8 @@ def test_service_create_groups_happy_path(fake_user_portal):
 
 def test_service_create_memberships_happy_path(fake_user_portal):
     del fake_user_portal
-    prsl_id = "prp-000008"
-    portal_user_id = uuid4()
+    prsl_id = "prp-8"
+    portal_user_id = str(uuid4())
     service = UserPortalService(x_request_id="integration-trace-id")
     group_name = user_portal.get_group_name(prsl_id)
     expected_payload = {"status": "ok"}

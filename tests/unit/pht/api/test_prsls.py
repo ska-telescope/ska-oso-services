@@ -10,6 +10,7 @@ from unittest import mock
 import pytest
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
+from ska_db_oda.repository.domain import ODANotFound
 
 from ska_oso_services.common.auth import Scope
 from ska_oso_services.pht.api import prsls as prsl_api
@@ -208,6 +209,7 @@ class TestProposalAPI:
 
         uow_mock = mock.MagicMock()
         uow_mock.prsls.add.return_value = proposal_obj
+        uow_mock.prsls.get.side_effect = ODANotFound()
         mock_oda.return_value.__enter__.return_value = uow_mock
 
         response = client.post(
@@ -218,6 +220,30 @@ class TestProposalAPI:
 
         assert response.status_code == HTTPStatus.OK
         assert response.json()["prsl_id"] == proposal_obj.prsl_id
+
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
+    def test_create_proposal_existing_proposal_id(self, mock_oda, client):
+        """
+        Verify that HTTP 409: Conflict is returned when the proposal ID already exists.
+        """
+        uow_mock = mock.MagicMock()
+        # Unlike the success case, we don't raise ODANotFound(): this simulates
+        # the situation where post data conflicts with an existing ID.
+        uow_mock.prsls.get.side_effect = None
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        test_proposal = TestDataFactory.proposal().model_dump(mode="json")
+        prsl_id = test_proposal["prsl_id"]
+
+        response = client.post(
+            f"{PROPOSAL_API_URL}/create",
+            json=test_proposal,
+            headers={"Content-Type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.CONFLICT
+        data = response.json()
+        assert f"'{prsl_id}' already exists" in data["detail"]
 
     @mock.patch(f"{PRSL_MODULE}.UserPortalService.create_membership", new_callable=mock.AsyncMock)
     @mock.patch(
@@ -236,6 +262,7 @@ class TestProposalAPI:
         mock_create_membership.return_value = {}
 
         uow_mock = mock.MagicMock()
+        uow_mock.prsls.get.side_effect = ODANotFound()
         uow_mock.prsls.add.side_effect = ValueError("mock-failure")
 
         mock_oda.return_value.__enter__.return_value = uow_mock

@@ -136,12 +136,12 @@ class UserPortalService:
     async def create_membership(
         self,
         group_name: str,
-        user_id: UUID,
+        user_id: str,
     ) -> dict[str, Any]:
         response = await call_user_portal(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members",
-            json={"portal_user_id": str(user_id)},
+            json={"portal_user_id": user_id},
             headers=self.headers,
             timeout=self.timeout,
         )
