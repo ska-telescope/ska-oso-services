@@ -123,7 +123,7 @@ async def delete_invite(
 
 @router.get(
     "/prsls/{prsl_id}/members",
-    summary="List members who have accepted a proposal invite via external user portal",
+    summary="List members of the proposal group",
     dependencies=[READ_PERMISSIONS],
     response_model=InvitationsListResponse,
 )
