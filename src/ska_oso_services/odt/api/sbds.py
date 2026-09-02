@@ -18,7 +18,11 @@ from starlette.responses import Response
 
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.common.error_handling import DuplicateError, UnprocessableEntityError
-from ska_oso_services.validation.model import ValidationContext, ValidationResponse
+from ska_oso_services.validation.model import (
+    ValidationContext,
+    ValidationIssueType,
+    ValidationResponse,
+)
 from ska_oso_services.validation.sbdefinition import validate_sbdefinition
 
 LOGGER = logging.getLogger(__name__)
@@ -237,10 +241,12 @@ def validate_and_raise_exception(sbd: SBDefinition) -> None:
     validate_result = validate_sbdefinition(ValidationContext(primary_entity=sbd))
     validation_resp = ValidationResponse(issues=validate_result)
     if not validation_resp.valid:
-        message = (
-            f"SBDefinition validation failed with issues "
-            f"{[f'{issue.field}: {issue.message}' for issue in validation_resp.issues]}"
-        )
+        error_messages = [
+            f"{issue.field}: {issue.message}"
+            for issue in validation_resp.issues
+            if issue.level == ValidationIssueType.ERROR
+        ]
+        message = f"SBDefinition validation failed with issues {error_messages}"
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=message,
