@@ -3503,7 +3503,7 @@ wheels = [
 
 [[package]]
 name = "ska-db-oda"
-version = "19.2.0"
+version = "19.4.1"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "fire" },
@@ -3518,9 +3518,9 @@ dependencies = [
     { name = "ska-ser-logging" },
     { name = "ska-ser-skuid" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.2.0/ska_db_oda-19.2.0.tar.gz", hash = "sha256:8c8156bed6b4def1a7aeaf85815332bb339f02c47772fb3f92280a6fe2ff0b00" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.4.1/ska_db_oda-19.4.1.tar.gz", hash = "sha256:554734cde8d776bf1b13f09503ca3467d1a13ce58de0ab64340e7bcc169d01d8" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.2.0/ska_db_oda-19.2.0-py3-none-any.whl", hash = "sha256:6fb39e69df665963b312a45feee28465a69cc59377c274f6e103c837b77593f9" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.4.1/ska_db_oda-19.4.1-py3-none-any.whl", hash = "sha256:ea06ee68e7061e6055c27a5de7fbae456f94c1df35443d051674479169ede8ef" },
 ]
 
 [[package]]
@@ -3539,7 +3539,7 @@ wheels = [
 
 [[package]]
 name = "ska-oso-services"
-version = "16.3.1"
+version = "16.3.3"
 source = { editable = "." }
 dependencies = [
     { name = "aiosmtplib" },
@@ -3558,7 +3558,6 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "ska-aaa-authhelpers" },
     { name = "ska-db-oda" },
-    { name = "ska-oso-pdm" },
     { name = "ska-ost-osd" },
     { name = "ska-ser-logging" },
     { name = "ska-ser-skuid" },
@@ -3604,8 +3603,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.5" },
     { name = "python-dateutil", specifier = ">=2.8.2" },
     { name = "ska-aaa-authhelpers", specifier = ">=1.5.0" },
-    { name = "ska-db-oda", specifier = ">=19.1.1" },
-    { name = "ska-oso-pdm", specifier = ">=28.1.1" },
+    { name = "ska-db-oda", specifier = ">=19.4.1" },
     { name = "ska-ost-osd", specifier = ">=6.0.7" },
     { name = "ska-ser-logging", specifier = ">=0.4.1" },
     { name = "ska-ser-skuid", specifier = ">=6.0.0,<7.0.0" },

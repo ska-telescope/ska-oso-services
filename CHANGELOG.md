@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+16.3.3
+******
 * [BUGFIX] Updates to only report validation Errors when `POST /sbds` request fails
 * Updates to ODA 19.4.1
 
