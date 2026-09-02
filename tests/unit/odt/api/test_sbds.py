@@ -157,7 +157,12 @@ class TestSBDefinitionAPI:
                 message="Maximum elevation (44.74 degrees) is less than the limit (45.0 degrees)",
                 field="$.targets.0",
                 level=ValidationIssueType.ERROR,
-            )
+            ),
+            ValidationIssue(
+                message="No validation of target visibility is currently performed",
+                field="$.targets.1",
+                level=ValidationIssueType.WARNING,
+            ),
         ]
         response = client.post(
             f"{SBDS_API_URL}",
