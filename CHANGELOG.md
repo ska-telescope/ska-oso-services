@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* [BUGFIX] Updates to only report validation Errors when `POST /sbds` request fails
 
 16.3.2
 ******
