@@ -122,7 +122,7 @@ async def delete_invite(
 @router.get(
     "/prsls/{prsl_id}/members",
     summary="List members of the proposal group",
-    dependencies=[READ_PERMISSIONS],
+    dependencies=[Security(roles={Role.ANY}, scopes={Scope.PHT_READ})],
     response_model=InvitationsListResponse,
 )
 async def list_members(
