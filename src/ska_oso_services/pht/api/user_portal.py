@@ -92,10 +92,17 @@ async def list_invites(
     service: Annotated[user_portal.UserPortalService, Depends(get_user_portal_service_read)],
     prsl_id: str,
 ) -> InvitationsListResponse:
-    payload = await service.list_invites(prsl_id=prsl_id)
+    members_payload = await service.list_invites(prsl_id=prsl_id)
+
+    invited = [
+        InviteCardResponse.model_validate(item)
+        for item in members_payload.get("items", [])
+        if item.get("claim_state") != "accepted"
+    ]
+
     return InvitationsListResponse(
-        invites=[InviteCardResponse.model_validate(item) for item in payload.get("items", [])],
-        next_cursor=payload.get("next_cursor"),
+        invites=invited,
+        next_cursor=members_payload.get("next_cursor"),
     )
 
 
@@ -112,3 +119,26 @@ async def delete_invite(
 ) -> InviteDeleteResponse:
     del prsl_id
     return InviteDeleteResponse.model_validate(await service.delete_invite(invite_id=invite_id))
+
+
+@router.get(
+    "/prsls/{prsl_id}/members",
+    summary="List members of the proposal group",
+    dependencies=[READ_PERMISSIONS],
+    response_model=InvitationsListResponse,
+)
+async def list_members(
+    service: Annotated[user_portal.UserPortalService, Depends(get_user_portal_service_read)],
+    prsl_id: str,
+) -> InvitationsListResponse:
+    members_payload = await service.list_invites(prsl_id=prsl_id)
+
+    members = [
+        InviteCardResponse.model_validate(item)
+        for item in members_payload.get("items", [])
+        if item.get("claim_state") == "accepted"
+    ]
+    return InvitationsListResponse(
+        invites=members,
+        next_cursor=members_payload.get("next_cursor"),
+    )

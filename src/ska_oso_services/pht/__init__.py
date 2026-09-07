@@ -3,12 +3,12 @@ from fastapi import APIRouter
 from ska_oso_services.pht.api import (
     panel_decision,
     panels,
-    portal_invitations,
     prslacc,
     prsls,
     report,
     reviewers,
     reviews,
+    user_portal,
 )
 
 router = APIRouter(prefix="/pht")
@@ -19,4 +19,4 @@ router.include_router(panel_decision.router)
 router.include_router(panels.router)
 router.include_router(report.router)
 router.include_router(prslacc.router)
-router.include_router(portal_invitations.router)
+router.include_router(user_portal.router)
