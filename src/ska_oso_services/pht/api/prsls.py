@@ -1,66 +1,74 @@
 import copy
 import logging
+import sys
+from enum import Enum
 from http import HTTPStatus
-from typing import Annotated
+from typing import Annotated, Literal
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
-from pydantic import ValidationError
+from pydantic import StringConstraints, ValidationError
 from ska_aaa_authhelpers import Role
-from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_db_oda.repository.domain import CustomQuery
-from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalPermissions, ProposalRole
-from ska_oso_pdm.proposal.investigator import Investigator
+from ska_db_oda.repository.domain import CustomQuery, ODANotFound
+from ska_oso_pdm.proposal import Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
-from ska_ser_skuid import EntityType, int_skuid, mint_skuid
+from ska_ser_skuid import EntityType, ShortSkuid, int_skuid, mint_skuid
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.auth import Permissions, Scope
+from ska_oso_services.common.auth import Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
-    ForbiddenError,
+    DuplicateError,
     NotFoundError,
     UnprocessableEntityError,
 )
 from ska_oso_services.common.osdmapper import get_osd_cycles, get_osd_data
-from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
+from ska_oso_services.pht.models.domain import OsdDataModel
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.proposal_service import (
-    assert_user_has_permission_for_proposal,
-    get_panel_prsl_ids,
-    get_reviewer_prsl_ids,
-    list_accessible_proposal_ids,
     merge_latest_with_preference,
     transform_update_proposal,
 )
 from ska_oso_services.pht.service.s3_bucket import (
     PRESIGNED_URL_EXPIRY_TIME,
+    build_content_disposition,
     create_presigned_url_delete_pdf,
     create_presigned_url_download_pdf,
     create_presigned_url_upload_pdf,
     get_aws_client,
+    get_s3_object_key,
 )
+from ska_oso_services.pht.service.security import Security, SecurityService
 from ska_oso_services.pht.service.user_portal import UserPortalService
-from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL, SV_NAME
-from ska_oso_services.pht.utils.ms_graph import (
-    extract_profile_from_access_token,
-    get_users_by_mail,
-)
+from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
-
-from .user_portal import get_user_portal_service_readwrite
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 
+ProposalID = ShortSkuid[Literal[EntityType.PRP]]
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+
+    class StrEnum(str, Enum):
+        """Python 3.10-compatible fallback for StrEnum."""
+
 
 @router.get(
     "/osd/cycles",
     summary="Retrieve OSD data for all available cycles",
+    dependencies=(
+        Security(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
+        ),
+    ),
 )
 def get_all_osd_cycles() -> list[OsdDataModel]:
     """
@@ -98,8 +106,16 @@ def get_all_osd_cycles() -> list[OsdDataModel]:
 @router.get(
     "/osd/{cycle}",
     summary="Retrieve OSD data for a given cycle",
+    dependencies=(
+        Security(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
+        ),
+    ),
 )
-def get_osd_by_cycle(cycle: int) -> OsdDataModel:
+def get_osd_by_cycle(
+    cycle: int,
+) -> OsdDataModel:
     """
     This queries the OSD data by cycle id.
 
@@ -121,14 +137,15 @@ def get_osd_by_cycle(cycle: int) -> OsdDataModel:
 
 
 @router.post("/create", summary="Create a new proposal")
-def create_proposal(
-    auth: Annotated[
-        AuthContext,
-        Permissions(
+async def create_proposal(
+    security: Annotated[
+        SecurityService,
+        Security(
             roles={Role.ANY},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
+    portal: Annotated[UserPortalService, Depends(UserPortalService)],
     proposal: Proposal = Body(
         ...,
         example=EXAMPLE_PROPOSAL,
@@ -140,36 +157,29 @@ def create_proposal(
 
     logger.debug("POST PROPOSAL create")
 
-    try:
-        given, family, email = extract_profile_from_access_token(auth)
-        new_investigator = Investigator(
-            user_id=auth.user_id,
-            given_name=given,
-            family_name=family,
-            email=email,
-            status="Accepted",  # This needs to be updated in the datamodel
-            principal_investigator=True,
-        )
-        with oda.uow() as uow:
-            proposal.proposal_info.investigators.append(new_investigator)
-            created_prsl = uow.prsls.add(proposal, auth.user_id)
-            # Create permissions
-            create_prslacc = ProposalAccess(
-                # proposal access table is a temp measure without a skuid
-                # type. For now just hack this with a string replace, as
-                # we just need a unique string
-                access_id=mint_skuid(EntityType.PRP).replace("prp", "acs"),
-                prsl_id=created_prsl.prsl_id,
-                user_id=auth.user_id,
-                role=ProposalRole.PrincipalInvestigator,
-                permissions=[
-                    ProposalPermissions.Submit,
-                    ProposalPermissions.Update,
-                    ProposalPermissions.View,
-                ],
-            )
+    # Fixup PDM typing and make this non-nullable
+    if proposal.prsl_id is None:
+        proposal.prsl_id = mint_skuid(EntityType.PRP)
+    else:
+        proposal.prsl_id = ProposalID(proposal.prsl_id)
 
-            uow.prslacc.add(create_prslacc, auth.user_id)
+    # TODO: This becomes unecessary once the ODA supports explicit create() API
+    with oda.uow() as uow:
+        try:
+            uow.prsls.get(proposal.prsl_id)
+        except ODANotFound:
+            pass  # New ID, safe to continue
+        else:
+            raise DuplicateError(detail=f"{proposal.prsl_id!r} already exists")
+
+    try:
+        # Portal calls must happen outside the UoW to avoid holding an open
+        # DB transaction across async I/O, which corrupts the session state.
+        groups = await portal.create_proposal_groups(proposal.prsl_id)
+        await portal.create_membership(groups.admin, security.auth.user_id)
+
+        with oda.uow() as uow:
+            created_prsl = uow.prsls.add(proposal, security.auth.user_id)
             uow.commit()
         logger.info("Proposal successfully created with ID %s", created_prsl.prsl_id)
         return created_prsl
@@ -182,11 +192,11 @@ def create_proposal(
 
 @router.get("/reviewable", summary="Get a list of proposals by status")
 def get_proposals_by_status(
-    auth: Annotated[
-        AuthContext,
-        Permissions(
+    security: Annotated[
+        SecurityService,
+        Security(
             roles={Role.ANY},
-            scopes={Scope.PHT_READWRITE},
+            scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
         ),
     ],
 ) -> list[Proposal]:
@@ -202,104 +212,82 @@ def get_proposals_by_status(
         list[Proposal]
 
     """
-    # TODO: clean up the repetitions of proposal query
-    logger.debug("GET PROPOSAL status")
 
-    roles = set(getattr(auth, "roles", ()))
-    groups = set(getattr(auth, "groups", ()))
+    user_panels = security.facts.get_all_proposals_and_panels().panels
 
-    has_role = Role.SW_ENGINEER in roles
-    is_admin = PrslRole.OPS_PROPOSAL_ADMIN in groups
-    is_chair = PrslRole.OPS_REVIEW_CHAIR in groups
-    has_review_group = PrslRole.SCIENCE_REVIEWER in groups or PrslRole.TECHNICAL_REVIEWER in groups
-
-    if not (has_role or is_admin or is_chair or has_review_group):
-        logger.info("No access roles/groups; returning 0 proposals.")
-        return []
-
-    def _latest_by_status(uow, status) -> list["Proposal"]:
+    def _latest_by_status(uow, status) -> list[Proposal]:
         return (
             get_latest_entity_by_id(uow.prsls.query(CustomQuery(status=status)), "prsl_id") or []
         )
 
-    def _filter_by_prsl_ids(proposals: list["Proposal"], ids: set[str]) -> list["Proposal"]:
+    def _filter_by_prsl_ids(proposals: list[Proposal], ids: set[str]) -> list[Proposal]:
         if not ids:
             return []
-        return [p for p in proposals if getattr(p, "prsl_id", None) in ids]
+        return [p for p in proposals if getattr(p, "prsl_id", -1) in ids]
 
+    # TODO This querying could be a lot better.
     with oda.uow() as uow:
-        if has_role or is_admin:
-            latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
-            latest_submitted = _latest_by_status(uow, ProposalStatus.SUBMITTED)
-            # TODO: filter by panel_prsl_ids intersection
-            proposals = merge_latest_with_preference(latest_under_review, latest_submitted)
+        under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
+        submitted = _latest_by_status(uow, ProposalStatus.SUBMITTED)
+        all_reviewable = merge_latest_with_preference(under_review, submitted)
 
-        elif is_chair:
-            latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
-            panel_prsl_ids = get_panel_prsl_ids(uow, SV_NAME)
-            proposals = _filter_by_prsl_ids(latest_under_review, panel_prsl_ids)
+        if security.facts.is_pht_admin():
+            security.proposals.allowed_to_view(*(p for p in all_reviewable))
+            return all_reviewable
 
-        else:
-            review_prsl_ids = get_reviewer_prsl_ids(uow, auth.user_id)
-            if not review_prsl_ids:
-                logger.info("Reviewer has no reviews; returning 0 proposals.")
-                return []
-            latest_under_review = _latest_by_status(uow, ProposalStatus.UNDER_REVIEW)
-            proposals = _filter_by_prsl_ids(latest_under_review, review_prsl_ids)
+        # Collect prsl_ids assigned to each of the user's panels
+        panel_prsl_ids: set[str] = set()
+        for pnl_id in user_panels:
+            panel = uow.panels.get(pnl_id)
+            if panel:
+                panel_prsl_ids.update(p.prsl_id for p in panel.proposals)
 
-    logger.info(
-        "Retrieved %d proposals for %s",
-        len(proposals),
-        (
-            "admin/sw_engineer"
-            if (has_role or is_admin)
-            else ("review_chair" if is_chair else "reviewer")
-        ),
-    )
+        proposals = _filter_by_prsl_ids(all_reviewable, panel_prsl_ids)
+
+    logger.debug("Retrieved %d reviewable proposals for %s", len(proposals), security.auth.user_id)
+    # Should we extend proposal rules to understand about panel memberships so
+    # it's possible to run this check as a backup?
+    # security.proposals.allowed_to_view(*(p for p in proposals))
     return proposals
 
 
 @router.get("/mine", summary="Get a list of proposals the user can access")
 def get_proposals_for_user(
-    auth: Annotated[
-        AuthContext,
-        Permissions(
-            roles={Role.ANY, Role.SW_ENGINEER},
-            scopes={Scope.PHT_READ, Scope.ODT_READ},
+    security: Annotated[
+        SecurityService,
+        Security(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
         ),
     ],
 ) -> list[Proposal]:
     """
-    List all proposals accessible to the authenticated user.
-
-    The proposals are determined from the underlying data store by:
-    1.) Resolving accessible proposal IDs via, list_accessible_proposal_ids:
-        - This queries the proposal_acces table to see if there is a proposal
-        associated with the user_id.
-        Note: Once a proposal is created, an access is created and once Co-Is are added,
-        access is created as well.
-    2.) Fetching each proposal by ID and
-    3.) Returning the proposals as a list (empty if none are found).
+    List all proposals where the authenticated user is a collaborator.
 
     Returns:
         list[Proposal]: Proposals accessible to the current user.
 
     """
+    my_proposals = security.facts.get_all_proposals_and_panels().proposals
 
-    logger.debug("GET PROPOSAL LIST query for the user: %s", auth.user_id)
+    logger.debug("GET PROPOSAL LIST query for the user: %s", security.auth.user_id)
 
     with oda.uow() as uow:
         proposals = [
             accessible_proposal
-            for prsl_id in list_accessible_proposal_ids(uow, auth.user_id)
+            for prsl_id in my_proposals.keys()
             if (accessible_proposal := uow.prsls.get(prsl_id)) is not None
         ]
 
     if not proposals:
-        logger.info("No proposals found for user: %s", auth.user_id)
+        logger.info("No proposals found for user: %s", security.auth.user_id)
         return []
 
-    logger.debug("Found %d proposals for user: %s", len(proposals), auth.user_id)
+    logger.debug("Found %d proposals for user: %s", len(proposals), security.auth.user_id)
+    # Strictly speaking, this check is redundant because we fetched the list of proposal IDs
+    # from the user's access token to start with, but we are double-checking here
+    # so the same exact auth logic runs on all code paths that view proposals.
+    security.proposals.allowed_to_view(*(p.prsl_id for p in proposals))
     return proposals
 
 
@@ -308,12 +296,12 @@ def get_proposals_for_user(
     summary="Retrieve an existing proposal",
 )
 def get_proposal(
-    prsl_id: str,
-    auth: Annotated[
-        AuthContext,
-        Permissions(
-            roles={Role.ANY, Role.SW_ENGINEER},
-            scopes={Scope.PHT_READ},
+    prsl_id: ShortSkuid[Literal[EntityType.PRP]],
+    security: Annotated[
+        SecurityService,
+        Security(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
         ),
     ],
 ) -> Proposal:
@@ -327,10 +315,10 @@ def get_proposal(
 
     """
     logger.debug("GET PROPOSAL prsl_id: %s", prsl_id)
+    security.proposals.allowed_to_view(prsl_id)
 
     try:
         with oda.uow() as uow:
-            assert_user_has_permission_for_proposal(uow, auth.user_id, prsl_id)
             proposal = uow.prsls.get(prsl_id)
         logger.info("Proposal retrieved successfully: %s", prsl_id)
         return proposal
@@ -344,14 +332,15 @@ def get_proposal(
     "/batch",
     summary="Retrieve multiple proposals in batch",
     response_model=list[Proposal],
-    dependencies=[
-        Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READ],
-        )
-    ],
 )
 def get_proposals_batch(
+    security: Annotated[
+        SecurityService,
+        Security(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
+        ),
+    ],
     prsl_ids: list[str] = Body(..., embed=True, description="List of proposal IDs"),
 ):
     """
@@ -359,7 +348,8 @@ def get_proposals_batch(
     and returning the proposals for those ids.
 
     """
-    logger.debug("GET BATCH PROPOSAL(s): %s", prsl_ids)
+    security.proposals.allowed_to_view(*prsl_ids)
+
     proposals = []
     with oda.uow() as uow:
         for prsl_id in prsl_ids:
@@ -374,14 +364,18 @@ def get_proposals_batch(
 @router.get(
     "/reviews/{prsl_id}",
     summary="Get all reviews for a particular proposal",
-    dependencies=[
-        Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READ],
-        )
-    ],
 )
-def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
+def get_reviews_for_proposal(
+    security: Annotated[
+        SecurityService,
+        Security(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
+            groups={SecurityService.PHT_ADMIN_GROUP},
+        ),
+    ],
+    prsl_id: str,
+) -> list[PanelReview]:
     """
     Function that requests to GET /reviews/{prsl_id} are mapped to.
 
@@ -397,6 +391,8 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
         query = CustomQuery(prsl_fk=int_skuid(prsl_id).uid)
         reviews = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
 
+    for r in reviews:
+        security.reviews.allowed_to_view(r)
     return reviews
 
 
@@ -407,11 +403,11 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
 def update_proposal(
     prsl_id: str,
     prsl: Proposal,
-    auth: Annotated[
-        AuthContext,
-        Permissions(
+    security: Annotated[
+        SecurityService,
+        Security(
             roles={Role.ANY},
-            scopes={Scope.PHT_READWRITE},
+            scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
         ),
     ],
 ) -> Proposal:
@@ -419,34 +415,21 @@ def update_proposal(
     Updates a proposal in the underlying data store.
 
     """
-    with oda.uow() as uow:
-        # Check if user in propsal access - forbidden error raised inside
-        rows = assert_user_has_permission_for_proposal(
-            uow=uow, prsl_id=prsl_id, user_id=auth.user_id
+    # Ensure ID match
+    if prsl.prsl_id != prsl_id:
+        logger.warning(
+            "Proposal ID mismatch: Proposal ID=%s in path, body ID=%s",
+            prsl_id,
+            prsl.prsl_id,
         )
-        transform_body = transform_update_proposal(prsl)
+        raise UnprocessableEntityError(detail="Proposal ID in path and body do not match.")
 
+    security.proposals.allowed_to_edit(prsl_id)
+    with oda.uow() as uow:
+        transform_body = transform_update_proposal(prsl)
         # Assumption: status is final beyond this point
         if transform_body.status == ProposalStatus.SUBMITTED:
-            if ProposalPermissions.Submit not in rows[0].permissions:
-                logger.info(
-                    "Forbidden submit attempt for proposal: %s by user_id: %s ",
-                    prsl_id,
-                    auth.user_id,
-                )
-                raise ForbiddenError(
-                    detail=(f"You do not have access to submit proposal with id:{prsl_id}")
-                )
-        elif ProposalPermissions.Update not in rows[0].permissions:
-            logger.info(
-                "Forbidden update attempt for proposal: %s by user_id: %s ",
-                prsl_id,
-                auth.user_id,
-            )
-            raise ForbiddenError(
-                detail=(f"You do not have access to update proposal with id:{prsl_id}")
-            )
-
+            security.proposals.allowed_to_submit(prsl_id)
         try:
             prsl = Proposal.model_validate(transform_body)  # test transformed
         except ValidationError as err:
@@ -455,15 +438,6 @@ def update_proposal(
             ) from err
 
         logger.debug("PUT PROPOSAL - Attempting update for prsl_id: %s", prsl_id)
-
-        # Ensure ID match
-        if prsl.prsl_id != prsl_id:
-            logger.warning(
-                "Proposal ID mismatch: Proposal ID=%s in path, body ID=%s",
-                prsl_id,
-                prsl.prsl_id,
-            )
-            raise UnprocessableEntityError(detail="Proposal ID in path and body do not match.")
 
         # Verify proposal exists
         existing = uow.prsls.get(prsl_id)
@@ -487,7 +461,7 @@ def update_proposal(
 @router.post(
     "/validate",
     summary="Validate a proposal",
-    dependencies=[Permissions(roles=[Role.ANY], scopes=[Scope.PHT_READ])],
+    dependencies=[Security(roles={Role.ANY}, scopes={Scope.PHT_READ})],
 )
 def validate_proposal(prsl: Proposal) -> dict:
     """
@@ -509,11 +483,11 @@ def validate_proposal(prsl: Proposal) -> dict:
     "/send-email/",
     summary="Send a proposal invitation email",
     deprecated=True,
-    dependencies=[Permissions(roles=[Role.ANY], scopes=[Scope.PHT_READWRITE])],
+    dependencies=[Security(roles={Role.ANY}, scopes={Scope.PHT_READWRITE})],
 )
 async def send_email(
     request: EmailRequest,
-    service: Annotated[UserPortalService, Depends(get_user_portal_service_readwrite)],
+    service: Annotated[UserPortalService, Depends(UserPortalService)],
     response: Response,
 ) -> dict:
     """
@@ -531,27 +505,31 @@ async def send_email(
     return {"message": "Email sent successfully"}
 
 
+class ProposalDocument(StrEnum):
+    SCIENCE = "science"
+    TECHNICAL = "technical"
+
+
 @router.post(
-    "/signed-url/upload/{filename}",
+    "/{prsl_id}/s3/upload/{document_type}",
     summary="Create upload PDF URL",
-    dependencies=[Permissions(roles=[Role.ANY], scopes=[Scope.PHT_READWRITE])],
 )
-def create_upload_pdf_url(filename: str) -> str:
+def create_upload_pdf_url(
+    prsl_id: ProposalID,
+    filename: Annotated[
+        str, StringConstraints(pattern=r"^[^/\\]+$", min_length=1, max_length=256)
+    ],
+    document_type: ProposalDocument,
+    security: Annotated[SecurityService, Security(roles={Role.ANY}, scopes={Scope.PHT_READWRITE})],
+) -> str:
     """
     Generate a presigned S3 upload URL for the given filename.
 
     """
-    # Catch simple things someone may add to the filename
-    if not filename or "/" in filename or "\\" in filename:
-        validation_resp = {
-            "error": "Invalid filename",
-            "reason": "Filename must not contain slashes or be empty",
-            "field": "filename",
-            "value": filename,
-        }
-        raise UnprocessableEntityError(detail=validation_resp)
-
-    logger.debug("POST Upload Signed URL for: %s", filename)
+    security.proposals.allowed_to_edit(prsl_id)
+    logger.debug("POST Upload Signed URL for slot: %s", document_type)
+    key = get_s3_object_key(prsl_id, document_type.value)
+    content_disposition = build_content_disposition(filename)
 
     try:
         s3_client = get_aws_client()
@@ -564,7 +542,10 @@ def create_upload_pdf_url(filename: str) -> str:
 
     try:
         return create_presigned_url_upload_pdf(
-            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+            key=key,
+            client=s3_client,
+            expiry=PRESIGNED_URL_EXPIRY_TIME,
+            content_disposition=content_disposition,
         )
     # TODO: Andrey to look into this and determine the correct code or if not needed
     except ClientError as client_err:
@@ -576,17 +557,23 @@ def create_upload_pdf_url(filename: str) -> str:
 
 
 @router.post(
-    "/signed-url/download/{filename}",
+    "/{prsl_id}/s3/download/{document_type}",
     summary="Create download PDF URL",
-    dependencies=[Permissions(roles=[Role.ANY], scopes=[Scope.PHT_READWRITE])],
 )
-def create_download_pdf_url(filename: str) -> str:
+def create_download_pdf_url(
+    prsl_id: ProposalID,
+    document_type: ProposalDocument,
+    security: Annotated[
+        SecurityService, Security(roles={Role.ANY}, scopes={Scope.PHT_READ, Scope.PHT_READWRITE})
+    ],
+) -> str:
     """
-    Generate a presigned S3 download URL for the given filename.
+    Generate a presigned S3 download URL for a proposal document slot.
 
     """
-
-    logger.debug("POST Download Signed URL for: %s", filename)
+    security.proposals.allowed_to_view(prsl_id)
+    logger.debug("POST Download Signed URL slot: %s", document_type)
+    key = get_s3_object_key(prsl_id, document_type.value)
 
     try:
         s3_client = get_aws_client()
@@ -599,7 +586,9 @@ def create_download_pdf_url(filename: str) -> str:
 
     try:
         return create_presigned_url_download_pdf(
-            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+            key=key,
+            client=s3_client,
+            expiry=PRESIGNED_URL_EXPIRY_TIME,
         )
     # TODO: Andrey to look into this when secrets are available
     # and determine the correct code or if not needed
@@ -612,17 +601,21 @@ def create_download_pdf_url(filename: str) -> str:
 
 
 @router.post(
-    "/signed-url/delete/{filename}",
+    "/{prsl_id}/s3/delete/{document_type}",
     summary="Create delete PDF URL",
-    dependencies=[Permissions(roles=[Role.ANY], scopes=[Scope.PHT_READWRITE])],
 )
-def create_delete_pdf_url(filename: str) -> str:
+def create_delete_pdf_url(
+    prsl_id: ProposalID,
+    document_type: ProposalDocument,
+    security: Annotated[SecurityService, Security(roles={Role.ANY}, scopes={Scope.PHT_READWRITE})],
+) -> str:
     """
-    Generate a presigned S3 delete URL for the given filename.
+    Generate a presigned S3 delete URL for a proposal document slot.
 
     """
-
-    logger.debug("POST Delete Signed URL for: %s", filename)
+    security.proposals.allowed_to_edit(prsl_id)
+    logger.debug("POST Delete Signed URL slot: %s", document_type)
+    key = get_s3_object_key(prsl_id, document_type.value)
 
     try:
         s3_client = get_aws_client()
@@ -635,7 +628,7 @@ def create_delete_pdf_url(filename: str) -> str:
 
     try:
         return create_presigned_url_delete_pdf(
-            key=filename, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
+            key=key, client=s3_client, expiry=PRESIGNED_URL_EXPIRY_TIME
         )
     # TODO: Andrey to look into this when secrets are available
     # and determine the correct code or if not needed
@@ -650,23 +643,27 @@ def create_delete_pdf_url(filename: str) -> str:
 @router.get(
     "/member/{email}",
     summary="Retrieve user by email",
-    dependencies=[
-        Permissions(
-            roles={Role.ANY},
-            scopes={Scope.PHT_READWRITE},
-        ),
-    ],
+    deprecated=True,
+    dependencies=[Security(roles={Role.ANY}, scopes={Scope.PHT_READ})],
 )
-def get_user_by_email(email: str) -> dict:
-    """Returns an MS Entra user by email from MS Graph.
+async def get_user_by_email(
+    email: str,
+    service: Annotated[UserPortalService, Depends(UserPortalService)],
+    response: Response,
+) -> dict:
+    """Deprecated. Use GET /pht/users/search?q=<email> instead.
 
     Returns:
         dict
     """
-    logger.debug("GET PROPOSAL user by email")
-    result = get_users_by_mail(email)
+    logger.warning(
+        "Deprecated endpoint GET /member/%s called. Use GET /users/search instead.", email
+    )
+    response.headers["Deprecation"] = "true"
+    response.headers["Link"] = '</pht/users/search>; rel="successor-version"'
 
-    if result:
-        return result[0]
-    else:
-        raise NotFoundError(detail=f"User not found with email: {email}")
+    result = await service.search_users(query=email, limit=5)
+    items = result.get("items", [])
+    if items:
+        return items[0]
+    raise NotFoundError(detail=f"User not found with email: {email}")

@@ -52,6 +52,7 @@ def request_headers() -> dict:
         audience="test:pht",
         roles=[
             Role.ANY,
+            Role.INTERNAL,
             Role.OPS_PROPOSAL_ADMIN,
             Role.OPS_REVIEWER_SCIENCE,
             Role.OPS_REVIEWER_TECHNICAL,

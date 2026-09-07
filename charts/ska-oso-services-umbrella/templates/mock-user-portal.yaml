@@ -1,0 +1,74 @@
+{{- $skaOsoServices := index .Values "ska-oso-services" }}
+{{- if and $skaOsoServices $skaOsoServices.pipeline_test_deployment }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ska-oso-services-{{ .Release.Name }}-user-portal-mock-spec
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    app: ska-oso-services-umbrella-user-portal-mock
+data:
+  spec.yaml: |
+{{ .Files.Get "files/user-portal-mock.openapi.yaml" | indent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ska-oso-services-{{ .Release.Name }}-user-portal-mock
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    app: ska-oso-services-umbrella-user-portal-mock
+spec:
+  ports:
+  - port: 4010
+  selector:
+    app: ska-oso-services-user-portal-mock
+    release: {{ .Release.Name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ska-oso-services-{{ .Release.Name }}-user-portal-mock
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    app: ska-oso-services-umbrella-user-portal-mock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ska-oso-services-user-portal-mock
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: ska-oso-services-user-portal-mock
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: prism
+        image: stoplight/prism:latest
+        command:
+        - node
+        - /usr/src/prism/packages/cli/dist/index.js
+        - mock
+        - -h
+        - "0.0.0.0"
+        - -p
+        - "4010"
+        - --no-multiprocess
+        - /etc/prism/spec.yaml
+        ports:
+        - containerPort: 4010
+        volumeMounts:
+        - name: spec
+          mountPath: /etc/prism
+          readOnly: true
+      volumes:
+      - name: spec
+        configMap:
+          name: ska-oso-services-{{ .Release.Name }}-user-portal-mock-spec
+{{- end }}

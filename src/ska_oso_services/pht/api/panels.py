@@ -1,16 +1,15 @@
 import logging
-from typing import Annotated, Union
+from typing import Annotated, Literal, Union
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from ska_aaa_authhelpers import Role
-from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
-from ska_ser_skuid import EntityType, mint_skuid
+from ska_ser_skuid import EntityType, ShortSkuid, mint_skuid
 
 from ska_oso_services.common import oda
-from ska_oso_services.common.auth import Permissions, Scope
+from ska_oso_services.common.auth import Scope
 from ska_oso_services.common.error_handling import UnprocessableEntityError
 from ska_oso_services.pht.models.schemas import PanelAssignResponse, PanelBatchCreateResult
 from ska_oso_services.pht.service.panel_operations import (
@@ -24,6 +23,8 @@ from ska_oso_services.pht.service.panel_operations import (
     group_proposals_by_science_category,
     set_removed_proposals_to_submitted,
 )
+from ska_oso_services.pht.service.security import Security, SecurityService
+from ska_oso_services.pht.service.user_portal import UserPortalService
 from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, validate_duplicates
 
@@ -36,15 +37,17 @@ logger = logging.getLogger(__name__)
     "/create",
     summary="Create a panel",
 )
-def create_panel(
+async def create_panel(
     param: Panel,
-    auth: Annotated[
-        AuthContext,
-        Permissions(
-            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+    security: Annotated[
+        SecurityService,
+        Security(
+            roles={Role.ANY},
             scopes={Scope.PHT_READWRITE},
+            groups={SecurityService.PHT_ADMIN_GROUP},
         ),
     ],
+    portal: Annotated[UserPortalService, Depends(UserPortalService)],
 ) -> str:
     """This endpoint may not be needed in the future.
 
@@ -53,9 +56,10 @@ def create_panel(
     logger.debug("POST panel")
 
     with oda.uow() as uow:
-        panel: Panel = uow.panels.add(param, auth.user_id)  # pylint: disable=no-member
+        panel: Panel = uow.panels.add(param, security.auth.user_id)  # pylint: disable=no-member
         uow.commit()
 
+    await portal.create_panel_groups(ShortSkuid[Literal[EntityType.PNL]](panel.panel_id))
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
 
@@ -67,11 +71,12 @@ def create_panel(
 )
 def auto_assign_to_panel(
     param: str,
-    auth: Annotated[
-        AuthContext,
-        Permissions(
-            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+    security: Annotated[
+        SecurityService,
+        Security(
+            roles={Role.ANY},
             scopes={Scope.PHT_READWRITE},
+            groups={SecurityService.PHT_ADMIN_GROUP},
         ),
     ],
 ) -> Union[str, list[PanelAssignResponse]]:
@@ -171,12 +176,12 @@ def auto_assign_to_panel(
                             )
                             updated_review_ids.append(rvw_ids)
 
-                persisted = uow.panels.add(sv_panel, auth.user_id)
+                persisted = uow.panels.add(sv_panel, security.auth.user_id)
 
                 uow.commit()
                 # ---------Set UNDER_REVIEW only for newly added proposals------
                 ensure_submitted_proposals_under_review(
-                    uow, auth, (a.prsl_id for a in sv_assignments_to_add)
+                    uow, security.auth, (a.prsl_id for a in sv_assignments_to_add)
                 )
                 logger.info(
                     "Updated existing Science Verification panel %s (added %d proposals)",
@@ -213,7 +218,7 @@ def auto_assign_to_panel(
 
             persisted, added_count, added_ids = assign_to_existing_panel(
                 uow=uow,
-                auth=auth,
+                auth=security.auth,
                 panel=panel,
                 proposals=proposals_for_name,
                 sci_reviewers=panel.sci_reviewers,
@@ -224,7 +229,7 @@ def auto_assign_to_panel(
 
         uow.commit()
         if ids_for_status:
-            ensure_submitted_proposals_under_review(uow, auth, ids_for_status)
+            ensure_submitted_proposals_under_review(uow, security.auth, ids_for_status)
         if skipped_missing:
             logger.warning(
                 "Skipped %d categories with no matching existing panel: %s",
@@ -242,11 +247,12 @@ def auto_assign_to_panel(
     response_model=Union[str, PanelBatchCreateResult],
 )
 def auto_create_panel(
-    auth: Annotated[
-        AuthContext,
-        Permissions(
-            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+    security: Annotated[
+        SecurityService,
+        Security(
+            roles={Role.ANY},
             scopes={Scope.PHT_READWRITE},
+            groups={SecurityService.PHT_ADMIN_GROUP},
         ),
     ],
 ) -> Union[str, PanelBatchCreateResult]:
@@ -283,7 +289,7 @@ def auto_create_panel(
                 name=SV_NAME,
                 cycle="SKAO_2027_1",  # keep if this is a business rule for SV
             )
-            uow.panels.add(sv_panel, auth.user_id)
+            uow.panels.add(sv_panel, security.auth.user_id)
             logger.info("Science Verification panel created (panel_id=%s)", sv_panel.panel_id)
             created_names.append(SV_NAME)
 
@@ -302,7 +308,7 @@ def auto_create_panel(
                 # add cycle here if non-SV panels also require it:
                 # cycle="SKAO_2027_1",
             )
-            uow.panels.add(new_panel, auth.user_id)
+            uow.panels.add(new_panel, security.auth.user_id)
             created_names.append(panel_name)
 
         # Commit only if we created something
@@ -326,16 +332,19 @@ def auto_create_panel(
 @router.get(
     "/{panel_id}",
     summary="Retrieve an existing panel by panel_id",
-    dependencies=[
-        Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READ],
-        )
-    ],
 )
-def get_panel_by_id(panel_id: str) -> Panel:
+def get_panel_by_id(
+    panel_id: str,
+    security: Annotated[
+        SecurityService,
+        Security(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READ, Scope.PHT_READWRITE},
+        ),
+    ],
+) -> Panel:
     logger.debug("GET panel panel_id: %s", panel_id)
-
+    security.panels.allowed_to_view(panel_id)
     with oda.uow() as uow:
         panel = uow.panels.get(panel_id)
     logger.info("Panel retrieved successfully: %s", panel_id)
@@ -349,10 +358,10 @@ def get_panel_by_id(panel_id: str) -> Panel:
 def update_panel(
     panel_id: str,
     param: Panel,
-    auth: Annotated[
-        AuthContext,
-        Permissions(
-            roles={Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER},
+    security: Annotated[
+        SecurityService,
+        Security(
+            roles={Role.ANY},
             scopes={Scope.PHT_READWRITE},
         ),
     ],
@@ -374,6 +383,7 @@ def update_panel(
     if param.panel_id != panel_id:
         raise UnprocessableEntityError(detail="Panel ID in path and body do not match.")
 
+    security.panels.allowed_to_change_members(panel_id)
     validate_duplicates(param.sci_reviewers, "reviewer_id")
 
     with oda.uow() as uow:
@@ -389,6 +399,10 @@ def update_panel(
         new_proposal_ids: set[str] = {
             pid for pid in (_to_prsl_id(x) for x in (param.proposals or [])) if pid
         }
+
+        # Proposals may only be changed by PHT admin
+        if new_proposal_ids != previous_proposal_ids:
+            security.panels.allowed_to_administer(panel_id)
 
         removed: set[str] = previous_proposal_ids - new_proposal_ids
 
@@ -458,7 +472,7 @@ def update_panel(
 
         # Only revert SAFE removals
         if safe_removed:
-            set_removed_proposals_to_submitted(uow, auth, safe_removed)
+            set_removed_proposals_to_submitted(uow, security.auth, safe_removed)
 
         # --------------------------------------------------------
         # 6. Persist the updated panel
@@ -511,7 +525,7 @@ def update_panel(
         if new_proposal_ids:
             ensure_submitted_proposals_under_review(
                 uow,
-                auth,
+                security.auth,
                 (p for p in new_proposal_ids),
             )
 
@@ -534,9 +548,10 @@ def update_panel(
     "/",
     summary="Get all panels matching the given query parameters",
     dependencies=[
-        Permissions(
-            roles=[Role.OPS_PROPOSAL_ADMIN, Role.SW_ENGINEER],
-            scopes=[Scope.PHT_READ],
+        Security(
+            roles={Role.ANY},
+            scopes={Scope.PHT_READ},
+            groups={SecurityService.PHT_ADMIN_GROUP},
         )
     ],
 )

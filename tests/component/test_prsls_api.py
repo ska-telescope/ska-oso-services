@@ -8,11 +8,14 @@ to a deployment of ska-oso-services in the same cluster
 import json
 from http import HTTPStatus
 
-from ska_aaa_authhelpers.test_helpers.constants import TEST_USER
+from requests import Session
+from ska_aaa_authhelpers.roles import Role
+from ska_aaa_authhelpers.test_helpers import mint_test_token
 from ska_ser_skuid import EntityType, mint_skuid
 
 from ..unit.util import TestDataFactory
 from . import PHT_URL
+from .conftest import AUDIENCE
 
 PANELS_API_URL = f"{PHT_URL}/panels"
 
@@ -149,16 +152,11 @@ def test_proposal_create_then_put_submit(authrequests):
     assert get_v2.json()["metadata"]["version"] == v1 + 1
 
 
-def test_proposal_create_then_put_update_forbidden(authrequests):
+def test_proposal_update_forbidden_for_non_member(authrequests):
     """
-    POST /prsls/create with a unique prsl_id
-    GET /proposal-access/{prsl_id} to get list of proposal access
-    filter returned proposal access by TEST_USER
-    PUT /proposal-access/{access_id} to remove(update) submit
-    then PUT /prsls/{identifier} to update proposal
-    verify return forbidden and version increment does not occur
+    A user with no proposal-specific group and no PHT admin group must get 403
+    when trying to PUT a proposal they didn't create and have no access to.
     """
-    # Create proposal
     post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
         data=TestDataFactory.proposal().model_dump_json(),
@@ -167,52 +165,27 @@ def test_proposal_create_then_put_update_forbidden(authrequests):
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     prsl_id = post_response.json()["prsl_id"]
 
-    # Get the created proposal
-    get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
-    assert get_v1.status_code == HTTPStatus.OK, get_v1.content
-    v1 = get_v1.json()["metadata"]["version"]
-
-    # Get my proposal access record and remove(update) access from proposal access
-    access_records = authrequests.get(f"{PHT_URL}/proposal-access/{prsl_id}")
-
-    filtered_access = [obj for obj in access_records.json() if obj.get("user_id") == TEST_USER]
-    my_access_record = filtered_access[0]
-    my_access_id = my_access_record["access_id"]
-
-    my_access_record["permissions"] = ["view"]
-
-    authrequests.put(
-        f"{PHT_URL}/proposal-access/user/{my_access_id}",
-        data=json.dumps(my_access_record),
-        headers={"Content-Type": "application/json"},
+    # A token with no groups at all — cannot view or edit any specific proposal
+    non_member_session = Session()
+    non_member_session.headers["Authorization"] = "Bearer " + mint_test_token(
+        audience=AUDIENCE,
+        roles=[Role.ANY],
+        scopes=["pht:read", "pht:readwrite"],
+        groups=[],
     )
 
-    # Update title and PUT back
-    updated_entity = get_v1.json()
-    updated_entity["title"] = f"{updated_entity.get('title', 'Untitled')} (updated title)"
-    put_resp = authrequests.put(
+    put_resp = non_member_session.put(
         f"{PHT_URL}/prsls/{prsl_id}",
-        data=json.dumps(updated_entity),
+        data=TestDataFactory.proposal(prsl_id=prsl_id).model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert put_resp.status_code == HTTPStatus.FORBIDDEN
 
-    # Verify version increment not occured
-    get_still_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
-    assert get_still_v1.status_code == HTTPStatus.OK, get_still_v1.content
-    assert get_still_v1.json()["metadata"]["version"] == v1
 
-
-def test_proposal_create_then_put_submit_forbidden(authrequests):
+def test_proposal_submit_forbidden_for_non_member(authrequests):
     """
-    POST /prsls/create with a unique prsl_id
-    GET /proposal-access/{prsl_id} to get list of proposal access
-    filter returned proposal access by TEST_USER
-    PUT /proposal-access/{access_id} to remove(update) submit/update permission
-    then PUT /prsls/{identifier}
-    verify return forbidden and version increment does not occur
+    A non-member user must not be able to submit a proposal they have no access to.
     """
-    # Create proposal
     post_response = authrequests.post(
         f"{PHT_URL}/prsls/create",
         data=TestDataFactory.proposal().model_dump_json(),
@@ -221,39 +194,20 @@ def test_proposal_create_then_put_submit_forbidden(authrequests):
     assert post_response.status_code == HTTPStatus.OK, post_response.content
     prsl_id = post_response.json()["prsl_id"]
 
-    # Get the created proposal
-    get_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
-    assert get_v1.status_code == HTTPStatus.OK, get_v1.content
-    v1 = get_v1.json()["metadata"]["version"]
-
-    # Get my proposal access record and remove(update) access from proposal access
-    access_records = authrequests.get(f"{PHT_URL}/proposal-access/{prsl_id}")
-
-    filtered_access = [obj for obj in access_records.json() if obj.get("user_id") == TEST_USER]
-    my_access_record = filtered_access[0]
-    my_access_id = my_access_record["access_id"]
-
-    my_access_record["permissions"] = ["view"]
-
-    authrequests.put(
-        f"{PHT_URL}/proposal-access/user/{my_access_id}",
-        data=json.dumps(my_access_record),
-        headers={"Content-Type": "application/json"},
+    non_member_session = Session()
+    non_member_session.headers["Authorization"] = "Bearer " + mint_test_token(
+        audience=AUDIENCE,
+        roles=[Role.ANY],
+        scopes=["pht:read", "pht:readwrite"],
+        groups=[],
     )
 
-    updated_complete_submit_proposal = TestDataFactory.complete_proposal(prsl_id=prsl_id)
-
-    put_resp = authrequests.put(
+    put_resp = non_member_session.put(
         f"{PHT_URL}/prsls/{prsl_id}",
-        data=updated_complete_submit_proposal.model_dump_json(),
+        data=TestDataFactory.complete_proposal(prsl_id=prsl_id).model_dump_json(),
         headers={"Content-Type": "application/json"},
     )
     assert put_resp.status_code == HTTPStatus.FORBIDDEN
-
-    # Verify version increment not occured
-    get_still_v1 = authrequests.get(f"{PHT_URL}/prsls/{prsl_id}")
-    assert get_still_v1.status_code == HTTPStatus.OK, get_still_v1.content
-    assert get_still_v1.json()["metadata"]["version"] == v1
 
 
 def test_get_proposals_batch(authrequests):
