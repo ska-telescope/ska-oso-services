@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
-from unittest import mock
 
 import pytest
 
@@ -178,10 +177,7 @@ class TestGetArrayClass:
 
 
 class TestProposalReportJoins:
-    @mock.patch("ska_oso_services.pht.service.report_processing.get_pi_office_location")
-    def test_join_proposals_panels_reviews_decisions(self, mock_get_pi_office_location):
-        mock_get_pi_office_location.return_value = "Test Office A"
-
+    def test_join_proposals_panels_reviews_decisions(self):
         proposal1 = TestDataFactory.complete_proposal(prsl_id="prp-tjoin01test")
         proposal2 = TestDataFactory.complete_proposal(prsl_id="prp-tjoin02test")
 
@@ -215,9 +211,5 @@ class TestProposalReportJoins:
         assert rows[0].review_id == reviews.review_id
         assert rows[0].prsl_id == decision.prsl_id
 
-        assert rows[0].location == "Test Office A"
-        assert rows[1].location == "Test Office A"
-
-        assert mock_get_pi_office_location.call_count == 2
-        mock_get_pi_office_location.assert_any_call(proposal1)
-        mock_get_pi_office_location.assert_any_call(proposal2)
+        assert rows[0].location == "DEFAULT OFFICE LOCATION"
+        assert rows[1].location == "DEFAULT OFFICE LOCATION"

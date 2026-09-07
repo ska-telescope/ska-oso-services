@@ -7,9 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 * Adds APIs for invitations, e.g. POST /pht/prsl/prp-1/invites
+* Adds APIs for members, e.g. POST /pht/prsl/prp-1/members
 * GSM survey constrained RA-sweep grouping now uses pairwise separation relative to beam FWHM
-* Adds APIs for members, e.g. GET /pht/prsl/prp-1/members
-
+* [BREAKING] Re-writes PHT permissions enforcement to be based on Indigo IAM group memberships.
+* [BREAKING] S3 file uploads are now scoped per-proposal.
 
 16.1.0
 **********

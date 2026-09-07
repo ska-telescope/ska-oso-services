@@ -5,6 +5,9 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
+# TODO: Review all the |None and UUID types in this module.
+# TODO: Can we avoid dealing with portal_user_id at all and only work in terms of Indigo usernames?
+
 
 class NewInvitation(BaseModel):
     model_config = ConfigDict(extra="forbid")

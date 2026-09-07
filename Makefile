@@ -31,6 +31,7 @@ IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 K8S_CHART = ska-oso-services-umbrella
 
 K8S_CHART_PARAMS += \
+  --wait \
   --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT) \
   --set global.cluster_domain=$(CLUSTER_DOMAIN)
 

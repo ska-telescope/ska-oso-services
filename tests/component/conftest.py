@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 import contextlib
 from enum import Enum
-from os import getenv
+from os import environ, getenv, path
 
 import pytest
 from requests import Session
@@ -23,6 +23,25 @@ SCOPE = ["https://graph.microsoft.com/.default"]
 
 SECOND_TEST_USER = "12d14d12-72ae-4cc3-a806-d00ba1d2731a"
 
+TEST_BASE_API_URL = "/ska-oso-services/oso/api/v0"
+FAKE_USER_PORTAL_PORT = 60517
+
+
+def pytest_configure():
+    # Set test defaults early so settings created during module imports use these values.
+    environ.setdefault("API_PATH_PREFIX", TEST_BASE_API_URL)
+    environ.setdefault("SKA_AUTH_AUDIENCE", "test:pht,test:odt")
+    environ.setdefault("USER_PORTAL_BASE_URL", f"http://localhost:{FAKE_USER_PORTAL_PORT}")
+    environ.setdefault("AWS_PHT_BUCKET_NAME", "test-bucket")
+    environ.setdefault("AWS_REGION", "eu-west-2")
+    environ.setdefault(
+        "SDP_SCRIPT_TMDATA",
+        f"file://{path.join(path.dirname(__file__), '..', 'tmdata')}",
+    )
+
+
+PHT_ADMIN_GROUP = "app:pht:ops_proposal_admin"
+
 
 class Scope(str, Enum):
     ODT_READ = "odt:read"
@@ -39,6 +58,7 @@ def second_user_token():
         audience=AUDIENCE,
         roles=[
             Role.ANY,
+            Role.INTERNAL,
             Role.OPS_PROPOSAL_ADMIN,
             Role.OPS_REVIEWER_SCIENCE,
             Role.OPS_REVIEWER_TECHNICAL,
@@ -50,6 +70,7 @@ def second_user_token():
             Scope.PHT_READ,
             Scope.PHT_READWRITE,
         ],
+        groups=[PHT_ADMIN_GROUP],
     )
 
 
@@ -67,6 +88,7 @@ def authrequests():
         audience=AUDIENCE,
         roles=[
             Role.ANY,
+            Role.INTERNAL,
             Role.OPS_PROPOSAL_ADMIN,
             Role.OPS_REVIEWER_SCIENCE,
             Role.OPS_REVIEWER_TECHNICAL,
@@ -78,6 +100,7 @@ def authrequests():
             Scope.PHT_READ,
             Scope.PHT_READWRITE,
         ],
+        groups=[PHT_ADMIN_GROUP],
     )
     req.headers.update({"Authorization": f"Bearer {token}"})
     return req

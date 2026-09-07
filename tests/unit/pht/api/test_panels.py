@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime, timezone
 from http import HTTPStatus
 from types import SimpleNamespace
@@ -418,11 +417,10 @@ class TestPanelsUpdateAPI:
 
 
 class TestPanelsAPI:
+    @mock.patch(f"{MODULE}.UserPortalService.create_panel_groups", new_callable=mock.AsyncMock)
     @mock.patch(f"{MODULE}.oda.uow")
-    def test_panels_post_success(self, mock_uow, client):
-        panel = TestDataFactory.panel_basic(
-            panel_id=f"pnl-test-{uuid.uuid4().hex[:8]}", name="Galaxy"
-        )
+    def test_panels_post_success(self, mock_uow, mock_create_panel_groups, client):
+        panel = TestDataFactory.panel_basic(panel_id="pnl-123", name="Galaxy")
 
         uow_mock = mock.MagicMock()
         uow_mock.panels.add.return_value = panel

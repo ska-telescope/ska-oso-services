@@ -1,9 +1,13 @@
+import asyncio
 from http import HTTPStatus
+from unittest.mock import AsyncMock
+from urllib.parse import quote
 from uuid import uuid4
 
 from fastapi import HTTPException
 
 from ska_oso_services.pht.service import user_portal
+from ska_oso_services.pht.service.user_portal import UserPortalService
 from tests.conftest import PHT_BASE_API_URL
 
 
@@ -24,7 +28,7 @@ def test_search_users_happy_path_proxies_to_user_portal(integration_client):
 
 
 def test_create_invite_by_user_id_happy_path(integration_client):
-    prsl_id = "prp-000001"
+    prsl_id = "prp-1"
     response = integration_client.post(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
         json={"invites": [{"user_id": str(uuid4())}]},
@@ -41,7 +45,7 @@ def test_create_invite_by_user_id_happy_path(integration_client):
 
 
 def test_create_invite_by_email_happy_path(integration_client):
-    prsl_id = "prp-000002"
+    prsl_id = "prp-2"
     response = integration_client.post(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
         json={"invites": [{"email": "new-user@example.org"}]},
@@ -58,7 +62,7 @@ def test_create_invite_by_email_happy_path(integration_client):
 
 
 def test_create_invites_bulk_happy_path(integration_client):
-    prsl_id = "prp-000006"
+    prsl_id = "prp-6"
     response = integration_client.post(
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
         json={
@@ -79,7 +83,7 @@ def test_create_invites_bulk_happy_path(integration_client):
 
 
 def test_list_invites_by_proposal_happy_path(integration_client):
-    response = integration_client.get(f"{PHT_BASE_API_URL}/prsls/prp-000003/invites")
+    response = integration_client.get(f"{PHT_BASE_API_URL}/prsls/prp-3/invites")
 
     assert response.status_code == HTTPStatus.OK
     payload = response.json()
@@ -89,9 +93,7 @@ def test_list_invites_by_proposal_happy_path(integration_client):
 
 def test_delete_invite_happy_path(integration_client):
     invite_id = uuid4()
-    response = integration_client.delete(
-        f"{PHT_BASE_API_URL}/prsls/prp-000004/invites/{invite_id}"
-    )
+    response = integration_client.delete(f"{PHT_BASE_API_URL}/prsls/prp-123/invites/{invite_id}")
 
     assert response.status_code == HTTPStatus.OK
     assert response.json().get("status")
@@ -126,8 +128,53 @@ def test_search_users_upstream_502_maps_to_bad_gateway(integration_client, monke
 
 def test_create_invite_invalid_payload_returns_422(integration_client):
     response = integration_client.post(
-        f"{PHT_BASE_API_URL}/prsls/prp-000005/invites",
+        f"{PHT_BASE_API_URL}/prsls/prp-5/invites",
         json={"invites": []},
     )
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_service_create_groups_happy_path(fake_user_portal):
+    del fake_user_portal
+    prsl_id = "prp-7"
+    service = UserPortalService(x_request_id="integration-trace-id")
+    group_name = user_portal.get_group_name(prsl_id)
+
+    payload = asyncio.run(service.create_group(group_name, description=prsl_id))
+
+    # Prism mocks the schema, not the request, so it won't echo our group_name back.
+    assert isinstance(payload["group_name"], str)
+    assert isinstance(payload["display_name"], str)
+
+
+def test_service_create_memberships_happy_path(fake_user_portal):
+    del fake_user_portal
+    prsl_id = "prp-8"
+    portal_user_id = str(uuid4())
+    service = UserPortalService(x_request_id="integration-trace-id")
+    group_name = user_portal.get_group_name(prsl_id)
+    expected_payload = {"status": "ok"}
+    mock_call = AsyncMock(return_value=type("Resp", (), {"json": lambda self: expected_payload})())
+
+    original_call = user_portal.call_user_portal
+    user_portal.call_user_portal = mock_call
+
+    try:
+        payload = asyncio.run(
+            service.create_membership(
+                group_name=group_name,
+                user_id=portal_user_id,
+            )
+        )
+    finally:
+        user_portal.call_user_portal = original_call
+
+    assert payload == expected_payload
+    mock_call.assert_awaited_once_with(
+        method="POST",
+        url=(f"{service.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members"),
+        json={"portal_user_id": str(portal_user_id)},
+        headers=service.headers,
+        timeout=service.timeout,
+    )

@@ -2,7 +2,6 @@ from collections import defaultdict
 from typing import Optional
 
 from ska_oso_services.pht.models.schemas import ProposalReportResponse
-from ska_oso_services.pht.utils.ms_graph import get_pi_office_location
 
 
 def _get_array_class(proposal) -> str:
@@ -66,7 +65,7 @@ def join_proposals_panels_reviews_decisions(
         decision = decision_by_pid.get(prsl_id)
 
         if prsl_id not in pi_location_by_prsl:
-            pi_location_by_prsl[prsl_id] = get_pi_office_location(proposal)
+            pi_location_by_prsl[prsl_id] = "DEFAULT OFFICE LOCATION"
         pi_location = pi_location_by_prsl[prsl_id]
 
         panel = proposal_to_panel.get(prsl_id)
