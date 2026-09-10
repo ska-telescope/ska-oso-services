@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest import mock
 
@@ -20,7 +20,7 @@ def _to_iso_z(value):
     if isinstance(value, str):
         return value
     if isinstance(value, datetime):
-        return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return value.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     raise TypeError(f"Unexpected submitted_on type: {type(value)}")
 
 
@@ -30,7 +30,7 @@ def _replace_investigators(proposal_info_obj, inv_objs):
 
 
 def _parse_iso_z(s: str) -> datetime:
-    return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
+    return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(UTC)
 
 
 class TestTransformUpdateProposal:
@@ -76,9 +76,9 @@ class TestTransformUpdateProposal:
             }
         )
 
-        t0 = datetime.now(timezone.utc)
+        t0 = datetime.now(UTC)
         out = svc.transform_update_proposal(incoming)
-        t1 = datetime.now(timezone.utc)
+        t1 = datetime.now(UTC)
 
         # submitted_on logic
         if case["expected_submitted_on"] == "NOW":

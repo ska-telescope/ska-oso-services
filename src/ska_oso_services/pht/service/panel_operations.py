@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Iterable
 
 from ska_db_oda.repository.domain import CustomQuery, ODANotFound
@@ -36,7 +36,7 @@ def build_assignment_response(updates: dict[str, tuple[Panel, int]]) -> list[Pan
 
 def build_sv_panel_proposals(submitted_proposals: list) -> list[ProposalAssignment]:
     """Typed assignments for the Science Verification panel."""
-    assigned_at_utc = datetime.now(timezone.utc)
+    assigned_at_utc = datetime.now(UTC)
     return [
         ProposalAssignment(prsl_id=ref_proposal.prsl_id, assigned_on=assigned_at_utc)
         for ref_proposal in submitted_proposals
@@ -108,7 +108,7 @@ def assign_to_existing_panel(
         for e in (panel.proposals or [])
     }
 
-    assigned_at = datetime.now(timezone.utc)
+    assigned_at = datetime.now(UTC)
     to_add_assignments: list[ProposalAssignment] = []
     to_add_ids: list[str] = []
 

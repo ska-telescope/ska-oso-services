@@ -1,6 +1,6 @@
 import logging
 from collections import OrderedDict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Iterable
 
 from ska_db_oda.repository.domain import CustomQuery
@@ -25,7 +25,7 @@ def transform_update_proposal(data: Proposal) -> Proposal:
 
     # TODO : rethink the logic here - may need to move to UI
     if data.submitted_by:
-        submitted_on = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        submitted_on = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         status = "submitted"
     else:
         submitted_on = data.submitted_on

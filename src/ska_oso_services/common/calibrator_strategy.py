@@ -1,17 +1,17 @@
 from datetime import timedelta
-from enum import Enum
+from enum import StrEnum
 
 from ska_oso_pdm._shared import TimedeltaMs
 
 from ska_oso_services.common.model import AppModel
 
 
-class CalibrationWhen(str, Enum):
+class CalibrationWhen(StrEnum):
     BEFORE_EACH_SCAN = "before_each_scan"
     AFTER_EACH_SCAN = "after_each_scan"
 
 
-class CalibratorChoice(str, Enum):
+class CalibratorChoice(StrEnum):
     CLOSEST = "closest"
     HIGHEST_ELEVATION = "highest_elevation"
 

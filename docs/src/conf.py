@@ -19,16 +19,15 @@
 #
 import os
 import sys
+import tomllib
 from pathlib import Path
-
-import tomli
 
 sys.path.insert(0, os.path.abspath("../.."))
 
 PROJECT_ROOT = Path(__file__).parents[2].resolve()
 
 with open(PROJECT_ROOT / "pyproject.toml", "rb") as fh:
-    pyproject = tomli.load(fh)
+    pyproject = tomllib.load(fh)
 
 
 autodoc_mock_imports = []

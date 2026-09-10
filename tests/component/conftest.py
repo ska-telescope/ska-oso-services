@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
 import contextlib
-from enum import Enum
+from enum import StrEnum
 from os import getenv
 
 import pytest
@@ -24,7 +24,7 @@ SCOPE = ["https://graph.microsoft.com/.default"]
 SECOND_TEST_USER = "12d14d12-72ae-4cc3-a806-d00ba1d2731a"
 
 
-class Scope(str, Enum):
+class Scope(StrEnum):
     ODT_READ = "odt:read"
     ODT_READWRITE = "odt:readwrite"
     PHT_READ = "pht:read"

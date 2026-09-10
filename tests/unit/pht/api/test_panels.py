@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
@@ -88,7 +88,7 @@ class TestPanelsUpdateAPI:
 
         mock_mint_skuid.return_value = "rvs-tec-0001"
 
-        assigned_on = datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc)
+        assigned_on = datetime(2025, 1, 1, 0, 0, tzinfo=UTC)
 
         tech = TestDataFactory.reviewer_assignment(reviewer_id="rvw-001", assigned_on=assigned_on)
         prop_assign = TestDataFactory.proposal_assignment(
@@ -149,7 +149,7 @@ class TestPanelsUpdateAPI:
         )
         mock_get_latest_ops.return_value = [existing_ref]
 
-        assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        assigned_on = datetime(2025, 1, 1, tzinfo=UTC)
         tech = TestDataFactory.reviewer_assignment(reviewer_id="rev-001", assigned_on=assigned_on)
         prop = TestDataFactory.proposal_assignment(prsl_id="prp-t001test", assigned_on=assigned_on)
         panel_body = TestDataFactory.panel_with_assignment(
@@ -247,7 +247,7 @@ class TestPanelsUpdateAPI:
         uow.pnlds.add.side_effect = lambda r: r
         uow.panels.add.side_effect = lambda p: p
 
-        assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        assigned_on = datetime(2025, 1, 1, tzinfo=UTC)
         sci = TestDataFactory.reviewer_assignment(
             reviewer_id="rev-sci-001", assigned_on=assigned_on
         )
@@ -303,7 +303,7 @@ class TestPanelsUpdateAPI:
         uow.rvws.add.side_effect = lambda r: r
         uow.panels.add.side_effect = lambda p: p
 
-        assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        assigned_on = datetime(2025, 1, 1, tzinfo=UTC)
         sci = TestDataFactory.reviewer_assignment(
             reviewer_id="rev-sci-001", assigned_on=assigned_on
         )
@@ -361,7 +361,7 @@ class TestPanelsUpdateAPI:
 
         uow.panels.add.side_effect = lambda p: p
 
-        assigned_on = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        assigned_on = datetime(2025, 1, 1, tzinfo=UTC)
         sci = TestDataFactory.reviewer_assignment(
             reviewer_id="rev-sci-001", assigned_on=assigned_on
         )
@@ -982,7 +982,7 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=UTC)
                 )
             ],
         )
@@ -994,10 +994,10 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=UTC)
                 ),
                 TestDataFactory.proposal_assignment(
-                    "prp-tp2", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+                    "prp-tp2", assigned_on=datetime(2025, 1, 2, tzinfo=UTC)
                 ),
             ],
         )
@@ -1045,10 +1045,10 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=UTC)
                 ),
                 TestDataFactory.proposal_assignment(
-                    "prp-tp2", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+                    "prp-tp2", assigned_on=datetime(2025, 1, 2, tzinfo=UTC)
                 ),
             ],
         )
@@ -1060,7 +1060,7 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=UTC)
                 )
             ],
         )
@@ -1117,7 +1117,7 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "pX", assigned_on=datetime(2025, 1, 10, tzinfo=timezone.utc)
+                    "pX", assigned_on=datetime(2025, 1, 10, tzinfo=UTC)
                 )
             ],
         )
@@ -1128,7 +1128,7 @@ class TestPanelsUpdateStatusTransitions:
             name="Stars",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "pX", assigned_on=datetime(2025, 1, 5, tzinfo=timezone.utc)
+                    "pX", assigned_on=datetime(2025, 1, 5, tzinfo=UTC)
                 )
             ],
         )
@@ -1167,7 +1167,7 @@ class TestPanelsUpdateStatusTransitions:
             name="Cosmology",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 1, tzinfo=UTC)
                 )
             ],
         )
@@ -1186,7 +1186,7 @@ class TestPanelsUpdateStatusTransitions:
             name="Stars",
             proposals=[
                 TestDataFactory.proposal_assignment(
-                    "prp-tp1", assigned_on=datetime(2025, 1, 2, tzinfo=timezone.utc)
+                    "prp-tp1", assigned_on=datetime(2025, 1, 2, tzinfo=UTC)
                 )
             ],
         )

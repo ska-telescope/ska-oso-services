@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections import deque
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Protocol, TypeVar
 
 import numpy as np
@@ -22,7 +22,7 @@ from ska_oso_pdm import ICRSCoordinates
 from ska_oso_services.common.error_handling import BadRequestError
 
 
-class GroupingMethod(str, Enum):
+class GroupingMethod(StrEnum):
     """Strategy used to partition targets into SBD groups."""
 
     SEQUENTIAL = "sequential"

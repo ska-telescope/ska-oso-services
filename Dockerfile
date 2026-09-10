@@ -1,12 +1,12 @@
 # Based on https://developer.skatelescope.org/en/latest/tools/containers/base-images.html#example-dockerfile-uv
-ARG BUILD_IMAGE="artefact.skao.int/ska-build-python:0.5.0"
-ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-python:0.2.5"
+ARG BUILD_IMAGE="artefact.skao.int/ska-build-python:1.0.1"
+ARG RUNTIME_BASE_IMAGE="artefact.skao.int/ska-python-py314:1.0.1"
 
 FROM $BUILD_IMAGE AS requirements
 
 WORKDIR /src
 
-COPY uv.lock pyproject.toml ./
+COPY uv.lock pyproject.toml .python-version ./
 
 RUN uv sync --frozen --no-dev --no-install-project
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from functools import wraps
 from inspect import signature
 from typing import Any, Callable, Generic, TypeVar, get_type_hints
@@ -38,7 +38,7 @@ class ValidationContext(AppModel, Generic[T]):
     )
 
 
-class ValidationIssueType(str, Enum):
+class ValidationIssueType(StrEnum):
     WARNING = "warning"
     ERROR = "error"
 
