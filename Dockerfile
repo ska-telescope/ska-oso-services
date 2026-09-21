@@ -14,10 +14,9 @@ FROM $RUNTIME_BASE_IMAGE
 
 ENV APP_USER="tango"
 
-RUN adduser $APP_USER --disabled-password
+RUN useradd --create-home $APP_USER
 
 WORKDIR /src
-
 ENV VIRTUAL_ENV=/src/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
