@@ -121,9 +121,9 @@ class TargetSPFRx(TargetSPFRxConfiguration):
 
 
 class SyncPPS(Enum):
-    unset = "unset"
-    on = "on"
-    off = "off"
+    UNSET = "unset"
+    ON = "on"
+    OFF = "off"
 
 
 class CSPSPFRx(BaseModel):
@@ -512,4 +512,4 @@ def _sync_pps_osd_to_pdm(sync_pps: SyncPPS) -> bool | None:
     Private function that maps the OSD's tri-state sync_pps value to the
     bool/None of PDM's CSPSPFRxConfiguration.sync_pps.
     """
-    return {SyncPPS.on: True, SyncPPS.off: False, SyncPPS.unset: None}[sync_pps]
+    return {SyncPPS.ON: True, SyncPPS.OFF: False, SyncPPS.UNSET: None}[sync_pps]
