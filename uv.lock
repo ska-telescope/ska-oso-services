@@ -70,15 +70,6 @@ wheels = [
 ]
 
 [[package]]
-name = "argcomplete"
-version = "3.7.2"
-source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/87/6f/5a73f04007ca950701765949209f068da628bd11f9c2da287278ce91e0ee/argcomplete-3.7.2.tar.gz", hash = "sha256:aad8b69a0b9969edb62db0d1752354c0d50717b10e0cbb00e2a958381b9fc6b9", size = 74473, upload-time = "2026-08-06T04:53:21.662Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/bd/551ee6af426af84ca33e02622be722925c196608e9127d731ef17c47f06e/argcomplete-3.7.2-py3-none-any.whl", hash = "sha256:6029205678bdd9c1c728a155f5f9ecf5812393f969eef58807641a2bc2aa5b19", size = 43294, upload-time = "2026-08-06T04:53:20.246Z" },
-]
-
-[[package]]
 name = "astroplan"
 version = "0.10.1"
 source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
@@ -2321,7 +2312,6 @@ version = "16.3.2"
 source = { editable = "." }
 dependencies = [
     { name = "aiosmtplib" },
-    { name = "argcomplete" },
     { name = "astroplan" },
     { name = "astropy" },
     { name = "astroquery" },
@@ -2364,7 +2354,6 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "aiosmtplib", specifier = ">=5.1.3,<6.0.0" },
-    { name = "argcomplete", specifier = ">=3.7.2,<4.0.0" },
     { name = "astroplan", specifier = ">=0.10.1,<0.11.0" },
     { name = "astropy", specifier = ">=8.0.1" },
     { name = "astroquery", specifier = ">=0.4.11,<0.5.0" },

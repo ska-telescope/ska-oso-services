@@ -34,9 +34,6 @@ dependencies = [
     "aiosmtplib>=5.1.3,<6.0.0",
     "boto3>=1.43.91,<2.0.0",
     "ska-aaa-authhelpers>=2.0.2,<3.0.0",
-    # Need to pin as otherwise pip cannot resolve the dependencies in the tests.
-    # This dependency comes through the osd > telmodel, so reasses when updating those.
-    "argcomplete>=3.7.2,<4.0.0",
     "msal>=1.38.0,<2.0.0",
     "astroplan>=0.10.1,<0.11.0",
     "matplotlib>=3.11.1,<4.0.0",
