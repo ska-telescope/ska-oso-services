@@ -3,6 +3,7 @@ This module calls the OSD and converts the relevant parts into the
 configuration needed for the application.
 """
 
+from enum import Enum
 from functools import cache
 from importlib.metadata import version
 from typing import Union
@@ -118,9 +119,20 @@ class TargetSPFRx(TargetSPFRxConfiguration):
     default_noise_diode_mode: str
 
 
+class SyncPPS(Enum):
+    unset = "unset"
+    on = "on"
+    off = "off"
+
+
+class CSPSPFRx(BaseModel):
+    sync_pps: SyncPPS
+    saturation_threshold: float
+
+
 class SPFRxParameters(BaseModel):
     target_spfrx: TargetSPFRx
-    csp_spfrx: CSPSPFRxConfiguration
+    csp_spfrx: CSPSPFRx
 
 
 @dataclasses.dataclass
@@ -268,7 +280,7 @@ def _get_spfrx_defaults(tmdata: TMData) -> SPFRxParameters:
             noise_diode_options=noise_diode_options,
             default_noise_diode_mode=default_mode,
         ),
-        csp_spfrx=CSPSPFRxConfiguration(**defaults["csp_configuration"]["spfrx"]),
+        csp_spfrx=CSPSPFRx(**defaults["csp_configuration"]["spfrx"]),
     )
 
 
@@ -467,4 +479,15 @@ def _noise_diode_osd_to_pdm(diode):
 
 def get_defaults_pdm_csp_spfrx() -> CSPSPFRxConfiguration:
     csp_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.csp_spfrx
-    return csp_spfrx
+    return CSPSPFRxConfiguration(
+        sync_pps=_sync_pps_osd_to_pdm(csp_spfrx.sync_pps),
+        saturation_threshold=csp_spfrx.saturation_threshold,
+    )
+
+
+def _sync_pps_osd_to_pdm(sync_pps: SyncPPS) -> bool | None:
+    """
+    Private function that maps the OSD's tri-state sync_pps value to the
+    bool/None of PDM's CSPSPFRxConfiguration.sync_pps.
+    """
+    return {SyncPPS.on: True, SyncPPS.off: False, SyncPPS.unset: None}[sync_pps]
