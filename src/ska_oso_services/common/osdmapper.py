@@ -316,11 +316,6 @@ def _get_osd_version_for_cycle(cycle_id: int) -> str:
     """
     Resolve a PPT cycle number to the ska-ost-osd/CAR release version whose
     tmdata contains that cycle's OSD data.
-
-    This mirrors what `ska_ost_osd`'s own `get_tmdata_for_osd_query` FastAPI
-    dependency does, which we can't call directly outside of a real FastAPI
-    request because its `tm_data` parameter is a `Depends(...)` default that
-    is only resolved by FastAPI's dependency injection.
     """
     tmdata = get_osd_tmdata()
     versions_dict = tmdata[VERSION_FILE_PATH].get_dict()
