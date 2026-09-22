@@ -41,6 +41,7 @@ dependencies = [
     "astroplan>=0.10.1,<0.11.0",
     "matplotlib>=3.11.1,<4.0.0",
     "numpy>=2.5.3,<3.0.0",
+    "astropy>=8.0.1",
 ]
 
 [project.urls]
