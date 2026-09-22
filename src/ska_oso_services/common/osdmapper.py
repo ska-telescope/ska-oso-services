@@ -19,9 +19,10 @@ from ska_oso_pdm._shared.spfrx import (
 )
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
 from ska_oso_pdm.sb_definition.csp.midcbf import CSPSPFRxConfiguration, ReceiverBand
+from ska_ost_osd.osd.common.constant import VERSION_FILE_PATH
 from ska_ost_osd.osd.common.error_handling import OSDModelError
 from ska_ost_osd.osd.models.models import OSDQueryParams
-from ska_ost_osd.osd.osd import get_available_cycles, get_osd_using_tmdata
+from ska_ost_osd.osd.osd import check_cycle_id, get_available_cycles, get_osd_using_tmdata
 from ska_telmodel_client import TMData
 
 from ska_oso_services.common.error_handling import OSDError
@@ -301,13 +302,34 @@ def get_osd_cycles():
 
 
 @cache
-def get_osd_tmdata():
+def get_osd_tmdata(osd_version: str = OSD_VERSION):
     """
     Wrapper function to fetch tmdata from the OSD that is not integrated into the
     OSD source code
     """
-    tmdata = TMData([f"car:ost/ska-ost-osd?{OSD_VERSION}"], update=True)
+    tmdata = TMData([f"car:ost/ska-ost-osd?{osd_version}"], update=True)
     return tmdata
+
+
+@cache
+def _get_osd_version_for_cycle(cycle_id: int) -> str:
+    """
+    Resolve a PPT cycle number to the ska-ost-osd/CAR release version whose
+    tmdata contains that cycle's OSD data.
+
+    This mirrors what `ska_ost_osd`'s own `get_tmdata_for_osd_query` FastAPI
+    dependency does, which we can't call directly outside of a real FastAPI
+    request because its `tm_data` parameter is a `Depends(...)` default that
+    is only resolved by FastAPI's dependency injection.
+    """
+    tmdata = get_osd_tmdata()
+    versions_dict = tmdata[VERSION_FILE_PATH].get_dict()
+    osd_version, cycle_errors = check_cycle_id(
+        tmdata=tmdata, cycle_id=cycle_id, versions_dict=versions_dict
+    )
+    if cycle_errors:
+        raise ValueError(cycle_errors)
+    return osd_version
 
 
 @cache
@@ -322,8 +344,13 @@ def get_osd_data(*args, **kwargs):
     """
     try:
         params = OSDQueryParams(*args, **kwargs)
+        tmdata = (
+            get_osd_tmdata(_get_osd_version_for_cycle(params.cycle_id))
+            if params.cycle_id is not None
+            else get_osd_tmdata()
+        )
         osd_data = get_osd_using_tmdata(
-            tm_data=get_osd_tmdata(),
+            tm_data=tmdata,
             capabilities=params.capabilities,
             array_assembly=params.array_assembly,
             cycle_id=params.cycle_id,
