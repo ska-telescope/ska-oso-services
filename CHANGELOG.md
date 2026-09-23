@@ -6,10 +6,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* [BREAKING] Updates OSD version to 7.0.0 (sync_pps default returned as `on`/`off`/`unset` instead of `True`/`False`)
 * [BUGFIX] Updates to only report validation Errors when `POST /sbds` request fails
 * Updates to ODA 19.4.1
 * Updates Python version to 3.14
-* Updates OSD version to 7.0.0 (sync_pps default returned as `on`/`off`/`unset` instead of `True`/`False`)
 
 16.3.2
 ******
