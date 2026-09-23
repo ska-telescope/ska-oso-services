@@ -4,7 +4,7 @@ These functions map to the API paths, with the returned value being the API resp
 
 import logging
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from sys import maxsize
 from typing import Annotated, Optional
 
@@ -86,7 +86,7 @@ def _validate_project_has_scheduling_blocks(project: Project) -> None:
         )
 
 
-class CommissioningObservingMode(str, Enum):
+class CommissioningObservingMode(StrEnum):
     VIS = "VIS"
     PST = "PST"
 

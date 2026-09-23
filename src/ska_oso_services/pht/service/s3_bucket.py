@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 import boto3
@@ -7,7 +7,7 @@ from botocore.client import BaseClient, Config
 from ska_oso_services.settings import PRESIGNED_URL_EXPIRY_TIME, S3Config, get_settings
 
 
-class S3Method(str, Enum):
+class S3Method(StrEnum):
     GET = "get_object"
     PUT = "put_object"
     DELETE = "delete_object"

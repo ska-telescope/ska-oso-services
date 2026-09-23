@@ -3,7 +3,7 @@ Utility functions to be used in tests
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from random import randint
 from types import SimpleNamespace
@@ -252,7 +252,7 @@ class TestDataFactory:
         status: str = "Pending",
     ) -> ReviewerAssignment:
         if isinstance(assigned_on, datetime):
-            assigned_on_str = assigned_on.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            assigned_on_str = assigned_on.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
             assigned_on_str = assigned_on
         data = {
@@ -269,7 +269,7 @@ class TestDataFactory:
         assigned_on: datetime | str = "2025-05-21T09:30:00Z",
     ) -> dict:
         if isinstance(assigned_on, datetime):
-            assigned_on_str = assigned_on.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            assigned_on_str = assigned_on.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
             assigned_on_str = assigned_on
         data = {

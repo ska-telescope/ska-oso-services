@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from functools import partial
 
 from ska_aaa_authhelpers import Requires
@@ -18,8 +18,7 @@ else:
     Permissions = partial(Requires, audience=get_settings().auth.audience)
 
 
-# Use StrEnum once we upgrade Python
-class Scope(str, Enum):
+class Scope(StrEnum):
     ODT_READ = "odt:read"
     ODT_READWRITE = "odt:readwrite"
     PHT_READ = "pht:read"

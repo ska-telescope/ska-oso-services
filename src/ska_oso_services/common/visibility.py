@@ -5,7 +5,7 @@ from astropy.units import Quantity
 matplotlib.use("Agg")
 import io
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 
 import astropy.units as u
@@ -96,7 +96,7 @@ def _alts(
     times = Time(start) + (np.linspace(0, seconds_per_day, n) * u.s)
     alt = sky_coord.transform_to(AltAz(obstime=times, location=site)).alt.to_value(u.deg)
 
-    return np.array(times.to_datetime(timezone=timezone.utc)), alt
+    return np.array(times.to_datetime(timezone=UTC)), alt
 
 
 def _visible_duration(alt: np.ndarray, min_elev: float, step_s: int) -> tuple[int, int, int]:
@@ -107,13 +107,13 @@ def _visible_duration(alt: np.ndarray, min_elev: float, step_s: int) -> tuple[in
     return seconds, hours, minutes
 
 
-_REF_EPOCH = datetime(2000, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+_REF_EPOCH = datetime(2000, 1, 1, 12, 0, 0, tzinfo=UTC)
 
 
 def _precompute_ateam_alts(site: EarthLocation) -> dict[str, np.ndarray]:
     t_ref = Time(_REF_EPOCH)
     lst_ref_h = t_ref.sidereal_time("apparent", longitude=site.lon).hour
-    start = (t_ref - (lst_ref_h / 24.0) * u.sday).to_datetime(timezone=timezone.utc)
+    start = (t_ref - (lst_ref_h / 24.0) * u.sday).to_datetime(timezone=UTC)
     return {
         name: _alts(
             SkyCoord(ra=ra, dec=dec, unit=(u.hourangle, u.deg), frame="icrs"),
@@ -152,11 +152,9 @@ def render_svg(
     # LST is then computed as a linear ramp (0 → ~24.07h over one solar day)
     # rather than via astropy's sidereal_time(), which wraps at 24h and would
     # produce discontinuities at both ends of the data array.
-    _t_ref = Time(datetime.now(timezone.utc))
+    _t_ref = Time(datetime.now(UTC))
     _lst_ref_h = _t_ref.sidereal_time("apparent", longitude=site.lon).hour
-    plot_start_time_utc = (_t_ref - (_lst_ref_h / 24.0) * u.sday).to_datetime(
-        timezone=timezone.utc
-    )
+    plot_start_time_utc = (_t_ref - (_lst_ref_h / 24.0) * u.sday).to_datetime(timezone=UTC)
 
     if ra is not None and dec is not None:
         target_coord = SkyCoord(

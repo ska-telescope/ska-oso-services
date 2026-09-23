@@ -3,6 +3,7 @@ This module calls the OSD and converts the relevant parts into the
 configuration needed for the application.
 """
 
+from enum import Enum
 from functools import cache
 from importlib.metadata import version
 from typing import Union
@@ -18,9 +19,10 @@ from ska_oso_pdm._shared.spfrx import (
 )
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
 from ska_oso_pdm.sb_definition.csp.midcbf import CSPSPFRxConfiguration, ReceiverBand
+from ska_ost_osd.osd.common.constant import VERSION_FILE_PATH
 from ska_ost_osd.osd.common.error_handling import OSDModelError
 from ska_ost_osd.osd.models.models import OSDQueryParams
-from ska_ost_osd.osd.routers.api import get_cycle_list, get_osd
+from ska_ost_osd.osd.osd import check_cycle_id, get_available_cycles, get_osd_using_tmdata
 from ska_telmodel_client import TMData
 
 from ska_oso_services.common.error_handling import OSDError
@@ -118,9 +120,20 @@ class TargetSPFRx(TargetSPFRxConfiguration):
     default_noise_diode_mode: str
 
 
+class SyncPPS(Enum):
+    UNSET = "unset"
+    ON = "on"
+    OFF = "off"
+
+
+class CSPSPFRx(BaseModel):
+    sync_pps: SyncPPS
+    saturation_threshold: float
+
+
 class SPFRxParameters(BaseModel):
     target_spfrx: TargetSPFRx
-    csp_spfrx: CSPSPFRxConfiguration
+    csp_spfrx: CSPSPFRx
 
 
 @dataclasses.dataclass
@@ -159,9 +172,7 @@ def configuration_from_osd() -> Configuration:
     with information for the UI.
 
     Note: currently this method uses the OSD as a library rather than
-     a service. However, it calls the OSD rest functions rather than
-     the lower level, as the interface is easier to use. Both of these
-     things are likely to change in the future.
+     a service, calling its lower level functions directly.
     """
     tmdata = get_osd_tmdata()
     return Configuration(
@@ -270,54 +281,79 @@ def _get_spfrx_defaults(tmdata: TMData) -> SPFRxParameters:
             noise_diode_options=noise_diode_options,
             default_noise_diode_mode=default_mode,
         ),
-        csp_spfrx=CSPSPFRxConfiguration(**defaults["csp_configuration"]["spfrx"]),
+        csp_spfrx=CSPSPFRx(**defaults["csp_configuration"]["spfrx"]),
     )
 
 
 @cache
 def get_osd_cycles():
     """
-    Wrapper function for `get_cycle_list` that fetches osd data
+    Wrapper function for `get_available_cycles` that fetches osd data
 
-    This function calls `get_cycle_list`,
-    and returns the result data. If `get_cycle_list` raises an `OSDModelError` or
-    `ValueError`, this function wraps and raises it as an `OSDError`
+    This function calls `get_available_cycles`, and returns the sorted cycle
+    numbers. If it raises an `OSDModelError` or `ValueError`, this function
+    wraps and raises it as an `OSDError`
     """
     try:
-        osd_data = get_cycle_list()
+        cycle_numbers = get_available_cycles(get_osd_tmdata('main'))
     except (OSDModelError, ValueError) as error:
-        raise OSDError(error)
-    data = osd_data.model_dump()["result_data"] if hasattr(osd_data, "model_dump") else osd_data
-    return data
+        raise OSDError(error) from error
+    return {"cycles": sorted(cycle_numbers)}
 
 
 @cache
-def get_osd_tmdata():
+def get_osd_tmdata(osd_version: str = OSD_VERSION):
     """
     Wrapper function to fetch tmdata from the OSD that is not integrated into the
     OSD source code
     """
-    tmdata = TMData([f"car:ost/ska-ost-osd?{OSD_VERSION}"], update=True)
+    tmdata = TMData([f"car:ost/ska-ost-osd?{osd_version}"], update=True)
     return tmdata
+
+
+@cache
+def _get_osd_version_for_cycle(cycle_id: int) -> str:
+    """
+    Resolve a PPT cycle number to the ska-ost-osd/CAR release version whose
+    tmdata contains that cycle's OSD data.
+    """
+    tmdata = get_osd_tmdata()
+    versions_dict = tmdata[VERSION_FILE_PATH].get_dict()
+    osd_version, cycle_errors = check_cycle_id(
+        tmdata=tmdata, cycle_id=cycle_id, versions_dict=versions_dict
+    )
+    if cycle_errors:
+        raise ValueError(cycle_errors)
+    return osd_version
 
 
 @cache
 def get_osd_data(*args, **kwargs):
     """
-    Wrapper function for `get_osd` that fetches osd data
+    Wrapper function for `get_osd_using_tmdata` that fetches osd data
 
     This function constructs an `OSDQueryParams` object from the given
-    arguments and keyword arguments, calls `get_osd` with these parameters,
-    and returns the result data. If `get_osd` raises an `OSDModelError` or
-    `ValueError`, this function wraps and raises it as an `OSDError`
+    arguments and keyword arguments, calls `get_osd_using_tmdata` with these
+    parameters, and returns the result data. If it raises an `OSDModelError`
+    or `ValueError`, this function wraps and raises it as an `OSDError`
     """
     try:
         params = OSDQueryParams(*args, **kwargs)
-        osd_data = get_osd(params)
+        tmdata = (
+            get_osd_tmdata(_get_osd_version_for_cycle(params.cycle_id))
+            if params.cycle_id is not None
+            else get_osd_tmdata()
+        )
+        osd_data = get_osd_using_tmdata(
+            tm_data=tmdata,
+            capabilities=params.capabilities,
+            array_assembly=params.array_assembly,
+            cycle_id=params.cycle_id,
+            process_templates=True,
+        )
     except (OSDModelError, ValueError) as error:
         raise OSDError(error)
-    data = osd_data.model_dump()["result_data"] if hasattr(osd_data, "model_dump") else osd_data
-    return data
+    return osd_data
 
 
 def get_telescope_observing_constraint(telescope: TelescopeType, parameter: str):
@@ -465,4 +501,15 @@ def _noise_diode_osd_to_pdm(diode):
 
 def get_defaults_pdm_csp_spfrx() -> CSPSPFRxConfiguration:
     csp_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.csp_spfrx
-    return csp_spfrx
+    return CSPSPFRxConfiguration(
+        sync_pps=_sync_pps_osd_to_pdm(csp_spfrx.sync_pps),
+        saturation_threshold=csp_spfrx.saturation_threshold,
+    )
+
+
+def _sync_pps_osd_to_pdm(sync_pps: SyncPPS) -> bool | None:
+    """
+    Private function that maps the OSD's tri-state sync_pps value to the
+    bool/None of PDM's CSPSPFRxConfiguration.sync_pps.
+    """
+    return {SyncPPS.ON: True, SyncPPS.OFF: False, SyncPPS.UNSET: None}[sync_pps]

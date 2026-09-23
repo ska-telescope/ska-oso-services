@@ -3,7 +3,7 @@ from __future__ import annotations
 # https://stackoverflow.com/a/50099819
 # pylint: disable=no-member,no-name-in-module
 import logging
-from enum import Enum
+from enum import StrEnum
 
 import astropy.units as u
 from astropy.coordinates import SkyCoord, get_icrs_coordinates
@@ -23,7 +23,7 @@ from ska_oso_services.common.error_handling import CatalogLookupError, NotFoundE
 LOGGER = logging.getLogger(__name__)
 
 
-class ReferenceFrame(str, Enum):
+class ReferenceFrame(StrEnum):
     equatorial = "equatorial"
     galactic = "galactic"
 
@@ -37,7 +37,7 @@ def _as_python_scalar(value):
     if hasattr(value, "item"):
         try:
             return value.item()
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             pass
 
     # 1-element containers/columns
@@ -46,7 +46,7 @@ def _as_python_scalar(value):
             if len(value) == 1:
                 first = value[0]
                 return first.item() if hasattr(first, "item") else first
-        except (TypeError, IndexError, KeyError):
+        except TypeError, IndexError, KeyError:
             pass
 
     return value

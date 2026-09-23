@@ -12,6 +12,7 @@ from astropy.io import ascii as astropy_ascii
 from astropy.table import QTable
 from astropy.time import Time
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.json_schema import SkipJsonSchema
 from ska_oso_pdm import ICRSCoordinates, RadialVelocity, Target, TelescopeType
 from ska_oso_pdm._shared import TimedeltaMs
 
@@ -40,18 +41,26 @@ class BestCalibrator(BaseModel, ABC):
 
 class ClosestCalibrator(BestCalibrator):
     """
-    class to hold the closest calibrators
+    Class to hold the closest calibrators.
+
+    We use SkipJsonSchema together with exclude=True to remove separation from
+    the API schema and response, as it is only used internally to select the
+    calibrators and is never returned to the user.
     """
 
-    separation: Angle = Field(exclude=True)
+    separation: SkipJsonSchema[Angle] = Field(exclude=True)
 
 
 class HighestCalibrator(BestCalibrator):
     """
-    class to hold the highest calibrators
+    Class to hold the highest calibrators.
+
+    We use SkipJsonSchema together with exclude=True to remove elevation from
+    the API schema and response, as it is only used internally to select the
+    calibrators and is never returned to the user.
     """
 
-    elevation: Angle = Field(exclude=True)
+    elevation: SkipJsonSchema[Angle] = Field(exclude=True)
 
 
 def to_pdm_targets(table: QTable) -> List[Target]:

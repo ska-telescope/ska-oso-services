@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest import mock
 
 import numpy as np
@@ -10,7 +10,7 @@ from ska_oso_services.common.visibility import ATEAM_SOURCES
 class TestVisibilityRenderSvg:
     @mock.patch("ska_oso_services.common.visibility.datetime")
     def test_render_svg_returns_valid_svg_bytes(self, mock_datetime):
-        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = fixed_now
 
         svg_bytes = visibility.render_svg(
@@ -28,7 +28,7 @@ class TestVisibilityRenderSvg:
     @mock.patch("ska_oso_services.common.visibility._visible_duration")
     @mock.patch("ska_oso_services.common.visibility._alts")
     def test_render_svg_with_mixed_altitudes(self, mock_alts, mock_visible_duration):
-        times = [datetime(2025, 1, 1, h, 0, 0, tzinfo=timezone.utc) for h in range(3)]
+        times = [datetime(2025, 1, 1, h, 0, 0, tzinfo=UTC) for h in range(3)]
         alt = np.array([-5.0, 10.0, 30.0], dtype=float)
 
         mock_alts.return_value = (times, alt)
@@ -47,7 +47,7 @@ class TestVisibilityRenderSvg:
 
     @mock.patch("ska_oso_services.common.visibility.datetime")
     def test_render_svg_ateam_sources_present_by_default(self, mock_datetime):
-        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = fixed_now
 
         svg_bytes = visibility.render_svg(
@@ -63,7 +63,7 @@ class TestVisibilityRenderSvg:
 
     @mock.patch("ska_oso_services.common.visibility.datetime")
     def test_render_svg_ateam_sources_absent_when_disabled(self, mock_datetime):
-        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = fixed_now
 
         svg_bytes = visibility.render_svg(
