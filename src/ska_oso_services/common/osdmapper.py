@@ -295,7 +295,7 @@ def get_osd_cycles():
     wraps and raises it as an `OSDError`
     """
     try:
-        cycle_numbers = get_available_cycles(get_osd_tmdata())
+        cycle_numbers = get_available_cycles(get_osd_tmdata('main'))
     except (OSDModelError, ValueError) as error:
         raise OSDError(error) from error
     return {"cycles": sorted(cycle_numbers)}
