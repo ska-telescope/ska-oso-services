@@ -17,6 +17,7 @@ class TestVisibilityRenderSvg:
             ra="10h00m00s",
             dec="-30d00m00s",
             site_key="LOW",
+            min_elevation_deg=20.0,
             step_s=3600,
         )
 
@@ -38,6 +39,7 @@ class TestVisibilityRenderSvg:
             ra="10h00m00s",
             dec="-30d00m00s",
             site_key="LOW",
+            min_elevation_deg=20.0,
             step_s=3600,
         )
 
@@ -54,6 +56,7 @@ class TestVisibilityRenderSvg:
             ra="10h00m00s",
             dec="-30d00m00s",
             site_key="LOW",
+            min_elevation_deg=20.0,
             step_s=3600,
         )
 
@@ -70,6 +73,7 @@ class TestVisibilityRenderSvg:
             ra="10h00m00s",
             dec="-30d00m00s",
             site_key="LOW",
+            min_elevation_deg=20.0,
             step_s=3600,
             show_ateam=False,
         )
@@ -77,3 +81,37 @@ class TestVisibilityRenderSvg:
         svg_text = svg_bytes.decode("utf-8")
         for name in ATEAM_SOURCES:
             assert name not in svg_text, f"A-team source '{name}' should not appear in SVG"
+
+    @mock.patch("ska_oso_services.common.visibility.datetime")
+    def test_render_svg_uses_supplied_min_elevation(self, mock_datetime):
+        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+        mock_datetime.now.return_value = fixed_now
+
+        svg_bytes = visibility.render_svg(
+            ra="10h00m00s",
+            dec="-30d00m00s",
+            site_key="LOW",
+            min_elevation_deg=45.0,
+            step_s=3600,
+            show_ateam=False,
+        )
+
+        svg_text = svg_bytes.decode("utf-8")
+        assert "Elevation limit: 45" in svg_text
+        assert "Elevation limit: 20" not in svg_text
+
+    @mock.patch("ska_oso_services.common.visibility.datetime")
+    def test_render_svg_min_elevation_is_optional(self, mock_datetime):
+        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+        mock_datetime.now.return_value = fixed_now
+
+        svg_bytes = visibility.render_svg(
+            ra="10h00m00s",
+            dec="-30d00m00s",
+            site_key="LOW",
+            step_s=3600,
+            show_ateam=False,
+        )
+
+        expected = f"Elevation limit: {visibility.DEFAULT_MIN_ELEVATION_DEG:.0f}"
+        assert expected in svg_bytes.decode("utf-8")
