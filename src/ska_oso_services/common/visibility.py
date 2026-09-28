@@ -1,6 +1,5 @@
 # pylint: disable=no-member
 import matplotlib
-from astropy.units import Quantity
 
 matplotlib.use("Agg")
 import io
@@ -14,20 +13,17 @@ from astropy.coordinates import AltAz, EarthLocation, SkyCoord
 from astropy.time import Time
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 
-from ska_oso_services.common.static.constants import STEP_SECONDS_DEFAULT_VISIBILITY, T10_COLOURS
+from ska_oso_services.common.static.constants import (
+    LOW_LOCATION,
+    MID_LOCATION,
+    STEP_SECONDS_DEFAULT_VISIBILITY,
+    T10_COLOURS,
+)
 
 # Sites
 SITES: dict[str, EarthLocation] = {
-    "LOW": EarthLocation(
-        lat=Quantity(-26.82472208, u.deg),
-        lon=Quantity(116.7644482, u.deg),
-        height=Quantity(377.8, u.m),
-    ),
-    "MID": EarthLocation(
-        lat=Quantity(-30.7130, u.deg),
-        lon=Quantity(21.4430, u.deg),
-        height=Quantity(1000, u.m),
-    ),
+    "LOW": LOW_LOCATION,
+    "MID": MID_LOCATION,
 }
 
 # Default elevation limit applied to both sites when a caller does not specify one.
