@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Introduce a `min_elevation_deg` parameter in `render_svg`. 
 
 17.0.0
 ******

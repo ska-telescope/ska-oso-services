@@ -113,5 +113,25 @@ class TestVisibilityRenderSvg:
             show_ateam=False,
         )
 
-        expected = f"Elevation limit: {visibility.DEFAULT_MIN_ELEVATION_DEG:.0f}"
+        expected = f"Elevation limit: {visibility.DEFAULT_MIN_ELEVATION_DEG:g}"
         assert expected in svg_bytes.decode("utf-8")
+
+    @mock.patch("ska_oso_services.common.visibility.datetime")
+    def test_render_svg_preserves_fractional_min_elevation(self, mock_datetime):
+        fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+        mock_datetime.now.return_value = fixed_now
+
+        svg_bytes = visibility.render_svg(
+            ra="10h00m00s",
+            dec="-30d00m00s",
+            site_key="LOW",
+            min_elevation_deg=20.5,
+            step_s=3600,
+            show_ateam=False,
+        )
+
+        svg_text = svg_bytes.decode("utf-8")
+        # Both the legend and the title must report the threshold actually used.
+        assert "Elevation limit: 20.5°" in svg_text
+        assert "elevation limit of 20.5°" in svg_text
+        assert "Elevation limit: 20°" not in svg_text

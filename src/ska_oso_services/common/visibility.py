@@ -206,7 +206,7 @@ def render_svg(
         color=T10_COLOURS["red"],
         ls="--",
         lw=1.3,
-        label=f"Elevation limit: {min_elev:.0f}°",
+        label=f"Elevation limit: {min_elev:g}°",
     )
 
     ax.fill_between(
@@ -246,7 +246,7 @@ def render_svg(
     ax.grid(False)
 
     ax.set_title(
-        f"The target is over the elevation limit of {min_elev:.0f}° for {vis_h}h {vis_m}m",
+        f"The target is over the elevation limit of {min_elev:g}° for {vis_h}h {vis_m}m",
         pad=10,
     )
     ax.set_ylabel("Elevation (°)", fontsize=14, labelpad=6)
