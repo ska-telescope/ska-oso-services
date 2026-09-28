@@ -1,10 +1,8 @@
 # pylint: disable=no-member
 import matplotlib
-from astropy.units import Quantity
 
 matplotlib.use("Agg")
 import io
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 
@@ -15,34 +13,21 @@ from astropy.coordinates import AltAz, EarthLocation, SkyCoord
 from astropy.time import Time
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 
-from ska_oso_services.common.static.constants import STEP_SECONDS_DEFAULT_VISIBILITY, T10_COLOURS
-
-
-@dataclass(frozen=True)
-class SiteConfig:
-    location: EarthLocation
-    min_elev_deg: float
-
+from ska_oso_services.common.static.constants import (
+    LOW_LOCATION,
+    MID_LOCATION,
+    STEP_SECONDS_DEFAULT_VISIBILITY,
+    T10_COLOURS,
+)
 
 # Sites
-SITES: dict[str, SiteConfig] = {
-    "LOW": SiteConfig(
-        location=EarthLocation(
-            lat=Quantity(-26.82472208, u.deg),
-            lon=Quantity(116.7644482, u.deg),
-            height=Quantity(377.8, u.m),
-        ),
-        min_elev_deg=20.0,
-    ),
-    "MID": SiteConfig(
-        location=EarthLocation(
-            lat=Quantity(-30.7130, u.deg),
-            lon=Quantity(21.4430, u.deg),
-            height=Quantity(1000, u.m),
-        ),
-        min_elev_deg=15.0,
-    ),
+SITES: dict[str, EarthLocation] = {
+    "LOW": LOW_LOCATION,
+    "MID": MID_LOCATION,
 }
+
+# Default elevation limit applied to both sites when a caller does not specify one.
+DEFAULT_MIN_ELEVATION_DEG: float = 20.0
 
 # A-team sources visible from SKA-Low (ICRS)
 ATEAM_SOURCES: dict[str, tuple[str, str]] = {
@@ -130,23 +115,24 @@ _ATEAM_ALTS: dict[str, dict[str, np.ndarray]] = {}
 
 def _get_ateam_alts(site_key: str) -> dict[str, np.ndarray]:
     if site_key not in _ATEAM_ALTS:
-        _ATEAM_ALTS[site_key] = _precompute_ateam_alts(SITES[site_key].location)
+        _ATEAM_ALTS[site_key] = _precompute_ateam_alts(SITES[site_key])
     return _ATEAM_ALTS[site_key]
 
 
 def render_svg(
+    *,
+    site_key: str,
+    min_elevation_deg: float = DEFAULT_MIN_ELEVATION_DEG,
     ra: str | None = None,
     dec: str | None = None,
     l: float | None = None,  # noqa: E741
     b: float | None = None,
-    site_key: str = "",
     step_s: int = STEP_SECONDS_DEFAULT_VISIBILITY,
     show_ateam: bool = True,
 ) -> bytes:
 
-    site_cfg = SITES[site_key]
-    site = site_cfg.location
-    min_elev = site_cfg.min_elev_deg
+    site = SITES[site_key]
+    min_elev = min_elevation_deg
 
     # Anchor at the UTC time when LST = 0h so the x-axis starts at 0h.
     # LST is then computed as a linear ramp (0 → ~24.07h over one solar day)
@@ -216,7 +202,7 @@ def render_svg(
         color=T10_COLOURS["red"],
         ls="--",
         lw=1.3,
-        label=f"Elevation limit: {min_elev:.0f}°",
+        label=f"Elevation limit: {min_elev:g}°",
     )
 
     ax.fill_between(
@@ -256,7 +242,7 @@ def render_svg(
     ax.grid(False)
 
     ax.set_title(
-        f"The target is over the elevation limit of {min_elev:.0f}° for {vis_h}h {vis_m}m",
+        f"The target is over the elevation limit of {min_elev:g}° for {vis_h}h {vis_m}m",
         pad=10,
     )
     ax.set_ylabel("Elevation (°)", fontsize=14, labelpad=6)
