@@ -245,3 +245,50 @@ def test_sbd_status_set_ready_then_draft(authrequests, test_project):
     status_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}/status")
     assert status_response.status_code == HTTPStatus.OK, status_response.content
     assert status_response.json()["status"] == "Draft"
+
+
+def test_sbd_post_then_get_version(authrequests, test_project):
+    """
+    Test that an entity POSTed to /sbds can then be retrieved
+    with GET /sbds/{identifier}?version={version}
+    """
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
+    post_response = authrequests.post(
+        f"{ODT_URL}/sbds",
+        data=sbd.model_dump_json(),
+        headers={"Content-type": "application/json"},
+    )
+
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
+    sbd_id = post_response.json()["sbd_id"]
+    version = post_response.json()["metadata"]["version"]
+
+    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}?version={version}")
+
+    assert get_response.status_code == HTTPStatus.OK, get_response.content
+    assert_json_is_equal(
+        get_response.content,
+        sbd.model_dump_json(),
+        exclude_paths=["root['metadata']", "root['sbd_id']"],
+    )
+
+
+def test_sbd_get_version_not_found(authrequests, test_project):
+    """
+    Test that GET /sbds/{identifier}?version={version} returns 404
+    when the version is not found
+    """
+    sbd = TestDataFactory.sbdefinition(sbd_id=None, ob_ref=test_project.obs_blocks[0].obs_block_id)
+    post_response = authrequests.post(
+        f"{ODT_URL}/sbds",
+        data=sbd.model_dump_json(),
+        headers={"Content-type": "application/json"},
+    )
+    assert post_response.status_code == HTTPStatus.OK, post_response.content
+    sbd_id = post_response.json()["sbd_id"]
+
+    # Try to get a version that doesn't exist
+    get_response = authrequests.get(f"{ODT_URL}/sbds/{sbd_id}?version=999")
+
+    assert get_response.status_code == HTTPStatus.NOT_FOUND, get_response.content
+    assert "could not be found" in get_response.json()["detail"]

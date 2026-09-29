@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 * Introduce a `min_elevation_deg` parameter in `render_svg`. 
+* Adds `/sbds/{sbd_id}?version={version}` API to query a specific SBDefinition version
 
 17.0.0
 ******
