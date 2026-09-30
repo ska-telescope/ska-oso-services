@@ -108,6 +108,43 @@ class TestSBDefinitionAPI:
         assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
         assert response.status_code == HTTPStatus.NOT_FOUND
 
+    def test_sbds_get_version_existing(self, client_with_uow_mock):
+        """
+        Check the sbds_get method returns the expected SBD for a specific version
+        """
+        client, uow_mock = client_with_uow_mock
+        test_sbd = TestDataFactory.sbdefinition()
+        uow_mock.sbds.get_version.return_value = test_sbd
+
+        response = client.get(f"{SBDS_API_URL}/sbd-1234?version=2")
+
+        assert_json_is_equal(response.text, test_sbd.model_dump_json())
+        assert response.status_code == HTTPStatus.OK
+
+    def test_sbds_get_version_not_found_sbd(self, client_with_uow_mock):
+        """
+        Check the sbds_get method returns Not Found error when SBD not in ODA for a version query
+        """
+        client, uow_mock = client_with_uow_mock
+        uow_mock.sbds.get_version.side_effect = ODANotFound(identifier="sbd-1234")
+
+        response = client.get(f"{SBDS_API_URL}/sbd-1234?version=2")
+
+        assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
+    def test_sbds_get_version_not_found_version(self, client_with_uow_mock):
+        """
+        Check the sbds_get method returns Not Found error when version not found
+        """
+        client, uow_mock = client_with_uow_mock
+        uow_mock.sbds.get_version.side_effect = ODANotFound(identifier="sbd-1234")
+
+        response = client.get(f"{SBDS_API_URL}/sbd-1234?version=999")
+
+        assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
     @mock.patch("ska_oso_services.validation.sbdefinition.validate_sbdefinition")
     def test_sbds_post_success(self, mock_validate, client_with_uow_mock):
         """

@@ -59,14 +59,19 @@ def sbds_create() -> SBDefinition:
 def sbds_get(
     identifier: str,
     oda: UnitOfWork,
+    version: int | None = None,
 ) -> SBDefinition:
     """
     Retrieves the SchedulingBlockDefinition with the given identifier
     from the underlying data store, if available.
+    If version is provided, retrieves that specific version from history.
     """
-    LOGGER.debug("GET SBD sbd_id: %s", identifier)
+    LOGGER.debug("GET SBD sbd_id: %s, version: %s", identifier, version)
     with oda as uow:
-        sbd = uow.sbds.get(identifier)
+        if version is not None:
+            sbd = uow.sbds.get_version(identifier, version)
+        else:
+            sbd = uow.sbds.get(identifier)
     return sbd
 
 
