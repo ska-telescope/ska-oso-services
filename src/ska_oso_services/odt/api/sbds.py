@@ -28,6 +28,7 @@ from ska_oso_services.validation.sbdefinition import validate_sbdefinition
 LOGGER = logging.getLogger(__name__)
 
 API_ROLES = {
+    Role.INTERNAL,
     Role.SW_ENGINEER,
     Role.LOW_TELESCOPE_OPERATOR,
     Role.MID_TELESCOPE_OPERATOR,
