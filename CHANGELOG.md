@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* [BUGFIX] `GET /pht/prsls/osd/cycles` no longer fails when the OSD main branch lists a cycle that is not in the pinned OSD release
 
 17.0.1
 ******

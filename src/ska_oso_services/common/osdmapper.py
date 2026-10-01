@@ -40,6 +40,9 @@ NOISE_DIODE_MODE_OFF = "off"
 
 OSD_VERSION = version("ska-ost-osd")
 OSD_SOURCE = "car"
+# The mapping of cycles to OSD versions is read from the OSD main branch, so that
+# cycles published after the pinned ska-ost-osd release are still available.
+OSD_CYCLE_MAPPING_VERSION = "main"
 
 
 @dataclasses.dataclass
@@ -295,7 +298,7 @@ def get_osd_cycles():
     wraps and raises it as an `OSDError`
     """
     try:
-        cycle_numbers = get_available_cycles(get_osd_tmdata("main"))
+        cycle_numbers = get_available_cycles(get_osd_tmdata(OSD_CYCLE_MAPPING_VERSION))
     except (OSDModelError, ValueError) as error:
         raise OSDError(error) from error
     return {"cycles": sorted(cycle_numbers)}
@@ -316,8 +319,11 @@ def _get_osd_version_for_cycle(cycle_id: int) -> str:
     """
     Resolve a PPT cycle number to the ska-ost-osd/CAR release version whose
     tmdata contains that cycle's OSD data.
+
+    The mapping is read from the same OSD version as `get_osd_cycles`, so that
+    every cycle it lists can be resolved here.
     """
-    tmdata = get_osd_tmdata()
+    tmdata = get_osd_tmdata(OSD_CYCLE_MAPPING_VERSION)
     versions_dict = tmdata[VERSION_FILE_PATH].get_dict()
     osd_version, cycle_errors = check_cycle_id(
         tmdata=tmdata, cycle_id=cycle_id, versions_dict=versions_dict
