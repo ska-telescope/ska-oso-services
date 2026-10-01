@@ -23,7 +23,7 @@ dependencies = [
     "ska-ser-logging>=0.4.3,<0.5.0",
     # PDM dependency is pulled in via the ODA rather than being explicitly set here
     # If updating this, also remember to update the Helm dependency in the umbrella chart
-    "ska-db-oda>=19.5.0,<20.0.0",
+    "ska-db-oda==20.0.0-rc.1",
     "pydantic>=2.13,<3.0",
     "pydantic-settings>=2.15,<3.0",
     "fastapi[standard]>=0.141.1",
@@ -39,6 +39,7 @@ dependencies = [
     "matplotlib>=3.11.1,<4.0.0",
     "numpy>=2.5.3,<3.0.0",
     "astropy>=8.0.1",
+    "psycopg[binary]>=3.0"
 ]
 
 [project.urls]

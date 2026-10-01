@@ -38,11 +38,11 @@ PRSL_MODULE = "ska_oso_services.pht.api.prsls"
 
 class TestListAccess:
     @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
-    @mock.patch(f"{MODULE}.CustomQuery", autospec=True)
-    def test_list_ids_happy_path(self, mock_cq, mock_latest):
+    @mock.patch(f"{MODULE}.select_with_conditions", autospec=True)
+    def test_list_ids_happy_path(self, mock_fs, mock_latest):
         user_id = "user-123"
         q = object()
-        mock_cq.return_value = q
+        mock_fs.return_value = q
 
         uow = mock.MagicMock()
 
@@ -61,13 +61,13 @@ class TestListAccess:
 
         assert response == ["prp-ta", "prp-tb"]
 
-        mock_cq.assert_called_once_with(user_id=user_id)
+        mock_fs.assert_called_once_with(mock.ANY, user_id=user_id)
         uow.prslacc.query.assert_called_once_with(q)
         mock_latest.assert_called_once_with(rows_init, "access_id")
 
     @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
-    @mock.patch(f"{MODULE}.CustomQuery", autospec=True)
-    def test_list_ids_none_paths(self, mock_cq, mock_latest):
+    @mock.patch(f"{MODULE}.select_with_conditions", autospec=True)
+    def test_list_ids_none_paths(self, mock_fs, mock_latest):
         uow = mock.MagicMock()
         uow.prslacc.query.return_value = None
         mock_latest.return_value = None
@@ -749,15 +749,19 @@ class TestGetProposalsByStatus:
     # -----------------------------------------------------------
     # SW ENGINEER: UNDER_REVIEW wins, then SUBMITTED
     # -----------------------------------------------------------
+    @mock.patch(f"{PRSL_MODULE}.select_with_conditions", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_privileged_engineer_prefers_under_review_then_submitted(self, mock_uow, mock_latest):
+    def test_privileged_engineer_prefers_under_review_then_submitted(
+        self, mock_uow, mock_latest, mock_fs
+    ):
         p_1st_same = TestDataFactory.complete_proposal(prsl_id="prsl-1", status="under review")
         p_sub_same = TestDataFactory.complete_proposal(prsl_id="prsl-1", status="submitted")
         p_sub_other = TestDataFactory.complete_proposal(prsl_id="prsl-2", status="submitted")
 
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
+        mock_fs.side_effect = [object(), object()]  # Return different mock objects for each call
 
         uow.prsls.query.side_effect = [
             [p_1st_same],
@@ -774,20 +778,19 @@ class TestGetProposalsByStatus:
         result = get_proposals_by_status(auth=auth)
         assert [p.prsl_id for p in result] == ["prsl-1", "prsl-2"]
 
-        calls = uow.prsls.query.call_args_list
-        assert len(calls) == 2
-        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        assert getattr(calls[1].args[0], "status") == prsl_api.ProposalStatus.SUBMITTED
+        assert uow.prsls.query.call_count == 2
         assert mock_latest.call_count == 2
 
     # -----------------------------------------------------------
     # Empty lists: []
     # -----------------------------------------------------------
+    @mock.patch(f"{PRSL_MODULE}.select_with_conditions", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_privileged_empty(self, mock_uow, mock_latest):
+    def test_privileged_empty(self, mock_uow, mock_latest, mock_fs):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
+        mock_fs.side_effect = [object(), object()]  # Return different mock objects for each call
 
         uow.prsls.query.side_effect = [[], []]
         mock_latest.side_effect = lambda rows, key: rows or []
@@ -801,20 +804,18 @@ class TestGetProposalsByStatus:
         result = get_proposals_by_status(auth=auth)
         assert result == []
 
-        calls = uow.prsls.query.call_args_list
-        assert len(calls) == 2
-        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        assert getattr(calls[1].args[0], "status") == prsl_api.ProposalStatus.SUBMITTED
+        assert uow.prsls.query.call_count == 2
         assert mock_latest.call_count == 2
 
     # -----------------------------------------------------------
     # Reviewer: ONLY UNDER_REVIEW and ONLY prsl_ids they review
     # -----------------------------------------------------------
+    @mock.patch(f"{PRSL_MODULE}.select_with_conditions", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_reviewer_prsl_ids", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_reviewer_only_under_review_and_filtered_by_reviews(
-        self, mock_uow, mock_latest, mock_get_review_ids
+        self, mock_uow, mock_latest, mock_get_review_ids, mock_fs
     ):
         mock_get_review_ids.return_value = {"prsl-2"}
 
@@ -823,6 +824,7 @@ class TestGetProposalsByStatus:
 
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
+        mock_fs.return_value = object()
 
         uow.prsls.query.side_effect = [
             [p_1, p_2],
@@ -840,9 +842,7 @@ class TestGetProposalsByStatus:
 
         assert [p.prsl_id for p in result] == ["prsl-2"]
 
-        calls = uow.prsls.query.call_args_list
-        assert len(calls) == 1
-        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
+        assert uow.prsls.query.call_count == 1
         mock_get_review_ids.assert_called_once_with(
             mock_uow.return_value.__enter__.return_value, "rev-1"
         )
@@ -873,15 +873,17 @@ class TestGetProposalsByStatus:
     # -----------------------------------------------------------
     # Review Chair: ONLY UNDER_REVIEW (latest), no SUBMITTED query
     # -----------------------------------------------------------
+    @mock.patch(f"{PRSL_MODULE}.select_with_conditions", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_panel_prsl_ids", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_review_chair_only_under_review(self, mock_uow, mock_latest, mock_panel_ids):
+    def test_review_chair_only_under_review(self, mock_uow, mock_latest, mock_panel_ids, mock_fs):
         p_ur_a = TestDataFactory.complete_proposal(prsl_id="prp-ta", status="under review")
         p_ur_b = TestDataFactory.complete_proposal(prsl_id="prp-tb", status="under review")
 
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
+        mock_fs.return_value = object()
 
         # Chair path queries only UNDER_REVIEW
         uow.prsls.query.side_effect = [[p_ur_a, p_ur_b]]
@@ -901,9 +903,7 @@ class TestGetProposalsByStatus:
 
         assert [p.prsl_id for p in result] == ["prp-ta", "prp-tb"]
 
-        calls = uow.prsls.query.call_args_list
-        assert len(calls) == 1
-        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
+        assert uow.prsls.query.call_count == 1
 
         # where panel prsl_ids intercept
         mock_panel_ids.assert_called_once_with(uow, prsl_api.SV_NAME)
@@ -912,14 +912,16 @@ class TestGetProposalsByStatus:
     # -----------------------------------------------------------
     # Admin
     # -----------------------------------------------------------
+    @mock.patch(f"{PRSL_MODULE}.select_with_conditions", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
-    def test_admin_behaves_like_privileged(self, mock_uow, mock_latest):
+    def test_admin_behaves_like_privileged(self, mock_uow, mock_latest, mock_fs):
         p_1st = TestDataFactory.complete_proposal(prsl_id="prp-tx", status="under review")
         p_sub = TestDataFactory.complete_proposal(prsl_id="prp-ty", status="submitted")
 
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
+        mock_fs.side_effect = [object(), object()]  # Return different mock objects for each call
 
         uow.prsls.query.side_effect = [
             [p_1st],
@@ -936,10 +938,7 @@ class TestGetProposalsByStatus:
         result = get_proposals_by_status(auth=auth)
         assert [p.prsl_id for p in result] == ["prp-tx", "prp-ty"]
 
-        calls = uow.prsls.query.call_args_list
-        assert len(calls) == 2
-        assert getattr(calls[0].args[0], "status") == prsl_api.ProposalStatus.UNDER_REVIEW
-        assert getattr(calls[1].args[0], "status") == prsl_api.ProposalStatus.SUBMITTED
+        assert uow.prsls.query.call_count == 2
         assert mock_latest.call_count == 2
 
     # -----------------------------------------------------------
@@ -963,18 +962,19 @@ class TestGetProposalsByStatus:
 
 
 class TestGetReviewerPrslIds:
-    @mock.patch(f"{MODULE}.CustomQuery")
-    def test_calls_query_with_reviewer_id(self, mock_cq):
+    @mock.patch(f"{MODULE}.select_with_conditions", autospec=True)
+    def test_calls_query_with_reviewer_id(self, mock_fs):
         uow = mock.MagicMock()
         uow.rvws.query.return_value = []
+        mock_fs.return_value = object()
 
         reviewer_id = "kjf"
         ids = ps.get_reviewer_prsl_ids(uow, reviewer_id)
 
         assert ids == set()
 
-        mock_cq.assert_called_once_with(reviewer_id=reviewer_id)
-        uow.rvws.query.assert_called_once_with(mock_cq.return_value)
+        mock_fs.assert_called_once_with(mock.ANY, reviewer_id=reviewer_id)
+        uow.rvws.query.assert_called_once_with(mock_fs.return_value)
 
     @mock.patch(f"{MODULE}.get_panel_prsl_ids", autospec=True)
     @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)

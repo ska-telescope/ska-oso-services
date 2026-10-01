@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-
+* Updates to ODA v20.0.0 with SQLAlchemy. Makes use of new functionality to improve querying like the project-view API
 
 17.0.1
 ******
