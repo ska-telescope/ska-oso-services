@@ -4,7 +4,7 @@ from typing import Annotated, Union
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.postgres import TABLES
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_ser_skuid import EntityType, mint_skuid
@@ -25,7 +25,11 @@ from ska_oso_services.pht.service.panel_operations import (
     set_removed_proposals_to_submitted,
 )
 from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, validate_duplicates
+from ska_oso_services.pht.utils.pht_helper import (
+    get_latest_entity_by_id,
+    select_with_conditions,
+    validate_duplicates,
+)
 
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 
@@ -95,7 +99,10 @@ def auto_assign_to_panel(
     with oda.uow() as uow:
         submitted_proposal_refs = (
             get_latest_entity_by_id(
-                uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)), "prsl_id"
+                uow.prsls.query(
+                    select_with_conditions(TABLES.proposals, status=ProposalStatus.SUBMITTED)
+                ),
+                "prsl_id",
             )
             or []
         )
@@ -110,7 +117,7 @@ def auto_assign_to_panel(
 
         if SV_NAME.casefold() in name_raw.casefold():
             sv_panel_refs = get_latest_entity_by_id(
-                uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id"
+                uow.panels.query(select_with_conditions(TABLES.panels, name=SV_NAME)), "panel_id"
             )
 
             if sv_panel_refs:
@@ -197,7 +204,9 @@ def auto_assign_to_panel(
 
         existing_by_name: dict[str, Panel] = {}
         for pname in PANEL_NAME_POOL:
-            refs = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=pname)), "panel_id")
+            refs = get_latest_entity_by_id(
+                uow.panels.query(select_with_conditions(TABLES.panels, name=pname)), "panel_id"
+            )
             if refs:
                 existing_by_name[pname] = uow.panels.get(refs[0].panel_id)
 
@@ -276,7 +285,9 @@ def auto_create_panel(
 
         # --- Science Verification panel ---
         # check if SV panel exist, create if not
-        existing = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id")
+        existing = get_latest_entity_by_id(
+            uow.panels.query(select_with_conditions(TABLES.panels, name=SV_NAME)), "panel_id"
+        )
         if not existing:
             sv_panel = Panel(
                 panel_id=mint_skuid(EntityType.PNL),
@@ -290,7 +301,8 @@ def auto_create_panel(
         # --- Science category panels ---
         for panel_name in PANEL_NAME_POOL:
             existing = get_latest_entity_by_id(
-                uow.panels.query(CustomQuery(name=panel_name)), "panel_id"
+                uow.panels.query(select_with_conditions(TABLES.panels, name=panel_name)),
+                "panel_id",
             )
             panel = existing[0] if existing else None
             if panel:
@@ -402,7 +414,7 @@ def update_panel(
         # --------------------------------------------------------
         # 3. Load all panels once
         # --------------------------------------------------------
-        all_panels = list(uow.panels.query(CustomQuery()))
+        all_panels = list(uow.panels.query(select_with_conditions(TABLES.panels)))
 
         # --------------------------------------------------------
         # 4. VALIDATION — ensure newly added proposals are not in
@@ -552,8 +564,9 @@ def get_panels() -> list[Panel]:
     logger.debug("GET PANEL LIST query")
 
     with oda.uow() as uow:
-        query_param = CustomQuery()
-        panels = get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
+        panels = get_latest_entity_by_id(
+            uow.panels.query(select_with_conditions(TABLES.panels)), "panel_id"
+        )
 
         logger.debug("Found %d panels", len(panels))
         return panels

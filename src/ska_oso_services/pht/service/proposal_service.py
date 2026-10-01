@@ -3,13 +3,12 @@ from collections import OrderedDict
 from datetime import UTC, datetime
 from typing import Iterable
 
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.postgres import TABLES
 from ska_oso_pdm.proposal import Proposal, ProposalAccess
-from ska_ser_skuid import int_skuid
 
 from ska_oso_services.common.error_handling import ForbiddenError
 from ska_oso_services.pht.utils.constants import ACCESS_ID, SV_NAME
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +61,9 @@ def assert_user_has_permission_for_proposal(
     """
     rows = (
         get_latest_entity_by_id(
-            uow.prslacc.query(CustomQuery(user_id=user_id, prsl_fk=int_skuid(prsl_id).uid)),
+            uow.prslacc.query(
+                select_with_conditions(TABLES.access_tmp, user_id=user_id, prsl_fk=prsl_id)
+            ),
             ACCESS_ID,
         )
         or []
@@ -94,7 +95,7 @@ def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
         - Uses `get_latest_entity_by_id(rows, "access_id")`
             to retrive the latest version.
     """
-    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
+    rows_init = uow.prslacc.query(select_with_conditions(TABLES.access_tmp, user_id=user_id)) or []
     rows = get_latest_entity_by_id(rows_init, ACCESS_ID) or []
     return sorted({row.prsl_id for row in rows})
 
@@ -135,7 +136,7 @@ def get_panel_prsl_ids(uow, panel_name: str) -> set[str]:
     """
     refs = (
         get_latest_entity_by_id(
-            uow.panels.query(CustomQuery(name=panel_name)),
+            uow.panels.query(select_with_conditions(TABLES.panels, name=panel_name)),
             "panel_id",
         )
         or []
@@ -159,7 +160,7 @@ def get_reviewer_prsl_ids(uow, reviewer_id: str, panel_name: str = SV_NAME) -> s
     # Reviews → latest per review_id (avoid boolean coercion on query object)
     latest_reviews = (
         get_latest_entity_by_id(
-            uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)),
+            uow.rvws.query(select_with_conditions(TABLES.reviews, reviewer_id=reviewer_id)),
             "review_id",
         )
         or []

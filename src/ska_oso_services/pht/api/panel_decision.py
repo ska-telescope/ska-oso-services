@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.postgres import TABLES
 from ska_oso_pdm import PanelDecision, Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel_decision import PanelReviewStatus, Recommendation
@@ -18,7 +18,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.models.domain import PrslRole
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -217,5 +217,7 @@ def get_panel_decisions_for_user(
         raise ForbiddenError("You do not have permission to retrieve decisions.")
 
     with oda.uow() as uow:
-        decisions = get_latest_entity_by_id(uow.pnlds.query(CustomQuery()), "decision_id")
+        decisions = get_latest_entity_by_id(
+            uow.pnlds.query(select_with_conditions(TABLES.panel_decisions)), "decision_id"
+        )
     return decisions

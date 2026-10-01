@@ -8,12 +8,12 @@ from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.postgres import TABLES
 from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalPermissions, ProposalRole
 from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
-from ska_ser_skuid import EntityType, int_skuid, mint_skuid
+from ska_ser_skuid import EntityType, mint_skuid
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from ska_oso_services.common import oda
@@ -49,7 +49,7 @@ from ska_oso_services.pht.utils.ms_graph import (
     extract_profile_from_access_token,
     get_users_by_mail,
 )
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
+from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +217,10 @@ def get_proposals_by_status(
 
     def _latest_by_status(uow, status) -> list["Proposal"]:
         return (
-            get_latest_entity_by_id(uow.prsls.query(CustomQuery(status=status)), "prsl_id") or []
+            get_latest_entity_by_id(
+                uow.prsls.query(select_with_conditions(TABLES.proposals, status=status)), "prsl_id"
+            )
+            or []
         )
 
     def _filter_by_prsl_ids(proposals: list["Proposal"], ids: set[str]) -> list["Proposal"]:
@@ -392,8 +395,8 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
     """
     logger.debug("GET reviews for a prsl_id: %s", prsl_id)
     with oda.uow() as uow:
-        query = CustomQuery(prsl_fk=int_skuid(prsl_id).uid)
-        reviews = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
+        stmt = select_with_conditions(TABLES.reviews, prsl_fk=prsl_id)
+        reviews = get_latest_entity_by_id(uow.rvws.query(stmt), "review_id")
 
     return reviews
 
