@@ -6,10 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-* [BUGFIX] `GET /pht/prsls/osd/cycles` no longer fails when the OSD main branch lists a cycle that is not in the pinned OSD release
+
 
 17.0.1
 ******
+* [BUGFIX] `GET /pht/prsls/osd/cycles` no longer fails when the OSD main branch lists a cycle that is not in the pinned OSD release
 * Adds Role.INTERNAL to roles authorised to access services
 * Introduce a `min_elevation_deg` parameter in `render_svg`. 
 * Adds `/sbds/{sbd_id}?version={version}` API to query a specific SBDefinition version
