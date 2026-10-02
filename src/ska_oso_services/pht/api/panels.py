@@ -25,11 +25,7 @@ from ska_oso_services.pht.service.panel_operations import (
     set_removed_proposals_to_submitted,
 )
 from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
-from ska_oso_services.pht.utils.pht_helper import (
-    get_latest_entity_by_id,
-    select_with_conditions,
-    validate_duplicates,
-)
+from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 
@@ -98,11 +94,8 @@ def auto_assign_to_panel(
 
     with oda.uow() as uow:
         submitted_proposal_refs = (
-            get_latest_entity_by_id(
-                uow.prsls.query(
-                    select_with_conditions(TABLES.proposals, status=ProposalStatus.SUBMITTED)
-                ),
-                "prsl_id",
+            uow.prsls.query(
+                select_with_conditions(TABLES.proposals, status=ProposalStatus.SUBMITTED)
             )
             or []
         )
@@ -116,9 +109,7 @@ def auto_assign_to_panel(
         name_raw = (param or "").strip()
 
         if SV_NAME.casefold() in name_raw.casefold():
-            sv_panel_refs = get_latest_entity_by_id(
-                uow.panels.query(select_with_conditions(TABLES.panels, name=SV_NAME)), "panel_id"
-            )
+            sv_panel_refs = uow.panels.query(select_with_conditions(TABLES.panels, name=SV_NAME))
 
             if sv_panel_refs:
                 sv_panel_id = sv_panel_refs[0].panel_id
@@ -204,9 +195,7 @@ def auto_assign_to_panel(
 
         existing_by_name: dict[str, Panel] = {}
         for pname in PANEL_NAME_POOL:
-            refs = get_latest_entity_by_id(
-                uow.panels.query(select_with_conditions(TABLES.panels, name=pname)), "panel_id"
-            )
+            refs = uow.panels.query(select_with_conditions(TABLES.panels, name=pname))
             if refs:
                 existing_by_name[pname] = uow.panels.get(refs[0].panel_id)
 
@@ -285,9 +274,7 @@ def auto_create_panel(
 
         # --- Science Verification panel ---
         # check if SV panel exist, create if not
-        existing = get_latest_entity_by_id(
-            uow.panels.query(select_with_conditions(TABLES.panels, name=SV_NAME)), "panel_id"
-        )
+        existing = uow.panels.query(select_with_conditions(TABLES.panels, name=SV_NAME))
         if not existing:
             sv_panel = Panel(
                 panel_id=mint_skuid(EntityType.PNL),
@@ -300,10 +287,7 @@ def auto_create_panel(
 
         # --- Science category panels ---
         for panel_name in PANEL_NAME_POOL:
-            existing = get_latest_entity_by_id(
-                uow.panels.query(select_with_conditions(TABLES.panels, name=panel_name)),
-                "panel_id",
-            )
+            existing = uow.panels.query(select_with_conditions(TABLES.panels, name=panel_name))
             panel = existing[0] if existing else None
             if panel:
                 continue  # already present
@@ -385,8 +369,6 @@ def update_panel(
     # ------------------------------------------------------------
     if param.panel_id != panel_id:
         raise UnprocessableEntityError(detail="Panel ID in path and body do not match.")
-
-    validate_duplicates(param.sci_reviewers, "reviewer_id")
 
     with oda.uow() as uow:
         # --------------------------------------------------------
@@ -564,9 +546,7 @@ def get_panels() -> list[Panel]:
     logger.debug("GET PANEL LIST query")
 
     with oda.uow() as uow:
-        panels = get_latest_entity_by_id(
-            uow.panels.query(select_with_conditions(TABLES.panels)), "panel_id"
-        )
+        panels = uow.panels.query(select_with_conditions(TABLES.panels))
 
         logger.debug("Found %d panels", len(panels))
         return panels

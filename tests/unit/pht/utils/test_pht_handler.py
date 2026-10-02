@@ -9,7 +9,6 @@ from ska_oso_services.pht.service.report_processing import (
     _get_array_class,
     join_proposals_panels_reviews_decisions,
 )
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 from tests.unit.util import REVIEWERS, TestDataFactory
 
 
@@ -95,26 +94,6 @@ class TestTransformUpdateProposal:
         assert out.cycle == incoming.cycle
         assert out.proposal_info is incoming.proposal_info
         assert out.observation_info is incoming.observation_info
-
-
-def test_get_latest_entity_by_id():
-    entities = [
-        SimpleNamespace(prsl_id="id1", metadata=SimpleNamespace(version=1)),
-        SimpleNamespace(prsl_id="id1", metadata=SimpleNamespace(version=3)),  # latest for id1
-        SimpleNamespace(prsl_id="id1", metadata=SimpleNamespace(version=2)),
-        SimpleNamespace(prsl_id="id2", metadata=SimpleNamespace(version=1)),  # only one for id2
-        SimpleNamespace(prsl_id="id3", metadata=SimpleNamespace(version=2)),
-        SimpleNamespace(prsl_id="id3", metadata=SimpleNamespace(version=5)),  # latest for id3
-        SimpleNamespace(prsl_id="id3", metadata=SimpleNamespace(version=1)),
-    ]
-
-    result = get_latest_entity_by_id(entities, "prsl_id")
-    result = sorted(result, key=lambda x: x.prsl_id)
-
-    assert len(result) == 3
-    assert any(obj.prsl_id == "id1" and obj.metadata.version == 3 for obj in result)
-    assert any(obj.prsl_id == "id2" and obj.metadata.version == 1 for obj in result)
-    assert any(obj.prsl_id == "id3" and obj.metadata.version == 5 for obj in result)
 
 
 class TestGetArrayClass:

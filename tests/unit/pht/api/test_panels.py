@@ -1,7 +1,6 @@
 import uuid
 from datetime import UTC, datetime
 from http import HTTPStatus
-from types import SimpleNamespace
 from unittest import mock
 
 from ska_db_oda.repository.domain import UniqueConstraintViolation
@@ -66,12 +65,10 @@ class TestPanelsUpdateAPI:
         uow_mock.panels.add.assert_called_once()
         uow_mock.commit.assert_called_once()
 
-    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.mint_skuid", autospec=True)
-    @mock.patch(f"{MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_creates_technical_review_when_missing(
-        self, mock_uow, mock_get_latest, mock_mint_skuid, mock_validate, client
+        self, mock_uow, mock_mint_skuid, client
     ):
         """
         With a technical reviewer and no existing technical review
@@ -82,9 +79,6 @@ class TestPanelsUpdateAPI:
         """
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
-
-        # No existing technical review
-        mock_get_latest.return_value = []
 
         mock_mint_skuid.return_value = "rvs-tec-0001"
 
@@ -103,7 +97,24 @@ class TestPanelsUpdateAPI:
             proposals=[prop_assign],
         )
 
+        # Setup mocks
+        persisted_panel = TestDataFactory.panel_with_assignment(
+            panel_id="pnl-123",
+            name="Cosmology",
+            sci_reviewers=[],
+            tech_reviewers=[tech],
+            proposals=[],
+        )
+        uow.panels.get.return_value = persisted_panel
+        uow.panels.query.return_value = []
         uow.panels.add.side_effect = lambda p: p
+
+        # No existing reviews/decisions, so they will be created
+        uow.rvws.query.return_value = []
+        uow.rvws.add.side_effect = lambda r: r
+        uow.pnlds.query.return_value = []
+        uow.pnlds.add.side_effect = lambda d: d
+        uow.prsls.query.return_value = []
 
         resp = client.put(
             f"{PANELS_API_URL}/{panel_body.panel_id}",
@@ -114,7 +125,6 @@ class TestPanelsUpdateAPI:
         assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
         # Dedup validation called
-        mock_validate.assert_called_once()
 
         # One technical review created
         uow.rvws.add.assert_called_once()
@@ -129,25 +139,18 @@ class TestPanelsUpdateAPI:
         "ska_oso_services.pht.service.panel_operations.mint_skuid",
         autospec=True,
     )
-    @mock.patch(
-        "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
-        autospec=True,
-    )
-    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_skips_creating_tech_review_if_already_exists_v1(
-        self, mock_uow, mock_validate, mock_get_latest_ops, mock_mint_skuid, client
+        self, mock_uow, mock_mint_skuid, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
         mock_mint_skuid.return_value = "pnld-123"
 
-        existing_ref = SimpleNamespace(
+        existing_tech_review = TestDataFactory.reviews(
             review_id="rvw-existing",
             reviewer_id="rev-001",
-            metadata=SimpleNamespace(version=1),
         )
-        mock_get_latest_ops.return_value = [existing_ref]
 
         assigned_on = datetime(2025, 1, 1, tzinfo=UTC)
         tech = TestDataFactory.reviewer_assignment(reviewer_id="rev-001", assigned_on=assigned_on)
@@ -160,7 +163,22 @@ class TestPanelsUpdateAPI:
             proposals=[prop],
         )
 
+        persisted_panel = TestDataFactory.panel_with_assignment(
+            panel_id="pnl-t123",
+            name="Cosmology",
+            sci_reviewers=[],
+            tech_reviewers=[tech],
+            proposals=[],
+        )
+        uow.panels.get.return_value = persisted_panel
+        uow.panels.query.return_value = []
         uow.panels.add.side_effect = lambda p: p
+
+        # Existing tech review, so it won't be created
+        uow.rvws.query.return_value = [existing_tech_review]
+        # Decision doesn't exist, so it will be created
+        uow.pnlds.query.return_value = []
+        uow.pnlds.add.side_effect = lambda d: d
 
         resp = client.put(
             f"{PANELS_API_URL}/{panel_body.panel_id}",
@@ -170,7 +188,6 @@ class TestPanelsUpdateAPI:
         assert resp.status_code == HTTPStatus.OK
         assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
-        mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
         uow.pnlds.add.assert_called_once()
         mock_mint_skuid.assert_called_once()
@@ -181,33 +198,36 @@ class TestPanelsUpdateAPI:
         "ska_oso_services.pht.service.panel_operations.mint_skuid",
         autospec=True,
     )
-    @mock.patch(
-        "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
-        autospec=True,
-    )
-    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_skips_creating_decision_if_already_exists(
-        self, mock_uow, mock_validate, mock_get_latest_ops, mock_mint_skuid, client
+        self, mock_uow, mock_mint_skuid, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
 
-        existing_decision_ref = SimpleNamespace(
+        existing_decision = TestDataFactory.panel_decision(
             panel_id="pnl-texist",
             decision_id="pnld-001",
-            cycle="science verification",
-            prsl_id="prp-t001test",
-            metadata=SimpleNamespace(version=1),
         )
-        mock_get_latest_ops.return_value = [existing_decision_ref]
 
         panel_body = TestDataFactory.panel_with_assignment(
             panel_id="pnl-texist",
             name="Cosmology",
         )
 
+        persisted_panel = TestDataFactory.panel_with_assignment(
+            panel_id="pnl-texist",
+            name="Cosmology",
+        )
+        uow.panels.get.return_value = persisted_panel
+        uow.panels.query.return_value = []
         uow.panels.add.side_effect = lambda p: p
+
+        # No reviewers, so no reviews/decisions to create
+        uow.rvws.query.return_value = []
+        # Decision already exists
+        uow.pnlds.query.return_value = [existing_decision]
+        uow.prsls.query.return_value = []
 
         resp = client.put(
             f"{PANELS_API_URL}/{panel_body.panel_id}",
@@ -217,7 +237,6 @@ class TestPanelsUpdateAPI:
         assert resp.status_code == HTTPStatus.OK
         assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
-        mock_validate.assert_called_once()
         uow.pnlds.add.assert_not_called()
         uow.rvws.add.assert_not_called()
         mock_mint_skuid.assert_not_called()
@@ -228,24 +247,14 @@ class TestPanelsUpdateAPI:
         "ska_oso_services.pht.service.panel_operations.mint_skuid",
         autospec=True,
     )
-    @mock.patch(
-        "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
-        autospec=True,
-    )
-    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_creates_decision_and_science_review_when_missing(
-        self, mock_uow, mock_validate, mock_get_latest_ops, mock_mint_skuid, client
+        self, mock_uow, mock_mint_skuid, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
 
-        mock_get_latest_ops.return_value = []
-
         mock_mint_skuid.return_value = "pnld-0001"
-
-        uow.pnlds.add.side_effect = lambda r: r
-        uow.panels.add.side_effect = lambda p: p
 
         assigned_on = datetime(2025, 1, 1, tzinfo=UTC)
         sci = TestDataFactory.reviewer_assignment(
@@ -260,6 +269,24 @@ class TestPanelsUpdateAPI:
             proposals=[prop],
         )
 
+        # Setup persisted panel and mocks
+        persisted_panel = TestDataFactory.panel_with_assignment(
+            panel_id="pnl-t123",
+            name="Cosmology",
+            sci_reviewers=[sci],
+            tech_reviewers=[],
+            proposals=[],
+        )
+        uow.panels.get.return_value = persisted_panel
+        uow.panels.query.return_value = []
+        uow.panels.add.side_effect = lambda p: p
+
+        # Neither review nor decision exist, so both will be created
+        uow.rvws.query.return_value = []
+        uow.rvws.add.side_effect = lambda r: r
+        uow.pnlds.query.return_value = []
+        uow.pnlds.add.side_effect = lambda d: d
+
         resp = client.put(
             f"{PANELS_API_URL}/{panel_body.panel_id}",
             data=panel_body.model_dump_json(),
@@ -268,7 +295,6 @@ class TestPanelsUpdateAPI:
         assert resp.status_code == HTTPStatus.OK
         assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
-        mock_validate.assert_called_once()
         uow.rvws.add.assert_called_once()
         uow.pnlds.add.assert_called_once()
 
@@ -284,24 +310,14 @@ class TestPanelsUpdateAPI:
         "ska_oso_services.pht.service.panel_operations.mint_skuid",
         autospec=True,
     )
-    @mock.patch(
-        "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
-        autospec=True,
-    )
-    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_creates_science_review_when_missing(
-        self, mock_uow, mock_validate, mock_get_latest_ops, mock_mint_skuid, client
+        self, mock_uow, mock_mint_skuid, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
 
-        mock_get_latest_ops.return_value = []
-
         mock_mint_skuid.return_value = "rvs-sci-0001"
-
-        uow.rvws.add.side_effect = lambda r: r
-        uow.panels.add.side_effect = lambda p: p
 
         assigned_on = datetime(2025, 1, 1, tzinfo=UTC)
         sci = TestDataFactory.reviewer_assignment(
@@ -316,6 +332,24 @@ class TestPanelsUpdateAPI:
             proposals=[prop],
         )
 
+        # Setup persisted panel and mocks
+        persisted_panel = TestDataFactory.panel_with_assignment(
+            panel_id="pnl-t123",
+            name="Cosmology",
+            sci_reviewers=[sci],
+            tech_reviewers=[],
+            proposals=[],
+        )
+        uow.panels.get.return_value = persisted_panel
+        uow.panels.query.return_value = []
+        uow.panels.add.side_effect = lambda p: p
+
+        # Science review doesn't exist, so it will be created
+        uow.rvws.query.return_value = []
+        uow.rvws.add.side_effect = lambda r: r
+        uow.pnlds.query.return_value = []
+        uow.prsls.query.return_value = []
+
         resp = client.put(
             f"{PANELS_API_URL}/{panel_body.panel_id}",
             data=panel_body.model_dump_json(),
@@ -324,7 +358,6 @@ class TestPanelsUpdateAPI:
         assert resp.status_code == HTTPStatus.OK
         assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
-        mock_validate.assert_called_once()
         uow.rvws.add.assert_called_once()
 
         created = uow.rvws.add.call_args[0][0]
@@ -339,27 +372,18 @@ class TestPanelsUpdateAPI:
         "ska_oso_services.pht.service.panel_operations.mint_skuid",
         autospec=True,
     )
-    @mock.patch(
-        "ska_oso_services.pht.service.panel_operations.get_latest_entity_by_id",
-        autospec=True,
-    )
-    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_skips_creating_science_review_if_already_exists_v1(
-        self, mock_uow, mock_validate, mock_get_latest_ops, mock_mint_skuid, client
+        self, mock_uow, mock_mint_skuid, client
     ):
         uow = mock.MagicMock()
         mock_uow().__enter__.return_value = uow
         mock_mint_skuid.return_value = "pnld-123"
 
-        existing_ref = SimpleNamespace(
+        existing_sci_review = TestDataFactory.reviews(
             review_id="rvw-existing-sci",
             reviewer_id="rev-sci-001",
-            metadata=SimpleNamespace(version=1),
         )
-        mock_get_latest_ops.return_value = [existing_ref]
-
-        uow.panels.add.side_effect = lambda p: p
 
         assigned_on = datetime(2025, 1, 1, tzinfo=UTC)
         sci = TestDataFactory.reviewer_assignment(
@@ -374,6 +398,25 @@ class TestPanelsUpdateAPI:
             proposals=[prop],
         )
 
+        # Setup persisted panel and mocks
+        persisted_panel = TestDataFactory.panel_with_assignment(
+            panel_id="pnl-t123",
+            name="Cosmology",
+            sci_reviewers=[sci],
+            tech_reviewers=[],
+            proposals=[],
+        )
+        uow.panels.get.return_value = persisted_panel
+        uow.panels.query.return_value = []
+        uow.panels.add.side_effect = lambda p: p
+
+        # Science review already exists, so it won't be created
+        uow.rvws.query.return_value = [existing_sci_review]
+        # Decision doesn't exist, so it will be created
+        uow.pnlds.query.return_value = []
+        uow.pnlds.add.side_effect = lambda d: d
+        uow.prsls.query.return_value = []
+
         resp = client.put(
             f"{PANELS_API_URL}/{panel_body.panel_id}",
             data=panel_body.model_dump_json(),
@@ -382,7 +425,6 @@ class TestPanelsUpdateAPI:
         assert resp.status_code == HTTPStatus.OK
         assert_json_is_equal(resp.text, panel_body.model_dump_json())
 
-        mock_validate.assert_called_once()
         uow.rvws.add.assert_not_called()
         uow.pnlds.add.assert_called_once()
         mock_mint_skuid.assert_called_once()
@@ -486,28 +528,27 @@ class TestPanelsAPI:
         response = client.get(f"{PANELS_API_URL}/")
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
-        assert len(response.json()) == 1
+        assert len(response.json()) == 2
 
 
 class TestPanelsGenerateAPI:
     # No existing SV panel -> create & return new id
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
-    def test_generate_sv_creates_when_missing(self, mock_get_latest, mock_uow, client):
+    def test_generate_sv_creates_when_missing(self, mock_uow, client):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
         # SV not found, categories found
         sv_not_found = []  # SV missing
-        mock_get_latest.return_value = []  # SV not found
+        uow.panels.query.return_value = []
+
         categories_found = [
-            [SimpleNamespace(panel_id=f"panel-{i}", name=name)]
+            [TestDataFactory.panel_basic(panel_id=f"panel-{i}", name=name)]
             for i, name in enumerate(panels_api.PANEL_NAME_POOL, start=1)
         ]
-        mock_get_latest.side_effect = [sv_not_found, *categories_found]
-
+        uow.panels.query.side_effect = [sv_not_found, *categories_found]
         # Panels.add will be called only for SV in this scenario
-        uow.panels.add.return_value = SimpleNamespace(
+        uow.panels.add.return_value = TestDataFactory.panel_basic(
             panel_id="panel-888", name=panels_api.SV_NAME
         )
 
@@ -527,27 +568,24 @@ class TestPanelsGenerateAPI:
         # check SV cycle
         assert getattr(created_panel, "cycle", None) == "SKAO_2027_1"
 
-        # get_latest called for SV + each category
-        assert mock_get_latest.call_count == 1 + len(panels_api.PANEL_NAME_POOL)
+        # panels.query called for SV + each category
+        assert uow.panels.query.call_count == 1 + len(panels_api.PANEL_NAME_POOL)
 
         uow.panels.add.assert_called_once()
         uow.commit.assert_called_once()
 
     # SV & Science Categories are all missing -> create panels for SV + all categories
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
-    def test_generate_creates_sv_and_all_categories_when_missing(
-        self, mock_get_latest, mock_uow, client
-    ):
+    def test_generate_creates_sv_and_all_categories_when_missing(self, mock_uow, client):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
         # SV missing, every category missing
-        mock_get_latest.side_effect = [[]] * (1 + len(panels_api.PANEL_NAME_POOL))
+        uow.panels.query.side_effect = [[]] * (1 + len(panels_api.PANEL_NAME_POOL))
 
         # Panels.add will be called for SV + each category.
         uow.panels.add.side_effect = [
-            SimpleNamespace(panel_id=f"panel-{i}", name=name)
+            TestDataFactory.panel_basic(panel_id=f"panel-{i}", name=name)
             for i, name in enumerate([panels_api.SV_NAME, *panels_api.PANEL_NAME_POOL], start=1)
         ]
 
@@ -570,10 +608,7 @@ class TestPanelsGenerateAPI:
 
     # Missing Category: Creates only missing panels from PANEL_NAME_POOL
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
-    def test_generate_categories_creates_missing_only(
-        self, mock_get_latest, mock_uow, client, monkeypatch
-    ):
+    def test_generate_categories_creates_missing_only(self, mock_uow, client, monkeypatch):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
@@ -586,9 +621,9 @@ class TestPanelsGenerateAPI:
 
         # SV exists -> do NOT create.
         # Then per-category: Cosmology exists, Stars missing, Transients missing.
-        mock_get_latest.side_effect = [
-            [SimpleNamespace(panel_id="sv-1")],  # SV exists
-            [SimpleNamespace(panel_id="panel-cosmology")],  # Cosmology exists
+        uow.panels.query.side_effect = [
+            [TestDataFactory.panel_basic(panel_id="sv-1")],  # SV exists
+            [TestDataFactory.panel_basic(panel_id="panel-cosmology")],  # Cosmology exists
             [],  # Stars missing
             [],  # Transients missing
         ]
@@ -609,10 +644,7 @@ class TestPanelsGenerateAPI:
 
     # SV & Category: All exist -> no creation, no commit
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
-    def test_generate_sv_categories_all_exist_noop(
-        self, mock_get_latest, mock_uow, client, monkeypatch
-    ):
+    def test_generate_sv_categories_all_exist_noop(self, mock_uow, client, monkeypatch):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
@@ -624,10 +656,10 @@ class TestPanelsGenerateAPI:
             raising=True,
         )
 
-        mock_get_latest.side_effect = [
-            [SimpleNamespace(panel_id="pnl-tsv")],  # SV exists
-            [SimpleNamespace(panel_id="pnl-tcosmology")],  # Cosmology exists
-            [SimpleNamespace(panel_id="pnl-tstars")],  # Stars exist
+        uow.panels.query.side_effect = [
+            [TestDataFactory.panel_basic(panel_id="pnl-tsv")],  # SV exists
+            [TestDataFactory.panel_basic(panel_id="pnl-tcosmology")],  # Cosmology exists
+            [TestDataFactory.panel_basic(panel_id="pnl-tstars")],  # Stars exist
         ]
 
         resp = client.post(f"{PANELS_API_URL}/generate")
@@ -642,18 +674,18 @@ class TestPanelsGenerateAPI:
 
     # Case-insensitive + trim
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
-    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
-    def test_generate_case_insensitive_and_trim(self, mock_get_latest, mock_uow, client):
+    def test_generate_case_insensitive_and_trim(self, mock_uow, client):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
         # SV missing, then each category lookup (all exist, so no category created)
-        mock_get_latest.side_effect = [[]] + [  # SV does not exist
-            [SimpleNamespace(panel_id=f"panel-{name}")] for name in panels_api.PANEL_NAME_POOL
+        uow.panels.query.side_effect = [[]] + [  # SV does not exist
+            [TestDataFactory.panel_basic(panel_id=f"panel-{name}", name=name)]
+            for name in panels_api.PANEL_NAME_POOL
         ]
 
         # Mock return for SV creation
-        uow.panels.add.return_value = SimpleNamespace(
+        uow.panels.add.return_value = TestDataFactory.panel_basic(
             panel_id="pnl-tsvnew",
             name="Science Verification",
         )
@@ -684,21 +716,16 @@ class TestPanelsAssignmentsAPI:
     # --------------------------------------------------------------------
     @mock.patch("ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
-    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_sv_no_submitted_returns_id_no_writes(
-        self, mock_uow, mock_get_latest, mock_build_sv, mock_ensure, client
+        self, mock_uow, mock_build_sv, mock_ensure, client
     ):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
 
-        # get_latest calls:
-        # 1) submitted proposals
-        # 2) existing SV panel lookup
-        mock_get_latest.side_effect = [
-            [],  # no submitted proposals
-            [SimpleNamespace(panel_id="pnl-tsv", sci_reviewers=[], tech_reviewers=[])],
-        ]
+        # submitted proposals now come from uow.prsls, panel lookups from uow.panels
+        uow.prsls.query.return_value = []  # no submitted proposals
+        uow.panels.query.return_value = [TestDataFactory.panel_basic(panel_id="pnl-tsv")]
 
         resp = client.post(
             f"{PANELS_API_URL}/assignments", params={"param": "Science Verification"}
@@ -720,12 +747,10 @@ class TestPanelsAssignmentsAPI:
     @mock.patch("ska_oso_services.pht.api.panels.build_assignment_response")
     @mock.patch("ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review")
     @mock.patch("ska_oso_services.pht.api.panels.build_sv_panel_proposals")
-    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_sv_with_submitted_adds_only_new_and_returns_summary(
         self,
         mock_uow,
-        mock_get_latest,
         mock_build_sv,
         mock_ensure_status,
         mock_build_resp,
@@ -737,14 +762,12 @@ class TestPanelsAssignmentsAPI:
         mock_uow.return_value.__enter__.return_value = uow
 
         # Two submitted proposals
-        proposal1 = SimpleNamespace(prsl_id="prp-tp1")
-        proposal2 = SimpleNamespace(prsl_id="prp-tp2")
+        proposal1 = TestDataFactory.proposal(prsl_id="prp-tp1")
+        proposal2 = TestDataFactory.proposal(prsl_id="prp-tp2")
         submitted_refs = [proposal1, proposal2]
 
-        mock_get_latest.side_effect = [
-            submitted_refs,
-            [SimpleNamespace(panel_id="pnl-tsv")],
-        ]
+        uow.prsls.query.return_value = submitted_refs
+        uow.panels.query.return_value = [TestDataFactory.panel_basic(panel_id="pnl-tsv")]
 
         reviewer_id = REVIEWERS["sci_reviewers"][0]["id"]
 
@@ -826,12 +849,10 @@ class TestPanelsAssignmentsAPI:
     @mock.patch("ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review")
     @mock.patch("ska_oso_services.pht.api.panels.assign_to_existing_panel")
     @mock.patch("ska_oso_services.pht.api.panels.group_proposals_by_science_category")
-    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_category_assigns_skips_missing_and_updates_status(
         self,
         mock_uow,
-        mock_get_latest,
         mock_group,
         mock_assign,
         mock_ensure,
@@ -845,27 +866,28 @@ class TestPanelsAssignmentsAPI:
         # deterministic pool
         monkeypatch.setattr(panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True)
 
-        # get_latest call sequence (exactly 3 calls):
-        # 1) fetch SUBMITTED proposals
-        # 2) lookup "Cosmology" panel
-        # 3) lookup "Stars" panel
-        mock_get_latest.side_effect = [
-            [SimpleNamespace(prsl_id="c1"), SimpleNamespace(prsl_id="s1")],  # SUBMITTED
-            [SimpleNamespace(panel_id="pnl-tcosmo")],  # Cosmology exists
+        # SUBMITTED proposals come from uow.prsls; panel lookups come from uow.panels
+        # (exactly 2 calls: Cosmology, then Stars)
+        uow.prsls.query.return_value = [
+            TestDataFactory.proposal(prsl_id="c1"),
+            TestDataFactory.proposal(prsl_id="s1"),
+        ]
+        uow.panels.query.side_effect = [
+            [TestDataFactory.panel_basic(panel_id="pnl-tcosmo")],  # Cosmology exists
             [],  # Stars missing
         ]
 
         mock_group.return_value = {
-            "Cosmology": [SimpleNamespace(prsl_id="c1")],
-            "Stars": [SimpleNamespace(prsl_id="s1")],
+            "Cosmology": [TestDataFactory.proposal(prsl_id="c1")],
+            "Stars": [TestDataFactory.proposal(prsl_id="s1")],
         }
 
-        cosmo_panel = SimpleNamespace(
+        cosmo_panel = TestDataFactory.panel_with_assignment(
             panel_id="pnl-tcosmo",
             name="Cosmology",
             proposals=[],
-            sci_reviewers=["keep-sci"],
-            tech_reviewers=["keep-tech"],
+            sci_reviewers=[TestDataFactory.reviewer_assignment(reviewer_id="keep-sci")],
+            tech_reviewers=[TestDataFactory.reviewer_assignment(reviewer_id="keep-tech")],
         )
         uow.panels.get.return_value = cosmo_panel
 
@@ -909,12 +931,10 @@ class TestPanelsAssignmentsAPI:
     @mock.patch("ska_oso_services.pht.api.panels.build_assignment_response")
     @mock.patch("ska_oso_services.pht.api.panels.ensure_submitted_proposals_under_review")
     @mock.patch("ska_oso_services.pht.api.panels.group_proposals_by_science_category")
-    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     def test_category_all_missing_returns_empty_and_no_status_update(
         self,
         mock_uow,
-        mock_get_latest,
         mock_group,
         mock_ensure,
         mock_build_resp,
@@ -926,15 +946,18 @@ class TestPanelsAssignmentsAPI:
 
         monkeypatch.setattr(panels_api, "PANEL_NAME_POOL", ["Cosmology", "Stars"], raising=True)
 
-        mock_get_latest.side_effect = [
-            [SimpleNamespace(prsl_id="c1"), SimpleNamespace(prsl_id="s1")],  # SUBMITTED
+        uow.prsls.query.return_value = [
+            TestDataFactory.proposal(prsl_id="c1"),
+            TestDataFactory.proposal(prsl_id="s1"),
+        ]
+        uow.panels.query.side_effect = [
             [],  # Cosmology missing
             [],  # Stars missing
         ]
 
         mock_group.return_value = {
-            "Cosmology": [SimpleNamespace(prsl_id="c1")],
-            "Stars": [SimpleNamespace(prsl_id="s1")],
+            "Cosmology": [TestDataFactory.proposal(prsl_id="c1")],
+            "Stars": [TestDataFactory.proposal(prsl_id="s1")],
         }
 
         # No updates --> build empty response
@@ -955,12 +978,10 @@ class TestPanelsUpdateStatusTransitions:
     @mock.patch(f"{MODULE}.ensure_decision_exist_or_create", autospec=True)
     @mock.patch(f"{MODULE}.set_removed_proposals_to_submitted", autospec=True)
     @mock.patch(f"{MODULE}.ensure_submitted_proposals_under_review", autospec=True)
-    @mock.patch(f"{MODULE}.validate_duplicates", autospec=True)
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_adds_new_proposal_marks_under_review(
         self,
         mock_uow,
-        mock_validate,
         mock_ensure_under_review,
         mock_set_removed,
         mock_ensure_decision,

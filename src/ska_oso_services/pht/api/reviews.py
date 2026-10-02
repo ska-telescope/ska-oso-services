@@ -15,7 +15,7 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.models.domain import PrslRole
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, select_with_conditions
+from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ def create_review(
                 kind=reviews.review_type.kind,
                 reviewer_id=reviews.reviewer_id,
             )
-            existing_rvws = get_latest_entity_by_id(uow.rvws.query(stmt), "review_id")
+            existing_rvws = uow.rvws.query(stmt)
             existing_rvw = existing_rvws[0] if existing_rvws else None
 
             if existing_rvw and existing_rvw.metadata.version == 1:
@@ -110,14 +110,10 @@ def get_reviews_for_user(
 
     with oda.uow() as uow:
         if has_group or has_role:
-            rows = get_latest_entity_by_id(
-                uow.rvws.query(select_with_conditions(TABLES.reviews)), "review_id"
-            )
+            return uow.rvws.query(select_with_conditions(TABLES.reviews))
         else:
             stmt = select_with_conditions(TABLES.reviews, reviewer_id=auth.user_id)
-            rows = uow.rvws.query(stmt)
-        reviews = get_latest_entity_by_id(rows, "review_id") or []
-        return reviews
+            return uow.rvws.query(stmt)
 
 
 @router.put(

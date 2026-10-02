@@ -18,14 +18,6 @@ class TestReportsAPI:
                 reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
             )
         ]
-        mock_reviews = [
-            TestDataFactory.reviews(
-                prsl_id=mock_proposals[0].prsl_id,
-                reviewer_id=REVIEWERS["sci_reviewers"][0]["id"],
-                review_id="rvw-trep01test",
-            )
-        ]
-        mock_decisions = [TestDataFactory.panel_decision(prsl_id=mock_proposals[0].prsl_id)]
         mock_report = [
             TestDataFactory.proposal_report(
                 prsl_id=mock_proposals[0].prsl_id,
@@ -43,18 +35,9 @@ class TestReportsAPI:
 
         with (
             mock.patch(
-                "ska_oso_services.pht.api.report.get_latest_entity_by_id"
-            ) as mock_get_latest,
-            mock.patch(
                 "ska_oso_services.pht.api.report.join_proposals_panels_reviews_decisions"
             ) as mock_join,
         ):
-            mock_get_latest.side_effect = [
-                mock_proposals,
-                mock_panels,
-                mock_reviews,
-                mock_decisions,
-            ]
             mock_join.return_value = mock_report
 
             response = client.get(f"{REPORT_API_URL}/")
