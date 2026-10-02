@@ -18,12 +18,14 @@ classifiers = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.14',
 ]
+
+
 dependencies = [
     "python-dateutil>=2.9,<3.0",
     "ska-ser-logging>=0.4.3,<0.5.0",
     # PDM dependency is pulled in via the ODA rather than being explicitly set here
     # If updating this, also remember to update the Helm dependency in the umbrella chart
-    "ska-db-oda==20.0.0-rc.1",
+    "ska-db-oda==20.0.0rc1+dev.c790e4265",
     "pydantic>=2.13,<3.0",
     "pydantic-settings>=2.15,<3.0",
     "fastapi[standard]>=0.141.1",
@@ -128,3 +130,6 @@ priority = "explicit"
 name = "gitlab-ska-ser-xray"
 url = "https://gitlab.com/api/v4/projects/39434823/packages/pypi/simple"
 priority = "explicit"
+
+[tool.uv.sources]
+ska-db-oda = { index = "gitlab-ska-db-oda" }
