@@ -9,7 +9,7 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
 from ska_oso_services.pht.models.schemas import ProposalReportResponse
 from ska_oso_services.pht.service.report_processing import join_proposals_panels_reviews_decisions
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, select_with_conditions
+from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +32,9 @@ def get_report() -> List[ProposalReportResponse]:
     logger.debug("GET REPORT create")
     logger.debug("GET REPORT")
     with oda.uow() as uow:
-        proposals = get_latest_entity_by_id(
-            uow.prsls.query(select_with_conditions(TABLES.proposals)), "prsl_id"
-        )
-        panels = get_latest_entity_by_id(
-            uow.panels.query(select_with_conditions(TABLES.panels)),
-            "panel_id",  # pylint: disable=no-member
-        )
-        reviews = get_latest_entity_by_id(
-            uow.rvws.query(select_with_conditions(TABLES.reviews)), "review_id"
-        )
-        decisions = get_latest_entity_by_id(
-            uow.pnlds.query(select_with_conditions(TABLES.panel_decisions)), "decision_id"
-        )
+        proposals = uow.prsls.query(select_with_conditions(TABLES.proposals))
+        panels = uow.panels.query(select_with_conditions(TABLES.panels))
+        reviews = uow.rvws.query(select_with_conditions(TABLES.reviews))
+        decisions = uow.pnlds.query(select_with_conditions(TABLES.panel_decisions))
     report = join_proposals_panels_reviews_decisions(proposals, panels, reviews, decisions)
     return report

@@ -17,7 +17,7 @@ from ska_ser_skuid import EntityType, mint_skuid
 
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.models.schemas import PanelAssignResponse
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, select_with_conditions
+from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -189,10 +189,10 @@ def ensure_review_exist_or_create(
     stmt = select_with_conditions(
         TABLES.reviews, prsl_fk=proposal_id, kind=kind, reviewer_id=reviewer_id
     )
-    existing = get_latest_entity_by_id(uow.rvws.query(stmt), "review_id")
+    existing = uow.rvws.query(stmt)
     existing_rvw = existing[0] if existing else None
 
-    if existing_rvw:  # TODO: check for where the metadata version ==1
+    if existing_rvw:
         logger.debug(
             "%s already exists (prsl_id=%s, reviewer=%s)",
             kind,
@@ -226,7 +226,7 @@ def ensure_decision_exist_or_create(uow, param, proposal_id: str) -> str:
     If not, create one with status TO_DO and return its decision_id.
     """
     stmt = select_with_conditions(TABLES.panel_decisions, prsl_fk=proposal_id)
-    existing = get_latest_entity_by_id(uow.pnlds.query(stmt), "decision_id")
+    existing = uow.pnlds.query(stmt)
     existing_pnld = existing[0] if existing else None
 
     if existing_pnld and hasattr(existing_pnld, "decision_id"):

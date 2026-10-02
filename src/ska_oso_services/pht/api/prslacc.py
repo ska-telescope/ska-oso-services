@@ -16,7 +16,7 @@ from ska_oso_services.pht.models.schemas import (
     ProposalAccessCreate,
     ProposalAccessResponse,
 )
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, select_with_conditions
+from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +69,8 @@ def get_access_for_user(
     logger.debug("Retrieving proposal access for user: %s", auth.user_id)
 
     with oda.uow() as uow:
-        proposal_access = get_latest_entity_by_id(
-            uow.prslacc.query(select_with_conditions(TABLES.access_tmp, user_id=auth.user_id)),
-            "access_id",
+        proposal_access = uow.prslacc.query(
+            select_with_conditions(TABLES.access_tmp, user_id=auth.user_id)
         )
     if not proposal_access:
         return []
@@ -99,9 +98,7 @@ def get_access_by_prsl_id(
             user_id=auth.user_id,
             role=ProposalRole.PrincipalInvestigator,
         )
-        proposal_access_pi = get_latest_entity_by_id(
-            uow.prslacc.query(query_param_pi), "access_id"
-        )
+        proposal_access_pi = uow.prslacc.query(query_param_pi)
 
         if not proposal_access_pi:
             raise ForbiddenError(
@@ -111,7 +108,7 @@ def get_access_by_prsl_id(
             )
 
         query_param = select_with_conditions(TABLES.access_tmp, prsl_fk=prsl_id)
-        proposal_access = get_latest_entity_by_id(uow.prslacc.query(query_param), "access_id")
+        proposal_access = uow.prslacc.query(query_param)
 
     if not proposal_access:
         return []
