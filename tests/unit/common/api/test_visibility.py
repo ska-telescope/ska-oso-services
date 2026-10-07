@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from unittest import mock
 
+from ska_oso_services.common.visibility import DEFAULT_MIN_ELEVATION_DEG
 from tests.conftest import TEST_BASE_API_URL
 
 VISIBILITY_API_URL = f"{TEST_BASE_API_URL}/visibility"
@@ -52,6 +53,32 @@ class TestVisibilitySvgEndpoint:
 
         _, kwargs = mock_render.call_args
         assert kwargs["show_ateam"] is True
+
+    @mock.patch("ska_oso_services.common.api.visibility.render_svg", return_value=_FAKE_SVG)
+    def test_min_elevation_defaults_for_both_arrays(self, mock_render, client):
+        client.get(f"{VISIBILITY_API_URL}/visibility?{_COMMON_PARAMS}")
+
+        _, kwargs = mock_render.call_args
+        assert kwargs["min_elevation_deg"] == DEFAULT_MIN_ELEVATION_DEG
+
+        client.get(f"{VISIBILITY_API_URL}/visibility?{_GALATIC_PARAM}")
+
+        _, kwargs = mock_render.call_args
+        assert kwargs["min_elevation_deg"] == DEFAULT_MIN_ELEVATION_DEG
+
+    @mock.patch("ska_oso_services.common.api.visibility.render_svg", return_value=_FAKE_SVG)
+    def test_min_elevation_passed_through(self, mock_render, client):
+        client.get(f"{VISIBILITY_API_URL}/visibility?{_COMMON_PARAMS}&min_elevation_deg=35")
+
+        _, kwargs = mock_render.call_args
+        assert kwargs["min_elevation_deg"] == 35.0
+
+    def test_min_elevation_out_of_range_returns_error(self, client):
+        response = client.get(
+            f"{VISIBILITY_API_URL}/visibility?{_COMMON_PARAMS}&min_elevation_deg=120"
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_invalid_array_returns_error(self, client):
         response = client.get(

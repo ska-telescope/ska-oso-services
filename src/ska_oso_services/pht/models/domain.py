@@ -2,7 +2,7 @@
 Model specific for the pht
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
@@ -11,7 +11,7 @@ from ska_oso_pdm.proposal import ProposalAccess, ProposalPermissions, ProposalRo
 from ska_oso_services.common.model import AppModel
 
 
-class PrslRole(str, Enum):
+class PrslRole(StrEnum):
     """
     Enum containing the IDs of PHT specific role-granting Groups
     defined in MS Entra ID.

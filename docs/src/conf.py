@@ -19,9 +19,8 @@
 #
 import os
 import sys
+import tomllib
 from pathlib import Path
-
-import tomli
 
 sys.path.insert(0, os.path.abspath("../.."))
 
@@ -33,7 +32,7 @@ os.environ.setdefault("AWS_REGION", "eu-west-2")
 os.environ.setdefault("USER_PORTAL_BASE_URL", "http://portal.example.org")
 
 with open(PROJECT_ROOT / "pyproject.toml", "rb") as fh:
-    pyproject = tomli.load(fh)
+    pyproject = tomllib.load(fh)
 
 
 autodoc_mock_imports = []
@@ -230,6 +229,8 @@ epub_copyright = copyright
 epub_exclude_files = ["search.html"]
 
 
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"python": ("https://docs.python.org/", None)}
+# Refer to the Python standard library. The inventory is fetched from docs.python.org,
+# falling back to the copy in this directory so that an outage there does not fail
+# the build (warnings are errors).
+intersphinx_mapping = {"python": ("https://docs.python.org/3", (None, "python-objects.inv"))}
 openapi_default_renderer = "httpdomain"

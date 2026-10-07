@@ -36,7 +36,11 @@ from ska_oso_services.common.calibrator_strategy import (
     lookup_observatory_calibration_strategy,
 )
 from ska_oso_services.common.calibrators import find_appropriate_calibrators
-from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
+from ska_oso_services.common.osdmapper import (
+    get_default_pdm_target_spfrx,
+    get_defaults_pdm_csp_spfrx,
+    get_subarray_specific_parameter_from_osd,
+)
 from ska_oso_services.common.sdpmapper import get_script_versions
 from ska_oso_services.common.static.constants import low_station_channel_width, mid_channel_width
 
@@ -121,6 +125,10 @@ def _sbd_from_science_programme(science_programme: ScienceProgramme, ob_ref: str
                         target_scan_sequence.insert(0, calibrator_scan_definition)
                     case CalibrationWhen.AFTER_EACH_SCAN:
                         target_scan_sequence.append(calibrator_scan_definition)
+
+        # SPFRx parameters are only a MID thing
+        else:
+            target.spfrx = get_default_pdm_target_spfrx()
 
         # adding the target scan sequence to the full scan_sequence
         scan_sequence += target_scan_sequence
@@ -254,6 +262,7 @@ def _csp_configuration_from_science_programme(
                         ]
                     )
                 ],
+                spfrx=get_defaults_pdm_csp_spfrx(),
             )
             lowcbf = None
         case _:

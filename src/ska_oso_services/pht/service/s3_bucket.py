@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
 from urllib.parse import quote
 
@@ -11,7 +11,7 @@ from ska_oso_services.settings import PRESIGNED_URL_EXPIRY_TIME, S3Config, get_s
 ProposalID = ShortSkuid[Literal[EntityType.PRP]]
 
 
-class S3Method(str, Enum):
+class S3Method(StrEnum):
     GET = "get_object"
     PUT = "put_object"
     DELETE = "delete_object"

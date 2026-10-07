@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
 import contextlib
-from enum import Enum
+from enum import StrEnum
 from os import environ, getenv, path
 
 import pytest
@@ -43,7 +43,7 @@ def pytest_configure():
 PHT_ADMIN_GROUP = "app:pht:ops_proposal_admin"
 
 
-class Scope(str, Enum):
+class Scope(StrEnum):
     ODT_READ = "odt:read"
     ODT_READWRITE = "odt:readwrite"
     PHT_READ = "pht:read"

@@ -108,6 +108,43 @@ class TestSBDefinitionAPI:
         assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
         assert response.status_code == HTTPStatus.NOT_FOUND
 
+    def test_sbds_get_version_existing(self, client_with_uow_mock):
+        """
+        Check the sbds_get method returns the expected SBD for a specific version
+        """
+        client, uow_mock = client_with_uow_mock
+        test_sbd = TestDataFactory.sbdefinition()
+        uow_mock.sbds.get_version.return_value = test_sbd
+
+        response = client.get(f"{SBDS_API_URL}/sbd-1234?version=2")
+
+        assert_json_is_equal(response.text, test_sbd.model_dump_json())
+        assert response.status_code == HTTPStatus.OK
+
+    def test_sbds_get_version_not_found_sbd(self, client_with_uow_mock):
+        """
+        Check the sbds_get method returns Not Found error when SBD not in ODA for a version query
+        """
+        client, uow_mock = client_with_uow_mock
+        uow_mock.sbds.get_version.side_effect = ODANotFound(identifier="sbd-1234")
+
+        response = client.get(f"{SBDS_API_URL}/sbd-1234?version=2")
+
+        assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
+    def test_sbds_get_version_not_found_version(self, client_with_uow_mock):
+        """
+        Check the sbds_get method returns Not Found error when version not found
+        """
+        client, uow_mock = client_with_uow_mock
+        uow_mock.sbds.get_version.side_effect = ODANotFound(identifier="sbd-1234")
+
+        response = client.get(f"{SBDS_API_URL}/sbd-1234?version=999")
+
+        assert response.json()["detail"] == "The requested identifier sbd-1234 could not be found."
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
     @mock.patch("ska_oso_services.validation.sbdefinition.validate_sbdefinition")
     def test_sbds_post_success(self, mock_validate, client_with_uow_mock):
         """
@@ -129,11 +166,13 @@ class TestSBDefinitionAPI:
         assert_json_is_equal(response.text, test_sbd.model_dump_json())
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbdefinition")
-    def test_sbds_post_given_sbd_id_raises_error(self, mock_validate, client):
+    def test_sbds_post_existing_sbd_id_raises_error(self, mock_validate, client_with_uow_mock):
         """
         Check the sbds_post method returns a validation error if the user
-        gives an sbd_id in the body, as we don't want to just silently overwrite this
+        gives an sbd_id that already exists, as we don't want to just silently overwrite this
         """
+        client, uow_mock = client_with_uow_mock
+        uow_mock.sbds.__contains__.return_value = True
         mock_validate.return_value = []
 
         response = client.post(
@@ -142,14 +181,8 @@ class TestSBDefinitionAPI:
             headers={"Content-type": "application/json"},
         )
 
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert response.json() == {
-            "detail": (
-                "sbd_id given in the body of the POST request. Identifier generation"
-                " for new entities is the responsibility of the ODA, which will fetch"
-                " them from SKUID, so they should not be given in this request."
-            )
-        }
+        assert response.status_code == HTTPStatus.CONFLICT
+        assert response.json() == {"detail": "sbd_id already present in the ODA."}
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbdefinition")
     def test_sbds_post_value_error(self, mock_validate, client):
@@ -158,10 +191,15 @@ class TestSBDefinitionAPI:
         """
         mock_validate.return_value = [
             ValidationIssue(
-                message="Maximum elevation (44.74 degrees) is less than the limit (45.0 degrees) ",
+                message="Maximum elevation (44.74 degrees) is less than the limit (45.0 degrees)",
                 field="$.targets.0",
                 level=ValidationIssueType.ERROR,
-            )
+            ),
+            ValidationIssue(
+                message="No validation of target visibility is currently performed",
+                field="$.targets.1",
+                level=ValidationIssueType.WARNING,
+            ),
         ]
         response = client.post(
             f"{SBDS_API_URL}",
@@ -170,17 +208,9 @@ class TestSBDefinitionAPI:
         )
 
         assert response.json() == {
-            "detail": {
-                "valid": False,
-                "issues": [
-                    {
-                        "field": "$.targets.0",
-                        "level": "error",
-                        "message": "Maximum elevation (44.74 degrees) is less "
-                        "than the limit (45.0 degrees) ",
-                    }
-                ],
-            }
+            "detail": "SBDefinition validation failed with issues "
+            "['$.targets.0: Maximum elevation (44.74 degrees) "
+            "is less than the limit (45.0 degrees)']"
         }
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
@@ -262,10 +292,7 @@ class TestSBDefinitionAPI:
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert response.json() == {
-            "detail": {
-                "issues": [{"field": "$.targets.0", "level": "error", "message": "foo"}],
-                "valid": False,
-            }
+            "detail": "SBDefinition validation failed with issues ['$.targets.0: foo']"
         }
 
     @mock.patch("ska_oso_services.odt.api.sbds.validate_sbdefinition")

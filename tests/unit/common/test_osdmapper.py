@@ -1,5 +1,9 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
 import pytest
 from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType
+from ska_oso_pdm._shared.spfrx import PeriodicNoiseDiodeConfig, PseudoRandomNoiseDiodeConfig
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
 from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
 
@@ -9,7 +13,9 @@ from ska_oso_services.common.osdmapper import (
     LowCBFMetrics,
     LowQualityAttributeMetrics,
     MidFrequencyBand,
+    SPFRxParameters,
     configuration_from_osd,
+    get_default_pdm_target_spfrx,
     get_low_basic_capability_parameter_from_osd,
     get_mid_frequency_band_data_from_osd,
     get_subarray_specific_parameter_from_osd,
@@ -62,10 +68,14 @@ def test_get_subarray_specific_parameter_fails_with_invalid_mid_subarray_value()
         )
 
 
-def test_get_subarray_specific_parameter_fails_for_invalid_parameter():
+@pytest.mark.parametrize(
+    "parameter",
+    ["not a parameter", "model_dump", "model_fields", "model_config"],
+)
+def test_get_subarray_specific_parameter_fails_for_invalid_parameter(parameter):
     with pytest.raises(ValueError):
         get_subarray_specific_parameter_from_osd(
-            TelescopeType.SKA_LOW, SubArrayLOW.AA2_ALL, "not a parameter"
+            TelescopeType.SKA_LOW, SubArrayLOW.AA2_ALL, parameter
         )
 
 
@@ -94,9 +104,13 @@ def test_get_telescope_observing_constraint_returns_constraints_for_low():
     assert value == 30.0
 
 
-def test_get_telescope_observing_constraint_fails_for_invalid_parameter():
+@pytest.mark.parametrize(
+    "parameter",
+    ["not_a_parameter", "model_dump", "model_fields", "model_config"],
+)
+def test_get_telescope_observing_constraint_fails_for_invalid_parameter(parameter):
     with pytest.raises(ValueError):
-        get_telescope_observing_constraint(TelescopeType.SKA_LOW, "not_a_parameter")
+        get_telescope_observing_constraint(TelescopeType.SKA_LOW, parameter)
 
 
 def test_configuration_from_osd_returns_low_cbf_metrics():
@@ -107,3 +121,42 @@ def test_configuration_from_osd_returns_low_cbf_metrics():
     cbf = value.ska_low.quality_attribute_metrics.cbf
 
     assert cbf.processors_ready_percent is not None, "processors_ready_percent must be present"
+
+
+def test_configuration_from_osd_returns_mid_spfrx_defaults():
+    value = configuration_from_osd()
+    assert type(value.ska_mid.spfrx_defaults) is SPFRxParameters
+
+
+def _mock_default_noise_diode_mode(mock_config, mode):
+    target_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx
+    modified = target_spfrx.model_copy(update={"default_noise_diode_mode": mode})
+
+    mock_config.return_value = SimpleNamespace(
+        ska_mid=SimpleNamespace(spfrx_defaults=SimpleNamespace(target_spfrx=modified))
+    )
+
+
+@pytest.mark.parametrize(
+    "mode,expected_type",
+    [
+        pytest.param("off", type(None), id="off"),
+        pytest.param("periodic", PeriodicNoiseDiodeConfig, id="periodic"),
+        pytest.param("pseudo_random", PseudoRandomNoiseDiodeConfig, id="pseudo_random"),
+    ],
+)
+@patch("ska_oso_services.common.osdmapper.configuration_from_osd")
+def test_default_noise_diode_mode_sets_expected_diode(mock_config, mode, expected_type):
+    _mock_default_noise_diode_mode(mock_config, mode)
+
+    result = get_default_pdm_target_spfrx()
+
+    assert type(result.noise_diode) is expected_type
+
+
+@patch("ska_oso_services.common.osdmapper.configuration_from_osd")
+def test_an_invalid_default_causes_a_value_error(mock_config):
+    _mock_default_noise_diode_mode(mock_config, "blah")
+
+    with pytest.raises(ValueError):
+        get_default_pdm_target_spfrx()

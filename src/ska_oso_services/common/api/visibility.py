@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 
 from ska_oso_services.common.static.constants import STEP_SECONDS_DEFAULT_VISIBILITY
-from ska_oso_services.common.visibility import SITES, render_svg
+from ska_oso_services.common.visibility import DEFAULT_MIN_ELEVATION_DEG, SITES, render_svg
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,12 @@ def visibility_svg(
     coord_system: str = Query("ICRS", description="ICRS | Galactic"),
     array: str = Query(..., description="LOW | MID"),
     show_ateam: bool = Query(True, description="Overlay A-team source elevations and separations"),
+    min_elevation_deg: float = Query(
+        DEFAULT_MIN_ELEVATION_DEG,
+        ge=0,
+        le=90,
+        description="Minimum elevation in degrees",
+    ),
 ) -> Response:
     key = array.upper()
     if key not in SITES:
@@ -41,6 +47,7 @@ def visibility_svg(
                     ra=ra,
                     dec=dec,
                     site_key=key,
+                    min_elevation_deg=min_elevation_deg,
                     step_s=STEP_SECONDS_DEFAULT_VISIBILITY,
                     show_ateam=show_ateam,
                 )
@@ -51,6 +58,7 @@ def visibility_svg(
                     l=float(l),
                     b=float(b),
                     site_key=key,
+                    min_elevation_deg=min_elevation_deg,
                     step_s=STEP_SECONDS_DEFAULT_VISIBILITY,
                     show_ateam=show_ateam,
                 )

@@ -39,12 +39,12 @@ substation_json = """
         "apertures": [
           {
             "station_id": 345,
-            "substation_id": 1,
+            "substation_id": 0,
             "weighting_key": "uniform"
           },
           {
             "station_id": 350,
-            "substation_id": 1,
+            "substation_id": 0,
             "weighting_key": "uniform"
           },
           {
@@ -54,12 +54,12 @@ substation_json = """
           },
           {
             "station_id": 352,
-            "substation_id": 1,
+            "substation_id": 0,
             "weighting_key": "uniform"
           },
           {
             "station_id": 431,
-            "substation_id": 1,
+            "substation_id": 0,
             "weighting_key": "uniform"
           }
         ],

@@ -8,9 +8,45 @@ Unreleased
 **********
 * Adds APIs for invitations, e.g. POST /pht/prsl/prp-1/invites
 * Adds APIs for members, e.g. POST /pht/prsl/prp-1/members
-* GSM survey constrained RA-sweep grouping now uses pairwise separation relative to beam FWHM
 * [BREAKING] Re-writes PHT permissions enforcement to be based on Indigo IAM group memberships.
 * [BREAKING] S3 file uploads are now scoped per-proposal.
+
+
+17.0.1
+******
+* [BUGFIX] `GET /pht/prsls/osd/cycles` no longer fails when the OSD main branch lists a cycle that is not in the pinned OSD release
+* Adds Role.INTERNAL to roles authorised to access services
+* Introduce a `min_elevation_deg` parameter in `render_svg`. 
+* Adds `/sbds/{sbd_id}?version={version}` API to query a specific SBDefinition version
+
+
+17.0.0
+******
+* [BREAKING] Updates OSD version to 7.0.0 (sync_pps default returned as `on`/`off`/`unset` instead of `True`/`False`)
+* [BUGFIX] Updates to only report validation Errors when `POST /sbds` request fails
+* Updates to ODA 19.4.1
+* Updates Python version to 3.14
+
+16.3.2
+******
+* [BUGFIX] Updates mccs validation to reflect 0 based indexing of substations
+
+16.3.1
+******
+* [BUGFIX] Updates `/configuration` endpoint to return a default noise diode mode
+* Updates the SBD generation from proposals to use the default noise diode mode
+
+16.3.0
+**********
+* Adds `/calibrators` endpoint for PHT that returns the appropriate calibrators for a given strategy
+* [BUGFIX] Fixes bugs in `generateBasicCommissioningSBDefinition` where reference frame was not passed into function and correct defaults not set
+
+16.2.0
+**********
+* GSM survey constrained RA-sweep grouping now uses pairwise separation relative to beam FWHM
+* Updated `/configuration` endpoint to return SPFRx defaults
+* Added `/{prj_id}/{obs_block_id}/generateBasicCommissioningSBDefinition` API
+* [BUGFIX] Fixes validation of band 5b CSP configurations
 
 16.1.0
 **********
@@ -39,6 +75,7 @@ Unreleased
 * Constrained RA-sweep grouping for GSM survey SBDs
 * Adds `POST /engineering/ebs/` with to allow ExecutionBlocks to be created with some initial data, such as labels
 * Adds `PATCH /engineering/ebs/{eb_id}/labels` to allow labels to be added to ExecutionBlocks after creation
+* Allow SKUIDs to be included in POST APIs to enable client side generation
 
 14.6.0
 **********

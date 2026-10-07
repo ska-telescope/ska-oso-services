@@ -17,13 +17,18 @@ from ska_oso_pdm.sb_definition import SBDefinition
 from starlette.responses import Response
 
 from ska_oso_services.common.auth import Permissions, Scope
-from ska_oso_services.common.error_handling import BadRequestError, UnprocessableEntityError
-from ska_oso_services.validation.model import ValidationContext, ValidationResponse
+from ska_oso_services.common.error_handling import DuplicateError, UnprocessableEntityError
+from ska_oso_services.validation.model import (
+    ValidationContext,
+    ValidationIssueType,
+    ValidationResponse,
+)
 from ska_oso_services.validation.sbdefinition import validate_sbdefinition
 
 LOGGER = logging.getLogger(__name__)
 
 API_ROLES = {
+    Role.INTERNAL,
     Role.SW_ENGINEER,
     Role.LOW_TELESCOPE_OPERATOR,
     Role.MID_TELESCOPE_OPERATOR,
@@ -55,14 +60,19 @@ def sbds_create() -> SBDefinition:
 def sbds_get(
     identifier: str,
     oda: UnitOfWork,
+    version: int | None = None,
 ) -> SBDefinition:
     """
     Retrieves the SchedulingBlockDefinition with the given identifier
     from the underlying data store, if available.
+    If version is provided, retrieves that specific version from history.
     """
-    LOGGER.debug("GET SBD sbd_id: %s", identifier)
+    LOGGER.debug("GET SBD sbd_id: %s, version: %s", identifier, version)
     with oda as uow:
-        sbd = uow.sbds.get(identifier)
+        if version is not None:
+            sbd = uow.sbds.get_version(identifier, version)
+        else:
+            sbd = uow.sbds.get(identifier)
     return sbd
 
 
@@ -103,24 +113,12 @@ def sbds_post(
     sbd_id and metadata populated.
     """
     LOGGER.debug("POST SBD")
-    validation_resp = validate(sbd)
-    if not validation_resp.valid:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail=validation_resp.model_dump(mode="json"),
-        )
+    validate_and_raise_exception(sbd)
 
-    # Ensure the identifier is None so the ODA doesn't try to perform an update
-    if sbd.sbd_id is not None:
-        raise BadRequestError(
-            detail=(
-                "sbd_id given in the body of the POST request. Identifier"
-                " generation for new entities is the responsibility of the ODA,"
-                " which will fetch them from SKUID, so they should not be given in"
-                " this request."
-            ),
-        )
     with oda as uow:
+        if sbd.sbd_id is not None and sbd.sbd_id in uow.sbds:
+            raise DuplicateError(detail=("sbd_id already present in the ODA."))
+
         updated_sbd = uow.sbds.add(sbd, user=auth.user_id)
         uow.commit()
 
@@ -145,12 +143,7 @@ def sbds_put(
     in the underlying data store to create a new version.
     """
     LOGGER.debug("POST SBD sbd_id: %s", identifier)
-    validation_resp = validate(sbd)
-    if not validation_resp.valid:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail=validation_resp.model_dump(mode="json"),
-        )
+    validate_and_raise_exception(sbd)
 
     if sbd.sbd_id != identifier:
         raise UnprocessableEntityError(
@@ -243,9 +236,24 @@ def sbds_status_set_draft(
         return uow.status.get_current_status(entity_id=identifier)
 
 
-def validate(sbd: SBDefinition) -> ValidationResponse:
+def validate_and_raise_exception(sbd: SBDefinition) -> None:
     """
-    Validate SB Definition by running custom validation steps
+    Validate SBDefinition and raises a HTTPException if invalid.
+
+    This should be used in APIs where the SBD is expected to be valid and it is an exceptional
+    case if not (as opposed to the /validate endpoint where an invalid result is still
+    returned as a 200).
     """
     validate_result = validate_sbdefinition(ValidationContext(primary_entity=sbd))
-    return ValidationResponse(issues=validate_result)
+    validation_resp = ValidationResponse(issues=validate_result)
+    if not validation_resp.valid:
+        error_messages = [
+            f"{issue.field}: {issue.message}"
+            for issue in validation_resp.issues
+            if issue.level == ValidationIssueType.ERROR
+        ]
+        message = f"SBDefinition validation failed with issues {error_messages}"
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=message,
+        )

@@ -1,17 +1,17 @@
 from datetime import timedelta
-from enum import Enum
+from enum import StrEnum
 
 from ska_oso_pdm._shared import TimedeltaMs
 
 from ska_oso_services.common.model import AppModel
 
 
-class CalibrationWhen(str, Enum):
+class CalibrationWhen(StrEnum):
     BEFORE_EACH_SCAN = "before_each_scan"
     AFTER_EACH_SCAN = "after_each_scan"
 
 
-class CalibratorChoice(str, Enum):
+class CalibratorChoice(StrEnum):
     CLOSEST = "closest"
     HIGHEST_ELEVATION = "highest_elevation"
 
@@ -41,13 +41,13 @@ OBSERVATORY_CALIBRATION_STRATEGIES: dict[str, CalibrationStrategy] = {
     strat.calibration_strategy_id: strat
     for strat in (
         CalibrationStrategy(
-            calibration_strategy_id="closest",
+            calibration_strategy_id=CalibratorChoice.CLOSEST.value,
             when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
             calibrator_choice=CalibratorChoice.CLOSEST,
             duration_ms=timedelta(minutes=10),
         ),
         CalibrationStrategy(
-            calibration_strategy_id="highest_elevation",
+            calibration_strategy_id=CalibratorChoice.HIGHEST_ELEVATION.value,
             when=[CalibrationWhen.BEFORE_EACH_SCAN, CalibrationWhen.AFTER_EACH_SCAN],
             calibrator_choice=CalibratorChoice.HIGHEST_ELEVATION,
             duration_ms=timedelta(minutes=10),

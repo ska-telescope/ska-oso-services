@@ -36,6 +36,12 @@
         "definition": "RADIO",
         "reference_frame": "LSRK",
         "redshift": 0
+      },
+      "spfrx": {
+        "attenuation_1_x": 10.0,
+        "attenuation_1_y": 10.0,
+        "attenuation_2_x": 10.0,
+        "attenuation_2_y": 10.0
       }
     }
   ],
@@ -63,7 +69,11 @@
               }
             ]
           }
-        ]
+        ],
+        "spfrx": {
+          "sync_pps": false,
+          "saturation_threshold": 0.55
+        }
       }
     }
   ],
