@@ -62,7 +62,7 @@ def fake_user_portal() -> Generator[DockerContainer, None, None]:
                 if error.code == 422:
                     ready = True
                     break
-            except (ConnectionResetError, OSError, URLError):
+            except ConnectionResetError, OSError, URLError:
                 time.sleep(0.2)
         if not ready:
             pytest.fail("Timed out waiting for Prism mock container")

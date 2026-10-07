@@ -3,14 +3,14 @@ from unittest import mock
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import status
 
+from ska_oso_services.pht.api.prsls import ProposalDocument
 from tests.conftest import PHT_BASE_API_URL
 
 PROPOSAL_API_URL = f"{PHT_BASE_API_URL}/prsls"
 PRSL_ID = "prp-test123"
 SCIENCE_FILENAME = "science-upload.pdf"
 TECHNICAL_FILENAME = "technical-upload.pdf"
-SCIENCE_SLOT = "science"
-TECHNICAL_SLOT = "technical"
+SV_DESCRIPTION_FILENAME = "sv-description-upload.pdf"
 
 
 class TestSignedUrlDelete:
@@ -19,7 +19,9 @@ class TestSignedUrlDelete:
     def test_create_delete_url_success(self, mock_create_url, mock_get_client, client):
         mock_get_client.return_value = mock.MagicMock()
         mock_create_url.return_value = "https://s3/delete-url"
-        response = client.post(f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/delete/{TECHNICAL_SLOT}")
+        response = client.post(
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/delete/{ProposalDocument.TECHNICAL}"
+        )
 
         assert response.status_code == 200
         mock_create_url.assert_called_once()
@@ -32,7 +34,9 @@ class TestSignedUrlDelete:
         """
         Test that a BotoCoreError is handled correctly
         """
-        response = client.post(f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/delete/{TECHNICAL_SLOT}")
+        response = client.post(
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/delete/{ProposalDocument.SV_DESCRIPTION}"
+        )
 
         assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
         assert "Could not initialize S3 client" in response.text
@@ -50,7 +54,9 @@ class TestSignedUrlDelete:
         """
         mock_get_client.return_value = mock.MagicMock()
 
-        response = client.post(f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/delete/{TECHNICAL_SLOT}")
+        response = client.post(
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/delete/{ProposalDocument.SCIENCE}"
+        )
 
         assert response.status_code == status.HTTP_502_BAD_GATEWAY
         assert "Failed to generate delete URL" in response.text
@@ -66,7 +72,7 @@ class TestSignedUrlUpload:
         mock_get_client.return_value = mock.MagicMock()
         mock_create_url.return_value = "https://s3/upload-url"
         response = client.post(
-            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_SLOT}?filename={SCIENCE_FILENAME}"
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{ProposalDocument.SCIENCE}?filename={SCIENCE_FILENAME}"
         )
 
         assert response.status_code == 200
@@ -79,7 +85,7 @@ class TestSignedUrlUpload:
         Test that an invalid filename returns a 422 error
         """
         response = client.post(
-            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_SLOT}?filename=bad%5Cname.pdf"
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{ProposalDocument.TECHNICAL}?filename=bad%5Cname.pdf"
         )
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -100,7 +106,7 @@ class TestSignedUrlUpload:
         """
         # Mock the S3 client to raise a BotoCoreError
         response = client.post(
-            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_SLOT}?filename={SCIENCE_FILENAME}"
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{ProposalDocument.SV_DESCRIPTION}?filename={SV_DESCRIPTION_FILENAME}"
         )
 
         assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
@@ -116,7 +122,7 @@ class TestSignedUrlUpload:
     def test_create_upload_url_client_error(self, mock_create_url, mock_get_client, client):
         mock_get_client.return_value = mock.MagicMock()
         response = client.post(
-            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{SCIENCE_SLOT}?filename={SCIENCE_FILENAME}"
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/upload/{ProposalDocument.TECHNICAL}?filename={TECHNICAL_FILENAME}"
         )
 
         assert response.status_code == status.HTTP_502_BAD_GATEWAY
@@ -132,16 +138,20 @@ class TestSignedUrlDownload:
     def test_create_download_url_success(self, mock_create_url, mock_get_client, client):
         mock_get_client.return_value = mock.MagicMock()
         mock_create_url.return_value = "https://s3/download-url"
-        response = client.post(f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/download/{SCIENCE_SLOT}")
+        response = client.post(
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/download/{ProposalDocument.SV_DESCRIPTION}"
+        )
 
         assert response.status_code == 200
         mock_create_url.assert_called_once()
-        assert mock_create_url.call_args.kwargs["key"] == f"{PRSL_ID}/science"
+        assert mock_create_url.call_args.kwargs["key"] == f"{PRSL_ID}/sv-description"
         assert response.text.strip('"') == "https://s3/download-url"
 
     @mock.patch("ska_oso_services.pht.api.prsls.get_aws_client", side_effect=BotoCoreError())
     def test_create_download_url_boto_core_error(self, mock_get_client, client):
-        response = client.post(f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/download/{SCIENCE_SLOT}")
+        response = client.post(
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/download/{ProposalDocument.TECHNICAL}"
+        )
 
         assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
         assert "Could not initialize S3 client" in response.text
@@ -155,7 +165,9 @@ class TestSignedUrlDownload:
     )
     def test_create_download_url_client_error(self, mock_create_url, mock_get_client, client):
         mock_get_client.return_value = mock.MagicMock()
-        response = client.post(f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/download/{SCIENCE_SLOT}")
+        response = client.post(
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/download/{ProposalDocument.SCIENCE}"
+        )
 
         assert response.status_code == status.HTTP_502_BAD_GATEWAY
         assert "Failed to generate download URL" in response.text

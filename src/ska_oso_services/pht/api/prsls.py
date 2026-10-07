@@ -506,6 +506,7 @@ async def send_email(
 
 
 class ProposalDocument(StrEnum):
+    SV_DESCRIPTION = "sv-description"
     SCIENCE = "science"
     TECHNICAL = "technical"
 
