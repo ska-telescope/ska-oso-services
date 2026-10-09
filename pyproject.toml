@@ -1,6 +1,6 @@
 [project]
 name = "ska-oso-services"
-version = "17.0.1"
+version = "17.1.0"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
 authors = [
     { name = "Team Buttons" },
@@ -23,7 +23,7 @@ dependencies = [
     "ska-ser-logging>=0.4.3,<0.5.0",
     # PDM dependency is pulled in via the ODA rather than being explicitly set here
     # If updating this, also remember to update the Helm dependency in the umbrella chart
-    "ska-db-oda>=19.5.0,<20.0.0",
+    "ska-db-oda>=19.6.0,<20.0.0",
     "pydantic>=2.13,<3.0",
     "pydantic-settings>=2.15,<3.0",
     "fastapi[standard]>=0.141.1",
