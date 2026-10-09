@@ -2273,7 +2273,7 @@ wheels = [
 
 [[package]]
 name = "ska-db-oda"
-version = "19.5.0"
+version = "19.6.0"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "fire" },
@@ -2286,14 +2286,14 @@ dependencies = [
     { name = "ska-ser-logging" },
     { name = "ska-ser-skuid" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.5.0/ska_db_oda-19.5.0.tar.gz", hash = "sha256:90412038f3d7e2655cc0267d4b32bb2765e75193f49fc3cb4596b3d3a7fcb3c1" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.6.0/ska_db_oda-19.6.0.tar.gz", hash = "sha256:96004f7a4d5ea1084371d0a89e9ffa76feb2270ab976745105f389eec8a5cf49" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.5.0/ska_db_oda-19.5.0-py3-none-any.whl", hash = "sha256:1461615938e131bb430299950dabe0d0c1fb5bae84874ff1df9a7fd7f2d528ac" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/19.6.0/ska_db_oda-19.6.0-py3-none-any.whl", hash = "sha256:c3ffd655bc74372e67bf0a332adde69746817826446b5b5fb7c298249c2aea2e" },
 ]
 
 [[package]]
 name = "ska-oso-pdm"
-version = "28.2.0"
+version = "28.3.0"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "astropy" },
@@ -2301,14 +2301,14 @@ dependencies = [
     { name = "pydantic", extra = ["email"] },
     { name = "ska-ser-skuid" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.2.0/ska_oso_pdm-28.2.0.tar.gz", hash = "sha256:acd87450ff4e3c2c664bd307a2d6929d0d211e98125a121c8350184d43e5ec74" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.3.0/ska_oso_pdm-28.3.0.tar.gz", hash = "sha256:52939ee4b0a29f930283a5e700bd3ae0cdc033535139cf616231fbc20f555bd4" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.2.0/ska_oso_pdm-28.2.0-py3-none-any.whl", hash = "sha256:cd8c412745b93b6275c507622e2c016bdcadbded547f40589ab1a09ec1687914" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.3.0/ska_oso_pdm-28.3.0-py3-none-any.whl", hash = "sha256:8fb8f65201f1927012a78e3d4c134031d2ca401810d2633f2de6b5d6ff8cb378" },
 ]
 
 [[package]]
 name = "ska-oso-services"
-version = "17.0.1"
+version = "17.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiosmtplib" },
@@ -2366,7 +2366,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.15,<3.0" },
     { name = "python-dateutil", specifier = ">=2.9,<3.0" },
     { name = "ska-aaa-authhelpers", specifier = ">=2.0.2,<3.0.0" },
-    { name = "ska-db-oda", specifier = ">=19.5.0,<20.0.0" },
+    { name = "ska-db-oda", specifier = ">=19.6.0,<20.0.0" },
     { name = "ska-ost-osd", specifier = ">=7.0.0,<8.0.0" },
     { name = "ska-ser-logging", specifier = ">=0.4.3,<0.5.0" },
     { name = "ska-ser-skuid", specifier = ">=6.0.0,<7.0.0" },

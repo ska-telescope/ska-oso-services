@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 
+17.1.0
+******
+* Target 19.6.0 or later release of the ODA (28.3.0 of the PDM) to pick up the new pst-metrics
 
 17.0.1
 ******
