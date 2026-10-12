@@ -11,6 +11,9 @@ Unreleased
 * [BREAKING] Re-writes PHT permissions enforcement to be based on Indigo IAM group memberships.
 * [BREAKING] S3 file uploads are now scoped per-proposal.
 
+17.1.0
+******
+* Target 19.6.0 or later release of the ODA (28.3.0 of the PDM) to pick up the new pst-metrics
 
 17.0.1
 ******
