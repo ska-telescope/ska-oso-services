@@ -21,7 +21,6 @@ classifiers = [
 
 
 dependencies = [
-    "python-dateutil>=2.9,<3.0",
     "ska-ser-logging>=0.4.3,<0.5.0",
     # PDM dependency is pulled in via the ODA rather than being explicitly set here
     # If updating this, also remember to update the Helm dependency in the umbrella chart
@@ -30,7 +29,7 @@ dependencies = [
     "pydantic-settings>=2.15,<3.0",
     "fastapi[standard]>=0.141.1",
     "astroquery>=0.4.11,<0.5.0",
-    "ska-ost-osd>=7.0.0,<8.0.0",
+    "ska-ost-osd==7.0.0+dev.c71593394",
     "ska-telmodel-client>=1.31.0,<2.0.0",
     "ska-ser-skuid>=6.0.0,<7.0.0",
     "aiosmtplib>=5.1.3,<6.0.0",
@@ -52,8 +51,6 @@ documentation = "https://developer.skao.int/projects/ska-oso-services/en/latest/
 dev = [
     "pytest>=8.2.2",
     "pytest-cov>=5.0.0",
-    "pytest-forked>=1.6.0",
-    "pytest-json-report>=1.5.0",
     "ruff>=0.15.20",
     "deepdiff>=7.0.0",
     "ska-ser-xray>=0.7.0",
@@ -67,8 +64,6 @@ docs = [
     # required to resolve the following import issue:
     # Could not import extension sphinxcontrib.openapi (exception: cannot import name 'error_string' from 'docutils.io'
     "mistune>=2",
-    # Required to be installed for the autodocs for the version check
-    "ska-ost-osd>=6.0.1",
 ]
 
 [tool.pytest.ini_options]
@@ -130,6 +125,9 @@ priority = "explicit"
 name = "gitlab-ska-ser-xray"
 url = "https://gitlab.com/api/v4/projects/39434823/packages/pypi/simple"
 priority = "explicit"
+
+[tool.uv.sources]
+ska-ost-osd = { index = "gitlab-ska-ost-osd" }
 
 [tool.uv.sources]
 ska-db-oda = { index = "gitlab-ska-db-oda" }
