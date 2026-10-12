@@ -3,12 +3,10 @@ This module calls the OSD and converts the relevant parts into the
 configuration needed for the application.
 """
 
-from enum import Enum
 from functools import cache
 from importlib.metadata import version
 from typing import Union
 
-from pydantic import AliasChoices, BaseModel, Field, dataclasses
 from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
 from ska_oso_pdm._shared.spfrx import (
     NoiseDiodeMode,
@@ -19,18 +17,10 @@ from ska_oso_pdm._shared.spfrx import (
 )
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
 from ska_oso_pdm.sb_definition.csp.midcbf import CSPSPFRxConfiguration, ReceiverBand
-from ska_ost_osd.osd.common.constant import VERSION_FILE_PATH
-from ska_ost_osd.osd.common.error_handling import OSDModelError
-from ska_ost_osd.osd.models.models import OSDQueryParams
-from ska_ost_osd.osd.osd import check_cycle_id, get_available_cycles, get_osd_using_tmdata
+from ska_ost_osd.osd.models.capabilities import Band5bSubband, MidFrequencyBand
+from ska_ost_osd.osd.models.configuration import Configuration
+from ska_ost_osd.osd.models.defaults import SyncPPS
 from ska_telmodel_client import TMData
-
-from ska_oso_services.common.error_handling import OSDError
-from ska_oso_services.common.model import AppModel
-
-SUPPORTED_COMMON_ARRAY_ASSEMBLIES = ["AA0.5", "AA1", "AA2"]
-MID_ARRAY_ASSEMBLIES = ["Mid_ITF"]
-LOW_ARRAY_ASSEMBLIES = ["AA2_SV", "Low_ITF"]
 
 # tmdata's default noise diode mode is a tri-state string ("periodic",
 # "pseudo_random", "off"), but PDM's NoiseDiodeMode enum only covers the first
@@ -39,327 +29,15 @@ LOW_ARRAY_ASSEMBLIES = ["AA2_SV", "Low_ITF"]
 NOISE_DIODE_MODE_OFF = "off"
 
 OSD_VERSION = version("ska-ost-osd")
-OSD_SOURCE = "car"
-# The mapping of cycles to OSD versions is read from the OSD main branch, so that
-# cycles published after the pinned ska-ost-osd release are still available.
-OSD_CYCLE_MAPPING_VERSION = "main"
-
-
-@dataclasses.dataclass
-class Band5bSubband:
-    sub_band: int
-    max_frequency_hz: float
-    min_frequency_hz: float
-    lo_frequency_hz: float
-    sideband: str
-
-
-@dataclasses.dataclass
-class FrequencyBand:
-    max_frequency_hz: float
-    min_frequency_hz: float
-
-
-@dataclasses.dataclass
-class MidFrequencyBand(FrequencyBand):
-    rx_id: str
-    band5b_subbands: list[Band5bSubband] | None = None
-
-
-@dataclasses.dataclass
-class LowFrequencyBand(FrequencyBand):
-    min_coarse_channel: int
-    max_coarse_channel: int
-    coarse_channel_width_hz: float
-    number_continuum_channels_per_coarse_channel: int
-    number_zoom_channels_per_coarse_channel: int
-    number_pst_channels_per_coarse_channel: int
-    number_pss_channels_per_coarse_channel: int
-
-
-class Subarray(BaseModel):
-    name: str
-    receptors: list[str | int] = Field(
-        validation_alias=AliasChoices("number_dish_ids", "number_station_ids")
-    )
-    available_bandwidth_hz: float
-    number_pst_beams: int
-    number_fsps: int
-
-
-class MidSubarray(Subarray):
-    allowed_channel_width_values_hz: list[int]
-
-
-class LowSubarray(Subarray):
-    number_substations: int
-    number_subarray_beams: int
-
-
-class Constraints(BaseModel):
-    sun_avoidance_angle_deg: float
-    moon_avoidance_angle_deg: float
-    jupiter_avoidance_angle_deg: float
-    min_elevation_deg: float
-    max_elevation_deg: float
-
-
-class PeriodicNoiseDiode(BaseModel):
-    mode: str = NoiseDiodeMode.PERIODIC
-    period_ms: float
-    duty_cycle_ms: float
-    phase_shift_ms: float
-
-
-class PseudoRandomNoiseDiode(BaseModel):
-    mode: str = NoiseDiodeMode.PSEUDO_RANDOM
-    binary_polynomial: int
-    seed: int
-    dwell_ms: float
-
-
-class TargetSPFRx(TargetSPFRxConfiguration):
-    noise_diode_options: list[PeriodicNoiseDiode | PseudoRandomNoiseDiode]
-    default_noise_diode_mode: str
-
-
-class SyncPPS(Enum):
-    UNSET = "unset"
-    ON = "on"
-    OFF = "off"
-
-
-class CSPSPFRx(BaseModel):
-    sync_pps: SyncPPS
-    saturation_threshold: float
-
-
-class SPFRxParameters(BaseModel):
-    target_spfrx: TargetSPFRx
-    csp_spfrx: CSPSPFRx
-
-
-@dataclasses.dataclass
-class LowCBFMetrics:
-    processors_ready_percent: float
-
-
-@dataclasses.dataclass
-class LowQualityAttributeMetrics:
-    cbf: LowCBFMetrics
-
-
-class MidConfiguration(AppModel):
-    frequency_band: list[MidFrequencyBand]
-    constraints: Constraints
-    subarrays: list[Subarray]
-    spfrx_defaults: SPFRxParameters
-
-
-class LowConfiguration(AppModel):
-    frequency_band: LowFrequencyBand
-    constraints: Constraints
-    quality_attribute_metrics: LowQualityAttributeMetrics
-    subarrays: list[LowSubarray]
-
-
-class Configuration(AppModel):
-    ska_mid: MidConfiguration
-    ska_low: LowConfiguration
 
 
 @cache
-def configuration_from_osd() -> Configuration:
+def configuration_from_osd(osd_version: str = OSD_VERSION) -> Configuration:
     """
-    Calls the OSD and converts the response into a Configuration
-    with information for the UI.
-
-    Note: currently this method uses the OSD as a library rather than
-     a service, calling its lower level functions directly.
-    """
-    tmdata = get_osd_tmdata()
-    return Configuration(
-        ska_mid=_get_mid_telescope_configuration(tmdata=tmdata),
-        ska_low=_get_low_telescope_configuration(tmdata=tmdata),
-    )
-
-
-def _get_mid_telescope_configuration(tmdata: TMData) -> MidConfiguration:
-
-    mid_response = get_osd_data(capabilities="mid", source=OSD_SOURCE, osd_version=OSD_VERSION)[
-        "capabilities"
-    ]["mid"]
-
-    subarrays = [
-        MidSubarray(
-            name=array_assembly,
-            **mid_response[array_assembly],
-        )
-        for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + MID_ARRAY_ASSEMBLIES
-    ]
-
-    receiver_information = mid_response["basic_capabilities"]["receiver_information"]
-
-    def frequency_band_from_receiver_information_for_band(receiver_information):
-        band5b_subbands = (
-            [Band5bSubband(**sub_band) for sub_band in receiver_information["sub_bands"]]
-            if receiver_information["rx_id"] == "Band_5b"
-            else None
-        )
-
-        return MidFrequencyBand(**receiver_information, band5b_subbands=band5b_subbands)
-
-    return MidConfiguration(
-        frequency_band=[
-            frequency_band_from_receiver_information_for_band(receiver_info)
-            for receiver_info in receiver_information
-        ],
-        constraints=_get_telescope_constraints(telescope=TelescopeType.SKA_MID, tmdata=tmdata),
-        subarrays=subarrays,
-        spfrx_defaults=_get_spfrx_defaults(tmdata=tmdata),
-    )
-
-
-def _get_low_telescope_configuration(tmdata: TMData) -> LowConfiguration:
-
-    low_response = get_osd_data(capabilities="low", source=OSD_SOURCE, osd_version=OSD_VERSION)[
-        "capabilities"
-    ]["low"]
-
-    subarrays = [
-        LowSubarray(
-            name=array_assembly,
-            **low_response[array_assembly],
-        )
-        for array_assembly in SUPPORTED_COMMON_ARRAY_ASSEMBLIES + LOW_ARRAY_ASSEMBLIES
-    ]
-
-    quality_attribute_metrics = low_response["quality_attribute_metrics"]
-    receiver_information = low_response["basic_capabilities"]
-
-    return LowConfiguration(
-        frequency_band=LowFrequencyBand(**receiver_information),
-        constraints=_get_telescope_constraints(telescope=TelescopeType.SKA_LOW, tmdata=tmdata),
-        quality_attribute_metrics=LowQualityAttributeMetrics(**quality_attribute_metrics),
-        subarrays=subarrays,
-    )
-
-
-def _get_telescope_constraints(telescope: TelescopeType, tmdata: TMData) -> Constraints:
-    if telescope == TelescopeType.SKA_MID:
-        path_prefix = "ska1_mid/mid_"
-    else:
-        path_prefix = "ska1_low/low_"
-
-    default_constraints_dict = tmdata[f"{path_prefix}defaults.json"].get_dict()["constraints"]
-    capabilities_constraints_dict = tmdata[f"{path_prefix}capabilities.json"].get_dict()[
-        "constraints"
-    ]
-
-    constraints = Constraints(**{**capabilities_constraints_dict, **default_constraints_dict})
-
-    return constraints
-
-
-def _get_spfrx_defaults(tmdata: TMData) -> SPFRxParameters:
-    defaults = tmdata["ska1_mid/mid_defaults.json"].get_dict()["defaults"]
-
-    dish_spfrx_params = defaults["target"]["dish_spfrx_params"]
-    noise_diode = dish_spfrx_params["noise_diode"]
-
-    noise_diode_options = [
-        PeriodicNoiseDiode(**noise_diode["periodic"]),
-        PseudoRandomNoiseDiode(**noise_diode["pseudo_random"]),
-    ]
-
-    default_mode = noise_diode["mode"]
-
-    target_spfrx_params = {
-        key: value for key, value in dish_spfrx_params.items() if key != "noise_diode"
-    }
-
-    return SPFRxParameters(
-        target_spfrx=TargetSPFRx(
-            **target_spfrx_params,
-            noise_diode_options=noise_diode_options,
-            default_noise_diode_mode=default_mode,
-        ),
-        csp_spfrx=CSPSPFRx(**defaults["csp_configuration"]["spfrx"]),
-    )
-
-
-@cache
-def get_osd_cycles():
-    """
-    Wrapper function for `get_available_cycles` that fetches osd data
-
-    This function calls `get_available_cycles`, and returns the sorted cycle
-    numbers. If it raises an `OSDModelError` or `ValueError`, this function
-    wraps and raises it as an `OSDError`
-    """
-    try:
-        cycle_numbers = get_available_cycles(get_osd_tmdata(OSD_CYCLE_MAPPING_VERSION))
-    except (OSDModelError, ValueError) as error:
-        raise OSDError(error) from error
-    return {"cycles": sorted(cycle_numbers)}
-
-
-@cache
-def get_osd_tmdata(osd_version: str = OSD_VERSION):
-    """
-    Wrapper function to fetch tmdata from the OSD that is not integrated into the
-    OSD source code
+    Builds the Configuration for the UI from the OSD's tmdata.
     """
     tmdata = TMData([f"car:ost/ska-ost-osd?{osd_version}"], update=True)
-    return tmdata
-
-
-@cache
-def _get_osd_version_for_cycle(cycle_id: int) -> str:
-    """
-    Resolve a PPT cycle number to the ska-ost-osd/CAR release version whose
-    tmdata contains that cycle's OSD data.
-
-    The mapping is read from the same OSD version as `get_osd_cycles`, so that
-    every cycle it lists can be resolved here.
-    """
-    tmdata = get_osd_tmdata(OSD_CYCLE_MAPPING_VERSION)
-    versions_dict = tmdata[VERSION_FILE_PATH].get_dict()
-    osd_version, cycle_errors = check_cycle_id(
-        tmdata=tmdata, cycle_id=cycle_id, versions_dict=versions_dict
-    )
-    if cycle_errors:
-        raise ValueError(cycle_errors)
-    return osd_version
-
-
-@cache
-def get_osd_data(*args, **kwargs):
-    """
-    Wrapper function for `get_osd_using_tmdata` that fetches osd data
-
-    This function constructs an `OSDQueryParams` object from the given
-    arguments and keyword arguments, calls `get_osd_using_tmdata` with these
-    parameters, and returns the result data. If it raises an `OSDModelError`
-    or `ValueError`, this function wraps and raises it as an `OSDError`
-    """
-    try:
-        params = OSDQueryParams(*args, **kwargs)
-        tmdata = (
-            get_osd_tmdata(_get_osd_version_for_cycle(params.cycle_id))
-            if params.cycle_id is not None
-            else get_osd_tmdata()
-        )
-        osd_data = get_osd_using_tmdata(
-            tm_data=tmdata,
-            capabilities=params.capabilities,
-            array_assembly=params.array_assembly,
-            cycle_id=params.cycle_id,
-            process_templates=True,
-        )
-    except (OSDModelError, ValueError) as error:
-        raise OSDError(error)
-    return osd_data
+    return Configuration.from_tmdata(tmdata)
 
 
 def get_telescope_observing_constraint(telescope: TelescopeType, parameter: str):
