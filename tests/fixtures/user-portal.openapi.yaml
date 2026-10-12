@@ -1,9 +1,27 @@
 # Snapshot of external user portal OpenAPI spec used for local Prism-backed tests.
 # Authoritative source (manual update only, no auto-sync):
-# https://gitlab.com/ska-telescope/sdi/ska-ser-user-portal-backend/-/raw/bed132e8e39746c45da516a0d03de43183cb86e5/docs/external-openapi.json
+# https://gitlab.com/ska-telescope/sdi/ska-ser-user-portal-backend/-/raw/9ef8cd36fd3cbb57920f013dd994482b9b7dcb53/docs/external-openapi.json
+# Contract version: 1.1
 
 components:
   schemas:
+    ExternalError:
+      description: 'The body of every error this API raises itself.
+
+
+        ``detail`` is a sentence meant for a log or an operator, not a field-level
+
+        report. FastAPI''s own request-validation failures answer with the array-shaped
+
+        ``HTTPValidationError`` instead, which is why both appear in this document.'
+      properties:
+        detail:
+          title: Detail
+          type: string
+      required:
+      - detail
+      title: ExternalError
+      type: object
     ExternalGroupCard:
       properties:
         created_at:
@@ -46,8 +64,6 @@ components:
         group_name:
           maxLength: 128
           minLength: 1
-          # Locally widened to allow ':' pending an upstream fix to the real spec
-          # (our group names use the "app:pht:<skuid>" scheme).
           pattern: ^[A-Za-z0-9._/:-]+$
           title: Group Name
           type: string
@@ -96,6 +112,12 @@ components:
             type: string
           - type: 'null'
           title: Portal User Id
+        preferred_username:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: The Entra object id, which is also the user's INDIGO userName and the preferred_username claim of their INDIGO token. Null until the account exists in Entra. Not the same as Entra's own preferred_username claim, which is a UPN.
+          title: Preferred Username
       required:
       - portal_user_id
       - iam_user_id
@@ -123,6 +145,80 @@ components:
       - as_of
       - stale
       title: ExternalGroupMembersResponse
+      type: object
+    ExternalInviteBulkCreateRequest:
+      description: Create several invites for one group in one call.
+      properties:
+        invites:
+          items:
+            $ref: '#/components/schemas/ExternalInviteCreateRequest'
+          maxItems: 100
+          minItems: 1
+          title: Invites
+          type: array
+      required:
+      - invites
+      title: ExternalInviteBulkCreateRequest
+      type: object
+    ExternalInviteBulkCreateResponse:
+      description: 'Per-item results. The response is 200 even when some items failed.
+
+
+        An item''s outcome is independent of its siblings: each create commits before
+
+        the next one starts, so a duplicate cannot discard the rest.'
+      properties:
+        created:
+          title: Created
+          type: integer
+        failed:
+          title: Failed
+          type: integer
+        results:
+          items:
+            $ref: '#/components/schemas/ExternalInviteBulkItemResult'
+          title: Results
+          type: array
+      required:
+      - results
+      - created
+      - failed
+      title: ExternalInviteBulkCreateResponse
+      type: object
+    ExternalInviteBulkItemResult:
+      description: What happened to one item of a bulk request, in the order it was sent.
+      properties:
+        detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Detail
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        index:
+          title: Index
+          type: integer
+        invite:
+          anyOf:
+          - $ref: '#/components/schemas/ExternalInviteCard'
+          - type: 'null'
+        portal_user_id:
+          anyOf:
+          - format: uuid
+            type: string
+          - type: 'null'
+          title: Portal User Id
+        status:
+          description: created, duplicate, not_found or invalid
+          title: Status
+          type: string
+      required:
+      - index
+      - status
+      title: ExternalInviteBulkItemResult
       type: object
     ExternalInviteCard:
       properties:
@@ -161,6 +257,11 @@ components:
         invited_by:
           title: Invited By
           type: string
+        invited_by_email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Invited By Email
         invited_email:
           title: Invited Email
           type: string
@@ -220,6 +321,13 @@ components:
             type: string
           - type: 'null'
           title: Email
+        expires_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          description: When the invitation stops working. Must carry a timezone, be in the future, and be no more than INVITE_EXPIRES_MAX_HOURS ahead (168 hours by default). Omitted, the default lifetime applies.
+          title: Expires At
         portal_user_id:
           anyOf:
           - format: uuid
@@ -242,7 +350,6 @@ components:
           title: Next Cursor
       required:
       - items
-      - next_cursor
       title: ExternalInviteListResponse
       type: object
     ExternalInviteRevokeResponse:
@@ -255,20 +362,23 @@ components:
       title: ExternalInviteRevokeResponse
       type: object
     ExternalMemberAddRequest:
-      description: 'Add an already-provisioned portal user to the group directly.
-
-
-        ``portal_user_id`` is ``user_records.id`` (as Search / Look-up return). The
-
-        user must already have an INDIGO account — a not-yet-provisioned invitee goes
-
-        through the invite flow instead, which waits on provisioning.'
+      description: "Add an already-provisioned user to the group directly.\n\nName the identifier you hold. Exactly one field, or the request is refused\nbefore anything is resolved. Nothing falls through: a handle that is unknown in\nthe namespace you named is a 404, never a retry in another namespace.\n\n* ``portal_user_id`` — ``user_records.id`` when it is a UUID (what Search and\n  Look-up return); any other string is read as an INDIGO ``userName``, which is\n  how a consumer holding only a username can keep using this field.\n* ``iam_user_id`` — the INDIGO account id, as the member card carries it. The\n  only way to address a member that exists in INDIGO but has no portal record.\n* ``preferred_username`` — the INDIGO ``userName``, which is the Entra object id\n  the portal writes when it creates the account.\n\nA not-yet-provisioned invitee has no INDIGO account, so they go through the\ninvite flow instead, which waits on provisioning."
       properties:
+        iam_user_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Iam User Id
         portal_user_id:
+          anyOf:
+          - type: string
+          - type: 'null'
           title: username
-          type: string
-      required:
-      - portal_user_id
+        preferred_username:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Preferred Username
       title: ExternalMemberAddRequest
       type: object
     ExternalMemberAddResponse:
@@ -301,6 +411,12 @@ components:
           format: uuid
           title: Portal User Id
           type: string
+        preferred_username:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: The Entra object id, which is also the user's INDIGO userName and the preferred_username claim of their INDIGO token. Null until the account exists in Entra. Not the same as Entra's own preferred_username claim, which is a UPN.
+          title: Preferred Username
         status:
           title: Status
           type: string
@@ -328,6 +444,12 @@ components:
             type: string
           - type: 'null'
           title: Portal User Id
+        preferred_username:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: The Entra object id, which is also the user's INDIGO userName and the preferred_username claim of their INDIGO token. Null until the account exists in Entra. Not the same as Entra's own preferred_username claim, which is a UPN.
+          title: Preferred Username
         status:
           anyOf:
           - type: string
@@ -358,6 +480,12 @@ components:
           format: uuid
           title: Portal User Id
           type: string
+        preferred_username:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: The Entra object id, which is also the user's INDIGO userName and the preferred_username claim of their INDIGO token. Null until the account exists in Entra. Not the same as Entra's own preferred_username claim, which is a UPN.
+          title: Preferred Username
         status:
           title: Status
           type: string
@@ -401,40 +529,37 @@ components:
       - type
       title: ValidationError
       type: object
+  securitySchemes:
+    INDIGO client credentials:
+      scheme: bearer
+      type: http
 info:
   title: SKAO User Portal — External (SV Ideas) API
   version: 0.1.0
+  x-contract-version: '1.1'
 openapi: 3.1.0
 paths:
   /api/external/v1/groups:
     post:
       operationId: create_group_api_external_v1_groups_post
       parameters:
-      - in: header
+      - description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
+        in: header
         name: X-Acting-User
-        required: false
+        required: true
         schema:
-          anyOf:
-          - type: string
-          - type: 'null'
+          description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
           title: X-Acting-User
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
-      - in: header
+          type: string
+      - description: 'A key unique to this attempt. Required. Replaying it returns the first response with Idempotency-Replayed: true.'
+        in: header
         name: Idempotency-Key
-        required: false
+        required: true
         schema:
-          anyOf:
-          - maxLength: 128
-            type: string
-          - type: 'null'
+          description: 'A key unique to this attempt. Required. Replaying it returns the first response with Idempotency-Replayed: true.'
+          maxLength: 128
           title: Idempotency-Key
+          type: string
       requestBody:
         content:
           application/json:
@@ -442,18 +567,78 @@ paths:
               $ref: '#/components/schemas/ExternalGroupCreateRequest'
         required: true
       responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalGroupCard'
+          description: The group already existed and is returned unchanged.
+          headers:
+            Idempotency-Replayed:
+              description: Present and 'true' when this body is a replay of the first request that used this Idempotency-Key, rather than a fresh write.
+              schema:
+                enum:
+                - 'true'
+                type: string
         '201':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExternalGroupCard'
           description: Successful Response
+          headers:
+            Idempotency-Replayed:
+              description: Present and 'true' when this body is a replay of the first request that used this Idempotency-Key, rather than a fresh write.
+              schema:
+                enum:
+                - 'true'
+                type: string
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: 'The resource is in a state this operation refuses: another owner, a non-mutable group, an invite that is no longer pending, or a parent group still being created.'
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: Create Group
       tags:
       - external-sv-ideas
@@ -461,28 +646,24 @@ paths:
     delete:
       operationId: delete_group_api_external_v1_groups__group_name__delete
       parameters:
-      - in: path
+      - description: 'The consumer-minted group name. One path segment: a nested name travels with its ''/'' percent-encoded as %2F. '':'' needs no encoding.'
+        in: path
         name: group_name
         required: true
         schema:
+          description: 'The consumer-minted group name. One path segment: a nested name travels with its ''/'' percent-encoded as %2F. '':'' needs no encoding.'
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._/:-]+$
           title: Group Name
           type: string
-      - in: header
+      - description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
+        in: header
         name: X-Acting-User
-        required: false
+        required: true
         schema:
-          anyOf:
-          - type: string
-          - type: 'null'
+          description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
           title: X-Acting-User
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
+          type: string
       responses:
         '200':
           content:
@@ -490,32 +671,68 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalGroupDeleteResponse'
           description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: 'The resource is in a state this operation refuses: another owner, a non-mutable group, an invite that is no longer pending, or a parent group still being created.'
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: Delete Group
       tags:
       - external-sv-ideas
     get:
       operationId: get_group_api_external_v1_groups__group_name__get
       parameters:
-      - in: path
+      - description: 'The consumer-minted group name. One path segment: a nested name travels with its ''/'' percent-encoded as %2F. '':'' needs no encoding.'
+        in: path
         name: group_name
         required: true
         schema:
+          description: 'The consumer-minted group name. One path segment: a nested name travels with its ''/'' percent-encoded as %2F. '':'' needs no encoding.'
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._/:-]+$
           title: Group Name
           type: string
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
       responses:
         '200':
           content:
@@ -523,12 +740,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalGroupCard'
           description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: Get Group
       tags:
       - external-sv-ideas
@@ -542,31 +793,23 @@ paths:
         schema:
           title: Group Name
           type: string
-      - in: header
+      - description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
+        in: header
         name: X-Acting-User
-        required: false
+        required: true
         schema:
-          anyOf:
-          - type: string
-          - type: 'null'
+          description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
           title: X-Acting-User
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
-      - in: header
+          type: string
+      - description: 'A key unique to this attempt. Required. Replaying it returns the first response with Idempotency-Replayed: true.'
+        in: header
         name: Idempotency-Key
-        required: false
+        required: true
         schema:
-          anyOf:
-          - maxLength: 128
-            type: string
-          - type: 'null'
+          description: 'A key unique to this attempt. Required. Replaying it returns the first response with Idempotency-Replayed: true.'
+          maxLength: 128
           title: Idempotency-Key
+          type: string
       requestBody:
         content:
           application/json:
@@ -580,18 +823,81 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalInviteCard'
           description: Successful Response
+          headers:
+            Idempotency-Replayed:
+              description: Present and 'true' when this body is a replay of the first request that used this Idempotency-Key, rather than a fresh write.
+              schema:
+                enum:
+                - 'true'
+                type: string
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: 'The resource is in a state this operation refuses: another owner, a non-mutable group, an invite that is no longer pending, or a parent group still being created.'
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: Create Invite
       tags:
       - external-sv-ideas
-  /api/external/v1/groups/{group_name}/members:
-    get:
-      operationId: list_members_api_external_v1_groups__group_name__members_get
+  /api/external/v1/groups/{group_name}/invites/bulk:
+    post:
+      description: 'Create up to a hundred invites for one group, reporting each item''s outcome.
+
+
+        The response is 200 with a result per item, in the order sent, because a batch
+
+        where one address is already invited is a normal outcome and not a failure of
+
+        the request. Items are independent: each create commits before the next starts,
+
+        so a duplicate cannot discard its siblings. One Idempotency-Key covers the
+
+        whole batch: replaying
+
+        it returns this same body rather than re-creating anything, so a consumer that
+
+        wants to retry only the failed items sends a new key with just those items.'
+      operationId: create_invites_bulk_api_external_v1_groups__group_name__invites_bulk_post
       parameters:
       - in: path
         name: group_name
@@ -599,25 +905,115 @@ paths:
         schema:
           title: Group Name
           type: string
-      - description: Enrich each member with name/email/affiliation (PII). Requires the portal:users.read
-          scope.
+      - description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
+        in: header
+        name: X-Acting-User
+        required: true
+        schema:
+          description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
+          title: X-Acting-User
+          type: string
+      - description: 'A key unique to this attempt. Required. Replaying it returns the first response with Idempotency-Replayed: true.'
+        in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          description: 'A key unique to this attempt. Required. Replaying it returns the first response with Idempotency-Replayed: true.'
+          maxLength: 128
+          title: Idempotency-Key
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalInviteBulkCreateRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalInviteBulkCreateResponse'
+          description: Successful Response
+          headers:
+            Idempotency-Replayed:
+              description: Present and 'true' when this body is a replay of the first request that used this Idempotency-Key, rather than a fresh write.
+              schema:
+                enum:
+                - 'true'
+                type: string
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: 'The resource is in a state this operation refuses: another owner, a non-mutable group, an invite that is no longer pending, or a parent group still being created.'
+        '422':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
+      summary: Create Invites Bulk
+      tags:
+      - external-sv-ideas
+  /api/external/v1/groups/{group_name}/members:
+    get:
+      operationId: list_members_api_external_v1_groups__group_name__members_get
+      parameters:
+      - description: 'The consumer-minted group name. One path segment: a nested name travels with its ''/'' percent-encoded as %2F. '':'' needs no encoding.'
+        in: path
+        name: group_name
+        required: true
+        schema:
+          description: 'The consumer-minted group name. One path segment: a nested name travels with its ''/'' percent-encoded as %2F. '':'' needs no encoding.'
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._/:-]+$
+          title: Group Name
+          type: string
+      - description: Enrich each member with their name, address and affiliation. Requires the portal:users.read scope.
         in: query
         name: include_user_info
         required: false
         schema:
           default: false
-          description: Enrich each member with name/email/affiliation (PII). Requires the portal:users.read
-            scope.
+          description: Enrich each member with their name, address and affiliation. Requires the portal:users.read scope.
           title: Include User Info
           type: boolean
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
       responses:
         '200':
           content:
@@ -625,49 +1021,85 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalGroupMembersResponse'
           description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: 'The resource is in a state this operation refuses: another owner, a non-mutable group, an invite that is no longer pending, or a parent group still being created.'
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: List Members
       tags:
       - external-sv-ideas
     post:
       operationId: add_member_api_external_v1_groups__group_name__members_post
       parameters:
-      - in: path
+      - description: 'The consumer-minted group name. One path segment: a nested name travels with its ''/'' percent-encoded as %2F. '':'' needs no encoding.'
+        in: path
         name: group_name
         required: true
         schema:
+          description: 'The consumer-minted group name. One path segment: a nested name travels with its ''/'' percent-encoded as %2F. '':'' needs no encoding.'
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._/:-]+$
           title: Group Name
           type: string
-      - in: header
+      - description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
+        in: header
         name: X-Acting-User
-        required: false
+        required: true
         schema:
-          anyOf:
-          - type: string
-          - type: 'null'
+          description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
           title: X-Acting-User
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
-      - in: header
+          type: string
+      - description: 'A key unique to this attempt. Required. Replaying it returns the first response with Idempotency-Replayed: true.'
+        in: header
         name: Idempotency-Key
-        required: false
+        required: true
         schema:
-          anyOf:
-          - maxLength: 128
-            type: string
-          - type: 'null'
+          description: 'A key unique to this attempt. Required. Replaying it returns the first response with Idempotency-Replayed: true.'
+          maxLength: 128
           title: Idempotency-Key
+          type: string
       requestBody:
         content:
           application/json:
@@ -681,48 +1113,102 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalMemberAddResponse'
           description: Successful Response
+          headers:
+            Idempotency-Replayed:
+              description: Present and 'true' when this body is a replay of the first request that used this Idempotency-Key, rather than a fresh write.
+              schema:
+                enum:
+                - 'true'
+                type: string
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: 'The resource is in a state this operation refuses: another owner, a non-mutable group, an invite that is no longer pending, or a parent group still being created.'
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: Add Member
       tags:
       - external-sv-ideas
-  /api/external/v1/groups/{group_name}/members/{portal_user_id}:
+  /api/external/v1/groups/{group_name}/members/{member}:
     delete:
-      operationId: remove_member_api_external_v1_groups__group_name__members__portal_user_id__delete
+      operationId: remove_member_api_external_v1_groups__group_name__members__member__delete
       parameters:
-      - in: path
+      - description: 'The consumer-minted group name. One path segment: a nested name travels with its ''/'' percent-encoded as %2F. '':'' needs no encoding.'
+        in: path
         name: group_name
         required: true
         schema:
+          description: 'The consumer-minted group name. One path segment: a nested name travels with its ''/'' percent-encoded as %2F. '':'' needs no encoding.'
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._/:-]+$
           title: Group Name
           type: string
-      - in: path
-        name: portal_user_id
+      - description: 'The member''s handle, in the namespace named by ?by= or inferred from its shape: a UUID is a portal_user_id, anything else a preferred_username.'
+        in: path
+        name: member
         required: true
         schema:
-          format: uuid
-          title: Portal User Id
+          description: 'The member''s handle, in the namespace named by ?by= or inferred from its shape: a UUID is a portal_user_id, anything else a preferred_username.'
+          title: Member
           type: string
-      - in: header
+      - description: 'Which namespace the member handle belongs to: portal_user_id, iam_user_id or preferred_username. Omitted, a UUID is read as a portal_user_id and anything else as a preferred_username. Pass by=iam_user_id to remove a member that has no portal record, using the iam_user_id from the member list.'
+        in: query
+        name: by
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 'Which namespace the member handle belongs to: portal_user_id, iam_user_id or preferred_username. Omitted, a UUID is read as a portal_user_id and anything else as a preferred_username. Pass by=iam_user_id to remove a member that has no portal record, using the iam_user_id from the member list.'
+          title: By
+      - description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
+        in: header
         name: X-Acting-User
-        required: false
+        required: true
         schema:
-          anyOf:
-          - type: string
-          - type: 'null'
+          description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
           title: X-Acting-User
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
+          type: string
       responses:
         '200':
           content:
@@ -730,33 +1216,90 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalMemberRemoveResponse'
           description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: 'The resource is in a state this operation refuses: another owner, a non-mutable group, an invite that is no longer pending, or a parent group still being created.'
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: Remove Member
       tags:
       - external-sv-ideas
   /api/external/v1/invites:
     get:
-      description: 'At-least-once keyset feed over (updated_at, id) ascending.
+      description: 'Invites ordered by ``updated_at`` then ``id``, filtered and capped.
 
 
-        Rows only become visible once their updated_at is at least
+        Page with ``updated_since``: re-read from the newest ``updated_at`` you have
 
-        ``FEED_VISIBILITY_LAG_SECONDS`` in the past (a row committed concurrently
+        seen, a little earlier to overlap, and treat items idempotently, because any
 
-        with a page read could otherwise land *behind* an already-served cursor
+        update re-delivers a row at its new position. De-duplicate on ``invite_id``.
 
-        position and be skipped permanently). Delivery is at-least-once — any update
 
-        re-delivers the row at its new feed position — so consumers must treat items
+        A row is withheld until its ``updated_at`` is a couple of seconds old, so a
 
-        idempotently. ``invited_by`` scopes the feed to one PI''s invites (the
+        row committed during a page read cannot slip behind a position you have
 
-        "all my pending / expired invites" view).'
+        already passed. A page never stops inside a block of rows that share one
+
+        ``updated_at``, so it may return more than ``limit`` rows; without that you
+
+        could not page past such a block at all. ``invited_by`` scopes the feed to one
+
+        PI''s invites.
+
+
+        ``status`` matches the same wall-clock status the card reports, so a pending
+
+        invite whose expiry has passed answers ``status=expired`` and not
+
+        ``status=pending``, whether or not the hourly sweep has run.
+
+
+        ``next_cursor`` is always null and ``cursor`` is ignored. Both remain so a
+
+        consumer written against the signed-cursor feed keeps working.'
       operationId: list_invites_api_external_v1_invites_get
       parameters:
       - in: query
@@ -797,30 +1340,27 @@ paths:
             type: string
           - type: 'null'
           title: Status
-      - in: query
+      - deprecated: true
+        description: Accepted and ignored. Page with updated_since instead.
+        in: query
         name: cursor
         required: false
         schema:
           anyOf:
           - type: string
           - type: 'null'
+          deprecated: true
+          description: Accepted and ignored. Page with updated_since instead.
           title: Cursor
       - in: query
         name: limit
         required: false
         schema:
-          default: 25
+          default: 500
+          maximum: 5000
           minimum: 1
           title: Limit
           type: integer
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
       responses:
         '200':
           content:
@@ -828,12 +1368,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalInviteListResponse'
           description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: List Invites
       tags:
       - external-sv-ideas
@@ -848,22 +1416,14 @@ paths:
           format: uuid
           title: Invite Id
           type: string
-      - in: header
+      - description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
+        in: header
         name: X-Acting-User
-        required: false
+        required: true
         schema:
-          anyOf:
-          - type: string
-          - type: 'null'
+          description: 'The INDIGO account id of the user this write acts for. Required: it is the basis of the ownership checks and it is recorded on every audit event.'
           title: X-Acting-User
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
+          type: string
       responses:
         '200':
           content:
@@ -871,12 +1431,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalInviteRevokeResponse'
           description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: 'The resource is in a state this operation refuses: another owner, a non-mutable group, an invite that is no longer pending, or a parent group still being created.'
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: Revoke Invite
       tags:
       - external-sv-ideas
@@ -890,64 +1490,88 @@ paths:
           format: uuid
           title: Invite Id
           type: string
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
       responses:
         '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExternalInviteCard'
-              example:
-                invite_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                group_name: app:pht:prp-123
-                invited_email: invitee@example.org
-                invited_by: pi@example.org
-                status: pending
-                claim_state: pending
-                accepted_via: null
-                email_mismatch: false
-                claimed_by_portal_user_id: null
-                created_at: '2026-01-01T00:00:00Z'
-                updated_at: '2026-01-01T00:00:00Z'
-                expires_at: '2026-02-01T00:00:00Z'
-                responded_at: null
           description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: Get Invite
       tags:
       - external-sv-ideas
   /api/external/v1/users/lookup:
     get:
+      description: 'Look a user up by contact address or by Entra object id.
+
+
+        Exactly one of the two, and both answer the same uniform 404, so the endpoint
+
+        is not an oracle beyond the exact value the caller already holds.'
       operationId: lookup_user_api_external_v1_users_lookup_get
       parameters:
       - in: query
         name: email
-        required: true
-        schema:
-          maxLength: 320
-          minLength: 3
-          title: Email
-          type: string
-      - in: header
-        name: authorization
         required: false
         schema:
           anyOf:
-          - type: string
+          - maxLength: 320
+            minLength: 3
+            type: string
           - type: 'null'
-          title: Authorization
+          title: Email
+      - description: The Entra object id, as an alternative to email. Exactly one of the two.
+        in: query
+        name: preferred_username
+        required: false
+        schema:
+          anyOf:
+          - maxLength: 64
+            minLength: 1
+            type: string
+          - type: 'null'
+          description: The Entra object id, as an alternative to email. Exactly one of the two.
+          title: Preferred Username
       responses:
         '200':
           content:
@@ -955,12 +1579,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalUserLookupResponse'
           description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: Lookup User
       tags:
       - external-sv-ideas
@@ -997,14 +1655,6 @@ paths:
           minimum: 1
           title: Limit
           type: integer
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
       responses:
         '200':
           content:
@@ -1012,12 +1662,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalUserSearchResponse'
           description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: Search Users
       tags:
       - external-sv-ideas
@@ -1032,14 +1710,6 @@ paths:
           format: uuid
           title: Portal User Id
           type: string
-      - in: header
-        name: authorization
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Authorization
       responses:
         '200':
           content:
@@ -1047,12 +1717,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalUserStatusResponse'
           description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The bearer token is missing, malformed, expired or not allowlisted.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The token lacks a scope this route requires.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: No such group, invite or member.
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
+                anyOf:
+                - $ref: '#/components/schemas/ExternalError'
+                - $ref: '#/components/schemas/HTTPValidationError'
+          description: Request invalid. Either a one-sentence detail from this API or FastAPI's array of field-level validation errors.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: The client's rate limit for this window is spent.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalError'
+          description: INDIGO IAM could not be reached. Retry with the same Idempotency-Key.
+      security:
+      - INDIGO client credentials: []
       summary: User Status
       tags:
       - external-sv-ideas
