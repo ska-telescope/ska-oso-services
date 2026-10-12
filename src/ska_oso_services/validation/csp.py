@@ -8,14 +8,13 @@ from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.sb_definition import CSPConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 from ska_oso_pdm.sb_definition.csp.midcbf import CorrelationSPWConfiguration, ReceiverBand
+from ska_ost_osd.osd.models.capabilities import Band5bSubband, MidFrequencyBand
 
 from ska_oso_services.common.astro import (
     low_centre_frequency_to_coarse_channel_end,
     low_centre_frequency_to_coarse_channel_start,
 )
 from ska_oso_services.common.osdmapper import (
-    Band5bSubband,
-    MidFrequencyBand,
     get_mid_frequency_band_data_from_osd,
     get_subarray_specific_parameter_from_osd,
 )
