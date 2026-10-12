@@ -2367,7 +2367,7 @@ requires-dist = [
     { name = "python-dateutil", specifier = ">=2.9,<3.0" },
     { name = "ska-aaa-authhelpers", specifier = ">=2.0.2,<3.0.0" },
     { name = "ska-db-oda", specifier = ">=19.6.0,<20.0.0" },
-    { name = "ska-ost-osd", specifier = ">=7.0.0,<8.0.0" },
+    { name = "ska-ost-osd", specifier = "==7.0.0+dev.c71593394", index = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple" },
     { name = "ska-ser-logging", specifier = ">=0.4.3,<0.5.0" },
     { name = "ska-ser-skuid", specifier = ">=6.0.0,<7.0.0" },
     { name = "ska-telmodel-client", specifier = ">=1.30.2,<2.0.0" },
@@ -2387,7 +2387,7 @@ dev = [
 docs = [
     { name = "mistune", specifier = ">=2" },
     { name = "myst-parser", specifier = ">=4.0.1" },
-    { name = "ska-ost-osd", specifier = ">=6.0.1" },
+    { name = "ska-ost-osd", specifier = ">=6.0.1", index = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple" },
     { name = "ska-ser-sphinx-theme", specifier = ">=0.2.1" },
     { name = "sphinx-pydantic", specifier = ">=0.1.1" },
     { name = "sphinxcontrib-openapi", specifier = ">=0.8.4" },
@@ -2395,8 +2395,8 @@ docs = [
 
 [[package]]
 name = "ska-ost-osd"
-version = "7.0.0"
-source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
+version = "7.0.0+dev.c71593394"
+source = { registry = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/simple" }
 dependencies = [
     { name = "astropy" },
     { name = "fastapi", extra = ["standard"] },
@@ -2406,9 +2406,9 @@ dependencies = [
     { name = "ska-ser-logging" },
     { name = "ska-telmodel-client" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/7.0.0/ska_ost_osd-7.0.0.tar.gz", hash = "sha256:0c56e88f0f392d725b6aadd7c3e27d0102b8d541ba5fe80c37e4a32d77024915" }
+sdist = { url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/files/1503256398c77510cf9be1fc0f5cb7c53bd2636335fc15d721bd86a1f683f6e6/ska_ost_osd-7.0.0+dev.c71593394.tar.gz", hash = "sha256:1503256398c77510cf9be1fc0f5cb7c53bd2636335fc15d721bd86a1f683f6e6" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/7.0.0/ska_ost_osd-7.0.0-py3-none-any.whl", hash = "sha256:ea05a99f3f0a4b5c870a862160c1bc43d4f9d091c50f2d01ddf4ab6731df12b4" },
+    { url = "https://gitlab.com/api/v4/projects/55825670/packages/pypi/files/692009ff487a7a1fa29a582bad1a8cef9ce2a8b481b99a7e4952105f00377f9a/ska_ost_osd-7.0.0+dev.c71593394-py3-none-any.whl", hash = "sha256:692009ff487a7a1fa29a582bad1a8cef9ce2a8b481b99a7e4952105f00377f9a" },
 ]
 
 [[package]]
