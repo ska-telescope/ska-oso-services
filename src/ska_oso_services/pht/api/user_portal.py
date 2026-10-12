@@ -63,6 +63,7 @@ async def create_invites(
                 await service.create_invite(
                     prsl_id=prsl_id,
                     invite_payload=invite_payload,
+                    acting_user=security.auth.user_id,
                 )
             )
         )
@@ -116,7 +117,9 @@ async def delete_invite(
 
     security.proposals.allowed_to_administer(prsl_id)
 
-    return InviteDeleteResponse.model_validate(await service.delete_invite(invite_id=invite_id))
+    return InviteDeleteResponse.model_validate(
+        await service.delete_invite(invite_id=invite_id, acting_user=security.auth.user_id)
+    )
 
 
 @router.get(

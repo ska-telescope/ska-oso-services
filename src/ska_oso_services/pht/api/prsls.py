@@ -175,8 +175,10 @@ async def create_proposal(
     try:
         # Portal calls must happen outside the UoW to avoid holding an open
         # DB transaction across async I/O, which corrupts the session state.
-        groups = await portal.create_proposal_groups(proposal.prsl_id)
-        await portal.create_membership(groups.admin, security.auth.user_id)
+        groups = await portal.create_proposal_groups(proposal.prsl_id, security.auth.user_id)
+        await portal.create_membership(
+            groups.admin, security.auth.user_id, acting_user=security.auth.user_id
+        )
 
         with oda.uow() as uow:
             created_prsl = uow.prsls.add(proposal, security.auth.user_id)
@@ -483,9 +485,12 @@ def validate_proposal(prsl: Proposal) -> dict:
     "/send-email/",
     summary="Send a proposal invitation email",
     deprecated=True,
-    dependencies=[Security(roles={Role.ANY}, scopes={Scope.PHT_READWRITE})],
 )
 async def send_email(
+    security: Annotated[
+        SecurityService,
+        Security(roles={Role.ANY}, scopes={Scope.PHT_READWRITE}),
+    ],
     request: EmailRequest,
     service: Annotated[UserPortalService, Depends(UserPortalService)],
     response: Response,
@@ -501,6 +506,7 @@ async def send_email(
     await service.create_invite(
         prsl_id=request.prsl_id,
         invite_payload={"email": request.email},
+        acting_user=security.auth.user_id,
     )
     return {"message": "Email sent successfully"}
 

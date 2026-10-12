@@ -67,15 +67,17 @@ class TestDeleteInvite:
         service = create_autospec(user_portal.UserPortalService, instance=True)
         service.get_invite.return_value = _invite_card(group_name=f"app:pht:{PRSL_ID}")
         service.delete_invite.return_value = {"status": "deleted"}
+        invite_id = uuid4()
 
         response = await delete_invite(
             security=_pi_security(PRSL_ID),
             service=service,
             prsl_id=PRSL_ID,
-            invite_id=uuid4(),
+            invite_id=invite_id,
         )
 
         assert response.status == "deleted"
+        service.delete_invite.assert_awaited_once_with(invite_id=invite_id, acting_user=USER_ID)
 
     async def test_delete_invite_matching_admin_subgroup_succeeds(self):
         # Invites for the admin (/w/a) tier of the proposal's groups are still that

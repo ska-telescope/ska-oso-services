@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from typing import Any, Literal, NamedTuple
 from urllib.parse import quote
-from uuid import UUID, uuid1
+from uuid import UUID, uuid7
 
 import httpx
 from fastapi import Header, HTTPException
@@ -62,16 +62,24 @@ async def call_user_portal(
 
 
 class UserPortalService:
-    def __init__(self, x_request_id: str = Header(default_factory=lambda: str(uuid1()))) -> None:
+    def __init__(self, x_request_id: str = Header(default_factory=lambda: str(uuid7()))) -> None:
         portal = get_settings().userportal
         self.base_url = str(portal.base_url).rstrip("/")
         self.timeout = portal.timeout
         self.headers = {
-            "Authorization": portal.api_key,
+            "Authorization": f"Bearer {portal.api_key}",
             "Accept": "application/json",
             "User-Agent": "ska-oso-services:pht",
             "X-Request-Id": x_request_id,
         }
+
+    def _write_headers(self, acting_user: str, idempotent: bool = True) -> dict[str, str]:
+        """Headers for state-changing calls: who we act on behalf of, and a per-call
+        Idempotency-Key (required by the portal on POSTs)."""
+        headers = {**self.headers, "X-Acting-User": acting_user}
+        if idempotent:
+            headers["Idempotency-Key"] = str(uuid7())
+        return headers
 
     async def search_users(self, query: str, limit: int) -> dict[str, Any]:
         response = await call_user_portal(
@@ -86,6 +94,7 @@ class UserPortalService:
     async def _create_entity_groups(
         self,
         skuid: ShortSkuid,
+        acting_user: str,
         read_desc: str,
         write_desc: str,
         admin_desc: str,
@@ -100,35 +109,41 @@ class UserPortalService:
             get_group_name(skuid, admin=True),
         )
         for name, desc in zip(names, (read_desc, write_desc, admin_desc)):
-            await self.create_group(name, desc)
+            await self.create_group(name, acting_user, desc)
         return names
 
     async def create_proposal_groups(
-        self, prsl_id: ShortSkuid[Literal[et.PRP]]
+        self, prsl_id: ShortSkuid[Literal[et.PRP]], acting_user: str
     ) -> ProposalGroupsTuple:
         read, write, admin = await self._create_entity_groups(
             prsl_id,
+            acting_user,
             read_desc=f"Collaborators on proposal ({prsl_id})",
             write_desc=f"Co-Investigators with edit rights on proposal ({prsl_id})",
             admin_desc=f"Principal Investigator(s) for proposal ({prsl_id})",
         )
         return ProposalGroupsTuple(read=read, write=write, admin=admin)
 
-    async def create_panel_groups(self, pnl_id: ShortSkuid[Literal[et.PNL]]) -> PanelGroupsTuple:
+    async def create_panel_groups(
+        self, pnl_id: ShortSkuid[Literal[et.PNL]], acting_user: str
+    ) -> PanelGroupsTuple:
         read, _, admin = await self._create_entity_groups(
             pnl_id,
+            acting_user,
             read_desc=f"Members of panel ({pnl_id})",
             write_desc=f"UNUSED middle tier of panel membership ({pnl_id})",
             admin_desc=f"Chair(s) of panel ({pnl_id})",
         )
         return PanelGroupsTuple(read=read, admin=admin)
 
-    async def create_group(self, group_name: str, description: str = "") -> dict[str, Any]:
+    async def create_group(
+        self, group_name: str, acting_user: str, description: str = ""
+    ) -> dict[str, Any]:
         response = await call_user_portal(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups",
             json={"group_name": group_name, "display_name": description},
-            headers=self.headers,
+            headers=self._write_headers(acting_user),
             timeout=self.timeout,
         )
         return response.json()
@@ -137,25 +152,29 @@ class UserPortalService:
         self,
         group_name: str,
         user_id: str,
+        acting_user: str,
     ) -> dict[str, Any]:
         response = await call_user_portal(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members",
             json={"portal_user_id": user_id},
-            headers=self.headers,
+            headers=self._write_headers(acting_user),
             timeout=self.timeout,
         )
         return response.json()
 
     async def create_invite(
-        self, prsl_id: ShortSkuid[Literal[et.PRP]], invite_payload: dict[str, Any]
+        self,
+        prsl_id: ShortSkuid[Literal[et.PRP]],
+        invite_payload: dict[str, Any],
+        acting_user: str,
     ) -> dict[str, Any]:
         group_name = get_group_name(prsl_id)
         response = await call_user_portal(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/invites",
             json=invite_payload,
-            headers=self.headers,
+            headers=self._write_headers(acting_user),
             timeout=self.timeout,
         )
         return response.json()
@@ -179,11 +198,11 @@ class UserPortalService:
         )
         return response.json()
 
-    async def delete_invite(self, invite_id: UUID) -> dict[str, Any]:
+    async def delete_invite(self, invite_id: UUID, acting_user: str) -> dict[str, Any]:
         response = await call_user_portal(
             method="DELETE",
             url=f"{self.base_url}/api/external/v1/invites/{invite_id}",
-            headers=self.headers,
+            headers=self._write_headers(acting_user, idempotent=False),
             timeout=self.timeout,
         )
         return response.json()

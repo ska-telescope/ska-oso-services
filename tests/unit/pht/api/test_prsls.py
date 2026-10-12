@@ -221,6 +221,13 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.OK
         assert response.json()["prsl_id"] == proposal_obj.prsl_id
 
+        # Portal writes are made on behalf of the authenticated user
+        user_id = uow_mock.prsls.add.call_args.args[1]
+        mock_create_groups.assert_awaited_once_with(proposal_obj.prsl_id, user_id)
+        mock_create_membership.assert_awaited_once_with(
+            "app:pht:prp-test/w/a", user_id, acting_user=user_id
+        )
+
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_create_proposal_existing_proposal_id(self, mock_oda, client):
         """

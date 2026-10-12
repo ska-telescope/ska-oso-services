@@ -59,7 +59,9 @@ async def create_panel(
         panel: Panel = uow.panels.add(param, security.auth.user_id)  # pylint: disable=no-member
         uow.commit()
 
-    await portal.create_panel_groups(ShortSkuid[Literal[EntityType.PNL]](panel.panel_id))
+    await portal.create_panel_groups(
+        ShortSkuid[Literal[EntityType.PNL]](panel.panel_id), security.auth.user_id
+    )
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
 

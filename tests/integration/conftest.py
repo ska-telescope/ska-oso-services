@@ -7,6 +7,7 @@ from urllib.request import urlopen
 from uuid import uuid4
 
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token, monkeypatch_pubkeys
@@ -19,6 +20,23 @@ USER_PORTAL_FIXTURE_SPEC = (
 )
 PRISM_IMAGE = "docker.io/stoplight/prism:latest"
 
+# Prism's static mode returns "string" for schemas without examples, which our
+# group-name parsing (facts._GROUP_REGEX) rejects. The fixture is a pristine upstream
+# snapshot, so inject examples here rather than editing it.
+MOCK_GROUP_NAME = "app:pht:prp-1"
+_SCHEMA_EXAMPLES = {
+    ("ExternalGroupCard", "group_name"): [MOCK_GROUP_NAME],
+    ("ExternalInviteCard", "group_name"): [MOCK_GROUP_NAME],
+}
+
+
+def _prism_spec() -> bytes:
+    spec = yaml.safe_load(USER_PORTAL_FIXTURE_SPEC.read_text())
+    schemas = spec["components"]["schemas"]
+    for (schema, prop), examples in _SCHEMA_EXAMPLES.items():
+        schemas[schema]["properties"][prop]["examples"] = examples
+    return yaml.safe_dump(spec, sort_keys=False, allow_unicode=True).encode()
+
 
 @pytest.fixture(scope="session")
 def fake_user_portal() -> Generator[DockerContainer, None, None]:
@@ -28,7 +46,7 @@ def fake_user_portal() -> Generator[DockerContainer, None, None]:
     if not USER_PORTAL_FIXTURE_SPEC.exists():
         pytest.fail(f"Missing OpenAPI fixture: {USER_PORTAL_FIXTURE_SPEC}")
 
-    spec_b64 = base64.b64encode(USER_PORTAL_FIXTURE_SPEC.read_bytes()).decode("ascii")
+    spec_b64 = base64.b64encode(_prism_spec()).decode("ascii")
 
     container = DockerContainer(PRISM_IMAGE)
     # Inject the spec at startup so this works with remote Docker daemons (for example minikube).
@@ -58,10 +76,10 @@ def fake_user_portal() -> Generator[DockerContainer, None, None]:
                     if response.status == 200:
                         ready = True
                         break
-            except HTTPError as error:
-                if error.code == 422:
-                    ready = True
-                    break
+            except HTTPError:
+                # Any HTTP response (e.g. 401 for the unauthenticated probe) means Prism is up
+                ready = True
+                break
             except ConnectionResetError, OSError, URLError:
                 time.sleep(0.2)
         if not ready:

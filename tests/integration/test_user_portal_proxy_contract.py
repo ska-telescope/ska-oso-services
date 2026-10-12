@@ -1,14 +1,16 @@
 import asyncio
 from http import HTTPStatus
-from unittest.mock import AsyncMock
+from unittest.mock import ANY, AsyncMock
 from urllib.parse import quote
 from uuid import uuid4
 
 from fastapi import HTTPException
 
 from ska_oso_services.pht.service import user_portal
+from ska_oso_services.pht.service.security.facts import get_group_skuid
 from ska_oso_services.pht.service.user_portal import UserPortalService
 from tests.conftest import PHT_BASE_API_URL
+from tests.integration.conftest import MOCK_GROUP_NAME
 
 
 def test_search_users_happy_path_proxies_to_user_portal(integration_client):
@@ -93,10 +95,19 @@ def test_list_invites_by_proposal_happy_path(integration_client):
 
 def test_delete_invite_happy_path(integration_client):
     invite_id = uuid4()
-    response = integration_client.delete(f"{PHT_BASE_API_URL}/prsls/prp-123/invites/{invite_id}")
+    # The mocked invite always belongs to MOCK_GROUP_NAME, so target that proposal
+    prsl_id = get_group_skuid(MOCK_GROUP_NAME)
+    response = integration_client.delete(f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites/{invite_id}")
 
     assert response.status_code == HTTPStatus.OK
     assert response.json().get("status")
+
+
+def test_delete_invite_for_other_proposal_returns_404(integration_client):
+    invite_id = uuid4()
+    response = integration_client.delete(f"{PHT_BASE_API_URL}/prsls/prp-123/invites/{invite_id}")
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
 
 
 def test_search_users_passes_upstream_results(integration_client):
@@ -141,10 +152,11 @@ def test_service_create_groups_happy_path(fake_user_portal):
     service = UserPortalService(x_request_id="integration-trace-id")
     group_name = user_portal.get_group_name(prsl_id)
 
-    payload = asyncio.run(service.create_group(group_name, description=prsl_id))
+    payload = asyncio.run(service.create_group(group_name, str(uuid4()), description=prsl_id))
 
-    # Prism mocks the schema, not the request, so it won't echo our group_name back.
-    assert isinstance(payload["group_name"], str)
+    # Prism mocks the schema, not the request, so it returns the injected example
+    # rather than echoing our group_name back.
+    assert payload["group_name"] == MOCK_GROUP_NAME
     assert isinstance(payload["display_name"], str)
 
 
@@ -152,6 +164,7 @@ def test_service_create_memberships_happy_path(fake_user_portal):
     del fake_user_portal
     prsl_id = "prp-8"
     portal_user_id = str(uuid4())
+    acting_user = str(uuid4())
     service = UserPortalService(x_request_id="integration-trace-id")
     group_name = user_portal.get_group_name(prsl_id)
     expected_payload = {"status": "ok"}
@@ -165,6 +178,7 @@ def test_service_create_memberships_happy_path(fake_user_portal):
             service.create_membership(
                 group_name=group_name,
                 user_id=portal_user_id,
+                acting_user=acting_user,
             )
         )
     finally:
@@ -175,6 +189,10 @@ def test_service_create_memberships_happy_path(fake_user_portal):
         method="POST",
         url=(f"{service.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members"),
         json={"portal_user_id": str(portal_user_id)},
-        headers=service.headers,
+        headers=ANY,
         timeout=service.timeout,
     )
+    headers = mock_call.await_args.kwargs["headers"]
+    assert headers["Authorization"].startswith("Bearer ")
+    assert headers["X-Acting-User"] == acting_user
+    assert headers["Idempotency-Key"]
