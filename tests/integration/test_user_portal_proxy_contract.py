@@ -188,6 +188,7 @@ def test_service_create_memberships_happy_path(fake_user_portal):
     mock_call.assert_awaited_once_with(
         method="POST",
         url=(f"{service.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members"),
+        params=None,
         json={"portal_user_id": str(portal_user_id)},
         headers=ANY,
         timeout=service.timeout,

@@ -13,7 +13,22 @@ data:
   SDP_SCRIPT_TMDATA: {{ .Values.global.oso.sdp_tmdata }}
   ENGINEERING_API_ENABLED: {{ .Values.rest.engineeringApiEnabled | quote }}
   USER_PORTAL_BASE_URL: {{ if .Values.pipeline_test_deployment }}{{ printf "http://%s-user-portal-mock:4010" (include "ska-oso-services.resource-name" .) | quote }}{{ else }}{{ .Values.rest.userPortalBaseUrl | quote }}{{ end }}
+  {{- if and .Values.pipeline_test_deployment (not .Values.rest.userPortalApiKey) }}
+  # The mock portal only checks that a bearer token is present
+  USER_PORTAL_API_KEY: "pipeline-test-token"
+  {{- else }}
   USER_PORTAL_API_KEY: {{ .Values.rest.userPortalApiKey | quote }}
+  {{- end }}
   USER_PORTAL_TIMEOUT: {{ .Values.rest.userPortalTimeout | quote }}
+  {{- if and .Values.rest.userPortalTokenUrl (not .Values.pipeline_test_deployment) }}
+  USER_PORTAL_TOKEN_URL: {{ .Values.rest.userPortalTokenUrl | quote }}
+  USER_PORTAL_CLIENT_ID: {{ .Values.rest.userPortalClientId | quote }}
+  {{- with .Values.rest.userPortalTokenScope }}
+  USER_PORTAL_TOKEN_SCOPE: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.rest.userPortalTokenAudience }}
+  USER_PORTAL_TOKEN_AUDIENCE: {{ . | quote }}
+  {{- end }}
+  {{- end }}
   AWS_PHT_BUCKET_NAME: {{ .Values.rest.awsPhtBucketName | quote }}
   AWS_REGION: {{ .Values.rest.awsRegion | quote }}

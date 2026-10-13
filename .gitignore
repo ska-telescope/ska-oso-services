@@ -40,6 +40,7 @@ MANIFEST.skao.int%
 PrivateRules.mak
 
 .venv
+.env
 .project
 .pydevproject
 lint.bat

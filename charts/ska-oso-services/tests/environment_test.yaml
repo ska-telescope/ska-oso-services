@@ -28,3 +28,40 @@ tests:
           of: ConfigMap
       - isAPIVersion:
           of: v1
+
+  - it: should use a static User Portal token when no token URL is set.
+    asserts:
+      - equal:
+          path: data.USER_PORTAL_API_KEY
+          value: ""
+      - notExists:
+          path: data.USER_PORTAL_TOKEN_URL
+
+  - it: should configure the User Portal client-credentials grant when a token URL is set.
+    set:
+      rest.userPortalTokenUrl: https://iam.example.org/token
+      rest.userPortalClientId: test-client
+      rest.userPortalTokenScope: "portal:read portal:write"
+    asserts:
+      - equal:
+          path: data.USER_PORTAL_TOKEN_URL
+          value: https://iam.example.org/token
+      - equal:
+          path: data.USER_PORTAL_CLIENT_ID
+          value: test-client
+      - equal:
+          path: data.USER_PORTAL_TOKEN_SCOPE
+          value: "portal:read portal:write"
+      - notExists:
+          path: data.USER_PORTAL_TOKEN_AUDIENCE
+
+  - it: should use the mock portal with a placeholder token in pipeline test deployments.
+    set:
+      pipeline_test_deployment: true
+      rest.userPortalTokenUrl: https://iam.example.org/token
+    asserts:
+      - equal:
+          path: data.USER_PORTAL_API_KEY
+          value: pipeline-test-token
+      - notExists:
+          path: data.USER_PORTAL_TOKEN_URL

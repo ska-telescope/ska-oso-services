@@ -1,3 +1,4 @@
+from functools import cache
 from http import HTTPStatus
 from typing import Any, Literal, NamedTuple
 from urllib.parse import quote
@@ -8,6 +9,12 @@ from fastapi import Header, HTTPException
 from ska_ser_skuid import EntityType as et
 from ska_ser_skuid import ShortSkuid
 
+from ska_oso_services.common.client_credentials import (
+    ClientCredentialsTokenProvider,
+    StaticTokenProvider,
+    TokenError,
+    TokenProvider,
+)
 from ska_oso_services.settings import get_settings
 
 from .security.facts import get_group_name
@@ -61,33 +68,103 @@ async def call_user_portal(
         ) from exc
 
 
+@cache
+def get_token_provider() -> TokenProvider:
+    """Process-wide token source for the User Portal, so every request shares one token."""
+    portal = get_settings().userportal
+    if portal.token_url is None:
+        return StaticTokenProvider(portal.api_key)
+    return ClientCredentialsTokenProvider(
+        token_url=str(portal.token_url),
+        client_id=portal.client_id,
+        client_secret=portal.client_secret.get_secret_value(),
+        scope=portal.token_scope,
+        audience=portal.token_audience,
+        timeout=portal.timeout,
+    )
+
+
 class UserPortalService:
     def __init__(self, x_request_id: str = Header(default_factory=lambda: str(uuid7()))) -> None:
         portal = get_settings().userportal
         self.base_url = str(portal.base_url).rstrip("/")
         self.timeout = portal.timeout
+        self.tokens = get_token_provider()
         self.headers = {
-            "Authorization": f"Bearer {portal.api_key}",
             "Accept": "application/json",
             "User-Agent": "ska-oso-services:pht",
             "X-Request-Id": x_request_id,
         }
 
-    def _write_headers(self, acting_user: str, idempotent: bool = True) -> dict[str, str]:
+    @staticmethod
+    def _write_headers(acting_user: str, idempotent: bool = True) -> dict[str, str]:
         """Headers for state-changing calls: who we act on behalf of, and a per-call
         Idempotency-Key (required by the portal on POSTs)."""
-        headers = {**self.headers, "X-Acting-User": acting_user}
+        headers = {"X-Acting-User": acting_user}
         if idempotent:
             headers["Idempotency-Key"] = str(uuid7())
         return headers
 
+    async def _call(
+        self,
+        method: HttpMethod,
+        url: str,
+        *,
+        extra_headers: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
+    ) -> httpx.Response:
+        # Built once so a retry reuses the same Idempotency-Key
+        headers = {**self.headers, **(extra_headers or {})}
+        try:
+            return await self._send(method, url, headers, params=params, json=json)
+        except HTTPException as exc:
+            if exc.status_code != HTTPStatus.UNAUTHORIZED:
+                raise
+        # Our token was rejected (revoked, or expired early), so get a new one and retry once
+        self.tokens.invalidate()
+        try:
+            return await self._send(method, url, headers, params=params, json=json)
+        except HTTPException as exc:
+            if exc.status_code != HTTPStatus.UNAUTHORIZED:
+                raise
+            self.tokens.invalidate()
+            # It's our credentials the portal rejected, not the end user's, so don't surface a 401
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_GATEWAY,
+                detail="User portal rejected our credentials",
+            ) from exc
+
+    async def _send(
+        self,
+        method: HttpMethod,
+        url: str,
+        headers: dict[str, str],
+        *,
+        params: dict[str, Any] | None,
+        json: dict[str, Any] | None,
+    ) -> httpx.Response:
+        try:
+            token = await self.tokens.get_token()
+        except TokenError as err:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_GATEWAY,
+                detail="Unable to authenticate to user portal",
+            ) from err
+        return await call_user_portal(
+            method=method,
+            url=url,
+            params=params,
+            json=json,
+            headers={**headers, "Authorization": f"Bearer {token}"},
+            timeout=self.timeout,
+        )
+
     async def search_users(self, query: str, limit: int) -> dict[str, Any]:
-        response = await call_user_portal(
+        response = await self._call(
             method="GET",
             url=f"{self.base_url}/api/external/v1/users/search",
             params={"q": query, "limit": limit},
-            headers=self.headers,
-            timeout=self.timeout,
         )
         return response.json()
 
@@ -139,12 +216,11 @@ class UserPortalService:
     async def create_group(
         self, group_name: str, acting_user: str, description: str = ""
     ) -> dict[str, Any]:
-        response = await call_user_portal(
+        response = await self._call(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups",
             json={"group_name": group_name, "display_name": description},
-            headers=self._write_headers(acting_user),
-            timeout=self.timeout,
+            extra_headers=self._write_headers(acting_user),
         )
         return response.json()
 
@@ -154,12 +230,11 @@ class UserPortalService:
         user_id: str,
         acting_user: str,
     ) -> dict[str, Any]:
-        response = await call_user_portal(
+        response = await self._call(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members",
             json={"portal_user_id": user_id},
-            headers=self._write_headers(acting_user),
-            timeout=self.timeout,
+            extra_headers=self._write_headers(acting_user),
         )
         return response.json()
 
@@ -170,39 +245,33 @@ class UserPortalService:
         acting_user: str,
     ) -> dict[str, Any]:
         group_name = get_group_name(prsl_id)
-        response = await call_user_portal(
+        response = await self._call(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/invites",
             json=invite_payload,
-            headers=self._write_headers(acting_user),
-            timeout=self.timeout,
+            extra_headers=self._write_headers(acting_user),
         )
         return response.json()
 
     async def get_invite(self, invite_id: UUID) -> dict[str, Any]:
-        response = await call_user_portal(
+        response = await self._call(
             method="GET",
             url=f"{self.base_url}/api/external/v1/invites/{invite_id}",
-            headers=self.headers,
-            timeout=self.timeout,
         )
         return response.json()
 
     async def list_invites(self, prsl_id: ShortSkuid[Literal[et.PRP]]) -> dict[str, Any]:
-        response = await call_user_portal(
+        response = await self._call(
             method="GET",
             url=f"{self.base_url}/api/external/v1/invites",
             params={"group_name": get_group_name(prsl_id)},
-            headers=self.headers,
-            timeout=self.timeout,
         )
         return response.json()
 
     async def delete_invite(self, invite_id: UUID, acting_user: str) -> dict[str, Any]:
-        response = await call_user_portal(
+        response = await self._call(
             method="DELETE",
             url=f"{self.base_url}/api/external/v1/invites/{invite_id}",
-            headers=self._write_headers(acting_user, idempotent=False),
-            timeout=self.timeout,
+            extra_headers=self._write_headers(acting_user, idempotent=False),
         )
         return response.json()

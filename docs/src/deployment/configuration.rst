@@ -55,20 +55,40 @@ or an existing Kubernetes Secret. See :doc:`secret_management`.
      - Optional - default: ``False``
      - ``pipeline_test_deployment``
      - Optional - default: ``false``
-   * - OSO_CLIENT_SECRET
-     - Client secret used by oso-services.
-     - Optional - default: ``OSO_CLIENT_SECRET``
-     - Pulled from Vault - see :doc:`secret_management`
-     -
    * - USER_PORTAL_BASE_URL
      - The base URL for the SKAO User Portal in this environment.
      - Required
      - ``rest.userPortalBaseUrl``
      - Required - default: ``"https://userportal.skao.int.example"``
    * - USER_PORTAL_API_KEY
-     - API key used to authenticate to the SKAO User Portal API.
+     - Static bearer token for the SKAO User Portal API. Only used when ``USER_PORTAL_TOKEN_URL`` is unset (e.g. against the mock portal).
      - Optional - default: ``""``
      - ``rest.userPortalApiKey``
+     - Optional - default: ``""``
+   * - USER_PORTAL_TOKEN_URL
+     - OAuth2 token endpoint for the client-credentials grant used to call the User Portal. Tokens are cached and refreshed shortly before they expire.
+     - Optional - default: unset (use ``USER_PORTAL_API_KEY``)
+     - ``rest.userPortalTokenUrl`` (ignored for pipeline test deployments)
+     - Optional - default: ``""``
+   * - USER_PORTAL_CLIENT_ID
+     - OAuth2 client ID for the User Portal client-credentials grant.
+     - Required if ``USER_PORTAL_TOKEN_URL`` is set
+     - ``rest.userPortalClientId``
+     - Optional - default: ``""``
+   * - USER_PORTAL_CLIENT_SECRET
+     - OAuth2 client secret for the User Portal client-credentials grant.
+     - Required if ``USER_PORTAL_TOKEN_URL`` is set
+     - Pulled from Vault - see :doc:`secret_management`
+     -
+   * - USER_PORTAL_TOKEN_SCOPE
+     - Space-separated scopes to request in the client-credentials grant.
+     - Optional - default: none requested
+     - ``rest.userPortalTokenScope``
+     - Optional - default: ``""``
+   * - USER_PORTAL_TOKEN_AUDIENCE
+     - Audience to request in the client-credentials grant.
+     - Optional - default: none requested
+     - ``rest.userPortalTokenAudience``
      - Optional - default: ``""``
    * - USER_PORTAL_TIMEOUT
      - How long to wait (in seconds) before User Portal API requests time out.

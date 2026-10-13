@@ -80,13 +80,6 @@ package "pht" as pht_pkg {
                 + transform_update_proposal()
             }
         }
-        package "ms_graph" <<Rectangle>> {
-            object ms_graph_items {
-                + make_graph_call()
-                + get_users_by_mail()
-                + get_users_by_group_id()
-            }
-        }
         package "s3_bucket" <<Rectangle>> {
             object s3_bucket_items {
                 + create_presigned_url_delete_pdf()
@@ -115,7 +108,6 @@ package "pht" as pht_pkg {
     pht_handler_items --> prsls_endpoints 
     pht_handler_items --> report_endpoints
     constants --> reviewers_endpoints
-    ms_graph_items --> prsls_endpoints 
     
 
 }

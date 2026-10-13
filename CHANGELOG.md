@@ -10,6 +10,10 @@ Unreleased
 * Adds APIs for members, e.g. POST /pht/prsl/prp-1/members
 * [BREAKING] Re-writes PHT permissions enforcement to be based on Indigo IAM group memberships.
 * [BREAKING] S3 file uploads are now scoped per-proposal.
+* User Portal calls authenticate with an OAuth2 client-credentials grant when ``USER_PORTAL_TOKEN_URL`` is set
+  (with ``USER_PORTAL_CLIENT_ID``, ``USER_PORTAL_CLIENT_SECRET`` and optional ``USER_PORTAL_TOKEN_SCOPE``/``USER_PORTAL_TOKEN_AUDIENCE``).
+  ``USER_PORTAL_API_KEY`` remains as a static-token fallback, e.g. for the mock portal.
+* [BREAKING] Removes the unused MS Graph integration, the ``msal`` dependency and the ``OSO_CLIENT_SECRET`` setting.
 
 17.1.0
 ******

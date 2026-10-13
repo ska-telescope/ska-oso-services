@@ -44,8 +44,15 @@ ingress:
 
 rest:
   userPortalBaseUrl: "https://userportal.skao.int.example"
+  # Static bearer token, only used when userPortalTokenUrl is empty (e.g. against the mock portal)
   userPortalApiKey: ""
   userPortalTimeout: 10
+  # OAuth2 client-credentials grant for the User Portal. The client secret comes
+  # from Vault (USER_PORTAL_CLIENT_SECRET under vault.secrets below).
+  userPortalTokenUrl: ""
+  userPortalClientId: ""
+  userPortalTokenScope: ""
+  userPortalTokenAudience: ""
   awsPhtBucketName: "pht-bucket"
   awsRegion: "eu-west-2"
   # Accepted JWT audience values. Includes Indigo IAM audiences and the
@@ -82,8 +89,8 @@ vault:
     - secretKey: AWS_REGION
       targetEnv: AWS_REGION
   secrets:
-    - secretKey: OSO_CLIENT_SECRET
-      targetEnv: OSO_CLIENT_SECRET
+    - secretKey: USER_PORTAL_CLIENT_SECRET
+      targetEnv: USER_PORTAL_CLIENT_SECRET
 
 s3ServiceAccount:
   # Used in production where we authenticate with EKS Pod Identity rather than credentials from Vault

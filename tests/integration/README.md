@@ -14,7 +14,7 @@ serve as the target behavior for phase 2.
 ## Requirements
 
 - Docker or Podman with Testcontainers-compatible access
-- Project dependencies installed (`poetry install`)
+- Project dependencies installed (`uv sync`)
 
 The Prism spec is injected into the container at startup, so this works with a
 remote daemon as well as a local engine.
@@ -22,6 +22,15 @@ remote daemon as well as a local engine.
 ## Run
 
 ```bash
+make pytest-integration
+```
+
+With rootless Podman, point Testcontainers at the Podman socket and disable the
+Ryuk reaper container, which doesn't work reliably under rootless Podman:
+
+```bash
+DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock \
+TESTCONTAINERS_RYUK_DISABLED=true \
 make pytest-integration
 ```
 
