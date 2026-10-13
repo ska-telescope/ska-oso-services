@@ -26,6 +26,7 @@ from ska_ost_osd.osd.osd import check_cycle_id, get_available_cycles, get_osd_us
 from ska_telmodel_client import TMData
 
 from ska_oso_services.common.error_handling import OSDError
+from ska_oso_services.common.itfmapper import ItfSubarray
 from ska_oso_services.common.model import AppModel
 
 SUPPORTED_COMMON_ARRAY_ASSEMBLIES = ["AA0.5", "AA1", "AA2"]
@@ -161,6 +162,8 @@ class LowConfiguration(AppModel):
     constraints: Constraints
     quality_attribute_metrics: LowQualityAttributeMetrics
     subarrays: list[LowSubarray]
+    # Sourced from the Low ITF TMData rather than the OSD - see itfmapper
+    itf_subarrays: list[ItfSubarray] = []
 
 
 class Configuration(AppModel):

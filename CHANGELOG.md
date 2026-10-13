@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Adds `ska_low.itf_subarrays` to the `GET /odt/configuration` response, containing details of the  SKA Low ITF subarrays and their allowed stations.
 
 17.1.0
 ******

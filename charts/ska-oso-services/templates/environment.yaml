@@ -11,4 +11,5 @@ data:
   PIPELINE_TESTS_DEPLOYMENT: {{ .Values.pipeline_test_deployment | quote }}
   SKA_AUTH_AUDIENCE: {{ .Values.rest.authAudiences | join "," | quote }}
   SDP_SCRIPT_TMDATA: {{ .Values.global.oso.sdp_tmdata }}
+  LOW_ITF_TMDATA: {{ .Values.global.oso.low_itf_tmdata | quote }}
   ENGINEERING_API_ENABLED: {{ .Values.rest.engineeringApiEnabled | quote }}

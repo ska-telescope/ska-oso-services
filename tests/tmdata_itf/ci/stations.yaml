@@ -1,0 +1,29 @@
+$schema: http://schema.skao.int/low/stations/1-2-0
+platform:
+  metadata:
+    description: Array-level Telescope Model data for Low ITF.
+  stations:
+    ci5-1:
+      id: 51
+      cluster: ci5
+      reference:
+        datum: WGS84
+        epoch: 2025.1
+        latitude: -26.826162
+        longitude: 116.765696
+        ellipsoidal_height: 370.0
+      rotation: 0.0
+      delay: 0.0
+      status: integrated
+    ci5-2:
+      id: 52
+      cluster: ci5
+      reference:
+        datum: WGS84
+        epoch: 2025.1
+        latitude: -26.951879
+        longitude: 117.19497
+        ellipsoidal_height: 458.0
+      rotation: 0.0
+      delay: 0.0
+      status: integrated

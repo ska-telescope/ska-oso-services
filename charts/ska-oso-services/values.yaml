@@ -10,6 +10,10 @@ global:
     # The TMData source URL for SDP Script data used by oso-services and oso-scripting to
     # retrieve compatible script version and script parameter information
     sdp_tmdata: "car://gitlab.com/ska-telescope/sdp/ska-sdp-script?master#tmdata"
+    # The TMData source URL for the SKA Low ITF array station data. 
+    #Note: This data is not published to the CAR hence the gitlab:// URL.
+    # Set to an empty string to omit the ITF subarrays from the configuration.
+    low_itf_tmdata: "gitlab://gitlab.com/ska-telescope/aiv/ska-low-itf?main#tmdata"
   oda:
     # These global values are used by the ska-db-oda rest server deployment to connect to the postgres instance
     # See RtD for more details.

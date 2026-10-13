@@ -77,3 +77,8 @@ The ODA connection is configured these environment variables and corresponding H
      - Required
      - Pulled from Vault - see :doc:`secret_management`
      -
+   * - LOW_ITF_TMDATA
+     - The TMData source for the SKA Low ITF array station data. 
+     - Optional - if not set, or the source cannot be reached, the ITF subarrays are omitted
+     - ``global.oso.low_itf_tmdata``
+     - Optional - default: ``gitlab://gitlab.com/ska-telescope/aiv/ska-low-itf?main#tmdata``

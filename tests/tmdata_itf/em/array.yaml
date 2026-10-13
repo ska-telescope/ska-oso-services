@@ -1,0 +1,11 @@
+$schema: http://schema.skao.int/low/array/1-0-0
+platform:
+  metadata:
+    description: Array-level Telescope Model data for SKA Low.
+  array:
+    name: SKA-Low-ITF-EM
+    stations:
+    - em3-1
+    - em3-2
+    - em4-1
+    - em4-2

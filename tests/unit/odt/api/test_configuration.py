@@ -1,3 +1,6 @@
+from unittest import mock
+
+from ska_oso_services.common import itfmapper
 from ska_oso_services.common.osdmapper import Configuration, LowFrequencyBand
 from ska_oso_services.odt.api.configuration import configuration_get
 
@@ -27,4 +30,26 @@ def test_configuration_get():
     assert len(response.ska_mid.frequency_band) == 6
     assert len(response.ska_mid.subarrays) == 4
     assert len(response.ska_low.subarrays) == 5
+    assert [
+        (subarray.name, [(station.id, station.label) for station in subarray.allowed_stations])
+        for subarray in response.ska_low.itf_subarrays
+    ] == [
+        ("SKA-Low-ITF-CI", [(51, "ci5-1"), (52, "ci5-2")]),
+        ("SKA-Low-ITF-EM", [(31, "em3-1"), (32, "em3-2"), (41, "em4-1"), (42, "em4-2")]),
+    ]
     assert len(response.ska_mid.frequency_band[-1].band5b_subbands) == 3
+
+
+def test_configuration_get_succeeds_when_itf_tmdata_is_unavailable():
+    """
+    The ITF subarrays are supplementary, so a failure to retrieve them should
+    not affect the rest of the configuration.
+    """
+    itfmapper._CACHE.clear()
+    with mock.patch.object(itfmapper, "TMData", side_effect=RuntimeError("unreachable")):
+        response = configuration_get()
+    itfmapper._CACHE.clear()
+
+    assert response.ska_low.itf_subarrays == []
+    assert len(response.ska_low.subarrays) == 5
+    assert len(response.ska_mid.subarrays) == 4

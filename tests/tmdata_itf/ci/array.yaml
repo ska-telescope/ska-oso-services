@@ -1,0 +1,9 @@
+$schema: http://schema.skao.int/low/array/1-0-0
+platform:
+  metadata:
+    description: Array-level Telescope Model data for SKA Low.
+  array:
+    name: SKA-Low-ITF-CI
+    stations:
+    - ci5-1
+    - ci5-2

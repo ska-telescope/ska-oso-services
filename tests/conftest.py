@@ -13,3 +13,7 @@ def pytest_configure():
         "SDP_SCRIPT_TMDATA",
         f"file://{os.path.join(os.path.dirname(__file__), 'tmdata')}",
     )
+    os.environ.setdefault(
+        "LOW_ITF_TMDATA",
+        f"file://{os.path.join(os.path.dirname(__file__), 'tmdata_itf')}",
+    )

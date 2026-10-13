@@ -82,6 +82,7 @@ class Settings(BaseSettings):
     api_path_prefix: str = Field(default="", alias="API_PATH_PREFIX")
     engineering_api_enabled: bool = Field(default=True, alias="ENGINEERING_API_ENABLED")
     sdp_script_tmdata: str | None = Field(default=None, alias="SDP_SCRIPT_TMDATA")
+    low_itf_tmdata: str | None = Field(default=None, alias="LOW_ITF_TMDATA")
 
     # Sub-models
     oda: ODAConfig = Field(default_factory=ODAConfig)
