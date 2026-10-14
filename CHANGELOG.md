@@ -12,8 +12,9 @@ Unreleased
 * [BREAKING] S3 file uploads are now scoped per-proposal.
 * [BREAKING] User Portal calls authenticate with an OAuth2 client-credentials grant. ``USER_PORTAL_TOKEN_URL``,
   ``USER_PORTAL_CLIENT_ID``, ``USER_PORTAL_CLIENT_SECRET``, ``USER_PORTAL_TOKEN_SCOPE`` and ``USER_PORTAL_TOKEN_AUDIENCE``
-  are required. The chart takes the client ID and secret from Vault and defaults the rest for non-production
-  (staging Indigo, the ``portal:*`` scopes for the routes we call, and audience ``test:portal``).
+  are required. The chart takes the client secret from Vault (``PHT_USER_PORTAL_CLIENT_SECRET``) and defaults the
+  rest for non-production (staging Indigo, the non-production client ID, the ``portal:*`` scopes for the routes we
+  call, and audience ``test:portal``).
   ``USER_PORTAL_API_KEY`` is removed.
 * User Portal failures (unreachable, auth/scope problems, unexpected responses) are reported as HTTP 502;
   a portal 404 or 409 about the caller's request is passed on as 404 or 409.

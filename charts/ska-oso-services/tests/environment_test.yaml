@@ -35,6 +35,9 @@ tests:
           path: data.USER_PORTAL_TOKEN_URL
           value: https://iam-1.staging.devx.skao.int/token
       - equal:
+          path: data.USER_PORTAL_CLIENT_ID
+          value: 80e7100b-6ada-486a-b82c-8a159ddeda4d
+      - equal:
           path: data.USER_PORTAL_TOKEN_SCOPE
           value: "portal:users.read portal:groups.read portal:groups.write portal:invites.read portal:invites.write"
       - equal:

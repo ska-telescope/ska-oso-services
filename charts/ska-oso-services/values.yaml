@@ -45,10 +45,12 @@ ingress:
 rest:
   userPortalBaseUrl: "https://userportal.skao.int.example"
   userPortalTimeout: 10
-  # OAuth2 client-credentials grant for the User Portal. The client ID and secret
-  # come from Vault (USER_PORTAL_CLIENT_ID/SECRET under vault.secrets below).
+  # OAuth2 client-credentials grant for the User Portal. These defaults are for
+  # non-production; production needs its own client ID, token URL and audience, and
+  # its own client secret in Vault (PHT_USER_PORTAL_CLIENT_SECRET, see vault.secrets).
   # Pipeline test deployments use this real grant even though they talk to the mock portal.
   userPortalTokenUrl: "https://iam-1.staging.devx.skao.int/token"
+  userPortalClientId: "80e7100b-6ada-486a-b82c-8a159ddeda4d"
   # Scopes for the portal routes we call
   userPortalTokenScope: "portal:users.read portal:groups.read portal:groups.write portal:invites.read portal:invites.write"
   # test:portal for non-production User Portal instances, live:portal for production
@@ -89,10 +91,9 @@ vault:
     - secretKey: AWS_REGION
       targetEnv: AWS_REGION
   secrets:
-    - secretKey: USER_PORTAL_CLIENT_ID
-      targetEnv: USER_PORTAL_CLIENT_ID
+    # secretKey is the app's environment variable; targetEnv is the key in Vault
     - secretKey: USER_PORTAL_CLIENT_SECRET
-      targetEnv: USER_PORTAL_CLIENT_SECRET
+      targetEnv: PHT_USER_PORTAL_CLIENT_SECRET
 
 s3ServiceAccount:
   # Used in production where we authenticate with EKS Pod Identity rather than credentials from Vault

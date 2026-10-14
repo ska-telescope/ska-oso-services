@@ -15,6 +15,7 @@ data:
   USER_PORTAL_BASE_URL: {{ if .Values.pipeline_test_deployment }}{{ printf "http://%s-user-portal-mock:4010" (include "ska-oso-services.resource-name" .) | quote }}{{ else }}{{ .Values.rest.userPortalBaseUrl | quote }}{{ end }}
   USER_PORTAL_TIMEOUT: {{ .Values.rest.userPortalTimeout | quote }}
   USER_PORTAL_TOKEN_URL: {{ .Values.rest.userPortalTokenUrl | quote }}
+  USER_PORTAL_CLIENT_ID: {{ .Values.rest.userPortalClientId | quote }}
   USER_PORTAL_TOKEN_SCOPE: {{ .Values.rest.userPortalTokenScope | quote }}
   USER_PORTAL_TOKEN_AUDIENCE: {{ .Values.rest.userPortalTokenAudience | quote }}
   AWS_PHT_BUCKET_NAME: {{ .Values.rest.awsPhtBucketName | quote }}

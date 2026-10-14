@@ -66,14 +66,14 @@ or an existing Kubernetes Secret. See :doc:`secret_management`.
      - ``rest.userPortalTokenUrl``
      - Optional - default: ``"https://iam-1.staging.devx.skao.int/token"``
    * - USER_PORTAL_CLIENT_ID
-     - OAuth2 client ID for the User Portal client-credentials grant.
+     - OAuth2 client ID for the User Portal client-credentials grant. Not secret.
      - Required
-     - Pulled from Vault - see :doc:`secret_management`
-     -
+     - ``rest.userPortalClientId``
+     - Optional - default: ``"80e7100b-6ada-486a-b82c-8a159ddeda4d"`` (non-production client)
    * - USER_PORTAL_CLIENT_SECRET
      - OAuth2 client secret for the User Portal client-credentials grant.
      - Required
-     - Pulled from Vault - see :doc:`secret_management`
+     - Pulled from Vault key ``PHT_USER_PORTAL_CLIENT_SECRET`` - see :doc:`secret_management`
      -
    * - USER_PORTAL_TOKEN_SCOPE
      - Space-separated scopes to request in the client-credentials grant. The portal checks a scope per route; the
