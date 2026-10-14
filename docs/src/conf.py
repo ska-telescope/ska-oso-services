@@ -30,6 +30,11 @@ PROJECT_ROOT = Path(__file__).parents[2].resolve()
 os.environ.setdefault("AWS_PHT_BUCKET_NAME", "docs-bucket")
 os.environ.setdefault("AWS_REGION", "eu-west-2")
 os.environ.setdefault("USER_PORTAL_BASE_URL", "http://portal.example.org")
+os.environ.setdefault("USER_PORTAL_TOKEN_URL", "http://iam.example.org/token")
+os.environ.setdefault("USER_PORTAL_CLIENT_ID", "docs-client")
+os.environ.setdefault("USER_PORTAL_CLIENT_SECRET", "docs-secret")
+os.environ.setdefault("USER_PORTAL_TOKEN_SCOPE", "portal:users.read")
+os.environ.setdefault("USER_PORTAL_TOKEN_AUDIENCE", "test:portal")
 
 with open(PROJECT_ROOT / "pyproject.toml", "rb") as fh:
     pyproject = tomllib.load(fh)
