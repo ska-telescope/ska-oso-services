@@ -11,9 +11,7 @@ from ska_ser_skuid import ShortSkuid
 
 from ska_oso_services.common.client_credentials import (
     ClientCredentialsTokenProvider,
-    StaticTokenProvider,
     TokenError,
-    TokenProvider,
 )
 from ska_oso_services.settings import get_settings
 
@@ -69,11 +67,9 @@ async def call_user_portal(
 
 
 @cache
-def get_token_provider() -> TokenProvider:
+def get_token_provider() -> ClientCredentialsTokenProvider:
     """Process-wide token source for the User Portal, so every request shares one token."""
     portal = get_settings().userportal
-    if portal.token_url is None:
-        return StaticTokenProvider(portal.api_key)
     return ClientCredentialsTokenProvider(
         token_url=str(portal.token_url),
         client_id=portal.client_id,

@@ -12,7 +12,6 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Protocol
 
 import httpx
 
@@ -27,26 +26,6 @@ DEFAULT_TOKEN_LIFETIME = timedelta(minutes=5)
 
 class TokenError(Exception):
     """Unable to obtain an access token."""
-
-
-class TokenProvider(Protocol):
-    async def get_token(self) -> str: ...
-
-    def invalidate(self) -> None:
-        """Discard any cached token, e.g. after the upstream rejects it."""
-
-
-class StaticTokenProvider:
-    """A fixed token, for upstreams (or mocks of them) that don't need a real grant."""
-
-    def __init__(self, token: str) -> None:
-        self._token = token
-
-    async def get_token(self) -> str:
-        return self._token
-
-    def invalidate(self) -> None:
-        pass
 
 
 @dataclass(frozen=True)
@@ -101,6 +80,7 @@ class ClientCredentialsTokenProvider:
             return self._cached.value
 
     def invalidate(self) -> None:
+        """Discard the cached token, e.g. after the upstream rejects it."""
         self._cached = None
 
     async def _fetch_or_fallback(self) -> _CachedToken:

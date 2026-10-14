@@ -38,6 +38,11 @@ def _prism_spec() -> bytes:
     return yaml.safe_dump(spec, sort_keys=False, allow_unicode=True).encode()
 
 
+@pytest.fixture(autouse=True)
+def _fake_user_portal_tokens(fake_user_portal_tokens):
+    """Prism doesn't check tokens, so don't do a real client-credentials grant."""
+
+
 @pytest.fixture(scope="session")
 def fake_user_portal() -> Generator[DockerContainer, None, None]:
     """

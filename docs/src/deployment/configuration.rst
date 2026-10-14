@@ -60,36 +60,33 @@ or an existing Kubernetes Secret. See :doc:`secret_management`.
      - Required
      - ``rest.userPortalBaseUrl``
      - Required - default: ``"https://userportal.skao.int.example"``
-   * - USER_PORTAL_API_KEY
-     - Static bearer token for the SKAO User Portal API. Only used when ``USER_PORTAL_TOKEN_URL`` is unset (e.g. against the mock portal).
-     - Optional - default: ``""``
-     - ``rest.userPortalApiKey``
-     - Optional - default: ``""``
    * - USER_PORTAL_TOKEN_URL
      - OAuth2 token endpoint for the client-credentials grant used to call the User Portal. Tokens are cached and refreshed shortly before they expire.
-     - Optional - default: unset (use ``USER_PORTAL_API_KEY``)
-     - ``rest.userPortalTokenUrl`` (ignored for pipeline test deployments)
-     - Optional - default: ``""``
+     - Required
+     - ``rest.userPortalTokenUrl``
+     - Optional - default: ``"https://iam-1.staging.devx.skao.int/token"``
    * - USER_PORTAL_CLIENT_ID
      - OAuth2 client ID for the User Portal client-credentials grant.
-     - Required if ``USER_PORTAL_TOKEN_URL`` is set
-     - ``rest.userPortalClientId``
-     - Optional - default: ``""``
+     - Required
+     - Pulled from Vault - see :doc:`secret_management`
+     -
    * - USER_PORTAL_CLIENT_SECRET
      - OAuth2 client secret for the User Portal client-credentials grant.
-     - Required if ``USER_PORTAL_TOKEN_URL`` is set
+     - Required
      - Pulled from Vault - see :doc:`secret_management`
      -
    * - USER_PORTAL_TOKEN_SCOPE
-     - Space-separated scopes to request in the client-credentials grant.
-     - Optional - default: none requested
+     - Space-separated scopes to request in the client-credentials grant. The portal checks a scope per route; the
+       default covers the routes ska-oso-services calls.
+     - Required
      - ``rest.userPortalTokenScope``
-     - Optional - default: ``""``
+     - Optional - default: ``"portal:users.read portal:groups.read portal:groups.write portal:invites.read portal:invites.write"``
    * - USER_PORTAL_TOKEN_AUDIENCE
-     - Audience to request in the client-credentials grant.
-     - Optional - default: none requested
+     - Audience to request in the client-credentials grant: ``test:portal`` for non-production User Portal
+       instances, ``live:portal`` for production.
+     - Required
      - ``rest.userPortalTokenAudience``
-     - Optional - default: ``""``
+     - Optional - default: ``"test:portal"``
    * - USER_PORTAL_TIMEOUT
      - How long to wait (in seconds) before User Portal API requests time out.
      - Optional - default: ``10``

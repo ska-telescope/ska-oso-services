@@ -29,39 +29,34 @@ tests:
       - isAPIVersion:
           of: v1
 
-  - it: should use a static User Portal token when no token URL is set.
-    asserts:
-      - equal:
-          path: data.USER_PORTAL_API_KEY
-          value: ""
-      - notExists:
-          path: data.USER_PORTAL_TOKEN_URL
-
-  - it: should configure the User Portal client-credentials grant when a token URL is set.
-    set:
-      rest.userPortalTokenUrl: https://iam.example.org/token
-      rest.userPortalClientId: test-client
-      rest.userPortalTokenScope: "portal:read portal:write"
+  - it: should configure the User Portal client-credentials grant against staging Indigo by default.
     asserts:
       - equal:
           path: data.USER_PORTAL_TOKEN_URL
-          value: https://iam.example.org/token
-      - equal:
-          path: data.USER_PORTAL_CLIENT_ID
-          value: test-client
+          value: https://iam-1.staging.devx.skao.int/token
       - equal:
           path: data.USER_PORTAL_TOKEN_SCOPE
-          value: "portal:read portal:write"
-      - notExists:
+          value: "portal:users.read portal:groups.read portal:groups.write portal:invites.read portal:invites.write"
+      - equal:
           path: data.USER_PORTAL_TOKEN_AUDIENCE
+          value: test:portal
 
-  - it: should use the mock portal with a placeholder token in pipeline test deployments.
+  - it: should use the configured User Portal token scope and audience.
     set:
-      pipeline_test_deployment: true
-      rest.userPortalTokenUrl: https://iam.example.org/token
+      rest.userPortalTokenScope: "portal:users.read"
+      rest.userPortalTokenAudience: live:portal
     asserts:
       - equal:
-          path: data.USER_PORTAL_API_KEY
-          value: pipeline-test-token
-      - notExists:
+          path: data.USER_PORTAL_TOKEN_SCOPE
+          value: "portal:users.read"
+      - equal:
+          path: data.USER_PORTAL_TOKEN_AUDIENCE
+          value: live:portal
+
+  - it: should keep the real token grant in pipeline test deployments.
+    set:
+      pipeline_test_deployment: true
+    asserts:
+      - equal:
           path: data.USER_PORTAL_TOKEN_URL
+          value: https://iam-1.staging.devx.skao.int/token

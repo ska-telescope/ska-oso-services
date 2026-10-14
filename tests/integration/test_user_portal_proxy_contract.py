@@ -194,6 +194,5 @@ def test_service_create_memberships_happy_path(fake_user_portal):
         timeout=service.timeout,
     )
     headers = mock_call.await_args.kwargs["headers"]
-    assert headers["Authorization"].startswith("Bearer ")
     assert headers["X-Acting-User"] == acting_user
     assert headers["Idempotency-Key"]

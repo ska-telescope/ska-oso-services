@@ -44,15 +44,15 @@ ingress:
 
 rest:
   userPortalBaseUrl: "https://userportal.skao.int.example"
-  # Static bearer token, only used when userPortalTokenUrl is empty (e.g. against the mock portal)
-  userPortalApiKey: ""
   userPortalTimeout: 10
-  # OAuth2 client-credentials grant for the User Portal. The client secret comes
-  # from Vault (USER_PORTAL_CLIENT_SECRET under vault.secrets below).
-  userPortalTokenUrl: ""
-  userPortalClientId: ""
-  userPortalTokenScope: ""
-  userPortalTokenAudience: ""
+  # OAuth2 client-credentials grant for the User Portal. The client ID and secret
+  # come from Vault (USER_PORTAL_CLIENT_ID/SECRET under vault.secrets below).
+  # Pipeline test deployments use this real grant even though they talk to the mock portal.
+  userPortalTokenUrl: "https://iam-1.staging.devx.skao.int/token"
+  # Scopes for the portal routes we call
+  userPortalTokenScope: "portal:users.read portal:groups.read portal:groups.write portal:invites.read portal:invites.write"
+  # test:portal for non-production User Portal instances, live:portal for production
+  userPortalTokenAudience: "test:portal"
   awsPhtBucketName: "pht-bucket"
   awsRegion: "eu-west-2"
   # Accepted JWT audience values. Includes Indigo IAM audiences and the
@@ -89,6 +89,8 @@ vault:
     - secretKey: AWS_REGION
       targetEnv: AWS_REGION
   secrets:
+    - secretKey: USER_PORTAL_CLIENT_ID
+      targetEnv: USER_PORTAL_CLIENT_ID
     - secretKey: USER_PORTAL_CLIENT_SECRET
       targetEnv: USER_PORTAL_CLIENT_SECRET
 

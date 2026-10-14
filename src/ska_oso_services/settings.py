@@ -1,6 +1,6 @@
-from typing import Annotated, Self, Tuple
+from typing import Annotated, Tuple
 
-from pydantic import Field, HttpUrl, SecretStr, field_validator, model_validator
+from pydantic import Field, HttpUrl, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 DEFAULT_AUDIENCES = (
@@ -70,63 +70,35 @@ class UserPortalConfig(ConfigBase):
         alias="USER_PORTAL_BASE_URL",
         description="The base URL for the SKAO User Portal in this environment.",
     )
-    api_key: str = Field(
-        default="",
-        alias="USER_PORTAL_API_KEY",
-        description=(
-            "Static bearer token for the SKAO User Portal API. Only used when "
-            "USER_PORTAL_TOKEN_URL is unset, e.g. against a mock portal."
-        ),
-    )
     timeout: int = Field(
         default=10,
         alias="USER_PORTAL_TIMEOUT",
         description="How long to wait (in seconds) before User Portal requests time out",
     )
-    token_url: HttpUrl | None = Field(
-        default=None,
+    token_url: HttpUrl = Field(
         alias="USER_PORTAL_TOKEN_URL",
-        description=(
-            "OAuth2 token endpoint for the client-credentials grant used to call the "
-            "User Portal. If unset, USER_PORTAL_API_KEY is sent as a static token."
-        ),
+        description="OAuth2 token endpoint for the User Portal client-credentials grant",
     )
     client_id: str = Field(
-        default="",
+        min_length=1,
         alias="USER_PORTAL_CLIENT_ID",
         description="OAuth2 client ID for the User Portal client-credentials grant",
     )
     client_secret: SecretStr = Field(
-        default=SecretStr(""),
+        min_length=1,
         alias="USER_PORTAL_CLIENT_SECRET",
         description="OAuth2 client secret for the User Portal client-credentials grant",
     )
-    token_scope: str | None = Field(
-        default=None,
+    token_scope: str = Field(
+        min_length=1,
         alias="USER_PORTAL_TOKEN_SCOPE",
         description="Space-separated scopes to request in the client-credentials grant",
     )
-    token_audience: str | None = Field(
-        default=None,
+    token_audience: str = Field(
+        min_length=1,
         alias="USER_PORTAL_TOKEN_AUDIENCE",
-        description="Audience to request in the client-credentials grant",
+        description="Audience to request in the client-credentials grant, e.g. test:portal",
     )
-
-    @field_validator("token_url", "token_scope", "token_audience", mode="before")
-    def _empty_as_unset(cls, value: object) -> object:
-        # Lets .env files and ConfigMaps leave these as KEY= without failing validation
-        return None if value == "" else value
-
-    @model_validator(mode="after")
-    def _require_client_credentials(self) -> Self:
-        if self.token_url is not None and not (
-            self.client_id and self.client_secret.get_secret_value()
-        ):
-            raise ValueError(
-                "USER_PORTAL_CLIENT_ID and USER_PORTAL_CLIENT_SECRET are required "
-                "when USER_PORTAL_TOKEN_URL is set"
-            )
-        return self
 
 
 class Settings(ConfigBase):

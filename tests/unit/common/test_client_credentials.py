@@ -9,7 +9,6 @@ import pytest
 from ska_oso_services.common.client_credentials import (
     DEFAULT_TOKEN_LIFETIME,
     ClientCredentialsTokenProvider,
-    StaticTokenProvider,
     TokenError,
 )
 
@@ -214,11 +213,3 @@ async def test_connection_error_raises_token_error(clock):
 
     with pytest.raises(TokenError):
         await provider.get_token()
-
-
-async def test_static_provider_returns_fixed_token():
-    provider = StaticTokenProvider("static-token")
-
-    assert await provider.get_token() == "static-token"
-    provider.invalidate()
-    assert await provider.get_token() == "static-token"

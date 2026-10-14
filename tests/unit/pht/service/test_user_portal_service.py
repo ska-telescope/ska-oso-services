@@ -6,15 +6,26 @@ import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
 
-from ska_oso_services.common.client_credentials import (
-    ClientCredentialsTokenProvider,
-    StaticTokenProvider,
-    TokenError,
-)
+from ska_oso_services.common.client_credentials import ClientCredentialsTokenProvider, TokenError
 from ska_oso_services.pht.service import user_portal
 from ska_oso_services.settings import UserPortalConfig
 
 BASE_URL = "http://portal.example.org"
+TOKEN_URL = "https://iam.example.org/token"
+# Captured at import, before the autouse fixture in tests/unit/conftest.py replaces it
+real_get_token_provider = user_portal.get_token_provider
+
+
+def portal_config(**overrides) -> UserPortalConfig:
+    kwargs = {
+        "base_url": BASE_URL,
+        "token_url": TOKEN_URL,
+        "client_id": "client",
+        "client_secret": "secret",
+        "token_scope": "portal:users.read",
+        "token_audience": "test:portal",
+    } | overrides
+    return UserPortalConfig(**kwargs)
 
 
 class FakeTokens:
@@ -123,67 +134,57 @@ class TestTokenHandling:
 class TestGetTokenProvider:
     @pytest.fixture(autouse=True)
     def clear_cache(self):
-        user_portal.get_token_provider.cache_clear()
+        real_get_token_provider.cache_clear()
         yield
-        user_portal.get_token_provider.cache_clear()
+        real_get_token_provider.cache_clear()
 
-    def _settings(self, **portal_kwargs):
-        config = UserPortalConfig(base_url=BASE_URL, **portal_kwargs)
+    def _settings(self, **overrides):
+        config = portal_config(**overrides)
         return mock.patch.object(
             user_portal, "get_settings", return_value=mock.Mock(userportal=config)
         )
 
-    async def test_static_token_without_token_url(self):
-        with self._settings(api_key="static-key"):
-            provider = user_portal.get_token_provider()
-
-        assert isinstance(provider, StaticTokenProvider)
-        assert await provider.get_token() == "static-key"
-
-    def test_client_credentials_with_token_url(self):
-        with self._settings(
-            token_url="https://iam.example.org/token",
-            client_id="client",
-            client_secret="secret",
-            token_scope="portal:read",
-            token_audience="portal",
-        ):
-            provider = user_portal.get_token_provider()
+    def test_builds_provider_from_settings(self):
+        with self._settings(token_scope="portal:users.read", token_audience="live:portal"):
+            provider = real_get_token_provider()
 
         assert isinstance(provider, ClientCredentialsTokenProvider)
-        assert provider.token_url == "https://iam.example.org/token"
+        assert provider.token_url == TOKEN_URL
         assert provider.client_id == "client"
-        assert provider.scope == "portal:read"
-        assert provider.audience == "portal"
+        assert provider.scope == "portal:users.read"
+        assert provider.audience == "live:portal"
 
-    def test_provider_is_shared_across_services(self):
-        with self._settings(api_key="static-key"):
-            first = user_portal.UserPortalService(x_request_id="a")
-            second = user_portal.UserPortalService(x_request_id="b")
-
-        assert first.tokens is second.tokens
+    def test_provider_is_shared_across_requests(self):
+        with self._settings():
+            assert real_get_token_provider() is real_get_token_provider()
 
 
 class TestUserPortalConfig:
-    def test_token_url_requires_client_credentials(self):
-        with pytest.raises(ValidationError, match="USER_PORTAL_CLIENT_ID"):
-            UserPortalConfig(base_url=BASE_URL, token_url="https://iam.example.org/token")
+    @pytest.mark.parametrize(
+        "field", ["token_url", "client_id", "client_secret", "token_scope", "token_audience"]
+    )
+    def test_client_credentials_are_required(self, field):
+        kwargs = {
+            "base_url": BASE_URL,
+            "token_url": TOKEN_URL,
+            "client_id": "client",
+            "client_secret": "secret",
+            "token_scope": "portal:users.read",
+            "token_audience": "test:portal",
+        }
+        del kwargs[field]
 
-    def test_empty_optional_values_are_unset(self):
-        config = UserPortalConfig(
-            base_url=BASE_URL, token_url="", token_scope="", token_audience=""
-        )
+        # Bypass the USER_PORTAL_* defaults that tests/conftest.py puts in the environment
+        with mock.patch.dict("os.environ", clear=True):
+            with pytest.raises(ValidationError):
+                UserPortalConfig(**kwargs)
 
-        assert config.token_url is None
-        assert config.token_scope is None
-        assert config.token_audience is None
+    @pytest.mark.parametrize(
+        "field", ["client_id", "client_secret", "token_scope", "token_audience"]
+    )
+    def test_client_credentials_must_not_be_empty(self, field):
+        with pytest.raises(ValidationError):
+            portal_config(**{field: ""})
 
     def test_client_secret_is_not_exposed_in_repr(self):
-        config = UserPortalConfig(
-            base_url=BASE_URL,
-            token_url="https://iam.example.org/token",
-            client_id="client",
-            client_secret="super-secret",
-        )
-
-        assert "super-secret" not in repr(config)
+        assert "super-secret" not in repr(portal_config(client_secret="super-secret"))

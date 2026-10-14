@@ -20,6 +20,11 @@ from ska_oso_pdm import SBDefinition
 from tests.unit.util import load_string_from_file
 
 
+@pytest.fixture(autouse=True)
+def _fake_user_portal_tokens(fake_user_portal_tokens):
+    """No unit test should do a real client-credentials grant."""
+
+
 @pytest.fixture(scope="module")
 def dummy_calibrator_table() -> QTable:
     """
