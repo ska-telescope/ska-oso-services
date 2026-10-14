@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 * Adds APIs for invitations, e.g. POST /pht/prsl/prp-1/invites
-* Adds APIs for members, e.g. POST /pht/prsl/prp-1/members
+* Adds GET /pht/prsls/{prsl_id}/members, listing everyone in the proposal's User Portal groups with their access level (``has_write``, ``is_admin``)
 * [BREAKING] Re-writes PHT permissions enforcement to be based on Indigo IAM group memberships.
 * [BREAKING] S3 file uploads are now scoped per-proposal.
 * [BREAKING] User Portal calls authenticate with an OAuth2 client-credentials grant. ``USER_PORTAL_TOKEN_URL``,

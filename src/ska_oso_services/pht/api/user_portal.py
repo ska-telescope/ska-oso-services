@@ -1,3 +1,4 @@
+import asyncio
 from http import HTTPStatus
 from typing import Annotated, Literal
 from uuid import UUID
@@ -13,11 +14,13 @@ from ska_oso_services.pht.models.invitations import (
     InviteCardResponse,
     InviteCreateListRequest,
     InviteDeleteResponse,
+    ProposalMember,
+    ProposalMembersResponse,
     UserSearchResponse,
 )
 from ska_oso_services.pht.service import user_portal
 from ska_oso_services.pht.service.security import Security, SecurityService
-from ska_oso_services.pht.service.security.facts import get_group_skuid
+from ska_oso_services.pht.service.security.facts import get_group_name, get_group_skuid
 
 ProposalID = ShortSkuid[Literal[EntityType.PRP]]
 
@@ -124,9 +127,9 @@ async def delete_invite(
 
 @router.get(
     "/prsls/{prsl_id}/members",
-    summary="List members of the proposal group",
+    summary="List members of the proposal's groups",
     dependencies=[Security(roles={Role.ANY}, scopes={Scope.PHT_READ})],
-    response_model=InvitationsListResponse,
+    response_model=ProposalMembersResponse,
 )
 async def list_members(
     security: Annotated[
@@ -135,13 +138,38 @@ async def list_members(
     ],
     service: Annotated[user_portal.UserPortalService, Depends(user_portal.UserPortalService)],
     prsl_id: ProposalID,
-) -> InvitationsListResponse:
+) -> ProposalMembersResponse:
     security.proposals.allowed_to_view_other_members(prsl_id)
-    members_payload = await service.list_invites(prsl_id=prsl_id)
 
-    members = [
-        InviteCardResponse.model_validate(item)
-        for item in members_payload.get("items", [])
-        if item.get("claim_state") == "accepted"
+    # (group, has_write, is_admin) for each tier of the proposal's groups
+    tiers = [
+        (get_group_name(prsl_id), False, False),
+        (get_group_name(prsl_id, write=True), True, False),
+        (get_group_name(prsl_id, admin=True), True, True),
     ]
-    return InvitationsListResponse(invites=members)
+    payloads = await asyncio.gather(
+        *(service.list_group_members(group_name) for group_name, _, _ in tiers)
+    )
+
+    # Someone can be in several tiers (or only a higher one, like the PI who
+    # created the proposal), so merge per person and keep their highest access.
+    # Merge on the portal's own account id, which unlike user_id is never null.
+    members: dict[str, ProposalMember] = {}
+    for (_, has_write, is_admin), payload in zip(tiers, payloads):
+        for item in payload["members"]:
+            key = item["iam_user_id"]
+            member = members.get(key) or ProposalMember.model_validate(item)
+            members[key] = member.model_copy(
+                update={
+                    "has_write": member.has_write or has_write,
+                    "is_admin": member.is_admin or is_admin,
+                }
+            )
+
+    return ProposalMembersResponse(
+        members=sorted(
+            members.values(),
+            key=lambda m: (not m.is_admin, not m.has_write, m.display_name or ""),
+        ),
+        stale=any(payload["stale"] for payload in payloads),
+    )

@@ -229,8 +229,17 @@ class UserPortalService:
         response = await self._call(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members",
-            json={"portal_user_id": user_id},
+            # Our user_id is the Indigo userName, which the portal calls preferred_username
+            json={"preferred_username": user_id},
             extra_headers=self._write_headers(acting_user),
+        )
+        return response.json()
+
+    async def list_group_members(self, group_name: str) -> dict[str, Any]:
+        response = await self._call(
+            method="GET",
+            url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members",
+            params={"include_user_info": True},
         )
         return response.json()
 

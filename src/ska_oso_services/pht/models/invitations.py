@@ -67,3 +67,24 @@ class InviteDeleteResponse(BaseModel):
 class InvitationsListResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     invites: list[InviteCardResponse]
+
+
+class ProposalMember(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    # AuthContext.user_id: the Indigo userName, which is the token's preferred_username
+    # claim. The portal can report it as null for an account not yet linked to Entra.
+    user_id: str | None = Field(validation_alias="preferred_username")
+    display_name: str | None
+    email: str | None = None
+    affiliation: str | None = None
+    has_write: bool = False
+    is_admin: bool = False
+
+
+class ProposalMembersResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    members: list[ProposalMember]
+    # True if the portal answered from a cached copy of any of the proposal's groups
+    stale: bool

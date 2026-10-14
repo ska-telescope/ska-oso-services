@@ -93,6 +93,19 @@ def test_list_invites_by_proposal_happy_path(integration_client):
     assert isinstance(payload["invites"], list)
 
 
+def test_list_members_happy_path(integration_client):
+    response = integration_client.get(f"{PHT_BASE_API_URL}/prsls/prp-1/members")
+
+    assert response.status_code == HTTPStatus.OK
+    payload = response.json()
+    assert isinstance(payload["stale"], bool)
+    assert isinstance(payload["members"], list)
+    for member in payload["members"]:
+        assert "user_id" in member
+        assert not {"iam_user_id", "portal_user_id", "preferred_username"} & member.keys()
+        assert {"has_write", "is_admin"} <= member.keys()
+
+
 def test_delete_invite_happy_path(integration_client):
     invite_id = uuid4()
     # The mocked invite always belongs to MOCK_GROUP_NAME, so target that proposal
@@ -163,7 +176,7 @@ def test_service_create_groups_happy_path(fake_user_portal):
 def test_service_create_memberships_happy_path(fake_user_portal):
     del fake_user_portal
     prsl_id = "prp-8"
-    portal_user_id = str(uuid4())
+    user_id = str(uuid4())
     acting_user = str(uuid4())
     service = UserPortalService(x_request_id="integration-trace-id")
     group_name = user_portal.get_group_name(prsl_id)
@@ -177,7 +190,7 @@ def test_service_create_memberships_happy_path(fake_user_portal):
         payload = asyncio.run(
             service.create_membership(
                 group_name=group_name,
-                user_id=portal_user_id,
+                user_id=user_id,
                 acting_user=acting_user,
             )
         )
@@ -189,7 +202,7 @@ def test_service_create_memberships_happy_path(fake_user_portal):
         method="POST",
         url=(f"{service.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members"),
         params=None,
-        json={"portal_user_id": str(portal_user_id)},
+        json={"preferred_username": user_id},
         headers=ANY,
         timeout=service.timeout,
     )
