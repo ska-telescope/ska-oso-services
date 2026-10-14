@@ -15,6 +15,8 @@ Unreleased
   are required. The chart takes the client ID and secret from Vault and defaults the rest for non-production
   (staging Indigo, the ``portal:*`` scopes for the routes we call, and audience ``test:portal``).
   ``USER_PORTAL_API_KEY`` is removed.
+* User Portal failures (unreachable, auth/scope problems, unexpected responses) are reported as HTTP 502;
+  a portal 404 or 409 about the caller's request is passed on as 404 or 409.
 * [BREAKING] Removes the unused MS Graph integration, the ``msal`` dependency and the ``OSO_CLIENT_SECRET`` setting.
 
 17.1.0

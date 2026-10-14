@@ -1,3 +1,4 @@
+import logging
 from functools import cache
 from http import HTTPStatus
 from typing import Any, Literal, NamedTuple
@@ -6,6 +7,7 @@ from uuid import UUID, uuid7
 
 import httpx
 from fastapi import Header, HTTPException
+from pydantic import BaseModel, ValidationError
 from ska_ser_skuid import EntityType as et
 from ska_ser_skuid import ShortSkuid
 
@@ -13,12 +15,80 @@ from ska_oso_services.common.client_credentials import (
     ClientCredentialsTokenProvider,
     TokenError,
 )
+from ska_oso_services.common.error_handling import DuplicateError, NotFoundError
 from ska_oso_services.settings import get_settings
 
 from .security.facts import get_group_name
 
+LOGGER = logging.getLogger(__name__)
+
 # TODO: Replace with http.HTTPMethod once the runtime baseline is Python 3.11+.
 HttpMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+
+
+class UserPortalError(HTTPException):
+    """
+    The User Portal failed us, rather than the caller asking for something it
+    can't have, so these are all 502s. (A portal 404 or 409 is about the caller's
+    request and becomes our own NotFoundError or DuplicateError instead.)
+    """
+
+    code = HTTPStatus.BAD_GATEWAY
+
+    def __init__(self, detail: str, upstream_status: int | None = None) -> None:
+        self.upstream_status = upstream_status
+        # Callers only see a 502, so make sure whoever is on call can see why
+        LOGGER.error("%s: %s (upstream status %s)", type(self).__name__, detail, upstream_status)
+        super().__init__(status_code=self.code, detail=detail)
+
+
+class UserPortalUnavailableError(UserPortalError):
+    """Unreachable, timed out, overloaded (5xx) or rate-limiting us (429)."""
+
+
+class UserPortalAuthError(UserPortalError):
+    """We couldn't get a token, or the portal rejected it (401) or its scopes (403)."""
+
+
+class UserPortalContractError(UserPortalError):
+    """The portal rejected our request as malformed, or replied with something we don't accept."""
+
+
+def parse_portal_response[M: BaseModel](model: type[M], data: Any) -> M:
+    """Validate User Portal response data into one of our models."""
+    try:
+        return model.model_validate(data)
+    except ValidationError as err:
+        raise UserPortalContractError(f"Unexpected response from user portal: {err}") from err
+
+
+def _upstream_detail(response: httpx.Response) -> str:
+    # The portal's own errors are {"detail": "<sentence>"}
+    try:
+        detail = response.json().get("detail")
+    except ValueError, AttributeError:
+        detail = None
+    return detail if isinstance(detail, str) else (response.text or response.reason_phrase)
+
+
+def _raise_for_status(response: httpx.Response) -> None:
+    status = response.status_code
+    if status < 400:
+        return
+    detail = _upstream_detail(response)
+    match status:
+        case HTTPStatus.NOT_FOUND:
+            raise NotFoundError(detail=detail)
+        case HTTPStatus.CONFLICT:
+            raise DuplicateError(detail=detail)
+        case HTTPStatus.UNAUTHORIZED | HTTPStatus.FORBIDDEN:
+            raise UserPortalAuthError(f"User portal refused our credentials: {detail}", status)
+        case HTTPStatus.TOO_MANY_REQUESTS:
+            raise UserPortalUnavailableError(f"User portal is rate limiting us: {detail}", status)
+        case _ if status >= 500:
+            raise UserPortalUnavailableError(f"User portal error: {detail}", status)
+        case _:
+            raise UserPortalContractError(f"User portal rejected our request: {detail}", status)
 
 
 class ProposalGroupsTuple(NamedTuple):
@@ -50,20 +120,11 @@ async def call_user_portal(
                 json=json,
                 headers=headers,
             )
-
-        if response.status_code < 400:
-            return response
-
-        detail = response.text or response.reason_phrase
-        if response.status_code >= 500:
-            raise HTTPException(status_code=HTTPStatus.BAD_GATEWAY, detail=detail)
-
-        raise HTTPException(status_code=response.status_code, detail=detail)
     except httpx.RequestError as exc:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_GATEWAY,
-            detail=f"Failed to contact user portal: {exc}",
-        ) from exc
+        raise UserPortalUnavailableError(f"Failed to contact user portal: {exc!r}") from exc
+
+    _raise_for_status(response)
+    return response
 
 
 @cache
@@ -114,22 +175,17 @@ class UserPortalService:
         headers = {**self.headers, **(extra_headers or {})}
         try:
             return await self._send(method, url, headers, params=params, json=json)
-        except HTTPException as exc:
-            if exc.status_code != HTTPStatus.UNAUTHORIZED:
+        except UserPortalAuthError as exc:
+            if exc.upstream_status != HTTPStatus.UNAUTHORIZED:
                 raise
         # Our token was rejected (revoked, or expired early), so get a new one and retry once
         self.tokens.invalidate()
         try:
             return await self._send(method, url, headers, params=params, json=json)
-        except HTTPException as exc:
-            if exc.status_code != HTTPStatus.UNAUTHORIZED:
-                raise
-            self.tokens.invalidate()
-            # It's our credentials the portal rejected, not the end user's, so don't surface a 401
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_GATEWAY,
-                detail="User portal rejected our credentials",
-            ) from exc
+        except UserPortalAuthError as exc:
+            if exc.upstream_status == HTTPStatus.UNAUTHORIZED:
+                self.tokens.invalidate()
+            raise
 
     async def _send(
         self,
@@ -143,10 +199,7 @@ class UserPortalService:
         try:
             token = await self.tokens.get_token()
         except TokenError as err:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_GATEWAY,
-                detail="Unable to authenticate to user portal",
-            ) from err
+            raise UserPortalAuthError("Unable to get an access token for the user portal") from err
         return await call_user_portal(
             method=method,
             url=url,

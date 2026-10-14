@@ -26,6 +26,7 @@ from ska_oso_services.common.error_handling import (
 )
 from ska_oso_services.common.osdmapper import get_osd_cycles, get_osd_data
 from ska_oso_services.pht.models.domain import OsdDataModel
+from ska_oso_services.pht.models.invitations import UserSearchResponse
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.proposal_service import (
@@ -42,7 +43,7 @@ from ska_oso_services.pht.service.s3_bucket import (
     get_s3_object_key,
 )
 from ska_oso_services.pht.service.security import Security, SecurityService
-from ska_oso_services.pht.service.user_portal import UserPortalService
+from ska_oso_services.pht.service.user_portal import UserPortalService, parse_portal_response
 from ska_oso_services.pht.utils.constants import EXAMPLE_PROPOSAL
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
@@ -669,8 +670,9 @@ async def get_user_by_email(
     response.headers["Deprecation"] = "true"
     response.headers["Link"] = '</pht/users/search>; rel="successor-version"'
 
-    result = await service.search_users(query=email, limit=5)
-    items = result.get("items", [])
-    if items:
-        return items[0]
+    result = parse_portal_response(
+        UserSearchResponse, await service.search_users(query=email, limit=5)
+    )
+    if result.results:
+        return result.results[0].model_dump(mode="json")
     raise NotFoundError(detail=f"User not found with email: {email}")

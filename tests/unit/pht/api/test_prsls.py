@@ -907,8 +907,19 @@ class TestGetPanelPrslIds:
 EMAIL_TEST_CASES = [
     (
         "user@example.com",
-        [{"id": "1", "mail": "user@example.com", "displayName": "User"}],
-        {"id": "1", "mail": "user@example.com", "displayName": "User"},
+        # A search hit as the portal returns it
+        [
+            {
+                "portal_user_id": "6f1c1c3e-3b0e-4b8a-9d55-2f3f1a2b4c5d",
+                "preferred_username": "user-indigo-username",
+                "display_name": "User",
+                "email": "user@example.com",
+                "status": "active",
+                "has_iam_account": True,
+            }
+        ],
+        # Our response: user_id is the Indigo username, with no portal identifiers
+        {"user_id": "user-indigo-username", "display_name": "User", "email": "user@example.com"},
     ),
 ]
 
@@ -919,7 +930,7 @@ class TestGetUserEmail:
     def test_get_user_by_email_success(
         self, mock_search_users, email, mock_return, expected_response, client_get
     ):
-        mock_search_users.return_value = {"items": mock_return}
+        mock_search_users.return_value = {"results": mock_return}
 
         response = client_get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
 
@@ -927,9 +938,21 @@ class TestGetUserEmail:
         assert response.json() == expected_response
 
     @mock.patch(f"{PRSL_MODULE}.UserPortalService.search_users", new_callable=mock.AsyncMock)
+    def test_get_user_by_email_without_username_fails_loudly(self, mock_search_users, client):
+        # The portal excludes "disabled" accounts (no preferred_username) from search
+        hit = EMAIL_TEST_CASES[0][1][0] | {"preferred_username": None}
+        mock_search_users.return_value = {"results": [hit]}
+
+        response = client.get(f"{PHT_BASE_API_URL}/prsls/member/user@example.com")
+
+        # A portal contract violation, so a (logged) 502 rather than our own 500
+        assert response.status_code == HTTPStatus.BAD_GATEWAY
+        assert "preferred_username" in response.json()["detail"]
+
+    @mock.patch(f"{PRSL_MODULE}.UserPortalService.search_users", new_callable=mock.AsyncMock)
     def test_get_user_by_email_user_not_found(self, mock_search_users, client_get):
         email = "no_user@example.com"
-        mock_search_users.return_value = {"items": []}
+        mock_search_users.return_value = {"results": []}
 
         response = client_get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
 
@@ -939,7 +962,7 @@ class TestGetUserEmail:
     @mock.patch(f"{PRSL_MODULE}.UserPortalService.search_users", new_callable=mock.AsyncMock)
     def test_get_user_by_invalid_email_user_not_found(self, mock_search_users, client_get):
         email = "invalid*address@example.com"
-        mock_search_users.return_value = {"items": []}
+        mock_search_users.return_value = {"results": []}
 
         response = client_get(f"{PHT_BASE_API_URL}/prsls/member/{email}")
 

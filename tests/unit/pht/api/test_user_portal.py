@@ -13,6 +13,7 @@ from ska_oso_services.common.error_handling import NotFoundError
 from ska_oso_services.pht.api.user_portal import delete_invite, list_members
 from ska_oso_services.pht.service import user_portal
 from ska_oso_services.pht.service.security import SecurityService
+from ska_oso_services.pht.service.user_portal import UserPortalContractError
 
 PRSL_ID = "prp-abc123"
 OTHER_PRSL_ID = "prp-zzz999"
@@ -96,7 +97,7 @@ class TestDeleteInvite:
         assert response.status == "deleted"
 
 
-def _member(user_id: str | None, display_name: str) -> dict:
+def _member(user_id: str, display_name: str) -> dict:
     """A member card as the portal returns it"""
     return {
         "portal_user_id": str(uuid4()),
@@ -197,16 +198,10 @@ class TestListMembers:
 
         service.list_group_members.assert_not_awaited()
 
-    async def test_members_without_username_are_kept_separate(self):
-        # preferred_username can be null in the portal; these must not merge together
-        first, second = _member(None, "Ada"), _member(None, "Bo")
-        service = _members_service({f"app:pht:{PRSL_ID}": [first, second]})
+    async def test_member_without_username_fails_loudly(self):
+        # The portal excludes "disabled" accounts (no preferred_username) from its
+        # external API, so a null here is a contract violation, not a member to show
+        service = _members_service({f"app:pht:{PRSL_ID}": [_member(None, "Ada")]})
 
-        response = await list_members(
-            security=_pi_security(PRSL_ID), service=service, prsl_id=PRSL_ID
-        )
-
-        assert [(m.user_id, m.display_name) for m in response.members] == [
-            (None, "Ada"),
-            (None, "Bo"),
-        ]
+        with pytest.raises(UserPortalContractError):
+            await list_members(security=_pi_security(PRSL_ID), service=service, prsl_id=PRSL_ID)

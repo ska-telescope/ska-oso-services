@@ -4,11 +4,9 @@ from unittest.mock import ANY, AsyncMock
 from urllib.parse import quote
 from uuid import uuid4
 
-from fastapi import HTTPException
-
 from ska_oso_services.pht.service import user_portal
 from ska_oso_services.pht.service.security.facts import get_group_skuid
-from ska_oso_services.pht.service.user_portal import UserPortalService
+from ska_oso_services.pht.service.user_portal import UserPortalService, UserPortalUnavailableError
 from tests.conftest import PHT_BASE_API_URL
 from tests.integration.conftest import MOCK_GROUP_NAME
 
@@ -26,24 +24,17 @@ def test_search_users_happy_path_proxies_to_user_portal(integration_client):
     if payload["results"]:
         first_result = payload["results"][0]
         assert "user_id" in first_result
-        assert "portal_user_id" not in first_result
+        assert not {"portal_user_id", "preferred_username"} & first_result.keys()
 
 
-def test_create_invite_by_user_id_happy_path(integration_client):
-    prsl_id = "prp-1"
+def test_create_invite_by_user_id_is_rejected(integration_client):
+    # Invites are by email only; the portal resolves known accounts from the address
     response = integration_client.post(
-        f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
-        json={"invites": [{"user_id": str(uuid4())}]},
+        f"{PHT_BASE_API_URL}/prsls/prp-1/invites",
+        json={"invites": [{"user_id": "someone"}]},
     )
 
-    assert response.status_code == HTTPStatus.CREATED
-    payload = response.json()
-    assert isinstance(payload, dict)
-    assert "invites" in payload
-    assert isinstance(payload["invites"], list)
-    assert len(payload["invites"]) == 1
-    assert "invite_id" in payload["invites"][0]
-    assert isinstance(payload["invites"][0].get("group_name"), str)
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
 def test_create_invite_by_email_happy_path(integration_client):
@@ -69,8 +60,8 @@ def test_create_invites_bulk_happy_path(integration_client):
         f"{PHT_BASE_API_URL}/prsls/{prsl_id}/invites",
         json={
             "invites": [
-                {"user_id": str(uuid4())},
-                {"email": "bulk-user@example.org"},
+                {"email": "bulk-user-1@example.org"},
+                {"email": "bulk-user-2@example.org"},
             ]
         },
     )
@@ -138,7 +129,7 @@ def test_search_users_passes_upstream_results(integration_client):
 def test_search_users_upstream_502_maps_to_bad_gateway(integration_client, monkeypatch):
     async def fake_upstream_request(*args, **kwargs):  # noqa: ANN002, ANN003
         del args, kwargs
-        raise HTTPException(status_code=HTTPStatus.BAD_GATEWAY, detail="upstream unavailable")
+        raise UserPortalUnavailableError("upstream unavailable", HTTPStatus.SERVICE_UNAVAILABLE)
 
     monkeypatch.setattr(user_portal, "call_user_portal", fake_upstream_request)
 

@@ -38,7 +38,9 @@ async def search_users(
     q: str = Query(..., min_length=2, max_length=256),
     limit: int = Query(25, ge=1, le=100),
 ) -> UserSearchResponse:
-    return UserSearchResponse.model_validate(await service.search_users(query=q, limit=limit))
+    return user_portal.parse_portal_response(
+        UserSearchResponse, await service.search_users(query=q, limit=limit)
+    )
 
 
 @router.post(
@@ -62,12 +64,13 @@ async def create_invites(
     for invite in body.invites:
         invite_payload = invite.model_dump(mode="json", by_alias=True, exclude_none=True)
         created_invites.append(
-            InviteCardResponse.model_validate(
+            user_portal.parse_portal_response(
+                InviteCardResponse,
                 await service.create_invite(
                     prsl_id=prsl_id,
                     invite_payload=invite_payload,
                     acting_user=security.auth.user_id,
-                )
+                ),
             )
         )
 
@@ -91,7 +94,7 @@ async def list_invites(
     members_payload = await service.list_invites(prsl_id=prsl_id)
 
     invited = [
-        InviteCardResponse.model_validate(item)
+        user_portal.parse_portal_response(InviteCardResponse, item)
         for item in members_payload.get("items", [])
         if item.get("claim_state") != "accepted"
     ]
@@ -113,15 +116,18 @@ async def delete_invite(
     prsl_id: ProposalID,
     invite_id: UUID,
 ) -> InviteDeleteResponse:
-    invite = InviteCardResponse.model_validate(await service.get_invite(invite_id))
+    invite = user_portal.parse_portal_response(
+        InviteCardResponse, await service.get_invite(invite_id)
+    )
     if get_group_skuid(invite.group_name) != prsl_id:
         # invite_id does not belong to prsl_id, so this path does not resolve to a resource
         raise NotFoundError(detail=f"Invite {invite_id} not found for proposal {prsl_id}")
 
     security.proposals.allowed_to_administer(prsl_id)
 
-    return InviteDeleteResponse.model_validate(
-        await service.delete_invite(invite_id=invite_id, acting_user=security.auth.user_id)
+    return user_portal.parse_portal_response(
+        InviteDeleteResponse,
+        await service.delete_invite(invite_id=invite_id, acting_user=security.auth.user_id),
     )
 
 
@@ -152,14 +158,13 @@ async def list_members(
     )
 
     # Someone can be in several tiers (or only a higher one, like the PI who
-    # created the proposal), so merge per person and keep their highest access.
-    # Merge on the portal's own account id, which unlike user_id is never null.
+    # created the proposal), so merge per person and keep their highest access
     members: dict[str, ProposalMember] = {}
     for (_, has_write, is_admin), payload in zip(tiers, payloads):
         for item in payload["members"]:
-            key = item["iam_user_id"]
-            member = members.get(key) or ProposalMember.model_validate(item)
-            members[key] = member.model_copy(
+            member = user_portal.parse_portal_response(ProposalMember, item)
+            member = members.get(member.user_id, member)
+            members[member.user_id] = member.model_copy(
                 update={
                     "has_write": member.has_write or has_write,
                     "is_admin": member.is_admin or is_admin,

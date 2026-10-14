@@ -3,11 +3,18 @@ from unittest import mock
 
 import httpx
 import pytest
-from fastapi import HTTPException
 from pydantic import ValidationError
 
 from ska_oso_services.common.client_credentials import ClientCredentialsTokenProvider, TokenError
+from ska_oso_services.common.error_handling import DuplicateError, NotFoundError
+from ska_oso_services.pht.models.invitations import UserSearchResponse
 from ska_oso_services.pht.service import user_portal
+from ska_oso_services.pht.service.user_portal import (
+    UserPortalAuthError,
+    UserPortalContractError,
+    UserPortalError,
+    UserPortalUnavailableError,
+)
 from ska_oso_services.settings import UserPortalConfig
 
 BASE_URL = "http://portal.example.org"
@@ -44,7 +51,7 @@ class FakeTokens:
 
 
 def unauthorized():
-    return HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="invalid token")
+    return UserPortalAuthError("invalid token", HTTPStatus.UNAUTHORIZED)
 
 
 def ok(payload=None):
@@ -102,33 +109,149 @@ class TestTokenHandling:
         tokens = FakeTokens("stale", "also-rejected")
         service = make_service(tokens)
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(UserPortalAuthError) as exc_info:
             await service.search_users("alice", 5)
 
         # The end user is authenticated fine; it's our credentials the portal rejected
         assert exc_info.value.status_code == HTTPStatus.BAD_GATEWAY
         assert portal_call.await_count == 2
+        assert tokens.invalidated == 2
 
-    async def test_other_errors_are_not_retried(self, make_service, portal_call):
-        portal_call.side_effect = HTTPException(status_code=HTTPStatus.NOT_FOUND)
+    async def test_403_is_not_retried(self, make_service, portal_call):
+        # Missing scope: a fresh token won't have it either
+        portal_call.side_effect = UserPortalAuthError("missing scope", HTTPStatus.FORBIDDEN)
         tokens = FakeTokens("token-1")
         service = make_service(tokens)
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(UserPortalAuthError):
             await service.search_users("alice", 5)
 
-        assert exc_info.value.status_code == HTTPStatus.NOT_FOUND
+        assert tokens.invalidated == 0
+        assert portal_call.await_count == 1
+
+    async def test_other_errors_are_not_retried(self, make_service, portal_call):
+        portal_call.side_effect = NotFoundError("no such invite")
+        tokens = FakeTokens("token-1")
+        service = make_service(tokens)
+
+        with pytest.raises(NotFoundError):
+            await service.search_users("alice", 5)
+
         assert tokens.invalidated == 0
         assert portal_call.await_count == 1
 
     async def test_token_failure_becomes_bad_gateway(self, make_service, portal_call):
         service = make_service(FakeTokens(TokenError("IAM is down")))
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(UserPortalAuthError) as exc_info:
             await service.search_users("alice", 5)
 
         assert exc_info.value.status_code == HTTPStatus.BAD_GATEWAY
         portal_call.assert_not_awaited()
+
+
+@pytest.fixture
+def portal_responds(monkeypatch):
+    """Make call_user_portal's httpx client answer with the given response or error."""
+
+    def _respond(result: httpx.Response | Exception):
+        def handler(request):
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        real_client = httpx.AsyncClient
+        monkeypatch.setattr(
+            user_portal.httpx,
+            "AsyncClient",
+            lambda **kwargs: real_client(transport=httpx.MockTransport(handler), **kwargs),
+        )
+
+    return _respond
+
+
+async def call_portal():
+    return await user_portal.call_user_portal("GET", f"{BASE_URL}/api/external/v1/invites", 5)
+
+
+class TestPortalErrors:
+    async def test_success_returns_response(self, portal_responds):
+        portal_responds(httpx.Response(200, json={"items": []}))
+
+        response = await call_portal()
+
+        assert response.json() == {"items": []}
+
+    @pytest.mark.parametrize(
+        "status, error",
+        [
+            (HTTPStatus.UNAUTHORIZED, UserPortalAuthError),
+            (HTTPStatus.FORBIDDEN, UserPortalAuthError),
+            (HTTPStatus.TOO_MANY_REQUESTS, UserPortalUnavailableError),
+            (HTTPStatus.INTERNAL_SERVER_ERROR, UserPortalUnavailableError),
+            (HTTPStatus.SERVICE_UNAVAILABLE, UserPortalUnavailableError),
+            (HTTPStatus.BAD_REQUEST, UserPortalContractError),
+            (HTTPStatus.UNPROCESSABLE_ENTITY, UserPortalContractError),
+        ],
+    )
+    async def test_portal_failures_are_bad_gateway(self, portal_responds, status, error):
+        portal_responds(httpx.Response(status, json={"detail": "upstream says no"}))
+
+        with pytest.raises(error) as exc_info:
+            await call_portal()
+
+        assert exc_info.value.status_code == HTTPStatus.BAD_GATEWAY
+        assert exc_info.value.upstream_status == status
+        assert "upstream says no" in exc_info.value.detail
+
+    @pytest.mark.parametrize(
+        "status, error",
+        [(HTTPStatus.NOT_FOUND, NotFoundError), (HTTPStatus.CONFLICT, DuplicateError)],
+    )
+    async def test_callers_request_errors_keep_their_status(self, portal_responds, status, error):
+        # e.g. an unknown invite id, or inviting someone who already has a pending invite
+        portal_responds(httpx.Response(status, json={"detail": "Invite already pending."}))
+
+        with pytest.raises(error) as exc_info:
+            await call_portal()
+
+        assert exc_info.value.status_code == status
+        assert exc_info.value.detail == "Invite already pending."
+
+    async def test_non_json_error_body_is_reported(self, portal_responds):
+        portal_responds(httpx.Response(HTTPStatus.BAD_GATEWAY, text="<html>proxy error</html>"))
+
+        with pytest.raises(UserPortalUnavailableError) as exc_info:
+            await call_portal()
+
+        assert "proxy error" in exc_info.value.detail
+
+    async def test_connection_failure_is_unavailable(self, portal_responds):
+        portal_responds(httpx.ConnectError("connection refused"))
+
+        with pytest.raises(UserPortalUnavailableError) as exc_info:
+            await call_portal()
+
+        assert exc_info.value.status_code == HTTPStatus.BAD_GATEWAY
+        assert exc_info.value.upstream_status is None
+
+    async def test_errors_are_logged(self, portal_responds, caplog):
+        portal_responds(httpx.Response(HTTPStatus.SERVICE_UNAVAILABLE, json={"detail": "down"}))
+
+        with pytest.raises(UserPortalError):
+            await call_portal()
+
+        assert "UserPortalUnavailableError" in caplog.text
+
+    def test_unexpected_response_is_a_contract_error(self):
+        # e.g. a "disabled" account without a preferred_username
+        hit = {"preferred_username": None, "display_name": "Ada", "email": "ada@example.org"}
+
+        with pytest.raises(UserPortalContractError) as exc_info:
+            user_portal.parse_portal_response(UserSearchResponse, {"results": [hit]})
+
+        assert exc_info.value.status_code == HTTPStatus.BAD_GATEWAY
+        assert "preferred_username" in exc_info.value.detail
 
 
 class TestGetTokenProvider:

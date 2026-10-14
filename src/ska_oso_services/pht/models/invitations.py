@@ -2,26 +2,19 @@
 
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
-from typing_extensions import Self
+from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field
 
 # TODO: Review all the |None and UUID types in this module.
-# TODO: Can we avoid dealing with portal_user_id at all and only work in terms of Indigo usernames?
+# user_id throughout is AuthContext.user_id (the Indigo userName / preferred_username
+# claim), never null: the portal excludes accounts without one ("disabled") from its
+# external API. The portal's own identifiers (portal_user_id, iam_user_id) are never exposed.
 
 
 class NewInvitation(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    user_id: UUID | None = Field(default=None, serialization_alias="portal_user_id")
-    email: str | None = None
-
-    @model_validator(mode="after")
-    def xor_invite_type(self) -> Self:
-        has_user_id = self.user_id is not None
-        has_email = self.email is not None
-        if has_user_id == has_email:
-            raise ValueError("Exactly one of user_id or email must be provided")
-        return self
+    # The portal keys invites on email, whether or not the invitee already has an account
+    email: EmailStr
 
 
 class InviteCreateListRequest(BaseModel):
@@ -33,7 +26,7 @@ class InviteCreateListRequest(BaseModel):
 class UserSearchItemResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    user_id: UUID | None = Field(validation_alias="portal_user_id")
+    user_id: str = Field(validation_alias="preferred_username")
     display_name: str
     email: str
 
@@ -51,7 +44,6 @@ class InviteCardResponse(BaseModel):
     invited_email: str
     invited_by: str
     claim_state: str
-    claimed_by_user_id: UUID | None = Field(validation_alias="claimed_by_portal_user_id")
     created_at: AwareDatetime
     updated_at: AwareDatetime
     expires_at: AwareDatetime
@@ -72,9 +64,7 @@ class InvitationsListResponse(BaseModel):
 class ProposalMember(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    # AuthContext.user_id: the Indigo userName, which is the token's preferred_username
-    # claim. The portal can report it as null for an account not yet linked to Entra.
-    user_id: str | None = Field(validation_alias="preferred_username")
+    user_id: str = Field(validation_alias="preferred_username")
     display_name: str | None
     email: str | None = None
     affiliation: str | None = None
