@@ -4,6 +4,7 @@ from unittest import mock
 import httpx
 import pytest
 from pydantic import ValidationError
+from ska_aaa_authhelpers import AuthContext, Role
 
 from ska_oso_services.common.client_credentials import ClientCredentialsTokenProvider, TokenError
 from ska_oso_services.common.error_handling import DuplicateError, NotFoundError
@@ -48,6 +49,19 @@ class FakeTokens:
 
     def invalidate(self) -> None:
         self.invalidated += 1
+
+
+def auth_context() -> AuthContext:
+    return AuthContext(
+        user_id="indigo-username",
+        principals=frozenset({"indigo-username"}),
+        roles=frozenset({Role.ANY}),
+        groups=frozenset(),
+        scopes=frozenset({"pht:readwrite"}),
+        audience="test:pht",
+        token_claims={"sub": "indigo-sub", "preferred_username": "indigo-username"},
+        access_token="test-token",
+    )
 
 
 def unauthorized():
@@ -98,11 +112,21 @@ class TestTokenHandling:
         portal_call.side_effect = [unauthorized(), ok({"group_name": "app:pht:prp-1"})]
         service = make_service(FakeTokens("stale", "fresh"))
 
-        await service.create_group("app:pht:prp-1", acting_user="user-1")
+        await service.create_group("app:pht:prp-1", acting_as=auth_context())
 
         first, second = (c.kwargs["headers"] for c in portal_call.await_args_list)
         assert first["Idempotency-Key"] == second["Idempotency-Key"]
-        assert second["X-Acting-User"] == "user-1"
+        assert second["X-Acting-User"] == "indigo-sub"
+
+    async def test_acting_user_is_the_indigo_account_id(self, make_service, portal_call):
+        # The portal resolves X-Acting-User as an INDIGO account id (and records it as
+        # the group owner), so it must be the token's sub, not our user_id
+        portal_call.return_value = ok({"group_name": "app:pht:prp-1"})
+        service = make_service(FakeTokens("token-1"))
+
+        await service.create_group("app:pht:prp-1", acting_as=auth_context())
+
+        assert portal_call.await_args.kwargs["headers"]["X-Acting-User"] == "indigo-sub"
 
     async def test_repeated_401_becomes_bad_gateway(self, make_service, portal_call):
         portal_call.side_effect = [unauthorized(), unauthorized()]

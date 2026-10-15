@@ -6,6 +6,8 @@ TEST_BASE_API_URL = "/ska-oso-services/oso/api/v0"
 ODT_BASE_API_URL = f"{TEST_BASE_API_URL}/odt"
 PHT_BASE_API_URL = f"{TEST_BASE_API_URL}/pht"
 FAKE_USER_PORTAL_PORT = 60517
+# Placeholder that tests/live uses to tell whether real User Portal credentials are set
+FAKE_USER_PORTAL_CLIENT_SECRET = "test-secret"
 
 
 def pytest_configure():
@@ -16,7 +18,7 @@ def pytest_configure():
     # Never used for a real grant: unit and integration tests fake the token provider
     os.environ.setdefault("USER_PORTAL_TOKEN_URL", "http://localhost/token")
     os.environ.setdefault("USER_PORTAL_CLIENT_ID", "test-client")
-    os.environ.setdefault("USER_PORTAL_CLIENT_SECRET", "test-secret")
+    os.environ.setdefault("USER_PORTAL_CLIENT_SECRET", FAKE_USER_PORTAL_CLIENT_SECRET)
     os.environ.setdefault(
         "USER_PORTAL_TOKEN_SCOPE",
         "portal:users.read portal:groups.read portal:groups.write "

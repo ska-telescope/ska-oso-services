@@ -8,6 +8,7 @@ from uuid import UUID, uuid7
 import httpx
 from fastapi import Header, HTTPException
 from pydantic import BaseModel, ValidationError
+from ska_aaa_authhelpers import AuthContext
 from ska_ser_skuid import EntityType as et
 from ska_ser_skuid import ShortSkuid
 
@@ -154,10 +155,12 @@ class UserPortalService:
         }
 
     @staticmethod
-    def _write_headers(acting_user: str, idempotent: bool = True) -> dict[str, str]:
+    def _write_headers(acting_as: AuthContext, idempotent: bool = True) -> dict[str, str]:
         """Headers for state-changing calls: who we act on behalf of, and a per-call
         Idempotency-Key (required by the portal on POSTs)."""
-        headers = {"X-Acting-User": acting_user}
+        # The portal identifies (and records as owner) the acting user by their INDIGO
+        # account id, the token's 'sub' claim -- not our user_id (preferred_username)
+        headers = {"X-Acting-User": acting_as.token_claims["sub"]}
         if idempotent:
             headers["Idempotency-Key"] = str(uuid7())
         return headers
@@ -220,7 +223,7 @@ class UserPortalService:
     async def _create_entity_groups(
         self,
         skuid: ShortSkuid,
-        acting_user: str,
+        acting_as: AuthContext,
         read_desc: str,
         write_desc: str,
         admin_desc: str,
@@ -235,15 +238,15 @@ class UserPortalService:
             get_group_name(skuid, admin=True),
         )
         for name, desc in zip(names, (read_desc, write_desc, admin_desc)):
-            await self.create_group(name, acting_user, desc)
+            await self.create_group(name, acting_as, desc)
         return names
 
     async def create_proposal_groups(
-        self, prsl_id: ShortSkuid[Literal[et.PRP]], acting_user: str
+        self, prsl_id: ShortSkuid[Literal[et.PRP]], acting_as: AuthContext
     ) -> ProposalGroupsTuple:
         read, write, admin = await self._create_entity_groups(
             prsl_id,
-            acting_user,
+            acting_as,
             read_desc=f"Collaborators on proposal ({prsl_id})",
             write_desc=f"Co-Investigators with edit rights on proposal ({prsl_id})",
             admin_desc=f"Principal Investigator(s) for proposal ({prsl_id})",
@@ -251,11 +254,11 @@ class UserPortalService:
         return ProposalGroupsTuple(read=read, write=write, admin=admin)
 
     async def create_panel_groups(
-        self, pnl_id: ShortSkuid[Literal[et.PNL]], acting_user: str
+        self, pnl_id: ShortSkuid[Literal[et.PNL]], acting_as: AuthContext
     ) -> PanelGroupsTuple:
         read, _, admin = await self._create_entity_groups(
             pnl_id,
-            acting_user,
+            acting_as,
             read_desc=f"Members of panel ({pnl_id})",
             write_desc=f"UNUSED middle tier of panel membership ({pnl_id})",
             admin_desc=f"Chair(s) of panel ({pnl_id})",
@@ -263,13 +266,13 @@ class UserPortalService:
         return PanelGroupsTuple(read=read, admin=admin)
 
     async def create_group(
-        self, group_name: str, acting_user: str, description: str = ""
+        self, group_name: str, acting_as: AuthContext, description: str = ""
     ) -> dict[str, Any]:
         response = await self._call(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups",
             json={"group_name": group_name, "display_name": description},
-            extra_headers=self._write_headers(acting_user),
+            extra_headers=self._write_headers(acting_as),
         )
         return response.json()
 
@@ -277,14 +280,14 @@ class UserPortalService:
         self,
         group_name: str,
         user_id: str,
-        acting_user: str,
+        acting_as: AuthContext,
     ) -> dict[str, Any]:
         response = await self._call(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members",
             # Our user_id is the Indigo userName, which the portal calls preferred_username
             json={"preferred_username": user_id},
-            extra_headers=self._write_headers(acting_user),
+            extra_headers=self._write_headers(acting_as),
         )
         return response.json()
 
@@ -300,14 +303,14 @@ class UserPortalService:
         self,
         prsl_id: ShortSkuid[Literal[et.PRP]],
         invite_payload: dict[str, Any],
-        acting_user: str,
+        acting_as: AuthContext,
     ) -> dict[str, Any]:
         group_name = get_group_name(prsl_id)
         response = await self._call(
             method="POST",
             url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/invites",
             json=invite_payload,
-            extra_headers=self._write_headers(acting_user),
+            extra_headers=self._write_headers(acting_as),
         )
         return response.json()
 
@@ -326,10 +329,10 @@ class UserPortalService:
         )
         return response.json()
 
-    async def delete_invite(self, invite_id: UUID, acting_user: str) -> dict[str, Any]:
+    async def delete_invite(self, invite_id: UUID, acting_as: AuthContext) -> dict[str, Any]:
         response = await self._call(
             method="DELETE",
             url=f"{self.base_url}/api/external/v1/invites/{invite_id}",
-            extra_headers=self._write_headers(acting_user, idempotent=False),
+            extra_headers=self._write_headers(acting_as, idempotent=False),
         )
         return response.json()

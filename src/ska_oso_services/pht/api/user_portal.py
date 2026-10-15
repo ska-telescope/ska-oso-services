@@ -69,7 +69,7 @@ async def create_invites(
                 await service.create_invite(
                     prsl_id=prsl_id,
                     invite_payload=invite_payload,
-                    acting_user=security.auth.user_id,
+                    acting_as=security.auth,
                 ),
             )
         )
@@ -127,7 +127,7 @@ async def delete_invite(
 
     return user_portal.parse_portal_response(
         InviteDeleteResponse,
-        await service.delete_invite(invite_id=invite_id, acting_user=security.auth.user_id),
+        await service.delete_invite(invite_id=invite_id, acting_as=security.auth),
     )
 
 

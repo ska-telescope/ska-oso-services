@@ -149,7 +149,7 @@ async def create_proposal(
     portal: Annotated[UserPortalService, Depends(UserPortalService)],
     proposal: Proposal = Body(
         ...,
-        example=EXAMPLE_PROPOSAL,
+        examples=[EXAMPLE_PROPOSAL],
     ),
 ) -> Proposal:
     """
@@ -176,9 +176,9 @@ async def create_proposal(
     try:
         # Portal calls must happen outside the UoW to avoid holding an open
         # DB transaction across async I/O, which corrupts the session state.
-        groups = await portal.create_proposal_groups(proposal.prsl_id, security.auth.user_id)
+        groups = await portal.create_proposal_groups(proposal.prsl_id, security.auth)
         await portal.create_membership(
-            groups.admin, security.auth.user_id, acting_user=security.auth.user_id
+            groups.admin, security.auth.user_id, acting_as=security.auth
         )
 
         with oda.uow() as uow:
@@ -507,7 +507,7 @@ async def send_email(
     await service.create_invite(
         prsl_id=request.prsl_id,
         invite_payload={"email": request.email},
-        acting_user=security.auth.user_id,
+        acting_as=security.auth,
     )
     return {"message": "Email sent successfully"}
 

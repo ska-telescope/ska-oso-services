@@ -4,11 +4,27 @@ from unittest.mock import ANY, AsyncMock
 from urllib.parse import quote
 from uuid import uuid4
 
+from ska_aaa_authhelpers import AuthContext, Role
+
 from ska_oso_services.pht.service import user_portal
 from ska_oso_services.pht.service.security.facts import get_group_skuid
 from ska_oso_services.pht.service.user_portal import UserPortalService, UserPortalUnavailableError
 from tests.conftest import PHT_BASE_API_URL
 from tests.integration.conftest import MOCK_GROUP_NAME
+
+
+def auth_context() -> AuthContext:
+    sub = str(uuid4())
+    return AuthContext(
+        user_id="indigo-username",
+        principals=frozenset({"indigo-username"}),
+        roles=frozenset({Role.ANY}),
+        groups=frozenset(),
+        scopes=frozenset({"pht:readwrite"}),
+        audience="test:pht",
+        token_claims={"sub": sub, "preferred_username": "indigo-username"},
+        access_token="test-token",
+    )
 
 
 def test_search_users_happy_path_proxies_to_user_portal(integration_client):
@@ -156,7 +172,7 @@ def test_service_create_groups_happy_path(fake_user_portal):
     service = UserPortalService(x_request_id="integration-trace-id")
     group_name = user_portal.get_group_name(prsl_id)
 
-    payload = asyncio.run(service.create_group(group_name, str(uuid4()), description=prsl_id))
+    payload = asyncio.run(service.create_group(group_name, auth_context(), description=prsl_id))
 
     # Prism mocks the schema, not the request, so it returns the injected example
     # rather than echoing our group_name back.
@@ -168,7 +184,7 @@ def test_service_create_memberships_happy_path(fake_user_portal):
     del fake_user_portal
     prsl_id = "prp-8"
     user_id = str(uuid4())
-    acting_user = str(uuid4())
+    acting_as = auth_context()
     service = UserPortalService(x_request_id="integration-trace-id")
     group_name = user_portal.get_group_name(prsl_id)
     expected_payload = {"status": "ok"}
@@ -182,7 +198,7 @@ def test_service_create_memberships_happy_path(fake_user_portal):
             service.create_membership(
                 group_name=group_name,
                 user_id=user_id,
-                acting_user=acting_user,
+                acting_as=acting_as,
             )
         )
     finally:
@@ -198,5 +214,6 @@ def test_service_create_memberships_happy_path(fake_user_portal):
         timeout=service.timeout,
     )
     headers = mock_call.await_args.kwargs["headers"]
-    assert headers["X-Acting-User"] == acting_user
+    # The INDIGO account id ('sub'), not our user_id
+    assert headers["X-Acting-User"] == acting_as.token_claims["sub"]
     assert headers["Idempotency-Key"]

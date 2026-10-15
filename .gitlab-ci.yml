@@ -116,18 +116,15 @@ indigo-live-auth:
   allow_failure: true
   variables:
     PYTHON_TEST_FILE: tests/live/
-    USER_PORTAL_BASE_URL: http://userportal.example.org
-    # Required by settings but not exercised by the Indigo auth tests. Project-level
-    # CI/CD variables take precedence over these, so real credentials can be set there.
+    # Audience requested for the Indigo user token in tests/live/conftest.py
+    SKA_AUTH_AUDIENCE: test:pht
+    # Staging User Portal (non-production client). USER_PORTAL_CLIENT_SECRET comes from a
+    # masked project CI/CD variable; without it the User Portal tests are skipped.
+    USER_PORTAL_BASE_URL: https://user-portal.staging.devx.skao.int
     USER_PORTAL_TOKEN_URL: https://iam-1.staging.devx.skao.int/token
     USER_PORTAL_CLIENT_ID: 80e7100b-6ada-486a-b82c-8a159ddeda4d
-    USER_PORTAL_CLIENT_SECRET: unused
     USER_PORTAL_TOKEN_SCOPE: portal:users.read portal:groups.read portal:groups.write portal:invites.read portal:invites.write
     USER_PORTAL_TOKEN_AUDIENCE: test:portal
-    API_PATH_PREFIX: /ska-oso-services/oso/api/v0
-    SKA_AUTH_AUDIENCE: test:pht
-    AWS_PHT_BUCKET_NAME: test-bucket
-    AWS_REGION: eu-west-2
 
 xray-publish:
   rules:

@@ -18,6 +18,8 @@ from ska_oso_services.pht.service.user_portal import UserPortalContractError
 PRSL_ID = "prp-abc123"
 OTHER_PRSL_ID = "prp-zzz999"
 USER_ID = "a1baebc7-2d1a-4a35-ac07-478d2fc6af95"
+# The INDIGO account id ('sub'), which the portal needs as X-Acting-User; not our user_id
+USER_SUB = "6c0e7d1e-5f0b-4a43-9b1a-0d6a2f1d9c11"
 
 
 def _invite_card(group_name: str) -> dict:
@@ -44,7 +46,7 @@ def _pi_security(prsl_id: str) -> SecurityService:
         groups=frozenset({group}),
         scopes=frozenset({"pht:readwrite"}),
         audience="test:pht",
-        token_claims={},
+        token_claims={"sub": USER_SUB, "preferred_username": USER_ID},
         access_token="test-token",
     )
     return SecurityService(auth)
@@ -70,15 +72,16 @@ class TestDeleteInvite:
         service.delete_invite.return_value = {"status": "deleted"}
         invite_id = uuid4()
 
+        security = _pi_security(PRSL_ID)
+
         response = await delete_invite(
-            security=_pi_security(PRSL_ID),
-            service=service,
-            prsl_id=PRSL_ID,
-            invite_id=invite_id,
+            security=security, service=service, prsl_id=PRSL_ID, invite_id=invite_id
         )
 
         assert response.status == "deleted"
-        service.delete_invite.assert_awaited_once_with(invite_id=invite_id, acting_user=USER_ID)
+        service.delete_invite.assert_awaited_once_with(
+            invite_id=invite_id, acting_as=security.auth
+        )
 
     async def test_delete_invite_matching_admin_subgroup_succeeds(self):
         # Invites for the admin (/w/a) tier of the proposal's groups are still that
