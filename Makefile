@@ -34,9 +34,10 @@ K8S_CHART_PARAMS += \
   --set ska-oso-services.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT) \
   --set global.cluster_domain=$(CLUSTER_DOMAIN)
 
-# CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline, so these variables are set for a local deployment
+# GitLab sets CI for every pipeline job, including jobs without an environment.
+# Apply these settings only for local deployments.
 # Set cluster_domain to minikube default (cluster.local) in local development
-ifeq ($(CI_ENVIRONMENT_SLUG),)
+ifeq ($(CI),)
 OSO_SERVICES_URL=http://`minikube ip`/$(KUBE_NAMESPACE)/oso/api/v$(MAJOR_VERSION)
 SGCLUSTER = oda
 SGCLUSTER_NAMESPACE = oda
