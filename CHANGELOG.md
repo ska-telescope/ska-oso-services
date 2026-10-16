@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 
+17.1.1
+******
+* Update Docker base images to `ska-build-python-ubuntu26:1.1.2` and `ska-python-ubuntu26:1.1.2` (BTN-3551)
+
 17.1.0
 ******
 * Target 19.6.0 or later release of the ODA (28.3.0 of the PDM) to pick up the new pst-metrics
