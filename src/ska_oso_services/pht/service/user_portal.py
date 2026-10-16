@@ -160,6 +160,8 @@ class UserPortalService:
         Idempotency-Key (required by the portal on POSTs)."""
         # The portal identifies (and records as owner) the acting user by their INDIGO
         # account id, the token's 'sub' claim -- not our user_id (preferred_username)
+        # TODO: send acting_as.user_id once the portal accepts usernames in
+        # X-Acting-User, and take a user_id here rather than the whole AuthContext
         headers = {"X-Acting-User": acting_as.token_claims["sub"]}
         if idempotent:
             headers["Idempotency-Key"] = str(uuid7())
