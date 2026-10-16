@@ -6,7 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-* Adds `ska_low.itf_subarrays` to the `GET /odt/configuration` response, containing details of the  SKA Low ITF subarrays and their allowed stations.
+* Adds an optional `subarray_details` list to each subarray. This is currently only set for the `Low_ITF` subarray, and contains the ITF subarrays and their allowed stations.
+* Adds an `issues` list of validation warnings to the `GET /odt/configuration` response, e.g. ITF allowed stations that are not in the OSD receptors of the `Low_ITF` subarray.
+* The `receptors` of the `Low_ITF` subarray in the `GET /odt/configuration` response also include any ITF allowed stations missing from the OSD, so a mismatch does not prevent them being selected.
 
 17.1.0
 ******

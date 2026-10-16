@@ -26,12 +26,14 @@ from ska_ost_osd.osd.osd import check_cycle_id, get_available_cycles, get_osd_us
 from ska_telmodel_client import TMData
 
 from ska_oso_services.common.error_handling import OSDError
-from ska_oso_services.common.itfmapper import ItfSubarray
+from ska_oso_services.common.itfmapper import SubarrayDetail
 from ska_oso_services.common.model import AppModel
+from ska_oso_services.validation.model import ValidationIssue
 
 SUPPORTED_COMMON_ARRAY_ASSEMBLIES = ["AA0.5", "AA1", "AA2"]
 MID_ARRAY_ASSEMBLIES = ["Mid_ITF"]
-LOW_ARRAY_ASSEMBLIES = ["AA2_SV", "Low_ITF"]
+LOW_ITF_ARRAY_ASSEMBLY = "Low_ITF"
+LOW_ARRAY_ASSEMBLIES = ["AA2_SV", LOW_ITF_ARRAY_ASSEMBLY]
 
 # tmdata's default noise diode mode is a tri-state string ("periodic",
 # "pseudo_random", "off"), but PDM's NoiseDiodeMode enum only covers the first
@@ -95,6 +97,9 @@ class MidSubarray(Subarray):
 class LowSubarray(Subarray):
     number_substations: int
     number_subarray_beams: int
+    # Only set for the Low_ITF array assembly, from the Low ITF TMData rather
+    # than the OSD - see itfmapper
+    subarray_details: list[SubarrayDetail] | None = None
 
 
 class Constraints(BaseModel):
@@ -162,13 +167,13 @@ class LowConfiguration(AppModel):
     constraints: Constraints
     quality_attribute_metrics: LowQualityAttributeMetrics
     subarrays: list[LowSubarray]
-    # Sourced from the Low ITF TMData rather than the OSD - see itfmapper
-    itf_subarrays: list[ItfSubarray] = []
 
 
 class Configuration(AppModel):
     ska_mid: MidConfiguration
     ska_low: LowConfiguration
+    # Problems found in the configuration data that do not prevent it being returned
+    issues: list[ValidationIssue] = []
 
 
 @cache

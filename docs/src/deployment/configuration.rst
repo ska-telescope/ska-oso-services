@@ -79,6 +79,6 @@ The ODA connection is configured these environment variables and corresponding H
      -
    * - LOW_ITF_TMDATA
      - The TMData source for the SKA Low ITF array station data. 
-     - Optional - if not set, or the source cannot be reached, the ITF subarrays are omitted
+     - Optional - if not set, or the source cannot be reached, the ``subarray_details`` of the Low_ITF subarray are omitted
      - ``global.oso.low_itf_tmdata``
      - Optional - default: ``gitlab://gitlab.com/ska-telescope/aiv/ska-low-itf?main#tmdata``

@@ -27,35 +27,39 @@ STATIONS_FILE = "stations.yaml"
 RETRY_INTERVAL_SECONDS = 300
 
 
-class ItfStation(AppModel):
+class Station(AppModel):
     id: int
     label: str
 
 
-class ItfSubarray(AppModel):
+class SubarrayDetail(AppModel):
     name: str
-    allowed_stations: list[ItfStation]
+    allowed_stations: list[Station]
 
 
 class _ItfSubarrayCache:
     """
-    Holds the successfully loaded subarrays for the lifetime of the process.
-    Failures are not cached, other than to delay the next attempt.
+    Holds the loaded subarrays. A complete load is kept until a refresh is
+    requested. After a failed or incomplete load the usable subarrays are kept,
+    and the source is tried again on a later call. The source is fetched at most
+    once per retry interval.
     """
 
     def __init__(self):
-        self.subarrays: list[ItfSubarray] | None = None
+        self.subarrays: list[SubarrayDetail] | None = None
+        self.complete: bool = False
         self.retry_after: float = 0.0
 
     def clear(self):
         self.subarrays = None
+        self.complete = False
         self.retry_after = 0.0
 
 
 _CACHE = _ItfSubarrayCache()
 
 
-def get_itf_subarrays() -> list[ItfSubarray]:
+def get_itf_subarrays(refresh: bool = False) -> list[SubarrayDetail]:
     """
     Fetches the SKA Low ITF subarrays and their allowed stations from the TMData.
 
@@ -63,34 +67,45 @@ def get_itf_subarrays() -> list[ItfSubarray]:
     stations.yaml is treated as an ITF environment, so new environments are
     picked up without a code change.
 
-    :return: A subarray for each ITF environment, or an empty list if the
-        LOW_ITF_TMDATA source is not set or the data cannot be retrieved.
+    :param refresh: Fetch the data again even if a complete load is cached. This
+        is still limited to one fetch per retry interval, so the cached subarrays
+        are returned if the source was fetched recently.
+    :return: A subarray for each ITF environment that could be parsed, or an
+        empty list if the LOW_ITF_TMDATA source is not set or the data has not
+        been retrieved.
     """
-    if _CACHE.subarrays is not None:
+    if _CACHE.complete and not refresh:
         return _CACHE.subarrays
 
     tmdata_path = get_settings().low_itf_tmdata
-    if not tmdata_path or time.monotonic() < _CACHE.retry_after:
+    if not tmdata_path:
         return []
+    if time.monotonic() < _CACHE.retry_after:
+        return _CACHE.subarrays or []
 
+    _CACHE.retry_after = time.monotonic() + RETRY_INTERVAL_SECONDS
     try:
         tmdata = TMData([tmdata_path], update=True)
-        subarrays = _get_itf_subarrays(tmdata)
+        subarrays, complete = _get_itf_subarrays(tmdata)
     except Exception:  # the TMData backends raise a wide range of errors
         LOGGER.warning(
             "Unable to retrieve SKA Low ITF subarrays from TMData source %s. "
-            "They will be omitted from the configuration.",
+            "Any previously retrieved subarrays will be used.",
             tmdata_path,
             exc_info=True,
         )
-        _CACHE.retry_after = time.monotonic() + RETRY_INTERVAL_SECONDS
-        return []
+        return _CACHE.subarrays or []
 
     _CACHE.subarrays = subarrays
+    _CACHE.complete = complete
     return subarrays
 
 
-def _get_itf_subarrays(tmdata: TMData) -> list[ItfSubarray]:
+def _get_itf_subarrays(tmdata: TMData) -> tuple[list[SubarrayDetail], bool]:
+    """
+    :return: The subarrays for the environments that could be parsed, and
+        whether every environment was parsed.
+    """
     keys = set(tmdata)
     environments = sorted(
         key.split("/")[0]
@@ -111,16 +126,16 @@ def _get_itf_subarrays(tmdata: TMData) -> list[ItfSubarray]:
                 environment,
                 exc_info=True,
             )
-    return subarrays
+    return subarrays, len(subarrays) == len(environments)
 
 
-def _get_itf_subarray(tmdata: TMData, environment: str) -> ItfSubarray:
+def _get_itf_subarray(tmdata: TMData, environment: str) -> SubarrayDetail:
     array = tmdata[f"{environment}/{ARRAY_FILE}"].get_dict()["platform"]["array"]
     stations = tmdata[f"{environment}/{STATIONS_FILE}"].get_dict()["platform"]["stations"]
 
-    return ItfSubarray(
+    return SubarrayDetail(
         name=array["name"],
         allowed_stations=[
-            ItfStation(id=stations[label]["id"], label=label) for label in array["stations"]
+            Station(id=stations[label]["id"], label=label) for label in array["stations"]
         ],
     )
