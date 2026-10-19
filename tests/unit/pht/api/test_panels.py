@@ -7,8 +7,9 @@ import pytest
 from ska_db_oda.repository.domain import UniqueConstraintViolation
 from ska_oso_pdm.proposal_management.panel import ReviewerAssignment
 
+from ska_oso_services.common.error_handling import NotFoundError
 from ska_oso_services.pht.api import panels as panels_api
-from ska_oso_services.pht.service.user_portal import PanelGroupsTuple
+from ska_oso_services.pht.service.user_portal import PanelGroupsTuple, UserPortalUnavailableError
 from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import REVIEWERS, TestDataFactory, assert_json_is_equal
 
@@ -469,6 +470,30 @@ class TestPanelsAPI:
         added = [c.args[:2] for c in mock_create_membership.await_args_list]
         assert added == [("app:pht:pnl-t1", "both"), ("app:pht:pnl-t1", "sci-1")]
 
+    @mock.patch(f"{MODULE}.UserPortalService.create_membership", new_callable=mock.AsyncMock)
+    @mock.patch(f"{MODULE}.UserPortalService.create_panel_groups", new_callable=mock.AsyncMock)
+    @mock.patch(f"{MODULE}.oda.uow")
+    def test_panels_post_commits_nothing_if_the_portal_fails(
+        self, mock_uow, mock_create_panel_groups, mock_create_membership, client
+    ):
+        panel = TestDataFactory.panel_basic(panel_id="pnl-t1", name="Galaxy")
+        panel.sci_reviewers = [ReviewerAssignment(reviewer_id="unknown-user")]
+        uow_mock = mock.MagicMock()
+        uow_mock.panels.add.side_effect = lambda saved, _user_id: saved
+        mock_uow().__enter__.return_value = uow_mock
+        mock_create_panel_groups.return_value = PanelGroupsTuple(
+            read="app:pht:pnl-t1", admin="app:pht:pnl-t1/w/a"
+        )
+        mock_create_membership.side_effect = NotFoundError(detail="No member found")
+
+        response = client.post(
+            f"{PANELS_API_URL}/create", content=panel.model_dump_json(), headers=HEADERS
+        )
+
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        uow_mock.panels.add.assert_called_once()
+        uow_mock.commit.assert_not_called()
+
     @mock.patch(f"{MODULE}.oda.uow")
     def test_panels_post_duplicate_name(self, mock_uow, client):
         panel = TestDataFactory.panel_basic(name="dup name", panel_id="pnl-tdupname")
@@ -649,6 +674,24 @@ class TestPanelsGenerateAPI:
         # ...each with its portal groups
         created_ids = [call.args[0].panel_id for call in uow.panels.add.call_args_list]
         assert [call.args[0] for call in create_panel_groups.await_args_list] == created_ids
+
+    @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
+    @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
+    def test_generate_commits_nothing_if_a_group_fails(
+        self, mock_get_latest, mock_uow, client, monkeypatch, create_panel_groups
+    ):
+        uow = mock.MagicMock()
+        mock_uow.return_value.__enter__.return_value = uow
+        monkeypatch.setattr(panels_api, "PANEL_NAME_POOL", ["Stars", "Transients"], raising=True)
+        mock_get_latest.side_effect = [[SimpleNamespace(panel_id="sv-1")], [], []]
+        create_panel_groups.side_effect = [None, UserPortalUnavailableError("portal down")]
+
+        resp = client.post(f"{PANELS_API_URL}/generate")
+
+        assert resp.status_code == HTTPStatus.BAD_GATEWAY
+        # Both panels were added, but leaving the UoW without committing rolls them back
+        assert uow.panels.add.call_count == 2
+        uow.commit.assert_not_called()
 
     # SV & Category: All exist -> no creation, no commit
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")

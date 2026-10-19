@@ -16,6 +16,9 @@ Unreleased
   rest for non-production (staging Indigo, the non-production client ID, the ``portal:*`` scopes for the routes we
   call, and audience ``test:portal``).
   ``USER_PORTAL_API_KEY`` is removed.
+* Creating a proposal or panel sets up its User Portal groups before committing it to the ODA, so a portal
+  failure leaves nothing saved. The portal calls for each one are limited to 30s in all, answering 502 when
+  that runs out.
 * User Portal failures (unreachable, auth/scope problems, unexpected responses) are reported as HTTP 502;
   a portal 404 or 409 about the caller's request is passed on as 404 or 409.
 * [BREAKING] Removes the unused MS Graph integration, the ``msal`` dependency and the ``OSO_CLIENT_SECRET`` setting.

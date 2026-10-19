@@ -1,3 +1,4 @@
+import asyncio
 from http import HTTPStatus
 from unittest import mock
 
@@ -382,3 +383,17 @@ class TestListInvites:
 
         assert len(await service.list_invites("prp-1")) == 2
         assert portal_call.await_count == 2
+
+
+class TestDeadline:
+    async def test_a_slow_setup_is_unavailable(self, make_service):
+        service = make_service(FakeTokens())
+        with pytest.raises(UserPortalUnavailableError, match="longer than"):
+            async with service.deadline(0.01):
+                await asyncio.sleep(1)
+
+    async def test_a_quick_setup_is_untouched(self, make_service):
+        service = make_service(FakeTokens())
+
+        async with service.deadline():
+            await asyncio.sleep(0)

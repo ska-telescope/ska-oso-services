@@ -1,4 +1,7 @@
+import asyncio
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from functools import cache
 from http import HTTPStatus
 from typing import Any, Literal, NamedTuple
@@ -156,6 +159,20 @@ class UserPortalService:
             "User-Agent": "ska-oso-services:pht",
             "X-Request-Id": x_request_id,
         }
+
+    @asynccontextmanager
+    async def deadline(self, seconds: float = 30) -> AsyncGenerator[None]:
+        """
+        Bounds a group of calls, such as those that set up one proposal or panel while its
+        ODA transaction is open, so a slow portal can't hold the transaction open for long.
+        """
+        try:
+            async with asyncio.timeout(seconds):
+                yield
+        except TimeoutError as err:
+            raise UserPortalUnavailableError(
+                f"User portal calls took longer than {seconds}s"
+            ) from err
 
     @staticmethod
     def _write_headers(acting_as: AuthContext, idempotent: bool = True) -> dict[str, str]:

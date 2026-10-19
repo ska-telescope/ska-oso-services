@@ -91,11 +91,14 @@ async def create_panel(
 
     with oda.uow() as uow:
         panel: Panel = uow.panels.add(param, security.auth.user_id)  # pylint: disable=no-member
+        # Before the commit, so if the portal fails, leaving the UoW rolls the panel back
+        # rather than saving one without its groups or members
+        async with portal.deadline():
+            groups = await portal.create_panel_groups(PanelID(panel.panel_id), security.auth)
+            for reviewer_id in sorted(reviewer_ids):
+                await portal.create_membership(groups.read, reviewer_id, acting_as=security.auth)
         uow.commit()
 
-    groups = await portal.create_panel_groups(PanelID(panel.panel_id), security.auth)
-    for reviewer_id in sorted(reviewer_ids):
-        await portal.create_membership(groups.read, reviewer_id, acting_as=security.auth)
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
 
@@ -360,6 +363,13 @@ async def auto_create_panel(
             created_names.append(panel_name)
             created_ids.append(new_panel.panel_id)
 
+        # Access to a panel comes from its groups, so every new panel needs them. They're
+        # created before the commit: if one fails, leaving the UoW rolls back every new
+        # panel, so a retry creates them all afresh rather than skipping groupless ones.
+        for panel_id in created_ids:
+            async with portal.deadline():
+                await portal.create_panel_groups(PanelID(panel_id), security.auth)
+
         # Commit only if we created something
         if created_names:
             uow.commit()
@@ -370,10 +380,6 @@ async def auto_create_panel(
             )
         else:
             logger.info("No panels created; all already existed.")
-
-    # Access to a panel comes from its groups, so every new panel needs them
-    for panel_id in created_ids:
-        await portal.create_panel_groups(PanelID(panel_id), security.auth)
 
     # return the combined list of created panel names and count
     return PanelBatchCreateResult(

@@ -18,6 +18,7 @@ from ska_oso_services.pht.api.prsls import get_proposals_by_status
 from ska_oso_services.pht.service import proposal_service as ps
 from ska_oso_services.pht.service.proposal_service import get_panel_prsl_ids
 from ska_oso_services.pht.service.security.facts import Facts
+from ska_oso_services.pht.service.user_portal import UserPortalUnavailableError
 from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import (
     TestDataFactory,
@@ -285,6 +286,34 @@ class TestProposalAPI:
         assert response.status_code == HTTPStatus.BAD_REQUEST
         data = response.json()
         assert "Failed when attempting to create a proposal" in data["detail"]
+        # The ODA refused it before the portal was touched, so no groups were made
+        mock_create_groups.assert_not_awaited()
+        mock_create_membership.assert_not_awaited()
+
+    @mock.patch(f"{PRSL_MODULE}.UserPortalService.create_membership", new_callable=mock.AsyncMock)
+    @mock.patch(
+        f"{PRSL_MODULE}.UserPortalService.create_proposal_groups",
+        new_callable=mock.AsyncMock,
+    )
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
+    def test_create_proposal_commits_nothing_if_the_portal_fails(
+        self, mock_oda, mock_create_groups, mock_create_membership, client
+    ):
+        mock_create_groups.return_value = SimpleNamespace(admin="app:pht:prp-test/w/a")
+        mock_create_membership.side_effect = UserPortalUnavailableError("portal down")
+        uow_mock = mock.MagicMock()
+        uow_mock.prsls.get.side_effect = ODANotFound()
+        mock_oda.return_value.__enter__.return_value = uow_mock
+
+        response = client.post(
+            f"{PROPOSAL_API_URL}/create",
+            data=TestDataFactory.proposal().model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.BAD_GATEWAY
+        uow_mock.prsls.add.assert_called_once()
+        uow_mock.commit.assert_not_called()
 
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_get_proposal_not_found(self, mock_oda, client):
@@ -364,6 +393,34 @@ class TestProposalAPI:
         assert isinstance(data, list)
         assert len(data) == len(proposal_objs)
         mock_memberships.assert_called_once()
+
+    @mock.patch(
+        "ska_oso_services.pht.service.security.facts.Facts.get_all_proposals_and_panels",
+        autospec=True,
+    )
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
+    def test_get_proposal_list_skips_groups_without_a_proposal(
+        self, mock_uow, mock_memberships, client_get
+    ):
+        saved = TestDataFactory.proposal()
+        mock_memberships.return_value = SimpleNamespace(
+            proposals={saved.prsl_id: object(), "prp-tmissing": object()}, panels={}
+        )
+
+        def get(prsl_id):
+            if prsl_id == saved.prsl_id:
+                return saved
+            raise ODANotFound(identifier=prsl_id)
+
+        uow = mock.MagicMock()
+        uow.prsls.get.side_effect = get
+        mock_uow.return_value.__enter__.return_value = uow
+        mock_uow.return_value.__exit__.return_value = None
+
+        resp = client_get(f"{PROPOSAL_API_URL}/mine")
+
+        assert resp.status_code == HTTPStatus.OK, resp.json()
+        assert [p["prsl_id"] for p in resp.json()] == [saved.prsl_id]
 
     @mock.patch(
         "ska_oso_services.pht.service.security.facts.Facts.get_all_proposals_and_panels",

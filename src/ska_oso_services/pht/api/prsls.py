@@ -164,25 +164,23 @@ async def create_proposal(
     else:
         proposal.prsl_id = ProposalID(proposal.prsl_id)
 
-    # TODO: This becomes unecessary once the ODA supports explicit create() API
-    with oda.uow() as uow:
-        try:
-            uow.prsls.get(proposal.prsl_id)
-        except ODANotFound:
-            pass  # New ID, safe to continue
-        else:
-            raise DuplicateError(detail=f"{proposal.prsl_id!r} already exists")
-
     try:
-        # Portal calls must happen outside the UoW to avoid holding an open
-        # DB transaction across async I/O, which corrupts the session state.
-        groups = await portal.create_proposal_groups(proposal.prsl_id, security.auth)
-        await portal.create_membership(
-            groups.admin, security.auth.user_id, acting_as=security.auth
-        )
-
         with oda.uow() as uow:
+            # TODO: This becomes unecessary once the ODA supports explicit create() API
+            try:
+                uow.prsls.get(proposal.prsl_id)
+            except ODANotFound:
+                pass  # New ID, safe to continue
+            else:
+                raise DuplicateError(detail=f"{proposal.prsl_id!r} already exists")
+
             created_prsl = uow.prsls.add(proposal, security.auth.user_id)
+            # User portal API failures here will roll back the Postgres transaction.
+            async with portal.deadline():
+                groups = await portal.create_proposal_groups(proposal.prsl_id, security.auth)
+                await portal.create_membership(
+                    groups.admin, security.auth.user_id, acting_as=security.auth
+                )
             uow.commit()
         logger.info("Proposal successfully created with ID %s", created_prsl.prsl_id)
         return created_prsl
@@ -275,12 +273,17 @@ def get_proposals_for_user(
 
     logger.debug("GET PROPOSAL LIST query for the user: %s", security.auth.user_id)
 
+    proposals = []
     with oda.uow() as uow:
-        proposals = [
-            accessible_proposal
-            for prsl_id in my_proposals.keys()
-            if (accessible_proposal := uow.prsls.get(prsl_id)) is not None
-        ]
+        for prsl_id in my_proposals:
+            try:
+                proposals.append(uow.prsls.get(prsl_id))
+            except ODANotFound:
+                logger.warning(
+                    "Proposal %s in the groups of user %s is not in the ODA",
+                    prsl_id,
+                    security.auth.user_id,
+                )
 
     if not proposals:
         logger.info("No proposals found for user: %s", security.auth.user_id)
