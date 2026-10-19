@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+import pytest
 from ska_ser_skuid import EntityType, mint_skuid
 
 from ..unit.util import REVIEWERS, TestDataFactory
@@ -8,6 +9,7 @@ from . import PHT_URL
 HEADERS = {"Content-type": "application/json"}
 
 
+@pytest.mark.skip(reason="Disabled (501) until stakeholders decide on the report")
 def test_get_report_for_user(authrequests, test_panel_id):
     """
     Integration test for the GET /reports/ endpoint.

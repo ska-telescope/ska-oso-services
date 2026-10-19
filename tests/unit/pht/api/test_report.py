@@ -1,6 +1,8 @@
 from http import HTTPStatus
 from unittest import mock
 
+import pytest
+
 from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import REVIEWERS, TestDataFactory
 
@@ -8,6 +10,7 @@ REPORT_API_URL = f"{PHT_BASE_API_URL}/report"
 HEADERS = {"Content-type": "application/json"}
 
 
+@pytest.mark.skip(reason="Disabled (501) until stakeholders decide on the report")
 class TestReportsAPI:
     @mock.patch("ska_oso_services.pht.api.report.oda.uow", autospec=True)
     def test_get_report_success(self, mock_uow, client):
@@ -66,3 +69,11 @@ class TestReportsAPI:
         assert result[0]["panel_id"] == mock_report[0]["panel_id"]
         assert result[0]["reviewer_id"] == mock_report[0]["reviewer_id"]
         assert result[0]["review_id"] == mock_report[0]["review_id"]
+
+
+@mock.patch("ska_oso_services.pht.api.report.oda.uow")
+def test_report_returns_not_implemented(mock_uow, client):
+    response = client.get(f"{REPORT_API_URL}/")
+
+    assert response.status_code == HTTPStatus.NOT_IMPLEMENTED
+    mock_uow.assert_not_called()

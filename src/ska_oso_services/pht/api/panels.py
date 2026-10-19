@@ -74,14 +74,28 @@ async def create_panel(
     """This endpoint may not be needed in the future.
 
     The idea is to auto-generate panels and assign proposals.
+
+    A panel is a group of reviewers. Everyone named in ``sci_reviewers`` or
+    ``tech_reviewers`` (by user_id) becomes a member of the panel's group, which is what
+    gives them access. The panel is saved with both lists empty.
     """
     logger.debug("POST panel")
+
+    # TODO: Panel's separate sci_reviewers and tech_reviewers lists are from the old
+    # model, where the kind of review belonged to the reviewer. Now whether a panel does
+    # the science or the technical review of a proposal belongs to the panel-proposal
+    # assignment (a join table in the ODA, to be built), and the panel's members are
+    # simply its group's members. Until the PDM catches up, both lists only name members.
+    reviewer_ids = {r.reviewer_id for r in (*param.sci_reviewers, *param.tech_reviewers)}
+    param = param.model_copy(update={"sci_reviewers": [], "tech_reviewers": []})
 
     with oda.uow() as uow:
         panel: Panel = uow.panels.add(param, security.auth.user_id)  # pylint: disable=no-member
         uow.commit()
 
-    await portal.create_panel_groups(PanelID(panel.panel_id), security.auth)
+    groups = await portal.create_panel_groups(PanelID(panel.panel_id), security.auth)
+    for reviewer_id in sorted(reviewer_ids):
+        await portal.create_membership(groups.read, reviewer_id, acting_as=security.auth)
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
 
@@ -119,6 +133,11 @@ def auto_assign_to_panel(
         assign a proposal to. This will soon be a problem after the first
         cycle and when we get to multiple cycles as panels
         can span across cycles.
+
+    Disabled (501) until reviewer access is redesigned. It predates the model where a
+    panel is a generic group of reviewers and the kind of review (science or technical)
+    belongs to the panel-proposal assignment: it decides the kind from which of the
+    panel's reviewer lists a reviewer is on.
     """
 
     with oda.uow() as uow:
@@ -166,6 +185,8 @@ def auto_assign_to_panel(
 
                 # TODO: move the reviews and decison creation to a common function
                 # to be used here and the PUT endpoint.
+                # TODO: take the review kind from the panel-proposal assignment, not from
+                # which reviewer list (tech_reviewers, sci_reviewers) a reviewer is on
 
                 # Panel Decision for every proposal in the panel
                 for prsl_id in proposal_ids:
@@ -406,9 +427,12 @@ def update_panel(
     - Removed proposals are set back to SUBMITTED (if not in an other panel)
     - Newly added proposals are set to UNDER REVIEW
     - Reviews/Decisions exist for all proposals in the panel (create if doesn't exist)
-    (Assumption: Only one technical reviewer for a panel for now. Hence,
-    only one technical review for each proposal in a panel is needed.)
 
+    Disabled (501) until reviewer access is redesigned. It predates the model where a
+    panel is a generic group of reviewers and the kind of review (science or technical)
+    belongs to the panel-proposal assignment: it decides the kind from which of the
+    panel's reviewer lists a reviewer is on, and saves those lists without giving the
+    reviewers access.
     """
     logger.debug("PUT panel")
     # ------------------------------------------------------------
@@ -526,6 +550,8 @@ def update_panel(
         # --------------------------------------------------------
         # 8. Ensure Technical reviews
         # --------------------------------------------------------
+        # TODO: here and in step 9, take the review kind from the panel-proposal
+        # assignment, not from which reviewer list a reviewer is on
         if param.tech_reviewers:
             for tech in param.tech_reviewers:
                 for prsl_id in new_proposal_ids:

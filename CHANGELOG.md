@@ -25,6 +25,9 @@ Unreleased
 * [BREAKING] ``POST /pht/prsls/{prsl_id}/invites`` invites each address independently and returns 200 with the
   created ``invites`` and a ``failed`` list, rather than stopping at the first failure. At most 100 per request.
 * ``POST /pht/panels/generate`` creates the User Portal groups for each new panel.
+* [BREAKING] ``GET /pht/report/`` is deprecated and returns 501 Not Implemented.
+* [BREAKING] ``POST /pht/panels/create`` adds the panel's ``sci_reviewers`` and ``tech_reviewers`` to the panel's
+  User Portal group, which gives them access, and no longer saves them on the panel in the ODA.
 * Members of a panel can download the documents of proposals assigned to that panel.
 
 17.1.0

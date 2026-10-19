@@ -5,8 +5,10 @@ from unittest import mock
 
 import pytest
 from ska_db_oda.repository.domain import UniqueConstraintViolation
+from ska_oso_pdm.proposal_management.panel import ReviewerAssignment
 
 from ska_oso_services.pht.api import panels as panels_api
+from ska_oso_services.pht.service.user_portal import PanelGroupsTuple
 from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import REVIEWERS, TestDataFactory, assert_json_is_equal
 
@@ -436,6 +438,36 @@ class TestPanelsAPI:
 
         result = response.json()
         assert panel.panel_id == result
+
+    @mock.patch(f"{MODULE}.UserPortalService.create_membership", new_callable=mock.AsyncMock)
+    @mock.patch(f"{MODULE}.UserPortalService.create_panel_groups", new_callable=mock.AsyncMock)
+    @mock.patch(f"{MODULE}.oda.uow")
+    def test_panels_post_makes_reviewers_group_members_not_oda_records(
+        self, mock_uow, mock_create_panel_groups, mock_create_membership, client
+    ):
+        panel = TestDataFactory.panel_basic(panel_id="pnl-t1", name="Galaxy")
+        panel.sci_reviewers = [
+            ReviewerAssignment(reviewer_id="sci-1"),
+            ReviewerAssignment(reviewer_id="both"),
+        ]
+        panel.tech_reviewers = [ReviewerAssignment(reviewer_id="both")]
+        uow_mock = mock.MagicMock()
+        uow_mock.panels.add.side_effect = lambda saved, _user_id: saved
+        mock_uow().__enter__.return_value = uow_mock
+        mock_create_panel_groups.return_value = PanelGroupsTuple(
+            read="app:pht:pnl-t1", admin="app:pht:pnl-t1/w/a"
+        )
+
+        response = client.post(
+            f"{PANELS_API_URL}/create", content=panel.model_dump_json(), headers=HEADERS
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.text
+        saved = uow_mock.panels.add.call_args.args[0]
+        assert (saved.sci_reviewers, saved.tech_reviewers) == ([], [])
+        # Each reviewer once, in the panel's base group
+        added = [c.args[:2] for c in mock_create_membership.await_args_list]
+        assert added == [("app:pht:pnl-t1", "both"), ("app:pht:pnl-t1", "sci-1")]
 
     @mock.patch(f"{MODULE}.oda.uow")
     def test_panels_post_duplicate_name(self, mock_uow, client):
