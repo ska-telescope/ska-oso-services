@@ -11,6 +11,7 @@ from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Scope
 from ska_oso_services.common.error_handling import (
     BadRequestError,
+    DuplicateError,
     NotFoundError,
     UnprocessableEntityError,
 )
@@ -20,6 +21,13 @@ from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/reviews", tags=["PMT API - Reviews"])
+
+
+def _refuse_moving(stored: PanelReview, review: PanelReview) -> None:
+    """Permission is checked against a stored review's links, so a save must keep them."""
+    for field in ("reviewer_id", "panel_id", "prsl_id"):
+        if getattr(review, field) != getattr(stored, field):
+            raise UnprocessableEntityError(detail=f"A review's {field} cannot be changed.")
 
 
 @router.post("/create", summary="Create a new Review")
@@ -36,6 +44,16 @@ def create_review(
     security.reviews.allowed_to_create(reviews)
     try:
         with oda.uow() as uow:
+            # add() would overwrite a stored review with this ID
+            # TODO: This becomes unecessary once the ODA supports explicit create() API
+            if reviews.review_id is not None:
+                try:
+                    uow.rvws.get(reviews.review_id)
+                except ODANotFound:
+                    pass  # New ID, safe to continue
+                else:
+                    raise DuplicateError(detail=f"{reviews.review_id!r} already exists")
+
             query_param = CustomQuery(
                 prsl_fk=int_skuid(reviews.prsl_id).uid,
                 kind=reviews.review_type.kind,
@@ -46,15 +64,6 @@ def create_review(
 
             if existing_rvw and existing_rvw.metadata.version == 1:
                 return existing_rvw.review_id
-            # add() overwrites any stored review with this ID, so the caller must be
-            # allowed to edit that one too, not only to create the one they sent
-            if reviews.review_id is not None:
-                try:
-                    stored = uow.rvws.get(reviews.review_id)
-                except ODANotFound:
-                    pass  # New ID
-                else:
-                    security.reviews.allowed_to_edit(stored)
             created_review = uow.rvws.add(reviews, security.auth.user_id)
             uow.commit()
         return created_review.review_id
@@ -139,10 +148,7 @@ def update_review(
             logger.info("Review not found for update: %s", review_id)
             raise NotFoundError(detail=f"Review not found: {review_id}")
         security.reviews.allowed_to_edit(existing)
-        # Permission is checked against the stored links, so they must not change
-        for field in ("reviewer_id", "panel_id", "prsl_id"):
-            if getattr(review, field) != getattr(existing, field):
-                raise UnprocessableEntityError(detail=f"A review's {field} cannot be changed.")
+        _refuse_moving(existing, review)
         try:
             updated_review = uow.rvws.add(review, security.auth.user_id)
             uow.commit()

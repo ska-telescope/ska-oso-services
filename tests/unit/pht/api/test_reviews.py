@@ -44,6 +44,7 @@ class TestReviewCreateAPI:
         uow = mock.MagicMock()
         uow.rvws.query.return_value = []
         uow.rvws.add.return_value = review_obj
+        uow.rvws.get.side_effect = ODANotFound()  # a new review_id
         mock_oda.return_value.__enter__.return_value = uow
 
         resp = client.post(
@@ -72,6 +73,7 @@ class TestReviewCreateAPI:
 
         uow = mock.MagicMock()
         uow.rvws.query.return_value = [existing]
+        uow.rvws.get.side_effect = ODANotFound()  # a new review_id
         mock_oda.return_value.__enter__.return_value = uow
 
         resp = client.post(
@@ -102,6 +104,7 @@ class TestReviewCreateAPI:
         uow = mock.MagicMock()
         uow.rvws.query.return_value = [existing]
         uow.rvws.add.return_value = created
+        uow.rvws.get.side_effect = ODANotFound()  # a new review_id
         mock_oda.return_value.__enter__.return_value = uow
 
         resp = client.post(
@@ -116,36 +119,21 @@ class TestReviewCreateAPI:
         uow.commit.assert_called_once()
 
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
-    def test_create_review_cannot_overwrite_another_reviewers_review(self, mock_oda, client):
-        """
-        A panel member naming themselves as reviewer can't reuse the ID of someone
-        else's review, which add() would otherwise overwrite.
-        """
-        self.patch_me.stop()
-        caller = "panel-member"
-        stored = TestDataFactory.reviews(reviewer_id="someone-else")
-        forged = stored.model_copy(update={"reviewer_id": caller})
-
+    def test_create_review_with_an_existing_id_is_a_conflict(self, mock_oda, client):
+        """add() would overwrite the stored review, whoever it belongs to, so refuse."""
+        stored = TestDataFactory.reviews()
         uow = mock.MagicMock()
-        uow.rvws.query.return_value = []
         uow.rvws.get.return_value = stored
         mock_oda.return_value.__enter__.return_value = uow
 
-        token = mint_test_token(
-            audience="test:pht",
-            user_id=caller,
-            roles=[Role.ANY],
-            scopes=[Scope.PHT_READWRITE],
-            groups=[f"app:pht:{stored.panel_id}"],
-        )
         resp = client.post(
             f"{REVIEWS_API_URL}/create",
-            data=forged.model_dump_json(),
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+            data=stored.model_dump_json(),
+            headers={"Content-Type": "application/json"},
         )
-        self.patch_me.start()
 
-        assert resp.status_code == HTTPStatus.FORBIDDEN, resp.text
+        assert resp.status_code == HTTPStatus.CONFLICT, resp.text
+        assert f"'{stored.review_id}' already exists" in resp.json()["detail"]
         uow.rvws.get.assert_called_once_with(stored.review_id)
         uow.rvws.add.assert_not_called()
 
@@ -157,6 +145,7 @@ class TestReviewCreateAPI:
         uow = mock.MagicMock()
         uow.rvws.query.return_value = []
         uow.rvws.add.side_effect = ValueError("mock-failure")
+        uow.rvws.get.side_effect = ODANotFound()  # a new review_id
         mock_oda.return_value.__enter__.return_value = uow
 
         resp = client.post(
@@ -305,7 +294,7 @@ class TestGetReviewAPI:
 
     @pytest.mark.parametrize(
         "field, value",
-        [("reviewer_id", "someone-else"), ("panel_id", "pnl-tother"), ("prsl_id", "prp-tother")],
+        [("reviewer_id", "someone-else"), ("panel_id", "pnl-t9"), ("prsl_id", "prp-t9")],
     )
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_update_review_cannot_move_a_review(self, mock_uow, client, field, value):

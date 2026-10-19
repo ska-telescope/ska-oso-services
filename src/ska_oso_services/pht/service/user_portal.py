@@ -10,7 +10,7 @@ from uuid import UUID, uuid7
 
 import httpx
 from fastapi import Header, HTTPException
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 from ska_aaa_authhelpers import AuthContext
 from ska_ser_skuid import EntityType as et
 from ska_ser_skuid import ShortSkuid
@@ -67,6 +67,36 @@ def parse_portal_response[M: BaseModel](model: type[M], data: Any) -> M:
         return model.model_validate(data)
     except ValidationError as err:
         raise UserPortalContractError(f"Unexpected response from user portal: {err}") from err
+
+
+def _decode(response: httpx.Response) -> Any:
+    """The JSON body of a successful response, which the portal promised."""
+    try:
+        return response.json()
+    except ValueError as err:
+        raise UserPortalContractError(f"User portal sent a body that isn't JSON: {err}") from err
+
+
+class _InviteFeedItem(BaseModel):
+    """The fields of an invite that list_invites pages on; the rest pass through."""
+
+    model_config = ConfigDict(extra="allow")
+
+    invite_id: str
+    updated_at: str
+
+
+class _GroupMembersPage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    members: list[dict[str, Any]]
+    stale: bool
+
+
+class _InviteFeedPage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    items: list[_InviteFeedItem]
 
 
 def _upstream_detail(response: httpx.Response) -> str:
@@ -240,7 +270,7 @@ class UserPortalService:
             url=f"{self.base_url}/api/external/v1/users/search",
             params={"q": query, "limit": limit},
         )
-        return response.json()
+        return _decode(response)
 
     async def _create_entity_groups(
         self,
@@ -296,7 +326,7 @@ class UserPortalService:
             json={"group_name": group_name, "display_name": description},
             extra_headers=self._write_headers(acting_as),
         )
-        return response.json()
+        return _decode(response)
 
     async def create_membership(
         self,
@@ -311,7 +341,7 @@ class UserPortalService:
             json={"preferred_username": user_id},
             extra_headers=self._write_headers(acting_as),
         )
-        return response.json()
+        return _decode(response)
 
     async def list_group_members(self, group_name: str) -> dict[str, Any]:
         response = await self._call(
@@ -319,7 +349,10 @@ class UserPortalService:
             url=f"{self.base_url}/api/external/v1/groups/{quote(group_name, safe='')}/members",
             params={"include_user_info": True},
         )
-        return response.json()
+        payload = _decode(response)
+        # Checked here so callers can index it; each member is checked as it's parsed
+        parse_portal_response(_GroupMembersPage, payload)
+        return payload
 
     async def create_invite(
         self,
@@ -334,7 +367,7 @@ class UserPortalService:
             json=invite_payload,
             extra_headers=self._write_headers(acting_as),
         )
-        return response.json()
+        return _decode(response)
 
     async def create_invites(
         self,
@@ -350,14 +383,14 @@ class UserPortalService:
             json={"invites": invite_payloads},
             extra_headers=self._write_headers(acting_as),
         )
-        return response.json()
+        return _decode(response)
 
     async def get_invite(self, invite_id: UUID) -> dict[str, Any]:
         response = await self._call(
             method="GET",
             url=f"{self.base_url}/api/external/v1/invites/{invite_id}",
         )
-        return response.json()
+        return _decode(response)
 
     async def list_invites(self, prsl_id: ShortSkuid[Literal[et.PRP]]) -> list[dict[str, Any]]:
         """Every invite to the proposal, reading all pages of the portal's feed."""
@@ -367,7 +400,10 @@ class UserPortalService:
             response = await self._call(
                 method="GET", url=f"{self.base_url}/api/external/v1/invites", params=params
             )
-            page = response.json()["items"]
+            page = [
+                item.model_dump()
+                for item in parse_portal_response(_InviteFeedPage, _decode(response)).items
+            ]
             new = [item for item in page if item["invite_id"] not in invites]
             # A later copy of an invite is a newer version of it
             invites.update((item["invite_id"], item) for item in page)
@@ -383,4 +419,4 @@ class UserPortalService:
             url=f"{self.base_url}/api/external/v1/invites/{invite_id}",
             extra_headers=self._write_headers(acting_as, idempotent=False),
         )
-        return response.json()
+        return _decode(response)

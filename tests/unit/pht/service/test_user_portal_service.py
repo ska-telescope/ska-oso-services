@@ -397,3 +397,42 @@ class TestDeadline:
 
         async with service.deadline():
             await asyncio.sleep(0)
+
+
+class TestMalformedResponses:
+    async def test_a_body_that_is_not_json_is_a_contract_error(self, make_service, portal_call):
+        portal_call.return_value = httpx.Response(200, text="<html>oops</html>")
+        service = make_service(FakeTokens("token"))
+
+        with pytest.raises(UserPortalContractError, match="isn't JSON"):
+            await service.search_users("alice", 5)
+
+    @pytest.mark.parametrize(
+        "body",
+        [{}, {"items": [{"invite_id": "a"}]}, {"items": [{"updated_at": "T1"}]}],
+    )
+    async def test_an_invite_page_missing_fields_is_a_contract_error(
+        self, make_service, portal_call, body
+    ):
+        portal_call.return_value = ok(body)
+        service = make_service(FakeTokens("token"))
+
+        with pytest.raises(UserPortalContractError):
+            await service.list_invites("prp-1")
+
+    async def test_invite_fields_pass_through(self, make_service, portal_call):
+        item = {"invite_id": "a", "updated_at": "T1", "claim_state": "pending"}
+        portal_call.return_value = ok({"items": [item]})
+        service = make_service(FakeTokens("token"))
+
+        assert await service.list_invites("prp-1") == [item]
+
+    @pytest.mark.parametrize("body", [{"members": []}, {"stale": False}])
+    async def test_a_member_list_missing_fields_is_a_contract_error(
+        self, make_service, portal_call, body
+    ):
+        portal_call.return_value = ok(body)
+        service = make_service(FakeTokens("token"))
+
+        with pytest.raises(UserPortalContractError):
+            await service.list_group_members("app:pht:prp-1")
