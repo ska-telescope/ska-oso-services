@@ -33,6 +33,14 @@ Unreleased
   User Portal group, which gives them access, and no longer saves them on the panel in the ODA.
 * Members of a panel can download the documents of proposals assigned to that panel.
 
+17.1.2
+******
+* Update telmodel-client to 1.31.0 to address SKB-1644.
+
+17.1.1
+******
+* Update Docker base images to `ska-build-python-ubuntu26:1.1.2` and `ska-python-ubuntu26:1.1.2` (BTN-3551)
+
 17.1.0
 ******
 * Target 19.6.0 or later release of the ODA (28.3.0 of the PDM) to pick up the new pst-metrics
@@ -41,7 +49,7 @@ Unreleased
 ******
 * [BUGFIX] `GET /pht/prsls/osd/cycles` no longer fails when the OSD main branch lists a cycle that is not in the pinned OSD release
 * Adds Role.INTERNAL to roles authorised to access services
-* Introduce a `min_elevation_deg` parameter in `render_svg`. 
+* Introduce a `min_elevation_deg` parameter in `render_svg`.
 * Adds `/sbds/{sbd_id}?version={version}` API to query a specific SBDefinition version
 
 
