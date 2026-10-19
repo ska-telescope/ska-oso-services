@@ -139,6 +139,10 @@ def update_review(
             logger.info("Review not found for update: %s", review_id)
             raise NotFoundError(detail=f"Review not found: {review_id}")
         security.reviews.allowed_to_edit(existing)
+        # Permission is checked against the stored links, so they must not change
+        for field in ("reviewer_id", "panel_id", "prsl_id"):
+            if getattr(review, field) != getattr(existing, field):
+                raise UnprocessableEntityError(detail=f"A review's {field} cannot be changed.")
         try:
             updated_review = uow.rvws.add(review, security.auth.user_id)
             uow.commit()

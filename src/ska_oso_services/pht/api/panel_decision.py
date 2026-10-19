@@ -91,6 +91,10 @@ def update_panel_decision(
         if not existing:
             raise NotFoundError(detail=f"Decision not found: {decision_id}")
         security.panels.allowed_to_edit_decision(existing.panel_id)
+        # Permission is checked against the stored links, so they must not change
+        for field in ("panel_id", "prsl_id"):
+            if getattr(decision, field) != getattr(existing, field):
+                raise UnprocessableEntityError(detail=f"A decision's {field} cannot be changed.")
         if decision.status == PanelReviewStatus.DECIDED:
             security.panels.allowed_to_submit_decision(existing.panel_id)
         try:

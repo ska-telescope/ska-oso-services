@@ -6,6 +6,7 @@ from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
 
+import pytest
 from ska_aaa_authhelpers.roles import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
 from ska_db_oda.repository.domain import ODANotFound
@@ -301,6 +302,29 @@ class TestGetReviewAPI:
 
         assert response.status_code == HTTPStatus.FORBIDDEN
         assert "reviewer" in response.json()["detail"]
+
+    @pytest.mark.parametrize(
+        "field, value",
+        [("reviewer_id", "someone-else"), ("panel_id", "pnl-tother"), ("prsl_id", "prp-tother")],
+    )
+    @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
+    def test_update_review_cannot_move_a_review(self, mock_uow, client, field, value):
+        """The stored review's author can't reassign it to another reviewer, panel or proposal."""
+        stored = TestDataFactory.reviews()
+        moved = stored.model_copy(update={field: value})
+        uow_mock = mock.MagicMock()
+        uow_mock.rvws.get.return_value = stored
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        response = client.put(
+            f"{REVIEWS_API_URL}/{stored.review_id}",
+            data=moved.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert field in response.json()["detail"]
+        uow_mock.rvws.add.assert_not_called()
 
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_update_review_not_found(self, mock_uow, client):

@@ -297,6 +297,28 @@ class Testpanel_decisionAPI:
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert "not found" in response.json()["detail"].lower()
 
+    @pytest.mark.parametrize(
+        "field, value", [("panel_id", "pnl-tother"), ("prsl_id", "prp-tother")]
+    )
+    @mock.patch(f"{MODULE}.oda.uow", autospec=True)
+    def test_update_cannot_move_a_decision(self, mock_uow, client, field, value):
+        """A chair of the stored panel can't move its decision to another panel or proposal."""
+        stored = TestDataFactory.panel_decision()
+        moved = stored.model_copy(update={field: value})
+        uow_mock = mock.MagicMock()
+        uow_mock.pnlds.get.return_value = stored
+        mock_uow.return_value.__enter__.return_value = uow_mock
+
+        response = client.put(
+            f"{PANEL_DECISION_API_URL}/{stored.decision_id}",
+            data=moved.model_dump_json(),
+            headers={"Content-Type": "application/json"},
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert field in response.json()["detail"]
+        uow_mock.pnlds.add.assert_not_called()
+
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_decision_id_mismatch(self, mock_uow, client):
         """
