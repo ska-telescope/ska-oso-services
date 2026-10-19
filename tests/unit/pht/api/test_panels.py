@@ -15,6 +15,7 @@ HEADERS = {"Content-type": "application/json"}
 MODULE = "ska_oso_services.pht.api.panels"
 
 
+@pytest.mark.skip(reason="Disabled (501) until reviewer access is redesigned")
 class TestPanelsUpdateAPI:
     @mock.patch(f"{MODULE}.oda.uow", autospec=True)
     def test_update_panel_id_mismatch_returns_422(self, mock_uow, client):
@@ -689,6 +690,7 @@ class TestPanelsGenerateAPI:
         uow.commit.assert_called_once()
 
 
+@pytest.mark.skip(reason="Disabled (501) until reviewer access is redesigned")
 class TestPanelsAssignmentsAPI:
     # --------------------------------------------------------------------
     # SV: existing SV panel & NO submitted proposals--> return panel_id (str)
@@ -961,6 +963,7 @@ class TestPanelsAssignmentsAPI:
         assert mock_build_resp.call_args[0][0] == {}
 
 
+@pytest.mark.skip(reason="Disabled (501) until reviewer access is redesigned")
 class TestPanelsUpdateStatusTransitions:
     # 1) ADD PROPOSAL -> UNDER REVIEW
     @mock.patch(f"{MODULE}.ensure_decision_exist_or_create", autospec=True)
@@ -1220,3 +1223,21 @@ class TestPanelsUpdateStatusTransitions:
             assert "prp-tp1" not in ids
 
         uow.commit.assert_called_once()
+
+
+class TestReviewerAssignmentDisabled:
+    @pytest.mark.parametrize(
+        "method, path",
+        [("PUT", f"{PANELS_API_URL}/pnl-t1"), ("POST", f"{PANELS_API_URL}/assignments")],
+    )
+    @mock.patch(f"{MODULE}.oda.uow")
+    def test_returns_not_implemented_without_touching_the_oda(
+        self, mock_uow, client, method, path
+    ):
+        panel = TestDataFactory.panel_basic(panel_id="pnl-t1", name="Galaxy")
+
+        response = client.request(method, path, content=panel.model_dump_json(), headers=HEADERS)
+
+        assert response.status_code == HTTPStatus.NOT_IMPLEMENTED
+        assert "reviewer access" in response.json()["detail"]
+        mock_uow.assert_not_called()

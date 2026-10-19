@@ -1,7 +1,8 @@
 import logging
+from http import HTTPStatus
 from typing import Annotated, Union
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from ska_aaa_authhelpers import Role
 from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal.proposal import ProposalStatus
@@ -30,6 +31,26 @@ from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, validate_duplicates
 
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
+
+
+def _reviewer_access_not_designed() -> None:
+    """
+    Disables a route that assigns reviewers, because assignment doesn't yet give a
+    reviewer access. Access comes from panel groups in the token, and nothing adds
+    an assigned reviewer to them. Remove once the stakeholder design is settled.
+    """
+    # TODO: decide how a reviewer joins a panel's groups, then re-enable these routes
+    raise HTTPException(
+        status_code=HTTPStatus.NOT_IMPLEMENTED,
+        detail=(
+            "Assigning reviewers is disabled until reviewer access is redesigned: an "
+            "assigned reviewer would not be given access to the panel."
+        ),
+    )
+
+
+# Runs before the route's own dependencies and body, so neither is reached
+REVIEWER_ACCESS_NOT_DESIGNED = [Depends(_reviewer_access_not_designed)]
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +90,8 @@ async def create_panel(
     "/assignments",
     summary="Assign proposals to panel",
     response_model=Union[str, list[PanelAssignResponse]],
+    deprecated=True,
+    dependencies=REVIEWER_ACCESS_NOT_DESIGNED,
 )
 def auto_assign_to_panel(
     param: str,
@@ -363,6 +386,8 @@ def get_panel_by_id(
 @router.put(
     "/{panel_id}",
     summary="Update a panel",
+    deprecated=True,
+    dependencies=REVIEWER_ACCESS_NOT_DESIGNED,
 )
 def update_panel(
     panel_id: str,

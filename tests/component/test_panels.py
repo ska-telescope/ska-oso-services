@@ -1,6 +1,8 @@
 import uuid
 from http import HTTPStatus
 
+import pytest
+
 from ..unit.util import TestDataFactory
 from . import PHT_URL
 
@@ -78,6 +80,7 @@ def test_generate_panels(authrequests):
     assert data2["created_names"] == []
 
 
+@pytest.mark.skip(reason="Disabled (501) until reviewer access is redesigned")
 def test_put_panel_with_proposal_and_reviewers(authrequests):
     # Create a proposal to reference in panel assignments
     proposal_response = authrequests.post(

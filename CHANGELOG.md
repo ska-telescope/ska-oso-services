@@ -19,6 +19,13 @@ Unreleased
 * User Portal failures (unreachable, auth/scope problems, unexpected responses) are reported as HTTP 502;
   a portal 404 or 409 about the caller's request is passed on as 404 or 409.
 * [BREAKING] Removes the unused MS Graph integration, the ``msal`` dependency and the ``OSO_CLIENT_SECRET`` setting.
+* [BREAKING] ``PUT /pht/panels/{panel_id}`` and ``POST /pht/panels/assignments`` are deprecated and return
+  501 Not Implemented until reviewer access is redesigned: assigning a reviewer does not yet give them access
+  to the panel.
+* [BREAKING] ``POST /pht/prsls/{prsl_id}/invites`` invites each address independently and returns 200 with the
+  created ``invites`` and a ``failed`` list, rather than stopping at the first failure. At most 100 per request.
+* ``POST /pht/panels/generate`` creates the User Portal groups for each new panel.
+* Members of a panel can download the documents of proposals assigned to that panel.
 
 17.1.0
 ******
