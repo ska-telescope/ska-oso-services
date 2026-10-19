@@ -2308,7 +2308,7 @@ wheels = [
 
 [[package]]
 name = "ska-oso-services"
-version = "17.1.1"
+version = "17.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "aiosmtplib" },
@@ -2370,7 +2370,7 @@ requires-dist = [
     { name = "ska-ost-osd", specifier = ">=7.0.0,<8.0.0" },
     { name = "ska-ser-logging", specifier = ">=0.4.3,<0.5.0" },
     { name = "ska-ser-skuid", specifier = ">=6.0.0,<7.0.0" },
-    { name = "ska-telmodel-client", specifier = ">=1.30.2,<2.0.0" },
+    { name = "ska-telmodel-client", specifier = ">=1.31.0,<2.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2480,7 +2480,7 @@ wheels = [
 
 [[package]]
 name = "ska-telmodel-client"
-version = "1.30.3"
+version = "1.31.0"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "appdirs" },
@@ -2494,9 +2494,9 @@ dependencies = [
     { name = "tomli" },
     { name = "toolz" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-telmodel-client/1.30.3/ska_telmodel_client-1.30.3.tar.gz", hash = "sha256:748549093f39c684e7a2e3dbb893f9762a7a23cf772ca35bf8d9b7dee251c8bd" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-telmodel-client/1.31.0/ska_telmodel_client-1.31.0.tar.gz", hash = "sha256:4d948bb45458cc49205cf8899e7f955368ef317b33d8b72a3eb1e8f9ae115657" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-telmodel-client/1.30.3/ska_telmodel_client-1.30.3-py3-none-any.whl", hash = "sha256:289f0e8d816c641e0c68041399cd6d731073655766b956386c5839660da3dd95" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-telmodel-client/1.31.0/ska_telmodel_client-1.31.0-py3-none-any.whl", hash = "sha256:154386cb9ab1835a9e096f5ab0b81ef954066c7d5d11a582298e70853027b310" },
 ]
 
 [[package]]
