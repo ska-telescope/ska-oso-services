@@ -805,6 +805,29 @@ class TestGetProposalsByStatus:
 
     @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
     @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
+    def test_panel_groups_without_a_panel_are_skipped(self, mock_uow, mock_latest):
+        p_2 = TestDataFactory.complete_proposal(prsl_id="prsl-2", status="under review")
+        panel = SimpleNamespace(proposals=[SimpleNamespace(prsl_id="prsl-2")])
+
+        def get(pnl_id):
+            if pnl_id == "pnl-1":
+                return panel
+            raise ODANotFound(identifier=pnl_id)
+
+        uow = mock.MagicMock()
+        uow.panels.get.side_effect = get
+        mock_uow.return_value.__enter__.return_value = uow
+        uow.prsls.query.side_effect = [[p_2], []]
+        mock_latest.side_effect = lambda rows, key: rows or []
+
+        panels = {"pnl-tmissing": object(), "pnl-1": object()}
+        security = self._security(user_id="member", is_admin=False, panels=panels)
+        result = get_proposals_by_status(security=security)
+
+        assert [p.prsl_id for p in result] == ["prsl-2"]
+
+    @mock.patch(f"{PRSL_MODULE}.get_latest_entity_by_id", autospec=True)
+    @mock.patch(f"{PRSL_MODULE}.oda.uow", autospec=True)
     def test_non_admin_without_panels_gets_empty(self, mock_uow, mock_latest):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow

@@ -239,9 +239,16 @@ def get_proposals_by_status(
         # Collect prsl_ids assigned to each of the user's panels
         panel_prsl_ids: set[str] = set()
         for pnl_id in user_panels:
-            panel = uow.panels.get(pnl_id)
-            if panel:
-                panel_prsl_ids.update(p.prsl_id for p in panel.proposals)
+            try:
+                panel = uow.panels.get(pnl_id)
+            except ODANotFound:
+                logger.warning(
+                    "Panel %s in the groups of user %s is not in the ODA",
+                    pnl_id,
+                    security.auth.user_id,
+                )
+                continue
+            panel_prsl_ids.update(p.prsl_id for p in panel.proposals)
 
         proposals = _filter_by_prsl_ids(all_reviewable, panel_prsl_ids)
 
