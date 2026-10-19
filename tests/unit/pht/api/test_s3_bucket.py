@@ -1,8 +1,13 @@
+from types import SimpleNamespace
 from unittest import mock
 
+import pytest
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import status
+from ska_aaa_authhelpers.roles import Role
+from ska_aaa_authhelpers.test_helpers import mint_test_token
 
+from ska_oso_services.common.auth import Scope
 from ska_oso_services.pht.api.prsls import ProposalDocument
 from tests.conftest import PHT_BASE_API_URL
 
@@ -11,6 +16,7 @@ PRSL_ID = "prp-test123"
 SCIENCE_FILENAME = "science-upload.pdf"
 TECHNICAL_FILENAME = "technical-upload.pdf"
 SV_DESCRIPTION_FILENAME = "sv-description-upload.pdf"
+PANEL_ID = "pnl-t1"
 
 
 class TestSignedUrlDelete:
@@ -171,3 +177,37 @@ class TestSignedUrlDownload:
 
         assert response.status_code == status.HTTP_502_BAD_GATEWAY
         assert "Failed to generate download URL" in response.text
+
+    @pytest.mark.parametrize(
+        "panel_proposals, expected_status",
+        [([PRSL_ID], status.HTTP_200_OK), (["prp-other"], status.HTTP_403_FORBIDDEN)],
+    )
+    @mock.patch("ska_oso_services.pht.api.prsls.oda.uow")
+    @mock.patch("ska_oso_services.pht.api.prsls.get_aws_client", autospec=True)
+    @mock.patch(
+        "ska_oso_services.pht.api.prsls.create_presigned_url_download_pdf",
+        autospec=True,
+    )
+    def test_panel_reviewer_can_download_only_assigned_proposals(
+        self, mock_create_url, mock_get_client, mock_uow, client, panel_proposals, expected_status
+    ):
+        mock_create_url.return_value = "https://s3/download-url"
+        uow = mock_uow.return_value.__enter__.return_value
+        uow.panels.get.return_value = SimpleNamespace(
+            proposals=[SimpleNamespace(prsl_id=prsl_id) for prsl_id in panel_proposals]
+        )
+        # A panel member, but not a member of the proposal
+        token = mint_test_token(
+            audience="test:pht",
+            roles=[Role.ANY],
+            scopes=[Scope.PHT_READ],
+            groups=[f"app:pht:{PANEL_ID}"],
+        )
+
+        response = client.post(
+            f"{PROPOSAL_API_URL}/{PRSL_ID}/s3/download/{ProposalDocument.SCIENCE}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == expected_status, response.text
+        uow.panels.get.assert_called_once_with(PANEL_ID)

@@ -23,6 +23,9 @@ from .security.facts import get_group_name
 
 LOGGER = logging.getLogger(__name__)
 
+# The portal's default page of its invites feed
+INVITE_PAGE_SIZE = 500
+
 # TODO: Replace with http.HTTPMethod once the runtime baseline is Python 3.11+.
 HttpMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 
@@ -316,6 +319,22 @@ class UserPortalService:
         )
         return response.json()
 
+    async def create_invites(
+        self,
+        prsl_id: ShortSkuid[Literal[et.PRP]],
+        invite_payloads: list[dict[str, Any]],
+        acting_as: AuthContext,
+    ) -> dict[str, Any]:
+        """Create up to 100 invites, which the portal reports on one by one."""
+        group_name = quote(get_group_name(prsl_id), safe="")
+        response = await self._call(
+            method="POST",
+            url=f"{self.base_url}/api/external/v1/groups/{group_name}/invites/bulk",
+            json={"invites": invite_payloads},
+            extra_headers=self._write_headers(acting_as),
+        )
+        return response.json()
+
     async def get_invite(self, invite_id: UUID) -> dict[str, Any]:
         response = await self._call(
             method="GET",
@@ -323,13 +342,23 @@ class UserPortalService:
         )
         return response.json()
 
-    async def list_invites(self, prsl_id: ShortSkuid[Literal[et.PRP]]) -> dict[str, Any]:
-        response = await self._call(
-            method="GET",
-            url=f"{self.base_url}/api/external/v1/invites",
-            params={"group_name": get_group_name(prsl_id)},
-        )
-        return response.json()
+    async def list_invites(self, prsl_id: ShortSkuid[Literal[et.PRP]]) -> list[dict[str, Any]]:
+        """Every invite to the proposal, reading all pages of the portal's feed."""
+        params: dict[str, Any] = {"group_name": get_group_name(prsl_id), "limit": INVITE_PAGE_SIZE}
+        invites: dict[str, dict[str, Any]] = {}
+        while True:
+            response = await self._call(
+                method="GET", url=f"{self.base_url}/api/external/v1/invites", params=params
+            )
+            page = response.json()["items"]
+            new = [item for item in page if item["invite_id"] not in invites]
+            # A later copy of an invite is a newer version of it
+            invites.update((item["invite_id"], item) for item in page)
+            # The feed is oldest first, and a page can run past the limit. updated_since
+            # is inclusive, so the next page repeats the last page's newest rows.
+            if len(page) < INVITE_PAGE_SIZE or not new:
+                return list(invites.values())
+            params = {**params, "updated_since": max(item["updated_at"] for item in page)}
 
     async def delete_invite(self, invite_id: UUID, acting_as: AuthContext) -> dict[str, Any]:
         response = await self._call(

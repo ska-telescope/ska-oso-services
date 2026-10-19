@@ -1,12 +1,12 @@
 import logging
-from typing import Annotated, Literal, Union
+from typing import Annotated, Union
 
 from fastapi import APIRouter, Depends
 from ska_aaa_authhelpers import Role
 from ska_db_oda.repository.domain import CustomQuery
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
-from ska_ser_skuid import EntityType, ShortSkuid, mint_skuid
+from ska_ser_skuid import EntityType, mint_skuid
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Scope
@@ -24,6 +24,7 @@ from ska_oso_services.pht.service.panel_operations import (
     set_removed_proposals_to_submitted,
 )
 from ska_oso_services.pht.service.security import Security, SecurityService
+from ska_oso_services.pht.service.security.facts import PanelID
 from ska_oso_services.pht.service.user_portal import UserPortalService
 from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
 from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, validate_duplicates
@@ -59,9 +60,7 @@ async def create_panel(
         panel: Panel = uow.panels.add(param, security.auth.user_id)  # pylint: disable=no-member
         uow.commit()
 
-    await portal.create_panel_groups(
-        ShortSkuid[Literal[EntityType.PNL]](panel.panel_id), security.auth
-    )
+    await portal.create_panel_groups(PanelID(panel.panel_id), security.auth)
     logger.info("Panel successfully created with ID %s", panel.panel_id)
     return panel.panel_id
 
@@ -248,7 +247,7 @@ def auto_assign_to_panel(
     summary="Create a panel",
     response_model=Union[str, PanelBatchCreateResult],
 )
-def auto_create_panel(
+async def auto_create_panel(
     security: Annotated[
         SecurityService,
         Security(
@@ -257,6 +256,7 @@ def auto_create_panel(
             groups={SecurityService.PHT_ADMIN_GROUP},
         ),
     ],
+    portal: Annotated[UserPortalService, Depends(UserPortalService)],
 ) -> Union[str, PanelBatchCreateResult]:
     """
     Creates a list of panels for both Science Verification and Science Categories.
@@ -281,6 +281,7 @@ def auto_create_panel(
 
     with oda.uow() as uow:
         created_names: list[str] = []
+        created_ids: list[str] = []
 
         # --- Science Verification panel ---
         # check if SV panel exist, create if not
@@ -294,6 +295,7 @@ def auto_create_panel(
             uow.panels.add(sv_panel, security.auth.user_id)
             logger.info("Science Verification panel created (panel_id=%s)", sv_panel.panel_id)
             created_names.append(SV_NAME)
+            created_ids.append(sv_panel.panel_id)
 
         # --- Science category panels ---
         for panel_name in PANEL_NAME_POOL:
@@ -312,6 +314,7 @@ def auto_create_panel(
             )
             uow.panels.add(new_panel, security.auth.user_id)
             created_names.append(panel_name)
+            created_ids.append(new_panel.panel_id)
 
         # Commit only if we created something
         if created_names:
@@ -324,11 +327,15 @@ def auto_create_panel(
         else:
             logger.info("No panels created; all already existed.")
 
-        # return the combined list of created panel names and count
-        return PanelBatchCreateResult(
-            created_count=len(created_names),
-            created_names=created_names,
-        )
+    # Access to a panel comes from its groups, so every new panel needs them
+    for panel_id in created_ids:
+        await portal.create_panel_groups(PanelID(panel_id), security.auth)
+
+    # return the combined list of created panel names and count
+    return PanelBatchCreateResult(
+        created_count=len(created_names),
+        created_names=created_names,
+    )
 
 
 @router.get(

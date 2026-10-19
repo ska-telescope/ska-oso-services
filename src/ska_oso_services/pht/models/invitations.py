@@ -20,7 +20,8 @@ class NewInvitation(BaseModel):
 class InviteCreateListRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    invites: list[NewInvitation] = Field(min_length=1)
+    # The portal's limit for one bulk request
+    invites: list[NewInvitation] = Field(min_length=1, max_length=100)
 
 
 class UserSearchItemResponse(BaseModel):
@@ -48,6 +49,46 @@ class InviteCardResponse(BaseModel):
     updated_at: AwareDatetime
     expires_at: AwareDatetime
     responded_at: AwareDatetime | None = None
+
+
+class InviteBulkItemResult(BaseModel):
+    """The portal's outcome for one item of a bulk invite request."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    index: int
+    # created, duplicate, not_found or invalid
+    status: str
+    email: str | None = None
+    detail: str | None = None
+    invite: InviteCardResponse | None = None
+
+
+class InviteBulkCreateResult(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    results: list[InviteBulkItemResult]
+
+
+class InviteFailure(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: str | None
+    # duplicate, not_found or invalid
+    status: str
+    detail: str | None
+
+
+class InviteCreateListResponse(BaseModel):
+    """
+    The invites created, and the ones that weren't. Each is independent of the others,
+    so a caller can retry only the failures.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    invites: list[InviteCardResponse]
+    failed: list[InviteFailure]
 
 
 class InviteDeleteResponse(BaseModel):

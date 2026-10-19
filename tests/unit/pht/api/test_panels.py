@@ -3,6 +3,7 @@ from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import mock
 
+import pytest
 from ska_db_oda.repository.domain import UniqueConstraintViolation
 
 from ska_oso_services.pht.api import panels as panels_api
@@ -488,6 +489,13 @@ class TestPanelsAPI:
 
 
 class TestPanelsGenerateAPI:
+    @pytest.fixture(autouse=True)
+    def create_panel_groups(self):
+        with mock.patch(
+            f"{MODULE}.UserPortalService.create_panel_groups", new_callable=mock.AsyncMock
+        ) as create_panel_groups:
+            yield create_panel_groups
+
     # No existing SV panel -> create & return new id
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
@@ -570,7 +578,7 @@ class TestPanelsGenerateAPI:
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     def test_generate_categories_creates_missing_only(
-        self, mock_get_latest, mock_uow, client, monkeypatch
+        self, mock_get_latest, mock_uow, client, monkeypatch, create_panel_groups
     ):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
@@ -605,11 +613,15 @@ class TestPanelsGenerateAPI:
 
         uow.commit.assert_called_once()
 
+        # ...each with its portal groups
+        created_ids = [call.args[0].panel_id for call in uow.panels.add.call_args_list]
+        assert [call.args[0] for call in create_panel_groups.await_args_list] == created_ids
+
     # SV & Category: All exist -> no creation, no commit
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")
     @mock.patch("ska_oso_services.pht.api.panels.get_latest_entity_by_id")
     def test_generate_sv_categories_all_exist_noop(
-        self, mock_get_latest, mock_uow, client, monkeypatch
+        self, mock_get_latest, mock_uow, client, monkeypatch, create_panel_groups
     ):
         uow = mock.MagicMock()
         mock_uow.return_value.__enter__.return_value = uow
@@ -637,6 +649,7 @@ class TestPanelsGenerateAPI:
 
         uow.panels.add.assert_not_called()
         uow.commit.assert_not_called()
+        create_panel_groups.assert_not_awaited()
 
     # Case-insensitive + trim
     @mock.patch("ska_oso_services.pht.api.panels.oda.uow")

@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from typing import Literal, TypeAlias
 
 from ska_ser_skuid import EntityType, ShortSkuid
@@ -5,6 +6,7 @@ from ska_ser_skuid import EntityType, ShortSkuid
 from ._shared import BaseRules, RuleResult, auth_rule
 
 ProposalID: TypeAlias = ShortSkuid[Literal[EntityType.PRP]]
+PanelID: TypeAlias = ShortSkuid[Literal[EntityType.PNL]]
 
 # These rules are based on @Adam's draft from
 # https://docs.google.com/document/d/1pHgDLu09dd7J81iwGi1sWx9jBJhWLZt8p8DllRCq760/edit?tab=t.0
@@ -29,6 +31,23 @@ class ProposalRules(BaseRules):
         proposals, _ = self.facts.get_all_proposals_and_panels()
         unauthorised = set(prsl_ids).difference(proposals)
         return RuleResult(False, f"You are not a member of {sorted(unauthorised)}")
+
+    @auth_rule
+    def allowed_to_view_documents(
+        self, prsl_id: ProposalID, reviewing_panels: Iterable[PanelID]
+    ) -> RuleResult:
+        """
+        Proposal members can view its documents, and so can the reviewers on a panel
+        it's assigned to (reviewing_panels), without becoming its collaborators.
+        """
+        if self.facts.is_pht_admin():
+            return RuleResult(True, "PHT admin can view any proposal's documents")
+        if self.facts.is_member_of(prsl_id):
+            return RuleResult(True, f"You are a member of {prsl_id}")
+        for pnl_id in reviewing_panels:
+            if self.facts.is_member_of(pnl_id):
+                return RuleResult(True, f"Member of panel {pnl_id}, which is reviewing {prsl_id}")
+        return RuleResult(False, f"You are not a member of {prsl_id} or a panel reviewing it")
 
     @auth_rule
     def allowed_to_edit(self, prsl_id: ProposalID) -> RuleResult:

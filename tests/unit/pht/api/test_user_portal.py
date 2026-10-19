@@ -10,7 +10,8 @@ import pytest
 from ska_aaa_authhelpers import AuthContext, AuthFailError, Role
 
 from ska_oso_services.common.error_handling import NotFoundError
-from ska_oso_services.pht.api.user_portal import delete_invite, list_members
+from ska_oso_services.pht.api.user_portal import create_invites, delete_invite, list_members
+from ska_oso_services.pht.models.invitations import InviteCreateListRequest
 from ska_oso_services.pht.service import user_portal
 from ska_oso_services.pht.service.security import SecurityService
 from ska_oso_services.pht.service.user_portal import UserPortalContractError
@@ -50,6 +51,36 @@ def _pi_security(prsl_id: str) -> SecurityService:
         access_token="test-token",
     )
     return SecurityService(auth)
+
+
+class TestCreateInvites:
+    async def test_one_failure_does_not_stop_the_others(self):
+        service = create_autospec(user_portal.UserPortalService, instance=True)
+        created = _invite_card(group_name=f"app:pht:{PRSL_ID}")
+        service.create_invites.return_value = {
+            "created": 1,
+            "failed": 1,
+            "results": [
+                {"index": 0, "status": "duplicate", "email": "a@example.org", "detail": "dup"},
+                {"index": 1, "status": "created", "email": "b@example.org", "invite": created},
+            ],
+        }
+        security = _pi_security(PRSL_ID)
+        body = InviteCreateListRequest(
+            invites=[{"email": "a@example.org"}, {"email": "b@example.org"}]
+        )
+
+        response = await create_invites(
+            security=security, service=service, prsl_id=PRSL_ID, body=body
+        )
+
+        service.create_invites.assert_awaited_once_with(
+            prsl_id=PRSL_ID,
+            invite_payloads=[{"email": "a@example.org"}, {"email": "b@example.org"}],
+            acting_as=security.auth,
+        )
+        assert [str(i.invite_id) for i in response.invites] == [created["invite_id"]]
+        assert [(f.email, f.status) for f in response.failed] == [("a@example.org", "duplicate")]
 
 
 class TestDeleteInvite:

@@ -60,7 +60,7 @@ def test_create_invite_by_email_happy_path(integration_client):
         json={"invites": [{"email": "new-user@example.org"}]},
     )
 
-    assert response.status_code == HTTPStatus.CREATED
+    assert response.status_code == HTTPStatus.OK
     payload = response.json()
     assert isinstance(payload, dict)
     assert "invites" in payload
@@ -68,6 +68,7 @@ def test_create_invite_by_email_happy_path(integration_client):
     assert len(payload["invites"]) == 1
     assert "invite_id" in payload["invites"][0]
     assert isinstance(payload["invites"][0].get("group_name"), str)
+    assert payload["failed"] == []
 
 
 def test_create_invites_bulk_happy_path(integration_client):
@@ -82,12 +83,12 @@ def test_create_invites_bulk_happy_path(integration_client):
         },
     )
 
-    assert response.status_code == HTTPStatus.CREATED
+    assert response.status_code == HTTPStatus.OK
     payload = response.json()
     assert isinstance(payload, dict)
-    assert "invites" in payload
     assert isinstance(payload["invites"], list)
-    assert len(payload["invites"]) == 2
+    assert isinstance(payload["failed"], list)
+    # Prism's static mock answers with one result whatever we send
     assert all("invite_id" in item for item in payload["invites"])
 
 

@@ -335,3 +335,50 @@ class TestUserPortalConfig:
 
     def test_client_secret_is_not_exposed_in_repr(self):
         assert "super-secret" not in repr(portal_config(client_secret="super-secret"))
+
+
+def _invite(invite_id: str, updated_at: str) -> dict:
+    return {"invite_id": invite_id, "updated_at": updated_at}
+
+
+class TestListInvites:
+    @pytest.fixture(autouse=True)
+    def small_pages(self, monkeypatch):
+        monkeypatch.setattr(user_portal, "INVITE_PAGE_SIZE", 2)
+
+    async def test_reads_every_page(self, make_service, portal_call):
+        portal_call.side_effect = [
+            ok({"items": [_invite("a", "T1"), _invite("b", "T2")]}),
+            # updated_since is inclusive, so "b" comes back too
+            ok({"items": [_invite("b", "T2"), _invite("c", "T3")]}),
+            ok({"items": [_invite("c", "T3")]}),
+        ]
+        service = make_service(FakeTokens(*["token"] * 3))
+
+        invites = await service.list_invites("prp-1")
+
+        assert [i["invite_id"] for i in invites] == ["a", "b", "c"]
+        since = [c.kwargs["params"].get("updated_since") for c in portal_call.await_args_list]
+        assert since == [None, "T2", "T3"]
+
+    async def test_keeps_the_newest_copy_of_an_invite(self, make_service, portal_call):
+        portal_call.side_effect = [
+            ok({"items": [_invite("a", "T1"), _invite("b", "T2")]}),
+            ok({"items": [_invite("b", "T2"), {**_invite("a", "T3"), "claim_state": "revoked"}]}),
+            ok({"items": [{**_invite("a", "T3"), "claim_state": "revoked"}]}),
+        ]
+        service = make_service(FakeTokens(*["token"] * 3))
+
+        invites = {i["invite_id"]: i for i in await service.list_invites("prp-1")}
+
+        assert invites["a"]["claim_state"] == "revoked"
+
+    async def test_stops_when_a_full_page_has_nothing_new(self, make_service, portal_call):
+        # A block of rows sharing one updated_at comes back whole, so a full page of
+        # rows already seen is the end of the feed rather than a reason to loop
+        same = ok({"items": [_invite("a", "T1"), _invite("b", "T1")]})
+        portal_call.side_effect = [same, same]
+        service = make_service(FakeTokens(*["token"] * 3))
+
+        assert len(await service.list_invites("prp-1")) == 2
+        assert portal_call.await_count == 2

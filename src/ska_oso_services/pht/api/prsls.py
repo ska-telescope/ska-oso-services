@@ -564,6 +564,23 @@ def create_upload_pdf_url(
         ) from client_err
 
 
+def _panels_reviewing(prsl_id: ProposalID, security: SecurityService) -> list[str]:
+    """Which of the caller's panels the proposal is assigned to."""
+    my_panels = security.facts.get_all_proposals_and_panels().panels
+    if not my_panels or security.facts.is_member_of(prsl_id):
+        return []  # Nothing to look up, or no need to
+    reviewing = []
+    with oda.uow() as uow:
+        for pnl_id in my_panels:
+            try:
+                panel = uow.panels.get(pnl_id)
+            except ODANotFound:
+                continue  # A panel group without a panel
+            if any(p.prsl_id == prsl_id for p in panel.proposals or []):
+                reviewing.append(pnl_id)
+    return reviewing
+
+
 @router.post(
     "/{prsl_id}/s3/download/{document_type}",
     summary="Create download PDF URL",
@@ -579,7 +596,7 @@ def create_download_pdf_url(
     Generate a presigned S3 download URL for a proposal document slot.
 
     """
-    security.proposals.allowed_to_view(prsl_id)
+    security.proposals.allowed_to_view_documents(prsl_id, _panels_reviewing(prsl_id, security))
     logger.debug("POST Download Signed URL slot: %s", document_type)
     key = get_s3_object_key(prsl_id, document_type.value)
 

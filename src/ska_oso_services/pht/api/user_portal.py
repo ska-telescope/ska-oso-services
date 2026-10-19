@@ -1,5 +1,4 @@
 import asyncio
-from http import HTTPStatus
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -11,9 +10,12 @@ from ska_oso_services.common.auth import Scope
 from ska_oso_services.common.error_handling import NotFoundError
 from ska_oso_services.pht.models.invitations import (
     InvitationsListResponse,
+    InviteBulkCreateResult,
     InviteCardResponse,
     InviteCreateListRequest,
+    InviteCreateListResponse,
     InviteDeleteResponse,
+    InviteFailure,
     ProposalMember,
     ProposalMembersResponse,
     UserSearchResponse,
@@ -46,8 +48,7 @@ async def search_users(
 @router.post(
     "/prsls/{prsl_id}/invites",
     summary="Create invites for proposal via external user portal",
-    status_code=HTTPStatus.CREATED,
-    response_model=InvitationsListResponse,
+    response_model=InviteCreateListResponse,
 )
 async def create_invites(
     security: Annotated[
@@ -57,24 +58,34 @@ async def create_invites(
     service: Annotated[user_portal.UserPortalService, Depends(user_portal.UserPortalService)],
     prsl_id: ProposalID,
     body: InviteCreateListRequest,
-) -> InvitationsListResponse:
+) -> InviteCreateListResponse:
+    """
+    Invites each address independently: one that fails (already invited, say) is
+    listed under "failed" and doesn't stop the others.
+    """
     security.proposals.allowed_to_administer(prsl_id)
 
-    created_invites: list[InviteCardResponse] = []
-    for invite in body.invites:
-        invite_payload = invite.model_dump(mode="json", by_alias=True, exclude_none=True)
-        created_invites.append(
-            user_portal.parse_portal_response(
-                InviteCardResponse,
-                await service.create_invite(
-                    prsl_id=prsl_id,
-                    invite_payload=invite_payload,
-                    acting_as=security.auth,
-                ),
-            )
-        )
+    bulk = user_portal.parse_portal_response(
+        InviteBulkCreateResult,
+        await service.create_invites(
+            prsl_id=prsl_id,
+            invite_payloads=[
+                invite.model_dump(mode="json", by_alias=True, exclude_none=True)
+                for invite in body.invites
+            ],
+            acting_as=security.auth,
+        ),
+    )
 
-    return InvitationsListResponse(invites=created_invites)
+    created, failed = [], []
+    for result in bulk.results:
+        if result.invite is not None:
+            created.append(result.invite)
+        else:
+            failed.append(
+                InviteFailure(email=result.email, status=result.status, detail=result.detail)
+            )
+    return InviteCreateListResponse(invites=created, failed=failed)
 
 
 @router.get(
@@ -91,11 +102,9 @@ async def list_invites(
     prsl_id: ProposalID,
 ) -> InvitationsListResponse:
     security.proposals.allowed_to_view_other_members(prsl_id)
-    members_payload = await service.list_invites(prsl_id=prsl_id)
-
     invited = [
         user_portal.parse_portal_response(InviteCardResponse, item)
-        for item in members_payload.get("items", [])
+        for item in await service.list_invites(prsl_id=prsl_id)
         if item.get("claim_state") != "accepted"
     ]
 

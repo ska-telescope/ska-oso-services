@@ -115,6 +115,40 @@ class TestReviewCreateAPI:
         uow.commit.assert_called_once()
 
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
+    def test_create_review_cannot_overwrite_another_reviewers_review(self, mock_oda, client):
+        """
+        A panel member naming themselves as reviewer can't reuse the ID of someone
+        else's review, which add() would otherwise overwrite.
+        """
+        self.patch_me.stop()
+        caller = "panel-member"
+        stored = TestDataFactory.reviews(reviewer_id="someone-else")
+        forged = stored.model_copy(update={"reviewer_id": caller})
+
+        uow = mock.MagicMock()
+        uow.rvws.query.return_value = []
+        uow.rvws.get.return_value = stored
+        mock_oda.return_value.__enter__.return_value = uow
+
+        token = mint_test_token(
+            audience="test:pht",
+            user_id=caller,
+            roles=[Role.ANY],
+            scopes=[Scope.PHT_READWRITE],
+            groups=[f"app:pht:{stored.panel_id}"],
+        )
+        resp = client.post(
+            f"{REVIEWS_API_URL}/create",
+            data=forged.model_dump_json(),
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+        )
+        self.patch_me.start()
+
+        assert resp.status_code == HTTPStatus.FORBIDDEN, resp.text
+        uow.rvws.get.assert_called_once_with(stored.review_id)
+        uow.rvws.add.assert_not_called()
+
+    @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
     def test_create_review_value_error_raises_bad_request(self, mock_oda, client):
         """
         Value Error during add()

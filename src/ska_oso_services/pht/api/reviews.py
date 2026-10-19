@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers.roles import Role
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.repository.domain import CustomQuery, ODANotFound
 from ska_oso_pdm import PanelReview
 from ska_ser_skuid import int_skuid
 
@@ -46,6 +46,15 @@ def create_review(
 
             if existing_rvw and existing_rvw.metadata.version == 1:
                 return existing_rvw.review_id
+            # add() overwrites any stored review with this ID, so the caller must be
+            # allowed to edit that one too, not only to create the one they sent
+            if reviews.review_id is not None:
+                try:
+                    stored = uow.rvws.get(reviews.review_id)
+                except ODANotFound:
+                    pass  # New ID
+                else:
+                    security.reviews.allowed_to_edit(stored)
             created_review = uow.rvws.add(reviews, security.auth.user_id)
             uow.commit()
         return created_review.review_id
