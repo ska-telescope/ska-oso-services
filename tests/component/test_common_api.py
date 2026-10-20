@@ -158,3 +158,17 @@ def test_coordinates_get(authrequests, identifier, reference_frame, expected_res
 
     assert response.status_code == HTTPStatus.OK, response.json()
     assert response.json()["reference_coordinate"] == expected_response["reference_coordinate"]
+
+
+def test_osd_get(authrequests):
+    """
+    Test that the GET /osd path receives the request and returns
+    the observatory policy for each cycle
+    """
+
+    response = authrequests.get(f"{OSO_SERVICES_URL}/osd")
+
+    assert response.status_code == HTTPStatus.OK, response.json()
+    policies = response.json()["observatory_policies"]
+    assert policies[0]["cycle_number"] == 1
+    assert policies[0]["cycle_information"]["cycle_id"] == "TEST_SKAO_2027_1"
