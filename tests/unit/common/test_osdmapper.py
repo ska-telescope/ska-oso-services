@@ -6,14 +6,15 @@ from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType
 from ska_oso_pdm._shared.spfrx import PeriodicNoiseDiodeConfig, PseudoRandomNoiseDiodeConfig
 from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
 from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
-
-from ska_oso_services.common.osdmapper import (
-    Band5bSubband,
-    Constraints,
+from ska_ost_osd.osd.models.capabilities import Band5bSubband, MidFrequencyBand
+from ska_ost_osd.osd.models.configuration import Constraints
+from ska_ost_osd.osd.models.defaults import (
     LowCBFMetrics,
     LowQualityAttributeMetrics,
-    MidFrequencyBand,
     SPFRxParameters,
+)
+
+from ska_oso_services.common.osdmapper import (
     configuration_from_osd,
     get_default_pdm_target_spfrx,
     get_low_basic_capability_parameter_from_osd,
