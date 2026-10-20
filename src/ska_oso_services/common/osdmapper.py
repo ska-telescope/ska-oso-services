@@ -4,7 +4,6 @@ configuration needed for the application.
 """
 
 from functools import cache
-from importlib.metadata import version
 from typing import Union
 
 from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
@@ -28,7 +27,8 @@ from ska_telmodel_client import TMData
 # a third mode - so "off" is handled separately below.
 NOISE_DIODE_MODE_OFF = "off"
 
-OSD_VERSION = version("ska-ost-osd")
+OSD_VERSION = "7.0.0"
+OSD_CYCLES_SOURCE = "gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?71593394#tmdata"
 
 
 @cache
@@ -36,7 +36,7 @@ def configuration_from_osd(osd_version: str = OSD_VERSION) -> Configuration:
     """
     Builds the Configuration for the UI from the OSD's tmdata.
     """
-    tmdata = TMData([f"car:ost/ska-ost-osd?{osd_version}"], update=True)
+    tmdata = TMData([OSD_CYCLES_SOURCE, f"car:ost/ska-ost-osd?{osd_version}"], update=True)
     return Configuration.from_tmdata(tmdata)
 
 
