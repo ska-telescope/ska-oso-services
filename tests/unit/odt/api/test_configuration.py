@@ -1,4 +1,6 @@
-from ska_oso_services.common.osdmapper import Configuration, LowFrequencyBand
+from ska_ost_osd.osd.models.capabilities import LowFrequencyBand
+from ska_ost_osd.osd.models.configuration import Configuration
+
 from ska_oso_services.odt.api.configuration import configuration_get
 
 
