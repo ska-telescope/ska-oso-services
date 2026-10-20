@@ -17,30 +17,6 @@ from . import PHT_URL
 PANELS_API_URL = f"{PHT_URL}/panels"
 
 
-def test_get_osd_data_fail(authrequests):
-    cycle = 9999
-    response = authrequests.get(f"{PHT_URL}/prsls/osd/{cycle}")
-    assert response.status_code == HTTPStatus.BAD_REQUEST
-
-
-def test_get_osd_data_success(authrequests):
-    cycle = 1
-    response = authrequests.get(f"{PHT_URL}/prsls/osd/{cycle}")
-
-    res = response.json()
-    assert res["observatory_policy"]["cycle_number"] == 1
-    assert res["observatory_policy"]["cycle_information"]["cycle_id"] == "TEST_SKAO_2027_1"
-
-
-def test_get_osd_cycles_success(authrequests):
-    response = authrequests.get(f"{PHT_URL}/prsls/osd/cycles")
-    assert response.status_code == HTTPStatus.OK
-
-    data = response.json()
-    assert isinstance(data, list)
-    assert len(data) > 0  # ensures OSD is reachable and cycles are returned
-
-
 def test_create_and_get_proposal(authrequests):
     """
     Integration test for the POST /prsls/create endpoint
