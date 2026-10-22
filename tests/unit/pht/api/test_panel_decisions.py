@@ -11,14 +11,11 @@ from ska_aaa_authhelpers.test_helpers import mint_test_token
 from ska_db_oda.repository.domain import ODANotFound
 
 from ska_oso_services.common.auth import Scope
-from ska_oso_services.pht.api import panel_decision as api
 from ska_oso_services.pht.service.security import SecurityService
 from tests.conftest import PHT_BASE_API_URL
 from tests.unit.util import TestDataFactory, assert_json_is_equal
 
 PANEL_DECISION_API_URL = f"{PHT_BASE_API_URL}/panel/decision"
-SEC_OBJ = api.get_panel_decisions_for_user.__annotations__["security"].__metadata__[0]
-SEC_DEP = SEC_OBJ.dependency
 
 MODULE = "ska_oso_services.pht.api.panel_decision"
 

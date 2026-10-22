@@ -135,16 +135,14 @@ def update_panel_decision(
 @router.get(
     "/",
     summary="Get a list of Decisions for all proposals",
-)
-def get_panel_decisions_for_user(
-    security: Annotated[
-        SecurityService,
+    dependencies=[
         Security(
             roles={Role.ANY},
             scopes={Scope.PHT_READWRITE},
             groups={SecurityService.PHT_ADMIN_GROUP},
-        ),
+        )
     ],
-) -> list[PanelDecision]:
+)
+def get_panel_decisions_for_user() -> list[PanelDecision]:
     with oda.uow() as uow:
         return get_latest_entity_by_id(uow.pnlds.query(CustomQuery()), "decision_id") or []
