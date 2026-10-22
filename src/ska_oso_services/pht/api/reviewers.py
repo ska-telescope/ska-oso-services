@@ -10,6 +10,7 @@ router = APIRouter(tags=["PMT API - Reviewers"])
 @router.get(
     "/reviewers",
     summary="Retrieve a list of reviewers",
+    deprecated=True,
     dependencies=[
         Security(
             roles={Role.INTERNAL},

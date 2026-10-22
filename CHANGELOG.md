@@ -22,13 +22,26 @@ Unreleased
 * User Portal failures (unreachable, auth/scope problems, unexpected responses) are reported as HTTP 502;
   a portal 404 or 409 about the caller's request is passed on as 404 or 409.
 * [BREAKING] Removes the unused MS Graph integration, the ``msal`` dependency and the ``OSO_CLIENT_SECRET`` setting.
-* [BREAKING] ``PUT /pht/panels/{panel_id}`` and ``POST /pht/panels/assignments`` are deprecated and return
-  501 Not Implemented until reviewer access is redesigned: assigning a reviewer does not yet give them access
-  to the panel.
+* Deprecated APIs, which clients such as the PHT UI should stop calling:
+
+  * Still working (their responses carry a ``Deprecation`` header, and a ``Link`` to the replacement):
+
+    * ``POST /pht/prsls/send-email/``: use ``POST /pht/prsls/{prsl_id}/invites``
+    * ``GET /pht/prsls/member/{email}``: use ``GET /pht/users/search?q=<email>``
+    * ``POST /pht/proposal-access/create``: use ``POST /pht/prsls/{prsl_id}/invites``
+    * ``GET /pht/proposal-access/user``: use ``GET /pht/prsls/mine``
+    * ``GET /pht/proposal-access/{prsl_id}``: use ``GET /pht/prsls/{prsl_id}/members``
+    * ``PUT /pht/proposal-access/user/{access_id}``: no replacement yet for changing a member's access
+
+  * [BREAKING] Disabled, answering 501 Not Implemented:
+
+    * ``PUT /pht/panels/{panel_id}`` and ``POST /pht/panels/assignments``, until reviewer access is redesigned:
+      assigning a reviewer does not yet give them access to the panel.
+    * ``GET /pht/report/``
+    * ``GET /pht/reviewers``
 * [BREAKING] ``POST /pht/prsls/{prsl_id}/invites`` invites each address independently and returns 200 with the
   created ``invites`` and a ``failed`` list, rather than stopping at the first failure. At most 100 per request.
 * ``POST /pht/panels/generate`` creates the User Portal groups for each new panel.
-* [BREAKING] ``GET /pht/report/`` is deprecated and returns 501 Not Implemented.
 * [BREAKING] ``POST /pht/panels/create`` adds the panel's ``sci_reviewers`` and ``tech_reviewers`` to the panel's
   User Portal group, which gives them access, and no longer saves them on the panel in the ODA.
 * Members of a panel can download the documents of proposals assigned to that panel.

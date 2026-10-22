@@ -75,7 +75,7 @@ def get_access_for_user(
     response: Response,
 ) -> list[ProposalAccessResponse]:
     response.headers["Deprecation"] = "true"
-    response.headers["Link"] = '</pht/prsls/{prsl_id}/invites>; rel="successor-version"'
+    response.headers["Link"] = '</pht/prsls/mine>; rel="successor-version"'
     logger.debug("Retrieving proposal access for user: %s", security.auth.user_id)
 
     with oda.uow() as uow:
@@ -104,7 +104,7 @@ def get_access_by_prsl_id(
 ) -> list[ProposalAccessByProposalResponse]:
     # pylint: disable=unused-argument
     response.headers["Deprecation"] = "true"
-    response.headers["Link"] = f'</pht/prsls/{prsl_id}/invites>; rel="successor-version"'
+    response.headers["Link"] = f'</pht/prsls/{prsl_id}/members>; rel="successor-version"'
     logger.debug("Retrieving proposal access for prsl id: %s", prsl_id)
 
     with oda.uow() as uow:
@@ -151,7 +151,7 @@ def update_access(
     response: Response,
 ) -> ProposalAccess:
     response.headers["Deprecation"] = "true"
-    response.headers["Link"] = '</pht/prsls/{prsl_id}/invites>; rel="successor-version"'
+    # No successor yet: nothing else changes a member's access
     try:
         with oda.uow() as uow:
             updated_prsl = uow.prslacc.add(access, security.auth.user_id)

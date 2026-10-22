@@ -71,6 +71,9 @@ class TestProposalAccessAPI:
         result = response.json()
 
         assert json.loads(proposal_access.model_dump_json()) == result
+        # Deprecated, with no successor to point to yet
+        assert response.headers["Deprecation"] == "true"
+        assert "Link" not in response.headers
 
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow", autospec=True)
     def test_get_proposal_access_by_user_success(self, mock_oda, client):
@@ -92,6 +95,7 @@ class TestProposalAccessAPI:
 
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(proposal_access)
+        assert response.headers["Link"] == '</pht/prsls/mine>; rel="successor-version"'
 
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow", autospec=True)
     def test_get_proposal_access_by_prsl_id_success(self, mock_oda, client):
@@ -124,6 +128,10 @@ class TestProposalAccessAPI:
 
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(proposal_access)
+        assert (
+            response.headers["Link"]
+            == f'</pht/prsls/{MOCK_PRSL_ID}/members>; rel="successor-version"'
+        )
 
     @mock.patch("ska_oso_services.pht.api.prslacc.oda.uow", autospec=True)
     def test_get_proposal_access_by_prsl_id_not_PI_forbidden(self, mock_oda, client):
