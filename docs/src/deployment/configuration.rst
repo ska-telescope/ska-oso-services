@@ -135,13 +135,13 @@ or an existing Kubernetes Secret. See :doc:`secret_management`.
    * - AWS_PHT_BUCKET_NAME
      - The S3 bucket name used by PHT.
      - Required
-     - ``rest.awsPhtBucketName``
-     - Required - default: ``"pht-bucket"``
+     - Pulled from Vault - see :doc:`secret_management`, or ``s3ServiceAccount.bucketName`` with EKS Pod Identity
+     -
    * - AWS_REGION
      - The S3 region used by PHT.
      - Required
-     - ``rest.awsRegion``
-     - Required - default: ``"us-west-2"``
+     - Pulled from Vault - see :doc:`secret_management`, or ``s3ServiceAccount.region`` with EKS Pod Identity
+     -
    * - PHT_EMAIL_USER
      - The address used by the PHT to send email with invitations to proposals.
      - Optional - default: ``None``

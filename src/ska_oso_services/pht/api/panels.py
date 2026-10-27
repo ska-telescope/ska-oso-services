@@ -366,6 +366,9 @@ async def auto_create_panel(
         # Access to a panel comes from its groups, so every new panel needs them. They're
         # created before the commit: if one fails, leaving the UoW rolls back every new
         # panel, so a retry creates them all afresh rather than skipping groupless ones.
+        # TODO: Have the frontend send the pnl SKUIDs, so that after a failure the client
+        # can retry with the same ones. Minting fresh SKUIDs here means a retry creates
+        # new groups and orphans the ones from the failed attempt.
         for panel_id in created_ids:
             async with portal.deadline():
                 await portal.create_panel_groups(PanelID(panel_id), security.auth)
