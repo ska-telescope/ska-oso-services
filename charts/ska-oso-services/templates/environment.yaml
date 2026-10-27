@@ -18,3 +18,7 @@ data:
   USER_PORTAL_CLIENT_ID: {{ .Values.rest.userPortalClientId | quote }}
   USER_PORTAL_TOKEN_SCOPE: {{ .Values.rest.userPortalTokenScope | quote }}
   USER_PORTAL_TOKEN_AUDIENCE: {{ .Values.rest.userPortalTokenAudience | quote }}
+  PHT_GROUP_BASE: {{ .Values.rest.groupNames.base | quote }}
+  PHT_GROUP_COI_SUFFIX: {{ .Values.rest.groupNames.coiSuffix | quote }}
+  PHT_GROUP_PI_SUFFIX: {{ .Values.rest.groupNames.piSuffix | quote }}
+  PHT_GROUP_CHAIR_SUFFIX: {{ .Values.rest.groupNames.chairSuffix | quote }}

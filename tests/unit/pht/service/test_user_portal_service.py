@@ -456,3 +456,25 @@ class TestCreateMembership:
         )
         assert kwargs["json"] == {"preferred_username": "indigo-username"}
         assert kwargs["headers"]["Idempotency-Key"]
+
+
+class TestCreateEntityGroups:
+    async def test_a_proposal_has_three_tiers(self, make_service, portal_call):
+        portal_call.return_value = ok({})
+        service = make_service(FakeTokens(*["token"] * 3))
+
+        groups = await service.create_proposal_groups("prp-1", acting_as=auth_context())
+
+        assert groups == ("app:pht:prp-1", "app:pht:prp-1/w", "app:pht:prp-1/w/a")
+        sent = [c.kwargs["json"]["group_name"] for c in portal_call.await_args_list]
+        assert sent == list(groups)
+
+    async def test_a_panel_has_two_tiers(self, make_service, portal_call):
+        portal_call.return_value = ok({})
+        service = make_service(FakeTokens(*["token"] * 2))
+
+        groups = await service.create_panel_groups("pnl-1", acting_as=auth_context())
+
+        assert groups == ("app:pht:pnl-1", "app:pht:pnl-1/w/a")
+        sent = [c.kwargs["json"]["group_name"] for c in portal_call.await_args_list]
+        assert sent == list(groups)

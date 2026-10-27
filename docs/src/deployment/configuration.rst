@@ -92,6 +92,26 @@ or an existing Kubernetes Secret. See :doc:`secret_management`.
      - Optional - default: ``10``
      - ``rest.userPortalTimeout``
      - Optional - default: ``10``
+   * - PHT_GROUP_BASE
+     - Name of a proposal's or panel's members group, with ``{skuid}`` standing for its ID.
+     - Optional - default: ``"app:pht:{skuid}"``
+     - ``rest.groupNames.base``
+     - Optional - default: ``"app:pht:{skuid}"``
+   * - PHT_GROUP_COI_SUFFIX
+     - Appended to the base name for a proposal's group of Co-Investigators with edit rights.
+     - Optional - default: ``"/w"``
+     - ``rest.groupNames.coiSuffix``
+     - Optional - default: ``"/w"``
+   * - PHT_GROUP_PI_SUFFIX
+     - Appended to the base name for a proposal's group of Principal Investigators.
+     - Optional - default: ``"/w/a"``
+     - ``rest.groupNames.piSuffix``
+     - Optional - default: ``"/w/a"``
+   * - PHT_GROUP_CHAIR_SUFFIX
+     - Appended to the base name for a panel's group of chairs.
+     - Optional - default: ``"/w/a"``
+     - ``rest.groupNames.chairSuffix``
+     - Optional - default: ``"/w/a"``
    * - LOG_LEVEL
      - Application log level.
      - Optional - default: ``INFO``

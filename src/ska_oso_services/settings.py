@@ -1,6 +1,6 @@
 from typing import Annotated, Tuple
 
-from pydantic import Field, HttpUrl, SecretStr, field_validator
+from pydantic import Field, HttpUrl, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 DEFAULT_AUDIENCES = (
@@ -101,6 +101,50 @@ class UserPortalConfig(ConfigBase):
     )
 
 
+class GroupNamesConfig(ConfigBase):
+    """
+    How the access groups of proposals and panels are named. Proposals have three tiers
+    (members, Co-Investigators with edit rights, PIs) and panels two (members, chairs).
+    Each suffix is appended to the base group's name; a "/" in one makes a subgroup.
+    """
+
+    base: str = Field(
+        default="app:pht:{skuid}",
+        alias="PHT_GROUP_BASE",
+        description="Name of a proposal's or panel's members group, with {skuid} for its ID",
+    )
+    coi_suffix: str = Field(
+        default="/w",
+        min_length=1,
+        alias="PHT_GROUP_COI_SUFFIX",
+        description="Suffix of a proposal's group for Co-Investigators with edit rights",
+    )
+    pi_suffix: str = Field(
+        default="/w/a",
+        min_length=1,
+        alias="PHT_GROUP_PI_SUFFIX",
+        description="Suffix of a proposal's group for its Principal Investigators",
+    )
+    chair_suffix: str = Field(
+        default="/w/a",
+        min_length=1,
+        alias="PHT_GROUP_CHAIR_SUFFIX",
+        description="Suffix of a panel's group for its chairs",
+    )
+
+    @field_validator("base")
+    def _one_skuid_placeholder(cls, value: str) -> str:
+        if value.count("{skuid}") != 1:
+            raise ValueError("must contain {skuid} exactly once")
+        return value
+
+    @model_validator(mode="after")
+    def _distinct_proposal_tiers(self) -> "GroupNamesConfig":
+        if self.coi_suffix == self.pi_suffix:
+            raise ValueError("The Co-Investigator and PI suffixes must differ")
+        return self
+
+
 class Settings(ConfigBase):
     """Centralized application settings."""
 
@@ -115,6 +159,7 @@ class Settings(ConfigBase):
     auth: AuthConfig = Field(default_factory=AuthConfig)
     s3: S3Config = Field(default_factory=S3Config)  # type: ignore
     userportal: UserPortalConfig = Field(default_factory=UserPortalConfig)  # type: ignore
+    groups: GroupNamesConfig = Field(default_factory=GroupNamesConfig)
 
 
 SETTINGS: Settings | None = None

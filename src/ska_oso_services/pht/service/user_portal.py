@@ -272,50 +272,43 @@ class UserPortalService:
         )
         return _decode(response)
 
-    async def _create_entity_groups(
-        self,
-        skuid: ShortSkuid,
-        acting_as: AuthContext,
-        read_desc: str,
-        write_desc: str,
-        admin_desc: str,
-    ) -> tuple[str, str, str]:
-        """Create the standard three-tier group set for an entity.
-
-        Returns (read, write, admin) group names.
-        """
-        names = (
-            get_group_name(skuid),
-            get_group_name(skuid, write=True),
-            get_group_name(skuid, admin=True),
-        )
-        for name, desc in zip(names, (read_desc, write_desc, admin_desc)):
-            await self.create_group(name, acting_as, desc)
-        return names
+    async def _create_groups(self, acting_as: AuthContext, groups: dict[str, str]) -> None:
+        # The portal creates any parent groups a name implies, so only ours are needed
+        for name, description in groups.items():
+            await self.create_group(name, acting_as, description)
 
     async def create_proposal_groups(
         self, prsl_id: ShortSkuid[Literal[et.PRP]], acting_as: AuthContext
     ) -> ProposalGroupsTuple:
-        read, write, admin = await self._create_entity_groups(
-            prsl_id,
-            acting_as,
-            read_desc=f"Collaborators on proposal ({prsl_id})",
-            write_desc=f"Co-Investigators with edit rights on proposal ({prsl_id})",
-            admin_desc=f"Principal Investigator(s) for proposal ({prsl_id})",
+        groups = ProposalGroupsTuple(
+            read=get_group_name(prsl_id),
+            write=get_group_name(prsl_id, write=True),
+            admin=get_group_name(prsl_id, admin=True),
         )
-        return ProposalGroupsTuple(read=read, write=write, admin=admin)
+        await self._create_groups(
+            acting_as,
+            {
+                groups.read: f"Collaborators on proposal ({prsl_id})",
+                groups.write: f"Co-Investigators with edit rights on proposal ({prsl_id})",
+                groups.admin: f"Principal Investigator(s) for proposal ({prsl_id})",
+            },
+        )
+        return groups
 
     async def create_panel_groups(
         self, pnl_id: ShortSkuid[Literal[et.PNL]], acting_as: AuthContext
     ) -> PanelGroupsTuple:
-        read, _, admin = await self._create_entity_groups(
-            pnl_id,
-            acting_as,
-            read_desc=f"Members of panel ({pnl_id})",
-            write_desc=f"UNUSED middle tier of panel membership ({pnl_id})",
-            admin_desc=f"Chair(s) of panel ({pnl_id})",
+        groups = PanelGroupsTuple(
+            read=get_group_name(pnl_id), admin=get_group_name(pnl_id, admin=True)
         )
-        return PanelGroupsTuple(read=read, admin=admin)
+        await self._create_groups(
+            acting_as,
+            {
+                groups.read: f"Members of panel ({pnl_id})",
+                groups.admin: f"Chair(s) of panel ({pnl_id})",
+            },
+        )
+        return groups
 
     async def create_group(
         self, group_name: str, acting_as: AuthContext, description: str = ""
