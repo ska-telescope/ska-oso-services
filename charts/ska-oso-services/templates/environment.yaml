@@ -18,5 +18,3 @@ data:
   USER_PORTAL_CLIENT_ID: {{ .Values.rest.userPortalClientId | quote }}
   USER_PORTAL_TOKEN_SCOPE: {{ .Values.rest.userPortalTokenScope | quote }}
   USER_PORTAL_TOKEN_AUDIENCE: {{ .Values.rest.userPortalTokenAudience | quote }}
-  AWS_PHT_BUCKET_NAME: {{ .Values.rest.awsPhtBucketName | quote }}
-  AWS_REGION: {{ .Values.rest.awsRegion | quote }}
