@@ -76,9 +76,9 @@ endif
 
 K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) OSO_SERVICES_URL=$(OSO_SERVICES_URL) SKA_AUTH_AUDIENCE=test:pht uv run pytest ./tests/component --junitxml=build/reports/report.xml | tee pytest.stdout
 
-# Set python-test make target to run unit and integration tests (but not component tests).
+# Set python-test make target to run unit tests only (component tests run in k8s-test).
 # Use ?= so CI jobs can override (e.g. PYTHON_TEST_FILE=tests/live/).
-PYTHON_TEST_FILE ?= tests/unit/ tests/integration/
+PYTHON_TEST_FILE ?= tests/unit/
 
 # Audience accepted by the app and embedded in test tokens.
 # Use ?= so CI jobs can set a different value (e.g. for live Indigo tests).
@@ -87,9 +87,6 @@ SKA_AUTH_AUDIENCE ?= test:pht,test:odt
 # Prepend PYTHONPATH and the test audience before pytest.
 # Use ?= so CI jobs can override the whole string if needed.
 PYTHON_VARS_BEFORE_PYTEST ?= PYTHONPATH=$(CURDIR)/$(PYTHON_SRC):/app/$(PYTHON_SRC):$(PYTHONPATH) SKA_AUTH_AUDIENCE=$(SKA_AUTH_AUDIENCE)
-
-pytest-integration:  ## Run FastAPI TestClient integration tests backed by Prism in Testcontainers
-	uv run pytest tests/integration
 
 # Variables used by the xray make targets
 XRAY_TEST_RESULT_FILE = build/reports/report.xml

@@ -15,7 +15,7 @@ def pytest_configure():
     os.environ.setdefault("API_PATH_PREFIX", TEST_BASE_API_URL)
     os.environ.setdefault("SKA_AUTH_AUDIENCE", "test:pht,test:odt")
     os.environ.setdefault("USER_PORTAL_BASE_URL", f"http://localhost:{FAKE_USER_PORTAL_PORT}")
-    # Never used for a real grant: unit and integration tests fake the token provider
+    # Never used for a real grant: unit tests fake the token provider
     os.environ.setdefault("USER_PORTAL_TOKEN_URL", "http://localhost/token")
     os.environ.setdefault("USER_PORTAL_CLIENT_ID", "test-client")
     os.environ.setdefault("USER_PORTAL_CLIENT_SECRET", FAKE_USER_PORTAL_CLIENT_SECRET)

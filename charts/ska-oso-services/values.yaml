@@ -48,7 +48,7 @@ rest:
   # OAuth2 client-credentials grant for the User Portal. These defaults are for
   # non-production; production needs its own client ID, token URL and audience, and
   # its own client secret in Vault (PHT_USER_PORTAL_CLIENT_SECRET, see vault.secrets).
-  # Pipeline test deployments use this real grant even though they talk to the mock portal.
+  # Pipeline test deployments ignore these, and get a fake token from a mock IAM instead.
   userPortalTokenUrl: "https://iam-1.staging.devx.skao.int/token"
   userPortalClientId: "80e7100b-6ada-486a-b82c-8a159ddeda4d"
   # Scopes for the portal routes we call

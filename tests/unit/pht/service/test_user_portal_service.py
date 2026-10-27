@@ -436,3 +436,23 @@ class TestMalformedResponses:
 
         with pytest.raises(UserPortalContractError):
             await service.list_group_members("app:pht:prp-1")
+
+
+class TestCreateMembership:
+    async def test_adds_the_user_by_indigo_username(self, make_service, portal_call):
+        portal_call.return_value = ok({"status": "ok"})
+        service = make_service(FakeTokens("token"))
+
+        assert await service.create_membership(
+            "app:pht:prp-1/w", user_id="indigo-username", acting_as=auth_context()
+        ) == {"status": "ok"}
+
+        kwargs = portal_call.await_args.kwargs
+        assert kwargs["method"] == "POST"
+        # The group name is one path segment, so its slash is escaped
+        assert (
+            kwargs["url"]
+            == f"{service.base_url}/api/external/v1/groups/app%3Apht%3Aprp-1%2Fw/members"
+        )
+        assert kwargs["json"] == {"preferred_username": "indigo-username"}
+        assert kwargs["headers"]["Idempotency-Key"]

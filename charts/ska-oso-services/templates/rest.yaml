@@ -80,12 +80,19 @@ spec:
               {{ else }}
               name: {{ template "ska-oso-services.application-secret-name" $ }}
               {{- end }}
-        {{- if .Values.s3ServiceAccount.enabled }}
+        {{- if or .Values.s3ServiceAccount.enabled .Values.pipeline_test_deployment }}
         env:
+          {{- if .Values.s3ServiceAccount.enabled }}
           - name: AWS_PHT_BUCKET_NAME
             value: {{ .Values.s3ServiceAccount.bucketName }}
           - name: AWS_REGION
             value: {{ .Values.s3ServiceAccount.region }}
+          {{- end }}
+          {{- if .Values.pipeline_test_deployment }}
+          # The mock IAM accepts any secret, so don't send it the real one from Vault
+          - name: USER_PORTAL_CLIENT_SECRET
+            value: dummy-secret
+          {{- end }}
         {{- end }}
         ports:
           - containerPort: 5000

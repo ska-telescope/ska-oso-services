@@ -1,0 +1,61 @@
+# The OAuth2 token endpoint of Indigo IAM, as much of it as our client-credentials
+# grant uses. Served by the Prism mock that pipeline test deployments use in place of
+# the real IAM, so k8s-test never depends on an external server. Prism validates the
+# request against this document, so a grant without basic auth or with the wrong form
+# fields is refused, and every valid one gets the fake token below.
+openapi: 3.1.0
+info:
+  title: Mock Indigo IAM token endpoint
+  version: 1.0.0
+components:
+  securitySchemes:
+    clientCredentials:
+      type: http
+      scheme: basic
+paths:
+  /token:
+    post:
+      operationId: token
+      security:
+      - clientCredentials: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+              - grant_type
+              properties:
+                grant_type:
+                  type: string
+                  enum:
+                  - client_credentials
+                scope:
+                  type: string
+                audience:
+                  type: string
+      responses:
+        '200':
+          description: An access token
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - access_token
+                - token_type
+                - expires_in
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                  expires_in:
+                    type: integer
+              example:
+                access_token: fake-access-token
+                token_type: Bearer
+                expires_in: 3600
+        '401':
+          description: Missing or malformed client credentials

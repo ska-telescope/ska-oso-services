@@ -3,7 +3,8 @@ Unit tests for ska_oso_services.pht.api.user_portal
 """
 
 from datetime import datetime, timezone
-from unittest.mock import create_autospec
+from http import HTTPStatus
+from unittest.mock import AsyncMock, create_autospec, patch
 from uuid import uuid4
 
 import pytest
@@ -14,7 +15,11 @@ from ska_oso_services.pht.api.user_portal import create_invites, delete_invite, 
 from ska_oso_services.pht.models.invitations import InviteCreateListRequest
 from ska_oso_services.pht.service import user_portal
 from ska_oso_services.pht.service.security import SecurityService
-from ska_oso_services.pht.service.user_portal import UserPortalContractError
+from ska_oso_services.pht.service.user_portal import (
+    UserPortalContractError,
+    UserPortalUnavailableError,
+)
+from tests.conftest import PHT_BASE_API_URL
 
 PRSL_ID = "prp-abc123"
 OTHER_PRSL_ID = "prp-zzz999"
@@ -239,3 +244,12 @@ class TestListMembers:
 
         with pytest.raises(UserPortalContractError):
             await list_members(security=_pi_security(PRSL_ID), service=service, prsl_id=PRSL_ID)
+
+
+class TestPortalUnavailable:
+    def test_is_a_bad_gateway(self, client):
+        unavailable = UserPortalUnavailableError("down", HTTPStatus.SERVICE_UNAVAILABLE)
+        with patch.object(user_portal, "call_user_portal", AsyncMock(side_effect=unavailable)):
+            response = client.get(f"{PHT_BASE_API_URL}/users/search", params={"q": "alice"})
+
+        assert response.status_code == HTTPStatus.BAD_GATEWAY

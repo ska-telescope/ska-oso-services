@@ -56,10 +56,12 @@ tests:
           path: data.USER_PORTAL_TOKEN_AUDIENCE
           value: live:portal
 
-  - it: should keep the real token grant in pipeline test deployments.
+  - it: should get tokens from the mock IAM in pipeline test deployments.
+    release:
+      name: test
     set:
       pipeline_test_deployment: true
     asserts:
       - equal:
           path: data.USER_PORTAL_TOKEN_URL
-          value: https://iam-1.staging.devx.skao.int/token
+          value: http://ska-oso-services-test-iam-mock:4010/token
