@@ -93,14 +93,14 @@ def prj_details(
 
     # Single combined query, executed via uow.execute() as it spans two entity
     # tables that the typed uow.<repo>.filter()/query() methods can't join in one
-    # round trip: every Project (LEFT JOIN'd to its current status) UNION ALL'd
+    # round trip: every Project (INNER JOIN'd to its current status) UNION ALL'd
     # with every non-draft Proposal that has no linked Project (see SKB-1031 for
     # the draft exclusion).
     projects = TABLES.projects
     proposals = TABLES.proposals
     current_status = TABLES.current_status
 
-    project_status_join = projects.outerjoin(
+    project_status_join = projects.join(
         current_status,
         and_(
             projects.c.id == current_status.c.entity_id,
