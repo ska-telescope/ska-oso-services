@@ -12,6 +12,12 @@ from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalPermissions, 
 from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
+from ska_ost_osd.osd.exceptions import OSDQueryError
+from ska_ost_osd.osd.views.pht import (
+    CycleConfiguration,
+    get_cycle_configuration,
+    get_cycle_configurations,
+)
 from ska_ser_skuid import EntityType, mint_skuid
 from sqlalchemy import select
 from starlette.status import HTTP_400_BAD_REQUEST
@@ -24,6 +30,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
+from ska_oso_services.common.osdmapper import osd_repository
 from ska_oso_services.pht.models.domain import PrslRole
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
@@ -52,6 +59,48 @@ from ska_oso_services.pht.utils.ms_graph import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
+
+
+@router.get(
+    "/osd/cycles",
+    summary="Retrieve OSD data for all available cycles",
+)
+def get_all_osd_cycles() -> list[CycleConfiguration]:
+    """
+    This queries the OSD data for all available cycles.
+
+    This data is made available for the PHT UI.
+
+    Returns:
+        list[CycleConfiguration]: a list of the OSD data for all cycles.
+
+    """
+    logger.debug("GET OSD data for all cycles")
+    try:
+        return get_cycle_configurations(osd_repository())
+    except OSDQueryError as error:
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(error)) from error
+
+
+@router.get(
+    "/osd/{cycle}",
+    summary="Retrieve OSD data for a given cycle",
+)
+def get_osd_by_cycle(cycle: int) -> CycleConfiguration:
+    """
+    This queries the OSD data by cycle id.
+
+    This data is made available for the PHT UI.
+
+    Returns:
+        CycleConfiguration: The OSD data validated against the defined schema.
+
+    """
+    logger.debug("GET OSD data cycle: %s", cycle)
+    try:
+        return get_cycle_configuration(osd_repository(), cycle)
+    except OSDQueryError as error:
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
 
 @router.post("/create", summary="Create a new proposal")

@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from unittest import mock
 
-from ska_ost_osd.osd.models.configuration import Configuration
+from ska_ost_osd.osd.views.odt import Configuration
 
 from tests.conftest import TEST_BASE_API_URL
 
@@ -13,19 +13,6 @@ CONSTRAINTS = {
     "jupiter_avoidance_angle_deg": 10.0,
     "min_elevation_deg": 15.0,
     "max_elevation_deg": 85.0,
-}
-
-POLICY = {
-    "cycle_number": 1,
-    "type": "Science Verification",
-    "cycle_description": "Science Verification",
-    "cycle_information": {
-        "cycle_id": "SKAO_2027_1",
-        "proposal_open": "2026-03-27T12:00:00.000Z",
-        "proposal_close": "2026-05-12T15:00:00.000Z",
-    },
-    "cycle_policies": {"normal_max_hours": 100.0},
-    "telescope_capabilities": {"Mid": None, "Low": "AA2_SV"},
 }
 
 CONFIGURATION = Configuration.model_validate(
@@ -54,12 +41,9 @@ CONFIGURATION = Configuration.model_validate(
                 "number_pss_channels_per_coarse_channel": 54,
             },
             "constraints": CONSTRAINTS,
-            "quality_attribute_metrics": {
-                "cbf": {"processors_ready_percent": 100.0, "alveo_configured_percent": 100.0}
-            },
+            "quality_attribute_metrics": {"cbf": {"processors_ready_percent": 100.0}},
             "subarrays": [],
         },
-        "observatory_policies": [POLICY, {**POLICY, "cycle_number": 2}],
     }
 )
 
@@ -76,18 +60,3 @@ class TestOSD:
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == CONFIGURATION.model_dump(mode="json", by_alias=True)
-
-    @mock.patch("ska_oso_services.common.api.osd.configuration_from_osd")
-    def test_returns_the_observatory_policies(self, mock_configuration_from_osd, client):
-        """
-        Test each cycle's observatory policy is returned
-        """
-        mock_configuration_from_osd.return_value = CONFIGURATION
-
-        response = client.get(OSD_API_URL)
-
-        assert response.status_code == HTTPStatus.OK
-        policies = response.json()["observatory_policies"]
-        assert [policy["cycle_number"] for policy in policies] == [1, 2]
-        assert policies[0]["cycle_information"]["cycle_id"] == "SKAO_2027_1"
-        assert policies[0]["telescope_capabilities"] == {"Mid": None, "Low": "AA2_SV"}

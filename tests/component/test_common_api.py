@@ -9,7 +9,7 @@ from http import HTTPStatus
 
 import pytest
 
-from . import OSO_SERVICES_URL
+from . import ODT_URL, OSO_SERVICES_URL
 
 
 @pytest.mark.parametrize(
@@ -195,12 +195,10 @@ def test_coordinates_get(authrequests, identifier, reference_frame, expected_res
 def test_osd_get(authrequests):
     """
     Test that the GET /osd path receives the request and returns
-    the observatory policy for each cycle
+    the same configuration as GET /odt/configuration
     """
 
     response = authrequests.get(f"{OSO_SERVICES_URL}/osd")
 
     assert response.status_code == HTTPStatus.OK, response.json()
-    policies = response.json()["observatory_policies"]
-    assert policies[0]["cycle_number"] == 1
-    assert policies[0]["cycle_information"]["cycle_id"] == "TEST_SKAO_2027_1"
+    assert response.json() == authrequests.get(f"{ODT_URL}/configuration").json()

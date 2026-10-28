@@ -4,9 +4,8 @@ configuration needed for the application.
 """
 
 from functools import cache
-from typing import Union
 
-from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType, ValidationArrayAssembly
+from ska_oso_pdm import TelescopeType
 from ska_oso_pdm._shared.spfrx import (
     NoiseDiodeMode,
     PeriodicNoiseDiodeConfig,
@@ -14,11 +13,11 @@ from ska_oso_pdm._shared.spfrx import (
     SPFRxNoiseDiodeDurationUnits,
     TargetSPFRxConfiguration,
 )
-from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
-from ska_oso_pdm.sb_definition.csp.midcbf import CSPSPFRxConfiguration, ReceiverBand
-from ska_ost_osd.osd.models.capabilities import Band5bSubband, MidFrequencyBand
-from ska_ost_osd.osd.models.configuration import Configuration
+from ska_oso_pdm.sb_definition.csp.midcbf import CSPSPFRxConfiguration
+from ska_ost_osd.osd.adapters.tmdata import TMDataRepository
+from ska_ost_osd.osd.common.constant import Telescope
 from ska_ost_osd.osd.models.defaults import SyncPPS
+from ska_ost_osd.osd.views.odt import Configuration, get_configuration
 from ska_telmodel_client import TMData
 
 # tmdata's default noise diode mode is a tri-state string ("periodic",
@@ -28,116 +27,30 @@ from ska_telmodel_client import TMData
 NOISE_DIODE_MODE_OFF = "off"
 
 OSD_VERSION = "7.0.0"
-OSD_CYCLES_SOURCE = "gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?71593394#tmdata"
+OSD_CYCLES_SOURCE = "gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?5e5f8dbe#tmdata"
+
+OSD_TELESCOPES = {TelescopeType.SKA_MID: Telescope.MID, TelescopeType.SKA_LOW: Telescope.LOW}
 
 
 @cache
-def configuration_from_osd(osd_version: str = OSD_VERSION) -> Configuration:
+def osd_repository(osd_version: str = OSD_VERSION) -> TMDataRepository:
     """
-    Builds the Configuration for the UI from the OSD's tmdata.
+    The OSD repository, reading the OSD's tmdata.
     """
     tmdata = TMData([OSD_CYCLES_SOURCE, f"car:ost/ska-ost-osd?{osd_version}"], update=True)
-    return Configuration.from_tmdata(tmdata)
+    return TMDataRepository(tmdata)
 
 
-def get_telescope_observing_constraint(telescope: TelescopeType, parameter: str):
+@cache
+def configuration_from_osd() -> Configuration:
     """
-    Utility function to extract an observing constraint from the OSD
+    Builds the Configuration for the UI from the OSD.
     """
-    osd = configuration_from_osd()
-    if telescope == TelescopeType.SKA_MID:
-        constraints = osd.ska_mid.constraints
-    else:
-        constraints = osd.ska_low.constraints
-
-    if parameter not in type(constraints).model_fields:
-        raise ValueError(f"{parameter} is not a valid observing constraint for {telescope.value}")
-
-    return getattr(constraints, parameter)
-
-
-def get_low_basic_capability_parameter_from_osd(parameter: str):
-    """
-    Utility function to extract one of the SKA Low basic capabilities from the OSD
-    """
-    osd = configuration_from_osd()
-
-    telescope_osd = osd.ska_low.frequency_band
-    if not hasattr(telescope_osd, parameter):
-        raise ValueError(f"{parameter} is not available for validation for SKA Low")
-
-    return getattr(telescope_osd, parameter)
-
-
-def get_mid_frequency_band_data_from_osd(
-    obs_band: ReceiverBand, band5b_subband: Union[pdm_Band5bSubband, None] = None
-) -> Union[MidFrequencyBand, Band5bSubband]:
-    """
-    Utility function to extract SKA Mid frequency band data from the OSD
-    """
-    if obs_band != ReceiverBand.BAND_5B and band5b_subband is not None:
-        raise ValueError(f"Cannot specify and band 5b subband for band {obs_band}")
-    elif obs_band == ReceiverBand.BAND_5B and band5b_subband is None:
-        raise ValueError("Band 5b subband must be specified for band 5b observation")
-
-    osd = configuration_from_osd()
-    bands = osd.ska_mid.frequency_band
-
-    if band5b_subband is None:
-        band_info = next(band for band in bands if band.rx_id == "Band_" + obs_band.value)
-
-    else:
-        subbands_info = next(
-            band for band in bands if band.rx_id == "Band_" + obs_band.value
-        ).band5b_subbands
-        band_info = next(
-            subband for subband in subbands_info if subband.sub_band == band5b_subband.value
-        )
-
-    return band_info
-
-
-def get_subarray_specific_parameter_from_osd(
-    telescope: TelescopeType,
-    validation_array_assembly: Union[ValidationArrayAssembly, SubArrayMID, SubArrayLOW],
-    parameter: str,
-):
-    """
-    utility function to extract subarray specific parameters from the OSD
-    """
-    osd = configuration_from_osd()
-
-    if not hasattr(osd, telescope.value):
-        raise ValueError(f"Invalid telescope: {telescope.value}")
-
-    telescope_osd = getattr(osd, telescope.value)
-
-    # extracting the subarray from the OSD
-    subarray = next(
-        (
-            subarray
-            for subarray in telescope_osd.subarrays
-            if subarray.name == validation_array_assembly.value
-        ),
-        None,
-    )
-
-    if not subarray:
-        raise ValueError(
-            f"Invalid validation array assembly {validation_array_assembly} for {telescope.value}"
-        )
-
-    if parameter not in type(subarray).model_fields:
-        raise ValueError(
-            f"{parameter} is not available for validation for "
-            f"{telescope.value} array assembly {validation_array_assembly.value}"
-        )
-
-    return getattr(subarray, parameter)
+    return get_configuration(osd_repository())
 
 
 def get_default_pdm_target_spfrx() -> TargetSPFRxConfiguration:
-    target_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx
+    target_spfrx = osd_repository().get_defaults(Telescope.MID).spfrx_defaults.target_spfrx
     default_mode = target_spfrx.default_noise_diode_mode
 
     valid_modes = [NOISE_DIODE_MODE_OFF, *(m.value for m in NoiseDiodeMode)]
@@ -184,7 +97,7 @@ def _noise_diode_osd_to_pdm(diode):
 
 
 def get_defaults_pdm_csp_spfrx() -> CSPSPFRxConfiguration:
-    csp_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.csp_spfrx
+    csp_spfrx = osd_repository().get_defaults(Telescope.MID).spfrx_defaults.csp_spfrx
     return CSPSPFRxConfiguration(
         sync_pps=_sync_pps_osd_to_pdm(csp_spfrx.sync_pps),
         saturation_threshold=csp_spfrx.saturation_threshold,

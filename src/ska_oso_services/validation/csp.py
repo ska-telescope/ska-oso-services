@@ -8,16 +8,14 @@ from ska_oso_pdm import TelescopeType
 from ska_oso_pdm.sb_definition import CSPConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 from ska_oso_pdm.sb_definition.csp.midcbf import CorrelationSPWConfiguration, ReceiverBand
+from ska_ost_osd.osd.common.constant import Telescope
 from ska_ost_osd.osd.models.capabilities import Band5bSubband, MidFrequencyBand
 
 from ska_oso_services.common.astro import (
     low_centre_frequency_to_coarse_channel_end,
     low_centre_frequency_to_coarse_channel_start,
 )
-from ska_oso_services.common.osdmapper import (
-    get_mid_frequency_band_data_from_osd,
-    get_subarray_specific_parameter_from_osd,
-)
+from ska_oso_services.common.osdmapper import OSD_TELESCOPES, osd_repository
 from ska_oso_services.common.static.constants import (
     low_max_coarse_channel,
     low_min_coarse_channel,
@@ -96,12 +94,16 @@ def validate_mid_spws(
     """
     midcbf = csp_context.primary_entity.midcbf
 
-    if midcbf.band5b_subband is None:
-        band_data = get_mid_frequency_band_data_from_osd(midcbf.frequency_band)
-    else:
-        band_data = get_mid_frequency_band_data_from_osd(
-            midcbf.frequency_band, midcbf.band5b_subband
-        )
+    band = (
+        osd_repository()
+        .get_basic_capabilities(Telescope.MID)
+        .get_frequency_band(f"Band_{midcbf.frequency_band.value}")
+    )
+    band_data = (
+        band
+        if midcbf.band5b_subband is None
+        else band.get_band5b_subband(midcbf.band5b_subband.value)
+    )
 
     # currently only supporting one subband per CSP config for Mid
 
@@ -247,9 +249,11 @@ def validate_continuum_spw_bandwidth(
     spw_index = spw_context.relevant_context["spw_index"]
 
     available_bandwidth = (
-        get_subarray_specific_parameter_from_osd(
-            spw_context.telescope, spw_context.array_assembly, "available_bandwidth_hz"
+        osd_repository()
+        .get_capability_set(
+            OSD_TELESCOPES[spw_context.telescope], spw_context.array_assembly.value
         )
+        .available_bandwidth_hz
         * u.Hz
     )
 
@@ -346,8 +350,10 @@ def validate_mid_fsps(
     """
     csp_config = csp_context.primary_entity
 
-    available_fsps = get_subarray_specific_parameter_from_osd(
-        csp_context.telescope, csp_context.array_assembly, "number_fsps"
+    available_fsps = (
+        osd_repository()
+        .get_capability_set(Telescope.MID, csp_context.array_assembly.value)
+        .number_fsps
     )
 
     n_fsps = 0
@@ -360,7 +366,12 @@ def validate_mid_fsps(
         for spw in subband.correlation_spws:
             if frequency_band == ReceiverBand.BAND_5B:
                 band_5b_subband = csp_config.midcbf.band5b_subband
-                subband_osd = get_mid_frequency_band_data_from_osd(frequency_band, band_5b_subband)
+                subband_osd = (
+                    osd_repository()
+                    .get_basic_capabilities(Telescope.MID)
+                    .get_frequency_band(f"Band_{frequency_band.value}")
+                    .get_band5b_subband(band_5b_subband.value)
+                )
 
                 if subband_osd.sideband == "high":
                     factor = -1.0

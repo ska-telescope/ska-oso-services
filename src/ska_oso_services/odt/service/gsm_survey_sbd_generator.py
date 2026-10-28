@@ -27,9 +27,10 @@ from ska_oso_pdm.sb_definition.csp import LowCBFConfiguration
 from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 from ska_oso_pdm.sb_definition.mccs.mccs_allocation import Aperture, SubarrayBeamConfiguration
 from ska_oso_pdm.sb_definition.procedures import GitScript
+from ska_ost_osd.osd.common.constant import Telescope
 
 from ska_oso_services.common.astro import low_frequency_to_coarse_channel
-from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
+from ska_oso_services.common.osdmapper import osd_repository
 from ska_oso_services.odt.service.sbd_generator import _sbd_internal_id
 from ska_oso_services.odt.service.target_grouping import GroupingMethod, Pointing, create_grouper
 
@@ -38,16 +39,8 @@ DEFAULT_MINIMUM_ALTITUDE = 20.0 * u.deg
 
 
 def _low_default_subarray_parameters() -> tuple[list[int], Quantity]:
-    station_ids = get_subarray_specific_parameter_from_osd(
-        TelescopeType.SKA_LOW, DEFAULT_SUBARRAY, "receptors"
-    )
-    total_bandwidth = (
-        get_subarray_specific_parameter_from_osd(
-            TelescopeType.SKA_LOW, DEFAULT_SUBARRAY, "available_bandwidth_hz"
-        )
-        * u.Hz
-    )
-    return station_ids, total_bandwidth
+    capability_set = osd_repository().get_capability_set(Telescope.LOW, DEFAULT_SUBARRAY.value)
+    return capability_set.receptors, capability_set.available_bandwidth_hz * u.Hz
 
 
 CALIBRATOR_TARGET = Target(

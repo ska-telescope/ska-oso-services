@@ -4,13 +4,10 @@ from functools import cache
 from astropy import units as u
 from astropy.coordinates import EarthLocation, Latitude
 from astropy.units import Quantity
-from ska_oso_pdm import TelescopeType, ValidationArrayAssembly
+from ska_oso_pdm import ValidationArrayAssembly
+from ska_ost_osd.osd.common.constant import Telescope
 
-from ska_oso_services.common.osdmapper import (
-    get_low_basic_capability_parameter_from_osd,
-    get_subarray_specific_parameter_from_osd,
-    get_telescope_observing_constraint,
-)
+from ska_oso_services.common.osdmapper import osd_repository
 
 LOW_LOCATION = EarthLocation.of_site("SKA Low")
 MID_LOCATION = EarthLocation.of_site("SKA Mid")
@@ -21,17 +18,13 @@ def mid_minimum_elevation() -> Quantity:
     """
     SKA Mid Telescope limit
     """
-    mid_min_elevation = get_telescope_observing_constraint(
-        TelescopeType.SKA_MID, "min_elevation_deg"
-    )
+    mid_min_elevation = osd_repository().get_constraints(Telescope.MID).min_elevation_deg
     return Latitude(mid_min_elevation, unit="degree")
 
 
 @cache
 def mid_maximum_elevation() -> Quantity:
-    mid_max_elevation = get_telescope_observing_constraint(
-        TelescopeType.SKA_MID, "max_elevation_deg"
-    )
+    mid_max_elevation = osd_repository().get_constraints(Telescope.MID).max_elevation_deg
     return Latitude(mid_max_elevation, unit="degree")
 
 
@@ -40,9 +33,7 @@ def low_minimum_elevation() -> Quantity:
     """
     SKA Low Telescope limit
     """
-    low_min_elevation = get_telescope_observing_constraint(
-        TelescopeType.SKA_LOW, "min_elevation_deg"
-    )
+    low_min_elevation = osd_repository().get_constraints(Telescope.LOW).min_elevation_deg
     return Latitude(low_min_elevation, unit="degree")
 
 
@@ -51,9 +42,7 @@ def low_maximum_elevation() -> Quantity:
     """
     SKA Low Telescope limit
     """
-    low_max_elevation = get_telescope_observing_constraint(
-        TelescopeType.SKA_LOW, "max_elevation_deg"
-    )
+    low_max_elevation = osd_repository().get_constraints(Telescope.LOW).max_elevation_deg
     return Latitude(low_max_elevation, unit="degree")
 
 
@@ -66,11 +55,9 @@ def mid_channel_width() -> Quantity:
     support zooms
     """
     return (
-        get_subarray_specific_parameter_from_osd(
-            TelescopeType.SKA_MID,
-            ValidationArrayAssembly.AA05,
-            "allowed_channel_width_values_hz",
-        )[0]
+        osd_repository()
+        .get_capability_set(Telescope.MID, ValidationArrayAssembly.AA05.value)
+        .allowed_channel_width_values_hz[0]
         * u.Hz
     )
 
@@ -89,23 +76,26 @@ def mid_frequency_slice_bandwidth() -> Quantity:
 
 @cache
 def low_min_coarse_channel() -> int:
-    return get_low_basic_capability_parameter_from_osd("min_coarse_channel")
+    return osd_repository().get_basic_capabilities(Telescope.LOW).min_coarse_channel
 
 
 @cache
 def low_max_coarse_channel() -> int:
-    return get_low_basic_capability_parameter_from_osd("max_coarse_channel")
+    return osd_repository().get_basic_capabilities(Telescope.LOW).max_coarse_channel
 
 
 @cache
 def low_station_channel_width() -> Quantity:
-    return get_low_basic_capability_parameter_from_osd("coarse_channel_width_hz") * u.Hz
+    return osd_repository().get_basic_capabilities(Telescope.LOW).coarse_channel_width_hz * u.Hz
 
 
 @cache
 def low_continuum_channel_width() -> Quantity:
-    return low_station_channel_width() / get_low_basic_capability_parameter_from_osd(
-        "number_continuum_channels_per_coarse_channel"
+    return (
+        low_station_channel_width()
+        / osd_repository()
+        .get_basic_capabilities(Telescope.LOW)
+        .number_continuum_channels_per_coarse_channel
     )
 
 

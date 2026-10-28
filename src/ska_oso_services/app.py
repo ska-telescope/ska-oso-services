@@ -54,7 +54,9 @@ def create_app(production=None) -> FastAPI:
         lifespan=watchdog(
             allow_unsecured=[
                 "get_systemcoordinates",
+                "get_osd_by_cycle",
                 "visibility_svg",
+                "get_all_osd_cycles",
                 # The following /engineering APIs are unsecured until a way
                 # for notebook users to generate tokens is available
                 "create_eb",
