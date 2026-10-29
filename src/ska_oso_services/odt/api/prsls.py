@@ -151,7 +151,7 @@ def _project_proposal_details(row: dict) -> ProposalProjectDetails:
     """Map a raw row from the prj_details query to the API view model."""
     prj_status = None
     if row["prj_status"] is not None:
-        prj_status = INTERNAL_STATUS_TO_PUBLIC_LABEL["project.projects"][row["prj_status"]].value
+        prj_status = str(INTERNAL_STATUS_TO_PUBLIC_LABEL["project.projects"][row["prj_status"]])
 
     return ProposalProjectDetails(
         prj_id=row["prj_id"],

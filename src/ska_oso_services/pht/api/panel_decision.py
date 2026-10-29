@@ -8,6 +8,7 @@ from ska_db_oda.postgres import TABLES
 from ska_oso_pdm import PanelDecision, Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel_decision import PanelReviewStatus, Recommendation
+from sqlalchemy import select
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -18,7 +19,6 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.models.domain import PrslRole
-from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -217,5 +217,5 @@ def get_panel_decisions_for_user(
         raise ForbiddenError("You do not have permission to retrieve decisions.")
 
     with oda.uow() as uow:
-        decisions = uow.pnlds.query(select_with_conditions(TABLES.panel_decisions))
+        decisions = uow.pnlds.query(select(TABLES.panel_decisions))
     return decisions

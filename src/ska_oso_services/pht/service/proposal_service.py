@@ -5,10 +5,10 @@ from typing import Iterable
 
 from ska_db_oda.postgres import TABLES
 from ska_oso_pdm.proposal import Proposal, ProposalAccess
+from sqlalchemy import select
 
 from ska_oso_services.common.error_handling import ForbiddenError
 from ska_oso_services.pht.utils.constants import SV_NAME
-from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,10 @@ def assert_user_has_permission_for_proposal(
         list[access]
     """
     rows = uow.prslacc.query(
-        select_with_conditions(TABLES.access_tmp, user_id=user_id, prsl_fk=prsl_id)
+        select(TABLES.access_tmp).where(
+            TABLES.access_tmp.c.user_id == user_id,
+            TABLES.access_tmp.c.prsl_fk == prsl_id,
+        )
     )
 
     if not rows:
@@ -87,7 +90,9 @@ def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
         - No permission filtering beyond existence of access rows,
             given that every entry has the basic `view` access
     """
-    rows = uow.prslacc.query(select_with_conditions(TABLES.access_tmp, user_id=user_id))
+    rows = uow.prslacc.query(
+        select(TABLES.access_tmp).where(TABLES.access_tmp.c.user_id == user_id)
+    )
     return sorted({row.prsl_id for row in rows})
 
 
@@ -125,7 +130,7 @@ def get_panel_prsl_ids(uow, panel_name: str) -> set[str]:
     Return the set of prsl_id values assigned to the *latest* panel
     matching `panel_name`. Empty set if not found.
     """
-    refs = uow.panels.query(select_with_conditions(TABLES.panels, name=panel_name))
+    refs = uow.panels.query(select(TABLES.panels).where(TABLES.panels.c.name == panel_name))
     if not refs:
         return set()
 
@@ -144,7 +149,7 @@ def get_reviewer_prsl_ids(uow, reviewer_id: str, panel_name: str = SV_NAME) -> s
     """
     # Reviews → latest per review_id (avoid boolean coercion on query object)
     latest_reviews = uow.rvws.query(
-        select_with_conditions(TABLES.reviews, reviewer_id=reviewer_id)
+        select(TABLES.reviews).where(TABLES.reviews.c.reviewer_id == reviewer_id)
     )
 
     review_ids = {r.prsl_id for r in latest_reviews if getattr(r, "prsl_id", None)}

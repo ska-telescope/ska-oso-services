@@ -7,6 +7,7 @@ from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_db_oda.postgres import TABLES
 from ska_oso_pdm.proposal import ProposalAccess, ProposalRole
 from ska_ser_skuid import EntityType, mint_skuid
+from sqlalchemy import select
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -16,7 +17,6 @@ from ska_oso_services.pht.models.schemas import (
     ProposalAccessCreate,
     ProposalAccessResponse,
 )
-from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ def get_access_for_user(
 
     with oda.uow() as uow:
         proposal_access = uow.prslacc.query(
-            select_with_conditions(TABLES.access_tmp, user_id=auth.user_id)
+            select(TABLES.access_tmp).where(TABLES.access_tmp.c.user_id == auth.user_id)
         )
     if not proposal_access:
         return []
@@ -92,11 +92,10 @@ def get_access_by_prsl_id(
     logger.debug("Retrieving proposal access for prsl id: %s", prsl_id)
 
     with oda.uow() as uow:
-        query_param_pi = select_with_conditions(
-            TABLES.access_tmp,
-            prsl_fk=prsl_id,
-            user_id=auth.user_id,
-            role=ProposalRole.PrincipalInvestigator,
+        query_param_pi = select(TABLES.access_tmp).where(
+            TABLES.access_tmp.c.prsl_fk == prsl_id,
+            TABLES.access_tmp.c.user_id == auth.user_id,
+            TABLES.access_tmp.c.role == ProposalRole.PrincipalInvestigator,
         )
         proposal_access_pi = uow.prslacc.query(query_param_pi)
 
@@ -107,7 +106,7 @@ def get_access_by_prsl_id(
                 )
             )
 
-        query_param = select_with_conditions(TABLES.access_tmp, prsl_fk=prsl_id)
+        query_param = select(TABLES.access_tmp).where(TABLES.access_tmp.c.prsl_fk == prsl_id)
         proposal_access = uow.prslacc.query(query_param)
 
     if not proposal_access:

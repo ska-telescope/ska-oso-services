@@ -14,6 +14,7 @@ from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
 from ska_ser_skuid import EntityType, mint_skuid
+from sqlalchemy import select
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from ska_oso_services.common import oda
@@ -49,7 +50,6 @@ from ska_oso_services.pht.utils.ms_graph import (
     extract_profile_from_access_token,
     get_users_by_mail,
 )
-from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -216,7 +216,10 @@ def get_proposals_by_status(
         return []
 
     def _latest_by_status(uow, status) -> list["Proposal"]:
-        return uow.prsls.query(select_with_conditions(TABLES.proposals, status=status)) or []
+        return (
+            uow.prsls.query(select(TABLES.proposals).where(TABLES.proposals.c.status == status))
+            or []
+        )
 
     def _filter_by_prsl_ids(proposals: list["Proposal"], ids: set[str]) -> list["Proposal"]:
         if not ids:
@@ -390,7 +393,7 @@ def get_reviews_for_proposal(prsl_id: str) -> list[PanelReview]:
     """
     logger.debug("GET reviews for a prsl_id: %s", prsl_id)
     with oda.uow() as uow:
-        stmt = select_with_conditions(TABLES.reviews, prsl_fk=prsl_id)
+        stmt = select(TABLES.reviews).where(TABLES.reviews.c.prsl_fk == prsl_id)
         reviews = uow.rvws.query(stmt)
 
     return reviews

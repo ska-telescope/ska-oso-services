@@ -6,6 +6,7 @@ from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
 from ska_db_oda.postgres import TABLES
 from ska_oso_pdm import PanelReview
+from sqlalchemy import select
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -15,7 +16,6 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.models.domain import PrslRole
-from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +41,10 @@ def create_review(
 
     try:
         with oda.uow() as uow:
-            stmt = select_with_conditions(
-                TABLES.reviews,
-                prsl_fk=reviews.prsl_id,
-                kind=reviews.review_type.kind,
-                reviewer_id=reviews.reviewer_id,
+            stmt = select(TABLES.reviews).where(
+                TABLES.reviews.c.prsl_fk == reviews.prsl_id,
+                TABLES.reviews.c.kind == reviews.review_type.kind,
+                TABLES.reviews.c.reviewer_id == reviews.reviewer_id,
             )
             existing_rvws = uow.rvws.query(stmt)
             existing_rvw = existing_rvws[0] if existing_rvws else None
@@ -110,9 +109,9 @@ def get_reviews_for_user(
 
     with oda.uow() as uow:
         if has_group or has_role:
-            return uow.rvws.query(select_with_conditions(TABLES.reviews))
+            return uow.rvws.query(select(TABLES.reviews))
         else:
-            stmt = select_with_conditions(TABLES.reviews, reviewer_id=auth.user_id)
+            stmt = select(TABLES.reviews).where(TABLES.reviews.c.reviewer_id == auth.user_id)
             return uow.rvws.query(stmt)
 
 

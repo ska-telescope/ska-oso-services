@@ -14,10 +14,10 @@ from ska_oso_pdm.proposal_management.review import (
     TechnicalReview,
 )
 from ska_ser_skuid import EntityType, mint_skuid
+from sqlalchemy import select
 
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.models.schemas import PanelAssignResponse
-from ska_oso_services.pht.utils.pht_helper import select_with_conditions
 
 logger = logging.getLogger(__name__)
 
@@ -186,8 +186,10 @@ def ensure_review_exist_or_create(
     Ensure a review of the given kind exists for the given proposal and reviewer.
     If not, create one with status TO_DO and return its review_id.
     """
-    stmt = select_with_conditions(
-        TABLES.reviews, prsl_fk=proposal_id, kind=kind, reviewer_id=reviewer_id
+    stmt = select(TABLES.reviews).where(
+        TABLES.reviews.c.prsl_fk == proposal_id,
+        TABLES.reviews.c.kind == kind,
+        TABLES.reviews.c.reviewer_id == reviewer_id,
     )
     existing = uow.rvws.query(stmt)
     existing_rvw = existing[0] if existing else None
@@ -225,7 +227,7 @@ def ensure_decision_exist_or_create(uow, param, proposal_id: str) -> str:
     Ensure a decision exists for the given proposal.
     If not, create one with status TO_DO and return its decision_id.
     """
-    stmt = select_with_conditions(TABLES.panel_decisions, prsl_fk=proposal_id)
+    stmt = select(TABLES.panel_decisions).where(TABLES.panel_decisions.c.prsl_fk == proposal_id)
     existing = uow.pnlds.query(stmt)
     existing_pnld = existing[0] if existing else None
 
