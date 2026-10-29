@@ -1,4 +1,5 @@
 from unittest import mock
+from urllib.parse import urlsplit
 
 import pytest
 import requests
@@ -6,13 +7,14 @@ from astropy.table import MaskedColumn, Table
 from astropy.units import Quantity
 from astroquery.exceptions import RemoteServiceError, TableParseError
 from astroquery.simbad import SimbadClass
-from pyvo.dal.exceptions import DALServiceError
+from pyvo.dal.exceptions import DALAccessError, DALServiceError
 from ska_oso_pdm import GalacticCoordinates, ICRSCoordinates, RadialVelocity, Target
 
 from ska_oso_services.common.coordinateslookup import (
     CATALOGUE_TIMEOUT_S,
     SIMBAD_SERVERS,
     Catalogue,
+    CatalogueUnavailableError,
     ReferenceFrame,
     _simbad_client,
     _TimeoutHTTPAdapter,
@@ -82,6 +84,22 @@ def fixture_simbad_clients():
 def fixture_ned():
     with mock.patch(f"{MODULE}.Ned") as ned:
         yield ned
+
+
+@pytest.fixture(name="sent_requests")
+def fixture_sent_requests():
+    """
+    Fail every HTTP request as though it timed out, recording the URL and timeout
+    each was sent with, so the real SIMBAD client can be used offline.
+    """
+    sent = []
+
+    def send(request, timeout=None, **_):
+        sent.append((request.url, timeout))
+        raise requests.ConnectTimeout(f"Connection to {request.url} timed out")
+
+    with mock.patch("requests.adapters.HTTPAdapter.send", side_effect=send):
+        yield sent
 
 
 def test_found_in_simbad(simbad_clients, ned):
@@ -246,16 +264,31 @@ def test_get_catalogue_lookup(catalogue, expected_lookup):
     assert get_catalogue_lookup(catalogue) is expected_lookup
 
 
+def test_simbad_client_setup_requests_time_out(sent_requests):
+    # Use the real clients, whose setup makes requests before the lookup is sent
+    _simbad_client.cache_clear()
+
+    with pytest.raises(CatalogueUnavailableError):
+        lookup_in_simbad("M83")
+
+    assert {urlsplit(url).hostname for url, _ in sent_requests} == set(SIMBAD_SERVERS)
+    assert all(timeout == CATALOGUE_TIMEOUT_S for _, timeout in sent_requests)
+
+
+# Skip the requests made while setting up the client so only the lookup's query is sent
+@mock.patch.object(SimbadClass, "hardlimit", 10000)
 @mock.patch.object(SimbadClass, "add_votable_fields")
-def test_simbad_client_uses_server_with_timeout(mock_add_votable_fields):
+def test_simbad_query_times_out(mock_add_votable_fields, sent_requests):
     # Call the uncached function so the client isn't kept for other tests
     client = _simbad_client.__wrapped__("simbad.harvard.edu")
 
-    assert client.server == "simbad.harvard.edu"
-    assert isinstance(
-        client._session.get_adapter("https://simbad.harvard.edu/"), _TimeoutHTTPAdapter
-    )
+    with pytest.raises((DALAccessError, requests.RequestException)):
+        client.query_object("M83")
+
     mock_add_votable_fields.assert_called_once_with("velocity")
+    assert sent_requests == [
+        ("https://simbad.harvard.edu/simbad/sim-tap/sync", CATALOGUE_TIMEOUT_S)
+    ]
 
 
 def test_timeout_adapter_only_sets_missing_timeout():
