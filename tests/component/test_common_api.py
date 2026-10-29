@@ -146,6 +146,38 @@ from . import OSO_SERVICES_URL
                 },
             },
         ),
+        (
+            "PMN J1924-2914",
+            "galactic",
+            {
+                "name": "PMN J1924-2914",
+                "pointing_pattern": {
+                    "active": "SinglePointParameters",
+                    "parameters": [
+                        {
+                            "kind": "SinglePointParameters",
+                            "offset_x_arcsec": 0.0,
+                            "offset_y_arcsec": 0.0,
+                        }
+                    ],
+                },
+                "reference_coordinate": {
+                    "kind": "galactic",
+                    "l": 9.3440789,
+                    "b": -19.6067907,
+                    "pm_l": 0.0,
+                    "pm_b": 0.0,
+                    "epoch": 2000.0,
+                    "parallax": 0.0,
+                },
+                "radial_velocity": {
+                    "quantity": {"value": 0.0, "unit": "km / s"},
+                    "definition": "RADIO",
+                    "reference_frame": "LSRK",
+                    "redshift": 0.0,
+                },
+            },
+        ),
     ],
 )
 def test_coordinates_get(authrequests, identifier, reference_frame, expected_response):
