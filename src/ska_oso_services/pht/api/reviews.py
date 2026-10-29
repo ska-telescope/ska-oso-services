@@ -4,9 +4,9 @@ from typing import Annotated
 from fastapi import APIRouter
 from ska_aaa_authhelpers.auth_context import AuthContext
 from ska_aaa_authhelpers.roles import Role
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.postgres import TABLES
 from ska_oso_pdm import PanelReview
-from ska_ser_skuid import int_skuid
+from sqlalchemy import select
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -16,7 +16,6 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.models.domain import PrslRole
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +41,12 @@ def create_review(
 
     try:
         with oda.uow() as uow:
-            query_param = CustomQuery(
-                prsl_fk=int_skuid(reviews.prsl_id).uid,
-                kind=reviews.review_type.kind,
-                reviewer_id=reviews.reviewer_id,
+            stmt = select(TABLES.reviews).where(
+                TABLES.reviews.c.prsl_fk == reviews.prsl_id,
+                TABLES.reviews.c.kind == reviews.review_type.kind,
+                TABLES.reviews.c.reviewer_id == reviews.reviewer_id,
             )
-            existing_rvws = get_latest_entity_by_id(uow.rvws.query(query_param), "review_id")
+            existing_rvws = uow.rvws.query(stmt)
             existing_rvw = existing_rvws[0] if existing_rvws else None
 
             if existing_rvw and existing_rvw.metadata.version == 1:
@@ -110,12 +109,10 @@ def get_reviews_for_user(
 
     with oda.uow() as uow:
         if has_group or has_role:
-            rows = get_latest_entity_by_id(uow.rvws.query(CustomQuery()), "review_id")
+            return uow.rvws.query(select(TABLES.reviews))
         else:
-            query_param = CustomQuery(reviewer_id=auth.user_id)
-            rows = uow.rvws.query(query_param)
-        reviews = get_latest_entity_by_id(rows, "review_id") or []
-        return reviews
+            stmt = select(TABLES.reviews).where(TABLES.reviews.c.reviewer_id == auth.user_id)
+            return uow.rvws.query(stmt)
 
 
 @router.put(

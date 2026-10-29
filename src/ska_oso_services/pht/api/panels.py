@@ -4,10 +4,11 @@ from typing import Annotated, Union
 from fastapi import APIRouter
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.auth_context import AuthContext
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.postgres import TABLES
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel
 from ska_ser_skuid import EntityType, mint_skuid
+from sqlalchemy import select
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Permissions, Scope
@@ -25,7 +26,6 @@ from ska_oso_services.pht.service.panel_operations import (
     set_removed_proposals_to_submitted,
 )
 from ska_oso_services.pht.utils.constants import PANEL_NAME_POOL, SV_NAME
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id, validate_duplicates
 
 router = APIRouter(prefix="/panels", tags=["PMT API - Panel Management"])
 
@@ -94,8 +94,10 @@ def auto_assign_to_panel(
 
     with oda.uow() as uow:
         submitted_proposal_refs = (
-            get_latest_entity_by_id(
-                uow.prsls.query(CustomQuery(status=ProposalStatus.SUBMITTED)), "prsl_id"
+            uow.prsls.query(
+                select(TABLES.proposals).where(
+                    TABLES.proposals.c.status == ProposalStatus.SUBMITTED
+                )
             )
             or []
         )
@@ -109,8 +111,8 @@ def auto_assign_to_panel(
         name_raw = (param or "").strip()
 
         if SV_NAME.casefold() in name_raw.casefold():
-            sv_panel_refs = get_latest_entity_by_id(
-                uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id"
+            sv_panel_refs = uow.panels.query(
+                select(TABLES.panels).where(TABLES.panels.c.name == SV_NAME)
             )
 
             if sv_panel_refs:
@@ -197,7 +199,7 @@ def auto_assign_to_panel(
 
         existing_by_name: dict[str, Panel] = {}
         for pname in PANEL_NAME_POOL:
-            refs = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=pname)), "panel_id")
+            refs = uow.panels.query(select(TABLES.panels).where(TABLES.panels.c.name == pname))
             if refs:
                 existing_by_name[pname] = uow.panels.get(refs[0].panel_id)
 
@@ -276,7 +278,7 @@ def auto_create_panel(
 
         # --- Science Verification panel ---
         # check if SV panel exist, create if not
-        existing = get_latest_entity_by_id(uow.panels.query(CustomQuery(name=SV_NAME)), "panel_id")
+        existing = uow.panels.query(select(TABLES.panels).where(TABLES.panels.c.name == SV_NAME))
         if not existing:
             sv_panel = Panel(
                 panel_id=mint_skuid(EntityType.PNL),
@@ -289,8 +291,8 @@ def auto_create_panel(
 
         # --- Science category panels ---
         for panel_name in PANEL_NAME_POOL:
-            existing = get_latest_entity_by_id(
-                uow.panels.query(CustomQuery(name=panel_name)), "panel_id"
+            existing = uow.panels.query(
+                select(TABLES.panels).where(TABLES.panels.c.name == panel_name)
             )
             panel = existing[0] if existing else None
             if panel:
@@ -374,8 +376,6 @@ def update_panel(
     if param.panel_id != panel_id:
         raise UnprocessableEntityError(detail="Panel ID in path and body do not match.")
 
-    validate_duplicates(param.sci_reviewers, "reviewer_id")
-
     with oda.uow() as uow:
         # --------------------------------------------------------
         # 2. Determine previous vs. new proposals
@@ -402,7 +402,7 @@ def update_panel(
         # --------------------------------------------------------
         # 3. Load all panels once
         # --------------------------------------------------------
-        all_panels = list(uow.panels.query(CustomQuery()))
+        all_panels = list(uow.panels.query(select(TABLES.panels)))
 
         # --------------------------------------------------------
         # 4. VALIDATION — ensure newly added proposals are not in
@@ -552,8 +552,7 @@ def get_panels() -> list[Panel]:
     logger.debug("GET PANEL LIST query")
 
     with oda.uow() as uow:
-        query_param = CustomQuery()
-        panels = get_latest_entity_by_id(uow.panels.query(query_param), "panel_id")
+        panels = uow.panels.query(select(TABLES.panels))
 
         logger.debug("Found %d panels", len(panels))
         return panels

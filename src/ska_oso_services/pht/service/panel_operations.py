@@ -2,7 +2,8 @@ import logging
 from datetime import UTC, datetime
 from typing import Iterable
 
-from ska_db_oda.repository.domain import CustomQuery, ODANotFound
+from ska_db_oda.postgres import TABLES
+from ska_db_oda.repository.domain import ODANotFound
 from ska_oso_pdm import PanelDecision, PanelReview
 from ska_oso_pdm.proposal.proposal import Proposal, ProposalStatus
 from ska_oso_pdm.proposal_management.panel import Panel, ProposalAssignment
@@ -12,11 +13,11 @@ from ska_oso_pdm.proposal_management.review import (
     ScienceReview,
     TechnicalReview,
 )
-from ska_ser_skuid import EntityType, int_skuid, mint_skuid
+from ska_ser_skuid import EntityType, mint_skuid
+from sqlalchemy import select
 
 from ska_oso_services.common.error_handling import BadRequestError
 from ska_oso_services.pht.models.schemas import PanelAssignResponse
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -185,11 +186,15 @@ def ensure_review_exist_or_create(
     Ensure a review of the given kind exists for the given proposal and reviewer.
     If not, create one with status TO_DO and return its review_id.
     """
-    query = CustomQuery(prsl_fk=int_skuid(proposal_id).uid, kind=kind, reviewer_id=reviewer_id)
-    existing = get_latest_entity_by_id(uow.rvws.query(query), "review_id")
+    stmt = select(TABLES.reviews).where(
+        TABLES.reviews.c.prsl_fk == proposal_id,
+        TABLES.reviews.c.kind == kind,
+        TABLES.reviews.c.reviewer_id == reviewer_id,
+    )
+    existing = uow.rvws.query(stmt)
     existing_rvw = existing[0] if existing else None
 
-    if existing_rvw:  # TODO: check for where the metadata version ==1
+    if existing_rvw:
         logger.debug(
             "%s already exists (prsl_id=%s, reviewer=%s)",
             kind,
@@ -222,8 +227,8 @@ def ensure_decision_exist_or_create(uow, param, proposal_id: str) -> str:
     Ensure a decision exists for the given proposal.
     If not, create one with status TO_DO and return its decision_id.
     """
-    query = CustomQuery(prsl_fk=int_skuid(proposal_id).uid)
-    existing = get_latest_entity_by_id(uow.pnlds.query(query), "decision_id")
+    stmt = select(TABLES.panel_decisions).where(TABLES.panel_decisions.c.prsl_fk == proposal_id)
+    existing = uow.pnlds.query(stmt)
     existing_pnld = existing[0] if existing else None
 
     if existing_pnld and hasattr(existing_pnld, "decision_id"):

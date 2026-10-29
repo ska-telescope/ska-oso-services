@@ -3,13 +3,12 @@ from collections import OrderedDict
 from datetime import UTC, datetime
 from typing import Iterable
 
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.postgres import TABLES
 from ska_oso_pdm.proposal import Proposal, ProposalAccess
-from ska_ser_skuid import int_skuid
+from sqlalchemy import select
 
 from ska_oso_services.common.error_handling import ForbiddenError
-from ska_oso_services.pht.utils.constants import ACCESS_ID, SV_NAME
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
+from ska_oso_services.pht.utils.constants import SV_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -60,15 +59,14 @@ def assert_user_has_permission_for_proposal(
     Returns:
         list[access]
     """
-    rows = (
-        get_latest_entity_by_id(
-            uow.prslacc.query(CustomQuery(user_id=user_id, prsl_fk=int_skuid(prsl_id).uid)),
-            ACCESS_ID,
+    rows = uow.prslacc.query(
+        select(TABLES.access_tmp).where(
+            TABLES.access_tmp.c.user_id == user_id,
+            TABLES.access_tmp.c.prsl_fk == prsl_id,
         )
-        or []
     )
-    access = rows[0] if rows else None
-    if not access:
+
+    if not rows:
         raise ForbiddenError(detail=f"You do not have access to this proposal with id:{prsl_id}")
     return rows
 
@@ -91,11 +89,10 @@ def list_accessible_proposal_ids(uow, user_id: str) -> list[str]:
     Notes:
         - No permission filtering beyond existence of access rows,
             given that every entry has the basic `view` access
-        - Uses `get_latest_entity_by_id(rows, "access_id")`
-            to retrive the latest version.
     """
-    rows_init = uow.prslacc.query(CustomQuery(user_id=user_id)) or []
-    rows = get_latest_entity_by_id(rows_init, ACCESS_ID) or []
+    rows = uow.prslacc.query(
+        select(TABLES.access_tmp).where(TABLES.access_tmp.c.user_id == user_id)
+    )
     return sorted({row.prsl_id for row in rows})
 
 
@@ -133,13 +130,7 @@ def get_panel_prsl_ids(uow, panel_name: str) -> set[str]:
     Return the set of prsl_id values assigned to the *latest* panel
     matching `panel_name`. Empty set if not found.
     """
-    refs = (
-        get_latest_entity_by_id(
-            uow.panels.query(CustomQuery(name=panel_name)),
-            "panel_id",
-        )
-        or []
-    )
+    refs = uow.panels.query(select(TABLES.panels).where(TABLES.panels.c.name == panel_name))
     if not refs:
         return set()
 
@@ -157,12 +148,8 @@ def get_reviewer_prsl_ids(uow, reviewer_id: str, panel_name: str = SV_NAME) -> s
       • present on the given panel (latest by panel_id).
     """
     # Reviews → latest per review_id (avoid boolean coercion on query object)
-    latest_reviews = (
-        get_latest_entity_by_id(
-            uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)),
-            "review_id",
-        )
-        or []
+    latest_reviews = uow.rvws.query(
+        select(TABLES.reviews).where(TABLES.reviews.c.reviewer_id == reviewer_id)
     )
 
     review_ids = {r.prsl_id for r in latest_reviews if getattr(r, "prsl_id", None)}

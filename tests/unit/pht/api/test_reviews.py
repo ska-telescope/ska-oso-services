@@ -157,9 +157,8 @@ class TestGetReviewAPI:
         data = response.json()
         assert data["review_id"] == review_id
 
-    @mock.patch("ska_oso_services.pht.api.reviews.get_latest_entity_by_id", autospec=True)
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
-    def test_get_review_list_success(self, mock_oda, mock_get_latest, client):
+    def test_get_review_list_success(self, mock_oda, client):
         """
         Check if the get_reviews_for_user returns reviews correctly.
         """
@@ -169,24 +168,19 @@ class TestGetReviewAPI:
         uow_mock.rvws.query.return_value = review_objs
         mock_oda.return_value.__enter__.return_value = uow_mock
 
-        mock_get_latest.return_value = review_objs
-
         response = client.get(f"{REVIEWS_API_URL}/users/reviews")
 
         assert response.status_code == HTTPStatus.OK
         assert isinstance(response.json(), list)
         assert len(response.json()) == len(review_objs)
 
-    @mock.patch("ska_oso_services.pht.api.reviews.get_latest_entity_by_id", autospec=True)
     @mock.patch("ska_oso_services.pht.api.reviews.oda.uow", autospec=True)
-    def test_get_review_list_none(self, mock_oda, mock_get_latest, client):
+    def test_get_review_list_none(self, mock_oda, client):
         """
         Should return empty list if no reviews are found.
         """
         uow_mock = mock.MagicMock()
         mock_oda.return_value.__enter__.return_value = uow_mock
-
-        mock_get_latest.return_value = []
 
         response = client.get(f"{REVIEWS_API_URL}/users/reviews")
 
