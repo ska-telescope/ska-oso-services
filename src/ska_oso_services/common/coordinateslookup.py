@@ -103,8 +103,8 @@ def get_coordinates(
 
     Velocities are handled in the following way:
     Simbad - for each object, a master value is stored which will be either
-    a velocity or a redshift. The function finds out which one this is and
-    stores it. The other is set to zero.
+    a velocity, a redshift or a cz. The function finds out which one this is and
+    stores it, with a cz stored as its redshift. The other is set to zero.
     NED - only the redshift is stored as the velocity has limited precision.
     Velocity is set to zero.
 
@@ -185,10 +185,11 @@ def lookup_in_simbad(object_name: str) -> CatalogueResult | None:
         frame="icrs",
     )
 
-    # Determine if stored information is redshift or velocity
+    # Determine if stored information is redshift or velocity. A cz value ("c") is
+    # also stored as its redshift, whereas its rvz_radvel is a derived relativistic velocity
     rvz_type = _as_python_scalar(result_table_simbad["rvz_type"])
     match rvz_type:
-        case "z":
+        case "z" | "c":
             radial_velocity = RadialVelocity(
                 redshift=float(_as_python_scalar(result_table_simbad["rvz_redshift"]))
             )

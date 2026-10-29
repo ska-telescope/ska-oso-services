@@ -97,9 +97,13 @@ def test_found_in_simbad(simbad_clients, ned):
     ned.query_object.assert_not_called()
 
 
-def test_found_in_simbad_with_redshift(simbad_clients, ned):
+@pytest.mark.parametrize("rvz_type", ["z", "c"])
+def test_found_in_simbad_with_redshift(simbad_clients, ned, rvz_type):
+    # SIMBAD stores a cz measurement ("c") as its redshift too
     cds, _ = simbad_clients
-    cds.query_object.return_value = SIMBAD_RESULT_WITH_REDSHIFT
+    simbad_result = SIMBAD_RESULT_WITH_REDSHIFT.copy()
+    simbad_result["rvz_type"] = [rvz_type]
+    cds.query_object.return_value = simbad_result
 
     result = get_coordinates("M83", ReferenceFrame.equatorial)
 

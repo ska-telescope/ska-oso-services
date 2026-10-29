@@ -174,7 +174,7 @@ from . import OSO_SERVICES_URL
                     "quantity": {"value": 0.0, "unit": "km / s"},
                     "definition": "RADIO",
                     "reference_frame": "LSRK",
-                    "redshift": 0.0,
+                    "redshift": 0.35262728323872644,
                 },
             },
         ),

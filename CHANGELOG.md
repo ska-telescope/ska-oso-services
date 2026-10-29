@@ -6,7 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
-* [BUGFIX] `GET /coordinates` no longer fails when CDS is down. Targets are looked up with astroquery in SIMBAD (falling back to its Harvard mirror) and then NED, rather than via Sesame, with a timeout on each request. VizieR is no longer searched.
+* [BUGFIX] `GET /coordinates` no longer fails when CDS is down. VizieR is no longer searched.
+* SIMBAD velocities stored as cz are now returned as a redshift rather than zero.
 
 17.1.2
 ******
