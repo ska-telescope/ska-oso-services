@@ -30,7 +30,7 @@ LOGGER = logging.getLogger(__name__)
 
 # Seconds to wait for any single catalogue request. Without this an unresponsive
 # server (e.g. during a CDS outage) can block a lookup for several minutes.
-CATALOGUE_TIMEOUT_S = 10
+CATALOGUE_TIMEOUT_S = 3
 
 # SIMBAD is hosted by CDS, with a mirror at Harvard that is tried if CDS is unavailable
 SIMBAD_SERVERS = ("simbad.cds.unistra.fr", "simbad.harvard.edu")
