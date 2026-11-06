@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+17.2.0
+******
 * [BUGFIX] `GET /coordinates` no longer fails when CDS is down. VizieR is no longer searched.
 * SIMBAD velocities stored as cz are now returned as a redshift rather than zero.
 * Updates to ODA v20.0.0 with SQLAlchemy. Makes use of new functionality to improve querying like the project-view API
