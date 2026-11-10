@@ -39,7 +39,7 @@ DEFAULT_MINIMUM_ALTITUDE = 20.0 * u.deg
 
 
 def _low_default_subarray_parameters() -> tuple[list[int], Quantity]:
-    capability_set = osd_repository().get_capability_set(Telescope.LOW, DEFAULT_SUBARRAY.value)
+    capability_set = osd_repository().get_capability_set(Telescope.SKA_LOW, DEFAULT_SUBARRAY.value)
     return capability_set.receptors, capability_set.available_bandwidth_hz * u.Hz
 
 

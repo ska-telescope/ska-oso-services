@@ -169,7 +169,7 @@ class TestOSD:
 
     @mock.patch(f"{PRSL_MODULE}.get_cycle_configurations")
     def test_get_all_osd_cycles_fail(self, mock_get_cycle_configurations, mock_repository, client):
-        error = CapabilitySetNotFoundError(Telescope.LOW, "AA9", ["AA2", "AA2_SV"])
+        error = CapabilitySetNotFoundError(Telescope.SKA_LOW, "AA9", ["AA2", "AA2_SV"])
         mock_get_cycle_configurations.side_effect = error
 
         response = client.get(f"{PROPOSAL_API_URL}/osd/cycles")

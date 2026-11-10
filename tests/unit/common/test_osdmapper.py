@@ -40,7 +40,7 @@ def test_configuration_from_osd_returns_mid_spfrx_defaults():
 
 
 def _repository_with_default_noise_diode_mode(mode):
-    target_spfrx = osd_repository().get_defaults(Telescope.MID).spfrx_defaults.target_spfrx
+    target_spfrx = osd_repository().get_defaults(Telescope.SKA_MID).spfrx_defaults.target_spfrx
     modified = target_spfrx.model_copy(update={"default_noise_diode_mode": mode})
 
     return SimpleNamespace(

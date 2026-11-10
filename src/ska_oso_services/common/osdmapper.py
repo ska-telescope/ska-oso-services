@@ -5,7 +5,6 @@ configuration needed for the application.
 
 from functools import cache
 
-from ska_oso_pdm import TelescopeType
 from ska_oso_pdm._shared.spfrx import (
     NoiseDiodeMode,
     PeriodicNoiseDiodeConfig,
@@ -29,8 +28,6 @@ NOISE_DIODE_MODE_OFF = "off"
 OSD_VERSION = "7.0.0"
 OSD_CYCLES_SOURCE = "gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?5e5f8dbe#tmdata"
 
-OSD_TELESCOPES = {TelescopeType.SKA_MID: Telescope.MID, TelescopeType.SKA_LOW: Telescope.LOW}
-
 
 @cache
 def osd_repository(osd_version: str = OSD_VERSION) -> TMDataRepository:
@@ -50,7 +47,7 @@ def configuration_from_osd() -> Configuration:
 
 
 def get_default_pdm_target_spfrx() -> TargetSPFRxConfiguration:
-    target_spfrx = osd_repository().get_defaults(Telescope.MID).spfrx_defaults.target_spfrx
+    target_spfrx = osd_repository().get_defaults(Telescope.SKA_MID).spfrx_defaults.target_spfrx
     default_mode = target_spfrx.default_noise_diode_mode
 
     valid_modes = [NOISE_DIODE_MODE_OFF, *(m.value for m in NoiseDiodeMode)]
@@ -97,7 +94,7 @@ def _noise_diode_osd_to_pdm(diode):
 
 
 def get_defaults_pdm_csp_spfrx() -> CSPSPFRxConfiguration:
-    csp_spfrx = osd_repository().get_defaults(Telescope.MID).spfrx_defaults.csp_spfrx
+    csp_spfrx = osd_repository().get_defaults(Telescope.SKA_MID).spfrx_defaults.csp_spfrx
     return CSPSPFRxConfiguration(
         sync_pps=_sync_pps_osd_to_pdm(csp_spfrx.sync_pps),
         saturation_threshold=csp_spfrx.saturation_threshold,

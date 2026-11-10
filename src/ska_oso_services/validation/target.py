@@ -3,8 +3,9 @@ import astropy.units as u
 from astropy.coordinates import Latitude
 from astropy.units import Quantity
 from ska_oso_pdm import CoordinateKind, Target, TelescopeType
+from ska_ost_osd.osd.common.constant import Telescope
 
-from ska_oso_services.common.osdmapper import OSD_TELESCOPES, osd_repository
+from ska_oso_services.common.osdmapper import osd_repository
 from ska_oso_services.common.static.constants import (
     LOW_LOCATION,
     MID_LOCATION,
@@ -107,7 +108,7 @@ def validate_single_target_pst_beams(
     allowed_number_pst_beams = (
         osd_repository()
         .get_capability_set(
-            OSD_TELESCOPES[target_context.telescope], target_context.array_assembly.value
+            Telescope(target_context.telescope), target_context.array_assembly.value
         )
         .number_pst_beams
     )

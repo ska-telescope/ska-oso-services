@@ -55,7 +55,7 @@ def validate_number_subarray_beams(
 
     allowed_subarray_beams = (
         osd_repository()
-        .get_capability_set(Telescope.LOW, mccs_context.array_assembly.value)
+        .get_capability_set(Telescope.SKA_LOW, mccs_context.array_assembly.value)
         .number_subarray_beams
     )
     if number_subarray_beams > allowed_subarray_beams:
@@ -85,7 +85,7 @@ def validate_number_substations(
 
     allowed_number_of_substations = (
         osd_repository()
-        .get_capability_set(Telescope.LOW, mccs_context.array_assembly.value)
+        .get_capability_set(Telescope.SKA_LOW, mccs_context.array_assembly.value)
         .number_substations
     )
 
@@ -135,7 +135,7 @@ def validate_number_of_pst_beams_per_scan(
 
     allowed_number_pst_beams = (
         osd_repository()
-        .get_capability_set(Telescope.LOW, mccs_context.array_assembly.value)
+        .get_capability_set(Telescope.SKA_LOW, mccs_context.array_assembly.value)
         .number_pst_beams
     )
 
@@ -310,7 +310,7 @@ def validate_station_bandwidth(
 
     available_bandwidth = (
         osd_repository()
-        .get_capability_set(Telescope.LOW, mccs_context.array_assembly.value)
+        .get_capability_set(Telescope.SKA_LOW, mccs_context.array_assembly.value)
         .available_bandwidth_hz
         * u.Hz
     )

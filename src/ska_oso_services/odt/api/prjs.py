@@ -138,7 +138,9 @@ class CalibratorSweepInputs(BaseModel):
     )
     stations: list[int] = Field(
         default_factory=lambda: (
-            osd_repository().get_capability_set(Telescope.LOW, SubArrayLOW.AA1_ALL.value).receptors
+            osd_repository()
+            .get_capability_set(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value)
+            .receptors
         ),
         description="List of station IDs to set in the SBDefinition. "
         "Will default to the AA1 stations if not given.",
@@ -176,7 +178,9 @@ class BasicCommissioningInputs(BaseModel):
 
     stations: list[int] = Field(
         default_factory=lambda: (
-            osd_repository().get_capability_set(Telescope.LOW, SubArrayLOW.AA1_ALL.value).receptors
+            osd_repository()
+            .get_capability_set(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value)
+            .receptors
         ),
         description="List of station IDs to set in the SBDefinition. "
         "Will default to the AA1 stations if not given.",
@@ -212,7 +216,9 @@ class FrequencySweepInputs(BaseModel):
     )
     stations: list[int] = Field(
         default_factory=lambda: (
-            osd_repository().get_capability_set(Telescope.LOW, SubArrayLOW.AA1_ALL.value).receptors
+            osd_repository()
+            .get_capability_set(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value)
+            .receptors
         ),
         description="List of station IDs to set in the SBDefinition. "
         "Will default to the AA1 stations if not given.",

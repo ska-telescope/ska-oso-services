@@ -18,13 +18,13 @@ def mid_minimum_elevation() -> Quantity:
     """
     SKA Mid Telescope limit
     """
-    mid_min_elevation = osd_repository().get_constraints(Telescope.MID).min_elevation_deg
+    mid_min_elevation = osd_repository().get_constraints(Telescope.SKA_MID).min_elevation_deg
     return Latitude(mid_min_elevation, unit="degree")
 
 
 @cache
 def mid_maximum_elevation() -> Quantity:
-    mid_max_elevation = osd_repository().get_constraints(Telescope.MID).max_elevation_deg
+    mid_max_elevation = osd_repository().get_constraints(Telescope.SKA_MID).max_elevation_deg
     return Latitude(mid_max_elevation, unit="degree")
 
 
@@ -33,7 +33,7 @@ def low_minimum_elevation() -> Quantity:
     """
     SKA Low Telescope limit
     """
-    low_min_elevation = osd_repository().get_constraints(Telescope.LOW).min_elevation_deg
+    low_min_elevation = osd_repository().get_constraints(Telescope.SKA_LOW).min_elevation_deg
     return Latitude(low_min_elevation, unit="degree")
 
 
@@ -42,7 +42,7 @@ def low_maximum_elevation() -> Quantity:
     """
     SKA Low Telescope limit
     """
-    low_max_elevation = osd_repository().get_constraints(Telescope.LOW).max_elevation_deg
+    low_max_elevation = osd_repository().get_constraints(Telescope.SKA_LOW).max_elevation_deg
     return Latitude(low_max_elevation, unit="degree")
 
 
@@ -56,7 +56,7 @@ def mid_channel_width() -> Quantity:
     """
     return (
         osd_repository()
-        .get_capability_set(Telescope.MID, ValidationArrayAssembly.AA05.value)
+        .get_capability_set(Telescope.SKA_MID, ValidationArrayAssembly.AA05.value)
         .allowed_channel_width_values_hz[0]
         * u.Hz
     )
@@ -76,17 +76,19 @@ def mid_frequency_slice_bandwidth() -> Quantity:
 
 @cache
 def low_min_coarse_channel() -> int:
-    return osd_repository().get_basic_capabilities(Telescope.LOW).min_coarse_channel
+    return osd_repository().get_basic_capabilities(Telescope.SKA_LOW).min_coarse_channel
 
 
 @cache
 def low_max_coarse_channel() -> int:
-    return osd_repository().get_basic_capabilities(Telescope.LOW).max_coarse_channel
+    return osd_repository().get_basic_capabilities(Telescope.SKA_LOW).max_coarse_channel
 
 
 @cache
 def low_station_channel_width() -> Quantity:
-    return osd_repository().get_basic_capabilities(Telescope.LOW).coarse_channel_width_hz * u.Hz
+    return (
+        osd_repository().get_basic_capabilities(Telescope.SKA_LOW).coarse_channel_width_hz * u.Hz
+    )
 
 
 @cache
@@ -94,7 +96,7 @@ def low_continuum_channel_width() -> Quantity:
     return (
         low_station_channel_width()
         / osd_repository()
-        .get_basic_capabilities(Telescope.LOW)
+        .get_basic_capabilities(Telescope.SKA_LOW)
         .number_continuum_channels_per_coarse_channel
     )
 

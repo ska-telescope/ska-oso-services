@@ -371,7 +371,7 @@ def _scan_time_ms_from_science_programme(
 
 
 def _dish_allocation(subarray: SubArrayMID, scan_sequence: list[ScanDefinition]) -> DishAllocation:
-    dish_ids = osd_repository().get_capability_set(Telescope.MID, subarray.value).receptors
+    dish_ids = osd_repository().get_capability_set(Telescope.SKA_MID, subarray.value).receptors
 
     return DishAllocation(
         dish_allocation_id=_sbd_internal_id(DishAllocation),
@@ -382,7 +382,7 @@ def _dish_allocation(subarray: SubArrayMID, scan_sequence: list[ScanDefinition])
 
 
 def _mccs_allocation(subarray: SubArrayLOW, scan_sequence: list[ScanDefinition]) -> MCCSAllocation:
-    station_ids = osd_repository().get_capability_set(Telescope.LOW, subarray.value).receptors
+    station_ids = osd_repository().get_capability_set(Telescope.SKA_LOW, subarray.value).receptors
 
     apertures = [
         Aperture(station_id=station_id, weighting_key="uniform", substation_id=1)
