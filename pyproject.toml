@@ -1,6 +1,6 @@
 [project]
 name = "ska-oso-services"
-version = "17.1.0"
+version = "17.2.0"
 description = "SKA OSO Services provides APIs for the PHT and ODT"
 authors = [
     { name = "Team Buttons" },
@@ -18,17 +18,19 @@ classifiers = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.14',
 ]
+
+
 dependencies = [
     "ska-ser-logging>=0.4.3,<0.5.0",
     # PDM dependency is pulled in via the ODA rather than being explicitly set here
     # If updating this, also remember to update the Helm dependency in the umbrella chart
-    "ska-db-oda>=19.6.0,<20.0.0",
+    "ska-db-oda>=20.0.0,<21.0.0",
     "pydantic>=2.13,<3.0",
     "pydantic-settings>=2.15,<3.0",
     "fastapi[standard]>=0.141.1",
     "astroquery>=0.4.11,<0.5.0",
-    "ska-ost-osd==7.0.0+dev.c71593394",
-    "ska-telmodel-client>=1.30.2,<2.0.0",
+    "ska-ost-osd==7.0.0+dev.c729968a6",
+    "ska-telmodel-client>=1.31.0,<2.0.0",
     "ska-ser-skuid>=6.0.0,<7.0.0",
     "aiosmtplib>=5.1.3,<6.0.0",
     "boto3>=1.43.91,<2.0.0",
@@ -38,6 +40,7 @@ dependencies = [
     "matplotlib>=3.11.1,<4.0.0",
     "numpy>=2.5.3,<3.0.0",
     "astropy>=8.0.1",
+    "psycopg[binary]>=3.0"
 ]
 
 [project.urls]
@@ -125,3 +128,4 @@ priority = "explicit"
 
 [tool.uv.sources]
 ska-ost-osd = { index = "gitlab-ska-ost-osd" }
+ska-db-oda = { index = "gitlab-ska-db-oda" }
