@@ -92,6 +92,16 @@ def low_station_channel_width() -> Quantity:
 
 
 @cache
+def low_available_coarse_channels(capability_set: str) -> int:
+    available_bandwidth_hz = (
+        osd_repository()
+        .get_capability_set(Telescope.SKA_LOW, capability_set)
+        .available_bandwidth_hz
+    )
+    return int(available_bandwidth_hz / low_station_channel_width().to_value(u.Hz))
+
+
+@cache
 def low_continuum_channel_width() -> Quantity:
     return (
         low_station_channel_width()
@@ -103,7 +113,12 @@ def low_continuum_channel_width() -> Quantity:
 
 @cache
 def low_pst_channel_width() -> Quantity:
-    return 16 * low_station_channel_width() / 3456
+    return (
+        low_station_channel_width()
+        / osd_repository()
+        .get_basic_capabilities(Telescope.SKA_LOW)
+        .number_pst_channels_per_coarse_channel
+    )
 
 
 MID_DISH_DIAMETER = Quantity(15, u.m)
