@@ -1,26 +1,17 @@
 import logging
 from http import HTTPStatus
 from traceback import format_exc
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import HTTPException, Request
 from pydantic import ValidationError
 from ska_db_oda.repository.domain import ODAError, ODANotFound, UniqueConstraintViolation
 from ska_db_oda.repository.domain.errors import ODAIntegrityError
-from ska_ost_osd.common.error_handling import generic_exception_handler
 from starlette.responses import JSONResponse
 
 from ska_oso_services.common.model import ErrorResponse, ErrorResponseTraceback
 
 LOGGER = logging.getLogger(__name__)
-
-
-class OSDError(Exception):
-    """Exception class for OSD errors."""
-
-    def __init__(self, errors: List[dict]):
-        self.errors = errors
-        super().__init__(errors)
 
 
 class BadRequestError(HTTPException):
@@ -163,15 +154,3 @@ async def dangerous_internal_server_handler(_: Request, err: Exception) -> JSONR
             ),
         )
     )
-
-
-async def osd_error_handler(request: Request, exc: OSDError):
-    """
-    Exception handler for OSDError that wraps the error
-    as a ValueError and delegates handling to the generic_exception_handler.
-
-    This function is designed to catch OSDError exceptions raised by the
-    get_osd method and pass them to generic_exception_handler as a ValueError.
-    """
-    response = await generic_exception_handler(request, ValueError(exc.errors))
-    return response
