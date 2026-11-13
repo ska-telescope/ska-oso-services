@@ -9,6 +9,8 @@ Unreleased
 
 17.2.0
 ******
+17.2.1
+******
 * [BUGFIX] fixed station bandwidth validation that was failing due to the move to 0-based ``substation_id`` values
 
 17.2.0
