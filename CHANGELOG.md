@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 
+17.2.1
+******
+* [BUGFIX] fixed station bandwidth validation that was failing due to the move to 0-based ``substation_id`` values
+
 17.2.0
 ******
 * [BUGFIX] `GET /coordinates` no longer fails when CDS is down. VizieR is no longer searched.
