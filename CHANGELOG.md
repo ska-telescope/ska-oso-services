@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* [BUGFIX] fixed station bandwidth validation that was failing due to the move to 0-based ``substation_id`` values
 
 17.2.0
 ******

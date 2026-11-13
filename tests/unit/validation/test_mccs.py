@@ -211,6 +211,25 @@ def test_validate_station_bandwidth(
     assert len(result) == 0
 
 
+def test_validate_station_bandwidth_fails_with_too_many_subarray_beams(
+    low_multiple_subarray_beams_invalid_total_bandwidth,
+):
+    sbd = low_multiple_subarray_beams_invalid_total_bandwidth
+    input_context = ValidationContext(
+        primary_entity=sbd.mccs_allocation,
+        relevant_context={"targets": sbd.targets, "csp_config": sbd.csp_configurations},
+        telescope=sbd.telescope,
+        array_assembly=ValidationArrayAssembly.AA1,
+    )
+
+    result = validate_mccs(input_context)
+    assert len(result) == 1
+    assert (
+        result[0].message == "At least one station in scan 1 is using more bandwidth (600.0 MHz) "
+        "than is available (75.0 MHz) for array assembly AA1"
+    )
+
+
 def test_validate_station_bandwidth_fails_for_invalid_setup(
     low_multiple_subarray_beam_multiple_apertures_multiple_spws_with_pst,
 ):
