@@ -21,6 +21,15 @@ def mock_facts(
     has_write: bool = False,
     known_proposals: tuple[str, ...] = (),
 ) -> Mock:
+    """Mock Facts for one proposal. Pass the user's highest tier; lower tiers are implied.
+
+    The PI group is a subgroup of the write group, which is a subgroup of the base
+    group, and INDIGO puts subgroup members in every ancestor group. So a PI always
+    has write membership, and anyone with write membership is always a member.
+    """
+    has_write = has_write or is_pi
+    is_member = is_member or has_write
+
     facts = Mock(spec=Facts)
     facts.auth = MagicMock(spec=AuthContext)
     facts.is_pht_admin.return_value = is_pht_admin
@@ -38,25 +47,25 @@ def mock_facts(
     ("facts", "prsl_ids", "expectation"),
     [
         pytest.param(
-            mock_facts(is_pht_admin=False, is_member=False),
+            mock_facts(),
             ("prp-1",),
             pytest.raises(AuthFailError, match="You are not a member of"),
             id="deny-when-no-membership",
         ),
         pytest.param(
-            mock_facts(is_pht_admin=False, is_member=True),
+            mock_facts(is_member=True),
             ("prp-1", "prp-2"),
             nullcontext(),
             id="allow-when-member-of-all",
         ),
         pytest.param(
-            mock_facts(is_pht_admin=True, is_member=False),
+            mock_facts(is_pht_admin=True),
             ("prp-1", "prp-2"),
             nullcontext(),
             id="allow-when-pht-admin",
         ),
         pytest.param(
-            mock_facts(is_pht_admin=False, is_member=False),
+            mock_facts(),
             ("prp-1", "prp-2"),
             pytest.raises(AuthFailError, match="prp-2"),
             id="deny-when-not-member-of-any",
@@ -75,27 +84,27 @@ def test_allowed_to_view(facts, prsl_ids, expectation):
     ("facts", "expectation"),
     [
         pytest.param(
-            mock_facts(is_pht_admin=True, is_pi=False, has_write=False, is_member=False),
+            mock_facts(is_pht_admin=True),
             nullcontext(),
             id="allow-pht-admin",
         ),
         pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=True, has_write=False, is_member=False),
+            mock_facts(is_pi=True),
             nullcontext(),
             id="allow-pi",
         ),
         pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=False, has_write=True, is_member=False),
+            mock_facts(has_write=True),
             nullcontext(),
             id="allow-write-membership",
         ),
         pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=False, has_write=False, is_member=True),
+            mock_facts(is_member=True),
             pytest.raises(AuthFailError, match="grant you edit privileges"),
             id="deny-member-without-write",
         ),
         pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=False, has_write=False, is_member=False),
+            mock_facts(),
             pytest.raises(AuthFailError, match="be invited"),
             id="deny-non-member",
         ),
@@ -112,14 +121,10 @@ def test_allowed_to_edit(facts, expectation):
 @pytest.mark.parametrize(
     ("facts", "expectation"),
     [
+        pytest.param(mock_facts(is_pht_admin=True), nullcontext(), id="submit-allow-admin"),
+        pytest.param(mock_facts(is_pi=True), nullcontext(), id="submit-allow-pi"),
         pytest.param(
-            mock_facts(is_pht_admin=True, is_pi=False), nullcontext(), id="submit-allow-admin"
-        ),
-        pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=True), nullcontext(), id="submit-allow-pi"
-        ),
-        pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=False),
+            mock_facts(),
             pytest.raises(AuthFailError, match="Principal Investigator"),
             id="submit-deny-non-pi",
         ),
@@ -136,14 +141,10 @@ def test_allowed_to_submit(facts, expectation):
 @pytest.mark.parametrize(
     ("facts", "expectation"),
     [
+        pytest.param(mock_facts(is_pht_admin=True), nullcontext(), id="administer-allow-admin"),
+        pytest.param(mock_facts(is_pi=True), nullcontext(), id="administer-allow-pi"),
         pytest.param(
-            mock_facts(is_pht_admin=True, is_pi=False), nullcontext(), id="administer-allow-admin"
-        ),
-        pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=True), nullcontext(), id="administer-allow-pi"
-        ),
-        pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=False),
+            mock_facts(),
             pytest.raises(AuthFailError, match="administer proposal"),
             id="administer-deny-non-pi",
         ),
@@ -161,24 +162,30 @@ def test_allowed_to_administer(facts, expectation):
     ("facts", "expectation"),
     [
         pytest.param(
-            mock_facts(is_pht_admin=True, is_pi=False, has_write=False),
+            mock_facts(is_pht_admin=True),
             nullcontext(),
             id="view-members-allow-admin",
         ),
         pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=True, has_write=False),
+            mock_facts(is_pi=True),
             nullcontext(),
             id="view-members-allow-pi",
         ),
         pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=False, has_write=True),
+            mock_facts(has_write=True),
             nullcontext(),
             id="view-members-allow-write-member",
         ),
         pytest.param(
-            mock_facts(is_pht_admin=False, is_pi=False, has_write=False),
+            # Read-only CoIs can see the other members too
+            mock_facts(is_member=True),
+            nullcontext(),
+            id="view-members-allow-read-member",
+        ),
+        pytest.param(
+            mock_facts(),
             pytest.raises(AuthFailError, match="cannot view the members"),
-            id="view-members-deny",
+            id="view-members-deny-non-member",
         ),
     ],
 )
@@ -221,12 +228,14 @@ class TestProposalRulesWithGroups:
         rules.allowed_to_view(PRSL_ID)
         rules.allowed_to_edit(PRSL_ID)
         rules.allowed_to_submit(PRSL_ID)
+        rules.allowed_to_view_other_members(PRSL_ID)
 
     def test_pi_group_allows_view_edit_submit(self):
         rules = _rules_from_group(get_group_name(PRSL_ID, admin=True))
         rules.allowed_to_view(PRSL_ID)
         rules.allowed_to_edit(PRSL_ID)
         rules.allowed_to_submit(PRSL_ID)
+        rules.allowed_to_view_other_members(PRSL_ID)
 
     def test_write_group_allows_view_edit_not_submit(self):
         rules = _rules_from_group(get_group_name(PRSL_ID, write=True))
@@ -234,10 +243,12 @@ class TestProposalRulesWithGroups:
         rules.allowed_to_edit(PRSL_ID)
         with pytest.raises(AuthFailError):
             rules.allowed_to_submit(PRSL_ID)
+        rules.allowed_to_view_other_members(PRSL_ID)
 
     def test_read_group_allows_view_not_edit(self):
         rules = _rules_from_group(get_group_name(PRSL_ID))
         rules.allowed_to_view(PRSL_ID)
+        rules.allowed_to_view_other_members(PRSL_ID)
         with pytest.raises(AuthFailError):
             rules.allowed_to_edit(PRSL_ID)
 
@@ -249,8 +260,12 @@ class TestProposalRulesWithGroups:
             rules.allowed_to_edit(PRSL_ID)
         with pytest.raises(AuthFailError):
             rules.allowed_to_submit(PRSL_ID)
+        with pytest.raises(AuthFailError):
+            rules.allowed_to_view_other_members(PRSL_ID)
 
     def test_group_for_one_proposal_does_not_grant_access_to_another(self):
         rules = _rules_from_group(get_group_name(PRSL_ID, admin=True))
         with pytest.raises(AuthFailError):
             rules.allowed_to_view("prp-other1")
+        with pytest.raises(AuthFailError):
+            rules.allowed_to_view_other_members("prp-other1")

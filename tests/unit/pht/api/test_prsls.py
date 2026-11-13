@@ -452,7 +452,8 @@ class TestProposalReadAccessFromClaims:
         auth = SimpleNamespace(
             user_id="u1",
             roles={prsl_api.Role.ANY},
-            principals={"app:pht:prp-123/w/a"},
+            # INDIGO puts PI group members in the ancestor groups too
+            principals={"app:pht:prp-123", "app:pht:prp-123/w", "app:pht:prp-123/w/a"},
         )
 
         assert Facts(auth).is_pi("prp-123") is True

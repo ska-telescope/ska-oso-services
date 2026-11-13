@@ -17,7 +17,7 @@ PanelID: TypeAlias = ShortSkuid[Literal[EntityType.PNL]]
 # | Submit Proposal         | ✅ | ❌         | ❌         |
 # | Delete Proposal         | ❌ | ❌         | ❌         |
 # | Add/Remove Co-Is        | ✅ | ❌         | ❌         |
-# | View proposal members   | ✅ | ✅         | ❌         |
+# | View proposal members   | ✅ | ✅         | ✅         |
 # | Manage Proposal members | ✅ | ❌         | ❌         |
 
 
@@ -87,9 +87,7 @@ class ProposalRules(BaseRules):
     def allowed_to_view_other_members(self, prsl_id: ProposalID) -> RuleResult:
         if self.facts.is_pht_admin():
             return RuleResult(True, "PHT admin can view all proposal members")
-        elif self.facts.is_pi(prsl_id):
-            return RuleResult(True, f"PI of {prsl_id} can view members.")
-        elif self.facts.has_write_membership(prsl_id):
-            return RuleResult(True, f"Co-I  with write privileges can view members of {prsl_id}")
+        elif self.facts.is_member_of(prsl_id):
+            return RuleResult(True, f"Members of {prsl_id} can view other members.")
         else:
             return RuleResult(False, f"You cannot view the members of {prsl_id}.")

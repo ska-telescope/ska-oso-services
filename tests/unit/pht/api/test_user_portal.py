@@ -43,19 +43,25 @@ def _invite_card(group_name: str) -> dict:
     }
 
 
-def _pi_security(prsl_id: str) -> SecurityService:
-    group = f"app:pht:{prsl_id}/w/a"
+def _security(group: str) -> SecurityService:
+    # INDIGO puts a subgroup's members in each of its ancestor groups too
+    parts = group.split("/")
+    groups = frozenset("/".join(parts[:i]) for i in range(1, len(parts) + 1))
     auth = AuthContext(
         user_id=USER_ID,
-        principals=frozenset({group, USER_ID}),
+        principals=groups | {USER_ID},
         roles=frozenset({Role.ANY}),
-        groups=frozenset({group}),
+        groups=groups,
         scopes=frozenset({"pht:readwrite"}),
         audience="test:pht",
         token_claims={"sub": USER_SUB, "preferred_username": USER_ID},
         access_token="test-token",
     )
     return SecurityService(auth)
+
+
+def _pi_security(prsl_id: str) -> SecurityService:
+    return _security(f"app:pht:{prsl_id}/w/a")
 
 
 class TestCreateInvites:
@@ -226,6 +232,15 @@ class TestListMembers:
         )
 
         assert response.stale is True
+
+    async def test_read_only_member_can_list_members(self):
+        service = _members_service({})
+
+        await list_members(
+            security=_security(f"app:pht:{PRSL_ID}"), service=service, prsl_id=PRSL_ID
+        )
+
+        service.list_group_members.assert_awaited()
 
     async def test_cannot_list_members_of_other_proposal(self):
         service = _members_service({})
