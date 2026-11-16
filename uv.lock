@@ -2308,7 +2308,7 @@ wheels = [
 
 [[package]]
 name = "ska-oso-services"
-version = "17.2.0"
+version = "17.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiosmtplib" },
