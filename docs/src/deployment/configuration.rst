@@ -98,17 +98,17 @@ or an existing Kubernetes Secret. See :doc:`secret_management`.
      - ``rest.groupNames.base``
      - Optional - default: ``"app:pht:{skuid}"``
    * - PHT_GROUP_COI_SUFFIX
-     - Appended to the base name for a proposal's group of Co-Investigators with edit rights.
+     - Appended to the base name for a proposal's group of Co-Investigators with edit rights. Must be a subgroup path starting with ``/``, e.g. ``/coi``.
      - Optional - default: ``"/w"``
      - ``rest.groupNames.coiSuffix``
      - Optional - default: ``"/w"``
    * - PHT_GROUP_PI_SUFFIX
-     - Appended to the base name for a proposal's group of Principal Investigators.
+     - Appended to the base name for a proposal's group of Principal Investigators. Must be a subgroup of the CoI suffix, e.g. ``/coi/pi``.
      - Optional - default: ``"/w/a"``
      - ``rest.groupNames.piSuffix``
      - Optional - default: ``"/w/a"``
    * - PHT_GROUP_CHAIR_SUFFIX
-     - Appended to the base name for a panel's group of chairs.
+     - Appended to the base name for a panel's group of chairs. Must be a subgroup path starting with ``/``, e.g. ``/chair``.
      - Optional - default: ``"/w/a"``
      - ``rest.groupNames.chairSuffix``
      - Optional - default: ``"/w/a"``

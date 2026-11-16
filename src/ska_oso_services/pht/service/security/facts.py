@@ -162,5 +162,5 @@ class Facts:
         return get_group_name(skuid, admin=True) in self.auth.principals
 
     def has_write_membership(self, skuid: ProposalID) -> bool:
-        # PIs can write too, whether or not their group is a subgroup of the CoIs'
-        return get_group_name(skuid, write=True) in self.auth.principals or self.is_pi(skuid)
+        # PIs' tokens carry this group too, since theirs is a subgroup of it
+        return get_group_name(skuid, write=True) in self.auth.principals

@@ -15,6 +15,9 @@ DEFAULT_AUDIENCES = (
     "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b",
 )
 
+# A group path below another: one or more "/"-separated, non-empty names
+SUBGROUP_PATTERN = r"^(/[^/\s]+)+$"
+
 # Default expiry for S3 presigned URLs
 PRESIGNED_URL_EXPIRY_TIME = 60
 
@@ -105,7 +108,10 @@ class GroupNamesConfig(ConfigBase):
     """
     How the access groups of proposals and panels are named. Proposals have three tiers
     (members, Co-Investigators with edit rights, PIs) and panels two (members, chairs).
-    Each suffix is appended to the base group's name; a "/" in one makes a subgroup.
+    Each suffix is appended to the base group's name, and must name a subgroup of it:
+    tokens carry every group above the ones a user is in, so a PI or chair can read only
+    because their group sits under the members' group. The "/" also keeps a suffix from
+    being read as part of a SKUID.
     """
 
     base: str = Field(
@@ -115,19 +121,19 @@ class GroupNamesConfig(ConfigBase):
     )
     coi_suffix: str = Field(
         default="/w",
-        min_length=1,
+        pattern=SUBGROUP_PATTERN,
         alias="PHT_GROUP_COI_SUFFIX",
         description="Suffix of a proposal's group for Co-Investigators with edit rights",
     )
     pi_suffix: str = Field(
         default="/w/a",
-        min_length=1,
+        pattern=SUBGROUP_PATTERN,
         alias="PHT_GROUP_PI_SUFFIX",
-        description="Suffix of a proposal's group for its Principal Investigators",
+        description="Suffix of a proposal's group for its PIs, under the CoI suffix",
     )
     chair_suffix: str = Field(
         default="/w/a",
-        min_length=1,
+        pattern=SUBGROUP_PATTERN,
         alias="PHT_GROUP_CHAIR_SUFFIX",
         description="Suffix of a panel's group for its chairs",
     )
@@ -139,9 +145,10 @@ class GroupNamesConfig(ConfigBase):
         return value
 
     @model_validator(mode="after")
-    def _distinct_proposal_tiers(self) -> "GroupNamesConfig":
-        if self.coi_suffix == self.pi_suffix:
-            raise ValueError("The Co-Investigator and PI suffixes must differ")
+    def _pis_under_cois(self) -> "GroupNamesConfig":
+        # So that a PI's token carries the CoI group, and with it edit rights
+        if not self.pi_suffix.startswith(self.coi_suffix + "/"):
+            raise ValueError("The PI suffix must be a subgroup of the Co-Investigator suffix")
         return self
 
 

@@ -209,7 +209,7 @@ def test_panels_have_no_write_group():
 @pytest.fixture
 def renamed_groups():
     names = GroupNamesConfig(
-        base="ska:{skuid}", coi_suffix="/coi", pi_suffix="/pi", chair_suffix="/chair"
+        base="ska:{skuid}", coi_suffix="/coi", pi_suffix="/coi/pi", chair_suffix="/chair"
     )
     with mock.patch.object(facts_module, "get_settings") as get_settings:
         get_settings.return_value.groups = names
@@ -223,7 +223,7 @@ class TestConfiguredGroupNames:
         [
             pytest.param("prp-abc123", False, False, "ska:prp-abc123", id="base-group"),
             pytest.param("prp-abc123", False, True, "ska:prp-abc123/coi", id="coi-group"),
-            pytest.param("prp-abc123", True, False, "ska:prp-abc123/pi", id="pi-group"),
+            pytest.param("prp-abc123", True, False, "ska:prp-abc123/coi/pi", id="pi-group"),
             pytest.param("pnl-xyz999", True, False, "ska:pnl-xyz999/chair", id="chair-group"),
         ],
     )
@@ -233,10 +233,10 @@ class TestConfiguredGroupNames:
     def test_parses_groups(self):
         auth = make_auth_context(
             "ska:prp-abc123/coi",
-            "ska:prp-def456/pi",
+            "ska:prp-def456/coi/pi",
             "ska:pnl-xyz999/chair",
             "app:pht:prp-ghi789/w",  # the default names no longer count
-            "ska:pnl-uvw111/pi",  # a proposal tier on a panel
+            "ska:pnl-uvw111/coi",  # a proposal tier on a panel
         )
 
         proposals, panels = Facts(auth).get_all_proposals_and_panels()
@@ -247,20 +247,46 @@ class TestConfiguredGroupNames:
         }
         assert panels == {"pnl-xyz999": Membership("pnl-xyz999", True, False)}
 
-    def test_a_pi_can_write_without_being_in_the_coi_group(self):
-        facts = Facts(make_auth_context("ska:prp-abc123", "ska:prp-abc123/pi"))
-
-        assert facts.has_write_membership("prp-abc123")
-
 
 class TestGroupNamesConfig:
     def test_base_needs_the_skuid_placeholder(self):
         with pytest.raises(ValidationError, match="skuid"):
             GroupNamesConfig(base="app:pht")
 
-    def test_proposal_tiers_must_differ(self):
-        with pytest.raises(ValidationError, match="must differ"):
-            GroupNamesConfig(coi_suffix="/x", pi_suffix="/x")
+    @pytest.mark.parametrize(
+        "field",
+        ["coi_suffix", "pi_suffix", "chair_suffix"],
+    )
+    @pytest.mark.parametrize(
+        "suffix",
+        [
+            pytest.param("w", id="not-a-subgroup"),  # app:pht:prp-123w reads as prp-123w
+            pytest.param("-pi", id="sibling-group"),
+            pytest.param("/", id="empty-name"),
+            pytest.param("/w/", id="trailing-slash"),
+            pytest.param("/w//a", id="empty-segment"),
+        ],
+    )
+    def test_suffixes_must_be_subgroups(self, field, suffix):
+        with pytest.raises(ValidationError, match="pattern"):
+            GroupNamesConfig(**{field: suffix})
+
+    @pytest.mark.parametrize(
+        "pi_suffix",
+        [
+            pytest.param("/w", id="same-as-coi"),
+            pytest.param("/a", id="sibling-of-coi"),
+            pytest.param("/wa", id="prefixed-but-not-under-coi"),
+        ],
+    )
+    def test_pi_suffix_must_be_under_the_coi_suffix(self, pi_suffix):
+        with pytest.raises(ValidationError, match="subgroup of the Co-Investigator"):
+            GroupNamesConfig(coi_suffix="/w", pi_suffix=pi_suffix)
+
+    def test_accepts_renamed_hierarchical_suffixes(self):
+        names = GroupNamesConfig(coi_suffix="/coi", pi_suffix="/coi/pi", chair_suffix="/chair")
+
+        assert names.pi_suffix == "/coi/pi"
 
     def test_reads_the_environment(self, monkeypatch):
         monkeypatch.setenv("PHT_GROUP_CHAIR_SUFFIX", "/chair")
