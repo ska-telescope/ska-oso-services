@@ -1,5 +1,6 @@
 # pylint: disable=no-member
 import dataclasses
+from collections import Counter
 
 import astropy.units as u
 from ska_oso_pdm import PointingKind, ValidationArrayAssembly
@@ -320,7 +321,8 @@ def validate_station_bandwidth(
         beam_max_stations = []
         for beam in scan.beam_scans:
             max_number_of_substations = max(
-                [station.substation_id for station in beam.beam.apertures]
+                Counter(aperture.station_id for aperture in beam.beam.apertures).values(),
+                default=0,
             )
             csp_config = next(
                 csp_config

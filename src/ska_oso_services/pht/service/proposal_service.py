@@ -3,11 +3,11 @@ from collections import OrderedDict
 from datetime import UTC, datetime
 from typing import Iterable
 
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.postgres import TABLES
 from ska_oso_pdm.proposal import Proposal
+from sqlalchemy import select
 
 from ska_oso_services.pht.utils.constants import SV_NAME
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -60,13 +60,7 @@ def get_panel_prsl_ids(uow, panel_name: str) -> set[str]:
     Return the set of prsl_id values assigned to the *latest* panel
     matching `panel_name`. Empty set if not found.
     """
-    refs = (
-        get_latest_entity_by_id(
-            uow.panels.query(CustomQuery(name=panel_name)),
-            "panel_id",
-        )
-        or []
-    )
+    refs = uow.panels.query(select(TABLES.panels).where(TABLES.panels.c.name == panel_name))
     if not refs:
         return set()
 
@@ -84,12 +78,8 @@ def get_reviewer_prsl_ids(uow, reviewer_id: str, panel_name: str = SV_NAME) -> s
       • present on the given panel (latest by panel_id).
     """
     # Reviews → latest per review_id (avoid boolean coercion on query object)
-    latest_reviews = (
-        get_latest_entity_by_id(
-            uow.rvws.query(CustomQuery(reviewer_id=reviewer_id)),
-            "review_id",
-        )
-        or []
+    latest_reviews = uow.rvws.query(
+        select(TABLES.reviews).where(TABLES.reviews.c.reviewer_id == reviewer_id)
     )
 
     review_ids = {r.prsl_id for r in latest_reviews if getattr(r, "prsl_id", None)}

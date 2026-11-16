@@ -46,6 +46,16 @@ Unreleased
   User Portal group, which gives them access, and no longer saves them on the panel in the ODA.
 * Members of a panel can download the documents of proposals assigned to that panel.
 
+17.2.1
+******
+* [BUGFIX] fixed station bandwidth validation that was failing due to the move to 0-based ``substation_id`` values
+
+17.2.0
+******
+* [BUGFIX] `GET /coordinates` no longer fails when CDS is down. VizieR is no longer searched.
+* SIMBAD velocities stored as cz are now returned as a redshift rather than zero.
+* Updates to ODA v20.0.0 with SQLAlchemy. Makes use of new functionality to improve querying like the project-view API
+
 17.1.2
 ******
 * Update telmodel-client to 1.31.0 to address SKB-1644.

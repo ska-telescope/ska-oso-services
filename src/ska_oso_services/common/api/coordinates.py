@@ -22,7 +22,7 @@ def get_systemcoordinates(identifier: str, reference_frame: ReferenceFrame) -> T
     """
     Function that requests to /coordinates/{identifier}/{reference_frame} is mapped to
 
-    Query celestial coordinates for a given object name from SIMBAD, NED and Vizier databases.
+    Query celestial coordinates for a given object name from the SIMBAD and NED databases.
 
     :param identifier: A string representing the name of the object to query.
     :param reference_frame: A string representing the reference frame

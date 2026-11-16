@@ -3,10 +3,11 @@ from typing import Annotated
 
 from fastapi import APIRouter
 from ska_aaa_authhelpers.roles import Role
-from ska_db_oda.repository.domain import CustomQuery
+from ska_db_oda.postgres import TABLES
 from ska_oso_pdm import PanelDecision, Proposal
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.panel_decision import PanelReviewStatus, Recommendation
+from sqlalchemy import select
 
 from ska_oso_services.common import oda
 from ska_oso_services.common.auth import Scope
@@ -16,7 +17,6 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.pht.service.security import Security, SecurityService
-from ska_oso_services.pht.utils.pht_helper import get_latest_entity_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -145,4 +145,4 @@ def update_panel_decision(
 )
 def get_panel_decisions_for_user() -> list[PanelDecision]:
     with oda.uow() as uow:
-        return get_latest_entity_by_id(uow.pnlds.query(CustomQuery()), "decision_id") or []
+        return uow.pnlds.query(select(TABLES.panel_decisions))
