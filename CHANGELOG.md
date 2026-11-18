@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* `GET /visibility` and `render_svg` now default `min_elevation_deg` to the array's minimum elevation in the OSD, currently 15° for Mid and 45° for Low, instead of 20° for both
 
 17.2.2
 ******

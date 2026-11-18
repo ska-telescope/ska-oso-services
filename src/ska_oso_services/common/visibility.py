@@ -3,6 +3,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import io
+from collections.abc import Callable
 from datetime import UTC, datetime
 from enum import Enum
 
@@ -18,6 +19,8 @@ from ska_oso_services.common.static.constants import (
     MID_LOCATION,
     STEP_SECONDS_DEFAULT_VISIBILITY,
     T10_COLOURS,
+    low_minimum_elevation,
+    mid_minimum_elevation,
 )
 
 # Sites
@@ -26,8 +29,10 @@ SITES: dict[str, EarthLocation] = {
     "MID": MID_LOCATION,
 }
 
-# Default elevation limit applied to both sites when a caller does not specify one.
-DEFAULT_MIN_ELEVATION_DEG: float = 20.0
+SITE_MIN_ELEVATIONS: dict[str, Callable[[], u.Quantity]] = {
+    "LOW": low_minimum_elevation,
+    "MID": mid_minimum_elevation,
+}
 
 # A-team sources visible from SKA-Low (ICRS)
 ATEAM_SOURCES: dict[str, tuple[str, str]] = {
@@ -122,7 +127,7 @@ def _get_ateam_alts(site_key: str) -> dict[str, np.ndarray]:
 def render_svg(
     *,
     site_key: str,
-    min_elevation_deg: float = DEFAULT_MIN_ELEVATION_DEG,
+    min_elevation_deg: float | None = None,
     ra: str | None = None,
     dec: str | None = None,
     l: float | None = None,  # noqa: E741
@@ -132,7 +137,11 @@ def render_svg(
 ) -> bytes:
 
     site = SITES[site_key]
-    min_elev = min_elevation_deg
+    min_elev = (
+        min_elevation_deg
+        if min_elevation_deg is not None
+        else SITE_MIN_ELEVATIONS[site_key]().to_value(u.deg)
+    )
 
     # Anchor at the UTC time when LST = 0h so the x-axis starts at 0h.
     # LST is then computed as a linear ramp (0 → ~24.07h over one solar day)
