@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 * Updated to ska-ost-osd 8.0.0, using its repository and views in place of osdmapper's own models. Its tmdata is read from GitLab at the same release, as CAR doesn't hold it yet
+* Adds the `global.oso.osd_tmdata` Helm value (environment variable `OSD_TMDATA`) to read the OSD's tmdata from other TMData sources, e.g. OSD main
 * [BREAKING] `GET /prsls/osd/{cycle_id}` now takes the cycle's ID, e.g. `TEST_SKAO_2027_Low_AA2_SV`, rather than its number, as the OSD identifies cycles by ID
 * `GET /visibility` and `render_svg` now default `min_elevation_deg` to the array's minimum elevation in the OSD, currently 15° for Mid and 45° for Low, instead of 20° for both
 

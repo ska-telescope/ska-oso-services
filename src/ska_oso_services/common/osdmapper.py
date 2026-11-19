@@ -22,6 +22,7 @@ from ska_ost_osd.osd.views import odt
 from ska_telmodel_client import TMData
 
 from ska_oso_services.common.model import AppModel
+from ska_oso_services.settings import get_settings
 
 # tmdata's default noise diode mode is a tri-state string ("periodic",
 # "pseudo_random", "off"), but PDM's NoiseDiodeMode enum only covers the first
@@ -29,8 +30,8 @@ from ska_oso_services.common.model import AppModel
 # a third mode - so "off" is handled separately below.
 NOISE_DIODE_MODE_OFF = "off"
 
-# The tmdata is read at the same release as the installed ska-ost-osd, so the
-# library's models always match the files they read.
+# Unless OSD_TMDATA says otherwise, the tmdata is read at the same release as
+# the installed ska-ost-osd, so the library's models match the files they read.
 OSD_VERSION = version("ska-ost-osd")
 
 # (array assembly, policy) for each subarray the ODT serves, in the order it
@@ -72,20 +73,28 @@ class Configuration(AppModel):
     ska_low: LowConfiguration
 
 
-@cache
-def osd_repository(osd_version: str = OSD_VERSION) -> TMDataRepository:
+def osd_tmdata_sources() -> list[str]:
     """
-    The OSD repository, reading the OSD's tmdata.
+    The TMData sources the OSD's tmdata is read from: those in OSD_TMDATA, which
+    the Helm chart sets from global.oso.osd_tmdata, or else the tmdata at the
+    installed ska-ost-osd release.
 
-    CAR doesn't hold the tmdata for ska-ost-osd 8.0.0, so it is read from GitLab
-    at the release's tag. Once CAR does, the source can be
-    f"car:ost/ska-ost-osd?{osd_version}".
+    CAR doesn't hold the tmdata for ska-ost-osd 8.0.0, so by default it is read
+    from GitLab at the release's tag. Once CAR does, the default can be
+    f"car:ost/ska-ost-osd?{OSD_VERSION}".
     """
-    tmdata = TMData(
-        [f"gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?{osd_version}#tmdata"],
-        update=True,
-    )
-    return TMDataRepository(tmdata)
+    return list(get_settings().osd_tmdata) or [
+        f"gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?{OSD_VERSION}#tmdata"
+    ]
+
+
+@cache
+def osd_repository() -> TMDataRepository:
+    """
+    The OSD repository, reading the OSD's tmdata from osd_tmdata_sources().
+    It is read once per process, so a change to OSD_TMDATA needs a restart.
+    """
+    return TMDataRepository(TMData(osd_tmdata_sources(), update=True))
 
 
 def array_assembly_and_policy(telescope: Telescope, name: str) -> tuple[str, str | None]:

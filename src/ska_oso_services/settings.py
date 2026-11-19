@@ -19,6 +19,13 @@ DEFAULT_AUDIENCES = (
 PRESIGNED_URL_EXPIRY_TIME = 60
 
 
+def _comma_separated(value: object) -> object:
+    """Splits an environment variable's comma-separated values into a tuple."""
+    if isinstance(value, str):
+        return tuple(part.strip() for part in value.split(",") if part.strip())
+    return value
+
+
 class ODAConfig(BaseSettings):
     """Configuration for the Online Data Archive (ODA)."""
 
@@ -45,9 +52,7 @@ class AuthConfig(BaseSettings):
 
     @field_validator("audience", mode="before")
     def _parse_audience(cls, value: object) -> object:
-        if isinstance(value, str):
-            return tuple(part.strip() for part in value.split(",") if part.strip())
-        return value
+        return _comma_separated(value)
 
 
 class EmailConfig(BaseSettings):
@@ -82,6 +87,13 @@ class Settings(BaseSettings):
     api_path_prefix: str = Field(default="", alias="API_PATH_PREFIX")
     engineering_api_enabled: bool = Field(default=True, alias="ENGINEERING_API_ENABLED")
     sdp_script_tmdata: str | None = Field(default=None, alias="SDP_SCRIPT_TMDATA")
+    # The TMData sources for the OSD, comma separated. If empty, osdmapper reads
+    # the OSD's tmdata at the installed ska-ost-osd release.
+    osd_tmdata: Annotated[Tuple[str, ...], NoDecode] = Field(default=(), alias="OSD_TMDATA")
+
+    @field_validator("osd_tmdata", mode="before")
+    def _parse_osd_tmdata(cls, value: object) -> object:
+        return _comma_separated(value)
 
     # Sub-models
     oda: ODAConfig = Field(default_factory=ODAConfig)
