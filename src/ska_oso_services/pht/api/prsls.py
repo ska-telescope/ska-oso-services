@@ -13,11 +13,6 @@ from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
 from ska_ost_osd.osd.exceptions import OSDQueryError
-from ska_ost_osd.osd.views.pht import (
-    CycleConfiguration,
-    get_cycle_configuration,
-    get_cycle_configurations,
-)
 from ska_ser_skuid import EntityType, mint_skuid
 from sqlalchemy import select
 from starlette.status import HTTP_400_BAD_REQUEST
@@ -31,10 +26,11 @@ from ska_oso_services.common.error_handling import (
     UnprocessableEntityError,
 )
 from ska_oso_services.common.osdmapper import osd_repository
-from ska_oso_services.pht.models.domain import PrslRole
+from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
+from ska_oso_services.pht.service.osd_cycles import osd_data
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
     get_panel_prsl_ids,
@@ -65,40 +61,41 @@ router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
     "/osd/cycles",
     summary="Retrieve OSD data for all available cycles",
 )
-def get_all_osd_cycles() -> list[CycleConfiguration]:
+def get_all_osd_cycles() -> list[OsdDataModel]:
     """
-    This queries the OSD data for all available cycles.
+    This queries the OSD data for all available cycles, in order of cycle ID.
 
     This data is made available for the PHT UI.
 
     Returns:
-        list[CycleConfiguration]: a list of the OSD data for all cycles.
+        list[OsdDataModel]: a list of the OSD data for all cycles.
 
     """
     logger.debug("GET OSD data for all cycles")
     try:
-        return get_cycle_configurations(osd_repository())
+        osd = osd_repository()
+        return [osd_data(osd, cycle_id) for cycle_id in osd.get_cycle_ids()]
     except OSDQueryError as error:
         raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
 
 @router.get(
-    "/osd/{cycle}",
+    "/osd/{cycle_id}",
     summary="Retrieve OSD data for a given cycle",
 )
-def get_osd_by_cycle(cycle: int) -> CycleConfiguration:
+def get_osd_by_cycle(cycle_id: str) -> OsdDataModel:
     """
-    This queries the OSD data by cycle id.
+    This queries the OSD data by cycle ID, e.g. TEST_SKAO_2027_Low_AA2_SV.
 
     This data is made available for the PHT UI.
 
     Returns:
-        CycleConfiguration: The OSD data validated against the defined schema.
+        OsdDataModel: The OSD data validated against the defined schema.
 
     """
-    logger.debug("GET OSD data cycle: %s", cycle)
+    logger.debug("GET OSD data cycle: %s", cycle_id)
     try:
-        return get_cycle_configuration(osd_repository(), cycle)
+        return osd_data(osd_repository(), cycle_id)
     except OSDQueryError as error:
         raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(error)) from error
 

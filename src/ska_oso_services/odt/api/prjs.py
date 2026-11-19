@@ -32,7 +32,7 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
-from ska_oso_services.common.osdmapper import osd_repository
+from ska_oso_services.common.osdmapper import get_capabilities
 from ska_oso_services.common.static.constants import (
     low_available_coarse_channels,
     low_max_coarse_channel,
@@ -145,9 +145,7 @@ class CalibratorSweepInputs(BaseModel):
     )
     stations: list[int] = Field(
         default_factory=lambda: (
-            osd_repository()
-            .get_capability_set(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value)
-            .receptors
+            get_capabilities(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value).receptors.receptor_ids
         ),
         description="List of station IDs to set in the SBDefinition. "
         "Will default to the AA1 stations if not given.",
@@ -187,9 +185,7 @@ class BasicCommissioningInputs(BaseModel):
 
     stations: list[int] = Field(
         default_factory=lambda: (
-            osd_repository()
-            .get_capability_set(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value)
-            .receptors
+            get_capabilities(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value).receptors.receptor_ids
         ),
         description="List of station IDs to set in the SBDefinition. "
         "Will default to the AA1 stations if not given.",
@@ -231,9 +227,7 @@ class FrequencySweepInputs(BaseModel):
     )
     stations: list[int] = Field(
         default_factory=lambda: (
-            osd_repository()
-            .get_capability_set(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value)
-            .receptors
+            get_capabilities(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value).receptors.receptor_ids
         ),
         description="List of station IDs to set in the SBDefinition. "
         "Will default to the AA1 stations if not given.",

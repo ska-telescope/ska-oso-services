@@ -10,11 +10,12 @@ import pytest
 from aiosmtplib.errors import SMTPConnectError, SMTPException, SMTPRecipientsRefused
 from fastapi import status
 from ska_ost_osd.osd.common.constant import Telescope
-from ska_ost_osd.osd.exceptions import CapabilitySetNotFoundError, CycleNotFoundError
-from ska_ost_osd.osd.views.pht import CycleConfiguration
+from ska_ost_osd.osd.exceptions import ArrayAssemblyNotFoundError, CycleNotFoundError
+from ska_ost_osd.osd.views import pht as osd_pht
 
 from ska_oso_services.pht.api import prsls as prsl_api
 from ska_oso_services.pht.api.prsls import get_proposals_by_status
+from ska_oso_services.pht.models.domain import Capabilities, Low, OsdDataModel
 from ska_oso_services.pht.service import proposal_service as ps
 from ska_oso_services.pht.service.proposal_service import get_panel_prsl_ids
 from tests.conftest import PHT_BASE_API_URL
@@ -68,109 +69,106 @@ class TestListAccess:
         assert got == []
 
 
-CYCLE_1_DATA = {
-    "observatory_policy": {
-        "cycle_number": 1,
-        "cycle_id": "SKAO_2027_Low_AA2_SV",
-        "type": "Science Verification",
-        "cycle_description": "Science Verification",
-        "cycle_information": {
-            "cycle_id": "SKAO_2027_1",
-            "proposal_open": "2026-03-27T12:00:00.000Z",
-            "proposal_close": "2026-05-12T15:00:00.000Z",
-        },
-        "cycle_policies": {"normal_max_hours": 100.0},
-        "telescope_capabilities": {"Mid": None, "Low": "AA2_SV"},
-    },
-    "capabilities": {
-        "mid": None,
-        "low": {
-            "basic_capabilities": {
-                "min_frequency_hz": 50e6,
-                "max_frequency_hz": 350e6,
-                "min_coarse_channel": 64,
-                "max_coarse_channel": 447,
-                "coarse_channel_width_hz": 781250.0,
-                "number_continuum_channels_per_coarse_channel": 144,
-                "number_zoom_channels_per_coarse_channel": 432,
-                "number_pst_channels_per_coarse_channel": 216,
-                "number_pss_channels_per_coarse_channel": 54,
-            },
-            "AA2_SV": {
-                "name": "AA2_SV",
-                "receptors": [345, 350],
-                "number_stations": 2,
-                "number_substations": 0,
-                "number_subarray_beams": 1,
-                "max_baseline_km": 40.0,
-                "available_bandwidth_hz": 150e6,
-                "cbf_modes": ["vis", "pst"],
-                "number_zoom_windows": 16,
-                "number_zoom_channels": 4000,
-                "number_pss_beams": 0,
-                "number_pst_beams": 1,
-                "number_vlbi_beams": 0,
-                "ps_beam_bandwidth_hz": 118e6,
-                "number_fsps": 10,
-                "allowed_zoom_factors": [1, 2, 4],
-            },
-        },
-    },
-}
-CYCLE_1 = CycleConfiguration.model_validate(CYCLE_1_DATA)
-CYCLE_2 = CycleConfiguration.model_validate(
-    {
-        **CYCLE_1_DATA,
-        "observatory_policy": {**CYCLE_1_DATA["observatory_policy"], "cycle_number": 2},
+OBSERVATORY_POLICY_1 = osd_pht.ObservatoryPolicy(
+    cycle_number=1,
+    cycle_id="SKAO_2027_Low_AA2_SV",
+    type="Science Verification",
+    cycle_description="Science Verification",
+    cycle_information=osd_pht.CycleInformation(
+        cycle_id="SKAO_2027_Low_AA2_SV",
+        proposal_open="2026-03-27T12:00:00.000Z",
+        proposal_close="2026-05-12T15:00:00.000Z",
+    ),
+    cycle_policies=osd_pht.CyclePolicies(normal_max_hours=100.0),
+    telescope_capabilities=osd_pht.TelescopeCapabilities(Low="AA2_SV"),
+)
+CYCLE_1 = OsdDataModel(
+    observatory_policy=OBSERVATORY_POLICY_1,
+    capabilities=Capabilities(
+        low=Low(
+            basic_capabilities=osd_pht.BasicCapabilitiesLow(
+                min_frequency_hz=50e6, max_frequency_hz=350e6
+            ),
+            AA2_SV=osd_pht.AA2_LOW(
+                number_stations=2,
+                number_substations=0,
+                number_beams=1,
+                max_baseline_km=40.0,
+                available_bandwidth_hz=150e6,
+                cbf_modes=["vis", "pst"],
+                number_zoom_windows=16,
+                number_zoom_channels=4000,
+                number_pss_beams=0,
+                number_pst_beams=1,
+                number_vlbi_beams=0,
+                ps_beam_bandwidth_hz=118e6,
+                number_fsps=10,
+            ),
+        )
+    ),
+)
+CYCLE_2 = CYCLE_1.model_copy(
+    update={
+        "observatory_policy": OBSERVATORY_POLICY_1.model_copy(
+            update={"cycle_number": 2, "cycle_id": "SKAO_2027_Low_AA2_Proposal"}
+        )
     }
 )
 
 
 @mock.patch(f"{PRSL_MODULE}.osd_repository")
 class TestOSD:
-    @mock.patch(f"{PRSL_MODULE}.get_cycle_configuration")
-    def test_get_osd_by_cycle_success(self, mock_get_cycle_configuration, mock_repository, client):
-        mock_get_cycle_configuration.return_value = CYCLE_1
+    @mock.patch(f"{PRSL_MODULE}.osd_data")
+    def test_get_osd_by_cycle_success(self, mock_osd_data, mock_repository, client):
+        mock_osd_data.return_value = CYCLE_1
 
-        response = client.get(f"{PROPOSAL_API_URL}/osd/1")
+        response = client.get(f"{PROPOSAL_API_URL}/osd/SKAO_2027_Low_AA2_SV")
 
         assert response.status_code == HTTPStatus.OK
-        mock_get_cycle_configuration.assert_called_once_with(mock_repository.return_value, 1)
+        mock_osd_data.assert_called_once_with(mock_repository.return_value, "SKAO_2027_Low_AA2_SV")
         policy = response.json()["observatory_policy"]
         assert policy["cycle_number"] == 1
-        assert policy["cycle_information"]["cycle_id"] == "SKAO_2027_1"
+        assert policy["cycle_information"]["cycle_id"] == "SKAO_2027_Low_AA2_SV"
         assert policy["telescope_capabilities"] == {"Mid": None, "Low": "AA2_SV"}
-        assert list(response.json()["capabilities"]["low"]) == ["basic_capabilities", "AA2_SV"]
+        # The capabilities are served under the name of the policy the cycle offers
+        assert response.json()["capabilities"]["mid"] is None
+        low = response.json()["capabilities"]["low"]
+        assert low["AA2"] is None
+        assert low["AA2_SV"]["number_beams"] == 1
 
-    @mock.patch(f"{PRSL_MODULE}.get_cycle_configuration")
-    def test_get_osd_by_cycle_not_found(
-        self, mock_get_cycle_configuration, mock_repository, client
-    ):
-        error = CycleNotFoundError(9999, [1, 2])
-        mock_get_cycle_configuration.side_effect = error
+    @mock.patch(f"{PRSL_MODULE}.osd_data")
+    def test_get_osd_by_cycle_not_found(self, mock_osd_data, mock_repository, client):
+        error = CycleNotFoundError("9999", ["SKAO_2027_Low_AA2_SV"])
+        mock_osd_data.side_effect = error
 
         response = client.get(f"{PROPOSAL_API_URL}/osd/9999")
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert response.json() == {"detail": str(error)}
 
-    @mock.patch(f"{PRSL_MODULE}.get_cycle_configurations")
-    def test_get_all_osd_cycles_success(
-        self, mock_get_cycle_configurations, mock_repository, client
-    ):
-        mock_get_cycle_configurations.return_value = [CYCLE_1, CYCLE_2]
+    @mock.patch(f"{PRSL_MODULE}.osd_data")
+    def test_get_all_osd_cycles_success(self, mock_osd_data, mock_repository, client):
+        mock_repository.return_value.get_cycle_ids.return_value = [
+            "SKAO_2027_Low_AA2_SV",
+            "SKAO_2027_Low_AA2_Proposal",
+        ]
+        mock_osd_data.side_effect = [CYCLE_1, CYCLE_2]
 
         response = client.get(f"{PROPOSAL_API_URL}/osd/cycles")
 
         assert response.status_code == HTTPStatus.OK
-        mock_get_cycle_configurations.assert_called_once_with(mock_repository.return_value)
+        assert mock_osd_data.call_args_list == [
+            mock.call(mock_repository.return_value, "SKAO_2027_Low_AA2_SV"),
+            mock.call(mock_repository.return_value, "SKAO_2027_Low_AA2_Proposal"),
+        ]
         cycles = [cycle["observatory_policy"]["cycle_number"] for cycle in response.json()]
         assert cycles == [1, 2]
 
-    @mock.patch(f"{PRSL_MODULE}.get_cycle_configurations")
-    def test_get_all_osd_cycles_fail(self, mock_get_cycle_configurations, mock_repository, client):
-        error = CapabilitySetNotFoundError(Telescope.SKA_LOW, "AA9", ["AA2", "AA2_SV"])
-        mock_get_cycle_configurations.side_effect = error
+    @mock.patch(f"{PRSL_MODULE}.osd_data")
+    def test_get_all_osd_cycles_fail(self, mock_osd_data, mock_repository, client):
+        mock_repository.return_value.get_cycle_ids.return_value = ["SKAO_2027_Low_AA2_SV"]
+        error = ArrayAssemblyNotFoundError(Telescope.SKA_LOW, "AA9", ["AA2"])
+        mock_osd_data.side_effect = error
 
         response = client.get(f"{PROPOSAL_API_URL}/osd/cycles")
 

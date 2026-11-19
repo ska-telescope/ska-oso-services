@@ -30,7 +30,7 @@ from ska_oso_pdm.sb_definition.procedures import GitScript
 from ska_ost_osd.osd.common.constant import Telescope
 
 from ska_oso_services.common.astro import low_frequency_to_coarse_channel
-from ska_oso_services.common.osdmapper import osd_repository
+from ska_oso_services.common.osdmapper import get_capabilities
 from ska_oso_services.odt.service.sbd_generator import _sbd_internal_id
 from ska_oso_services.odt.service.target_grouping import GroupingMethod, Pointing, create_grouper
 
@@ -39,8 +39,8 @@ DEFAULT_MINIMUM_ALTITUDE = 20.0 * u.deg
 
 
 def _low_default_subarray_parameters() -> tuple[list[int], Quantity]:
-    capability_set = osd_repository().get_capability_set(Telescope.SKA_LOW, DEFAULT_SUBARRAY.value)
-    return capability_set.receptors, capability_set.available_bandwidth_hz * u.Hz
+    capabilities = get_capabilities(Telescope.SKA_LOW, DEFAULT_SUBARRAY.value)
+    return capabilities.receptors.receptor_ids, capabilities.available_bandwidth_hz * u.Hz
 
 
 CALIBRATOR_TARGET = Target(

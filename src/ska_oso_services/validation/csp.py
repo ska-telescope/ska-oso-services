@@ -15,7 +15,7 @@ from ska_oso_services.common.astro import (
     low_centre_frequency_to_coarse_channel_end,
     low_centre_frequency_to_coarse_channel_start,
 )
-from ska_oso_services.common.osdmapper import osd_repository
+from ska_oso_services.common.osdmapper import get_capabilities, osd_repository
 from ska_oso_services.common.static.constants import (
     low_max_coarse_channel,
     low_min_coarse_channel,
@@ -249,9 +249,9 @@ def validate_continuum_spw_bandwidth(
     spw_index = spw_context.relevant_context["spw_index"]
 
     available_bandwidth = (
-        osd_repository()
-        .get_capability_set(Telescope(spw_context.telescope), spw_context.array_assembly.value)
-        .available_bandwidth_hz
+        get_capabilities(
+            Telescope(spw_context.telescope), spw_context.array_assembly.value
+        ).available_bandwidth_hz
         * u.Hz
     )
 
@@ -348,11 +348,9 @@ def validate_mid_fsps(
     """
     csp_config = csp_context.primary_entity
 
-    available_fsps = (
-        osd_repository()
-        .get_capability_set(Telescope.SKA_MID, csp_context.array_assembly.value)
-        .number_fsps
-    )
+    available_fsps = get_capabilities(
+        Telescope.SKA_MID, csp_context.array_assembly.value
+    ).cbf.number_fsps
 
     n_fsps = 0
 
