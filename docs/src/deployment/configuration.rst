@@ -77,3 +77,9 @@ The ODA connection is configured these environment variables and corresponding H
      - Required
      - Pulled from Vault - see :doc:`secret_management`
      -
+   * - OSD_TMDATA
+     - Comma-separated TMData sources the OSD data is read from, e.g. ``gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?main#tmdata``.
+       It is read once on startup, so a change needs a restart.
+     - Optional - default: the OSD's tmdata at the installed ska-ost-osd release
+     - ``global.oso.osd_tmdata`` (a list)
+     - Optional - default: ``[]``, so the application default is used

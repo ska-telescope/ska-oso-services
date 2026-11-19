@@ -12,14 +12,41 @@ from ska_ost_osd.osd.views.odt import (
     SPFRxParameters,
 )
 
+import ska_oso_services.settings as settings_module
 from ska_oso_services.common.osdmapper import (
+    OSD_VERSION,
     SUBARRAYS,
     array_assembly_and_policy,
     configuration_from_osd,
     get_capabilities,
     get_default_pdm_target_spfrx,
     osd_repository,
+    osd_tmdata_sources,
 )
+from ska_oso_services.settings import Settings, get_settings
+
+
+def test_osd_tmdata_sources_default_to_the_installed_osd_release():
+    with patch.object(
+        settings_module, "SETTINGS", get_settings().model_copy(update={"osd_tmdata": ()})
+    ):
+        assert osd_tmdata_sources() == [
+            f"gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?{OSD_VERSION}#tmdata"
+        ]
+
+
+def test_osd_tmdata_sources_are_read_from_the_osd_tmdata_environment_variable(monkeypatch):
+    # As the Helm chart sets it, from a list joined with commas
+    monkeypatch.setenv(
+        "OSD_TMDATA",
+        "file:///tmdata, gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?main#tmdata",
+    )
+
+    with patch.object(settings_module, "SETTINGS", Settings()):
+        assert osd_tmdata_sources() == [
+            "file:///tmdata",
+            "gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?main#tmdata",
+        ]
 
 
 def test_configuration_from_osd_returns_constraints():
