@@ -83,3 +83,9 @@ The ODA connection is configured these environment variables and corresponding H
      - Optional - default: the OSD's tmdata at the installed ska-ost-osd release
      - ``global.oso.osd_tmdata`` (a list)
      - Optional - default: ``[]``, so the application default is used
+   * - SIMBAD_SERVERS
+     - Comma-separated SIMBAD servers that target coordinates are looked up in, tried in order until one can be reached.
+       Any SIMBAD mirror that serves TAP at ``/simbad/sim-tap`` can be used.
+     - Optional - default: ``simbad.cds.unistra.fr,simbad.harvard.edu,simbad.idia.ac.za``
+     - ``rest.simbadServers`` (a list)
+     - Optional - default: IDIA's mirror first, then CDS and Harvard, while the CDS server is unavailable

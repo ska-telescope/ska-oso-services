@@ -11,6 +11,9 @@ data:
   PIPELINE_TESTS_DEPLOYMENT: {{ .Values.pipeline_test_deployment | quote }}
   SKA_AUTH_AUDIENCE: {{ .Values.rest.authAudiences | join "," | quote }}
   SDP_SCRIPT_TMDATA: {{ .Values.global.oso.sdp_tmdata }}
+  {{- with .Values.rest.simbadServers }}
+  SIMBAD_SERVERS: {{ join "," . | quote }}
+  {{- end }}
   {{- with .Values.global.oso.osd_tmdata }}
   OSD_TMDATA: {{ join "," . | quote }}
   {{- end }}

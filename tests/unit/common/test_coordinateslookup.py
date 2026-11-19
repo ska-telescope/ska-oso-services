@@ -10,9 +10,9 @@ from astroquery.simbad import SimbadClass
 from pyvo.dal.exceptions import DALAccessError, DALServiceError
 from ska_oso_pdm import GalacticCoordinates, ICRSCoordinates, RadialVelocity, Target
 
+import ska_oso_services.settings as settings_module
 from ska_oso_services.common.coordinateslookup import (
     CATALOGUE_TIMEOUT_S,
-    SIMBAD_SERVERS,
     Catalogue,
     CatalogueUnavailableError,
     ReferenceFrame,
@@ -24,6 +24,7 @@ from ska_oso_services.common.coordinateslookup import (
     lookup_in_simbad,
 )
 from ska_oso_services.common.error_handling import CatalogLookupError, NotFoundError
+from ska_oso_services.settings import DEFAULT_SIMBAD_SERVERS, Settings, get_settings
 
 MODULE = "ska_oso_services.common.coordinateslookup"
 
@@ -71,12 +72,27 @@ TEST_NED_TARGET_WITH_REDSHIFT = Target(
 )
 
 
+def use_simbad_servers(servers: tuple[str, ...]):
+    """Patches the settings to look up coordinates in these SIMBAD servers, in order."""
+    return mock.patch.object(
+        settings_module,
+        "SETTINGS",
+        get_settings().model_copy(update={"simbad_servers": servers}),
+    )
+
+
 @pytest.fixture(name="simbad_clients")
 def fixture_simbad_clients():
-    """Mock SIMBAD clients for the CDS server and the Harvard mirror, in that order"""
-    clients = (mock.MagicMock(), mock.MagicMock())
-    clients_by_server = dict(zip(SIMBAD_SERVERS, clients))
-    with mock.patch(f"{MODULE}._simbad_client", side_effect=clients_by_server.__getitem__):
+    """
+    Mock SIMBAD clients for the CDS server and then the Harvard and IDIA mirrors,
+    the default order they are tried in
+    """
+    clients = tuple(mock.MagicMock() for _ in DEFAULT_SIMBAD_SERVERS)
+    clients_by_server = dict(zip(DEFAULT_SIMBAD_SERVERS, clients))
+    with (
+        use_simbad_servers(DEFAULT_SIMBAD_SERVERS),
+        mock.patch(f"{MODULE}._simbad_client", side_effect=clients_by_server.__getitem__),
+    ):
         yield clients
 
 
@@ -103,7 +119,7 @@ def fixture_sent_requests():
 
 
 def test_found_in_simbad(simbad_clients, ned):
-    cds, harvard = simbad_clients
+    cds, *mirrors = simbad_clients
     cds.query_object.return_value = SIMBAD_RESULT_WITH_VELOCITY
 
     result = get_coordinates("M83", ReferenceFrame.equatorial)
@@ -111,14 +127,15 @@ def test_found_in_simbad(simbad_clients, ned):
     assert result == TEST_TARGET_WITH_VELOCITY
     # One request in total: the position and velocity come from the same query
     cds.query_object.assert_called_once()
-    harvard.query_object.assert_not_called()
+    for mirror in mirrors:
+        mirror.query_object.assert_not_called()
     ned.query_object.assert_not_called()
 
 
 @pytest.mark.parametrize("rvz_type", ["z", "c"])
 def test_found_in_simbad_with_redshift(simbad_clients, ned, rvz_type):
     # SIMBAD stores a cz measurement ("c") as its redshift too
-    cds, _ = simbad_clients
+    cds, *_ = simbad_clients
     simbad_result = SIMBAD_RESULT_WITH_REDSHIFT.copy()
     simbad_result["rvz_type"] = [rvz_type]
     cds.query_object.return_value = simbad_result
@@ -129,7 +146,7 @@ def test_found_in_simbad_with_redshift(simbad_clients, ned, rvz_type):
 
 
 def test_found_in_simbad_galactic(simbad_clients, ned):
-    cds, _ = simbad_clients
+    cds, *_ = simbad_clients
     cds.query_object.return_value = SIMBAD_RESULT_WITH_VELOCITY
 
     result = get_coordinates("M83", ReferenceFrame.galactic)
@@ -138,19 +155,20 @@ def test_found_in_simbad_galactic(simbad_clients, ned):
 
 
 def test_not_found_in_simbad_found_in_ned(simbad_clients, ned):
-    cds, harvard = simbad_clients
+    cds, *mirrors = simbad_clients
     cds.query_object.return_value = EMPTY_SIMBAD_RESULT
     ned.query_object.return_value = NED_RESULT
 
     result = get_coordinates("M83", ReferenceFrame.equatorial)
 
     assert result == TEST_NED_TARGET_WITH_REDSHIFT
-    # The mirror is only for when CDS can't be reached, not for objects it doesn't have
-    harvard.query_object.assert_not_called()
+    # The mirrors are only for when CDS can't be reached, not for objects it doesn't have
+    for mirror in mirrors:
+        mirror.query_object.assert_not_called()
 
 
 def test_found_in_ned_without_redshift(simbad_clients, ned):
-    cds, _ = simbad_clients
+    cds, *_ = simbad_clients
     cds.query_object.return_value = EMPTY_SIMBAD_RESULT
     ned.query_object.return_value = NED_RESULT_WITHOUT_REDSHIFT
 
@@ -160,7 +178,7 @@ def test_found_in_ned_without_redshift(simbad_clients, ned):
 
 
 def test_not_found_in_simbad_or_ned(simbad_clients, ned):
-    cds, _ = simbad_clients
+    cds, *_ = simbad_clients
     cds.query_object.return_value = EMPTY_SIMBAD_RESULT
     ned.query_object.side_effect = NED_NOT_FOUND_ERROR
 
@@ -181,14 +199,46 @@ def test_not_found_in_simbad_or_ned(simbad_clients, ned):
     ],
 )
 def test_simbad_cds_unavailable_uses_harvard_mirror(simbad_clients, ned, error):
-    cds, harvard = simbad_clients
+    cds, harvard, idia = simbad_clients
     cds.query_object.side_effect = error
     harvard.query_object.return_value = SIMBAD_RESULT_WITH_VELOCITY
 
     result = get_coordinates("M83", ReferenceFrame.equatorial)
 
     assert result == TEST_TARGET_WITH_VELOCITY
+    idia.query_object.assert_not_called()
     ned.query_object.assert_not_called()
+
+
+def test_simbad_cds_and_harvard_unavailable_uses_idia_mirror(simbad_clients, ned):
+    cds, harvard, idia = simbad_clients
+    cds.query_object.side_effect = DALServiceError("Connection failed")
+    harvard.query_object.side_effect = requests.ReadTimeout("Read timed out.")
+    idia.query_object.return_value = SIMBAD_RESULT_WITH_VELOCITY
+
+    result = get_coordinates("M83", ReferenceFrame.equatorial)
+
+    assert result == TEST_TARGET_WITH_VELOCITY
+    ned.query_object.assert_not_called()
+
+
+def test_simbad_servers_are_tried_in_the_configured_order(simbad_clients, ned):
+    cds, harvard, idia = simbad_clients
+    idia.query_object.return_value = SIMBAD_RESULT_WITH_VELOCITY
+
+    with use_simbad_servers(("simbad.idia.ac.za", "simbad.cds.unistra.fr")):
+        result = get_coordinates("M83", ReferenceFrame.equatorial)
+
+    assert result == TEST_TARGET_WITH_VELOCITY
+    cds.query_object.assert_not_called()
+    harvard.query_object.assert_not_called()
+
+
+def test_simbad_servers_are_read_from_the_environment(monkeypatch):
+    # As the Helm chart sets it, from a list joined with commas
+    monkeypatch.setenv("SIMBAD_SERVERS", "simbad.idia.ac.za, simbad.cds.unistra.fr")
+
+    assert Settings().simbad_servers == ("simbad.idia.ac.za", "simbad.cds.unistra.fr")
 
 
 def test_simbad_unavailable_found_in_ned(simbad_clients, ned):
@@ -225,7 +275,7 @@ def test_simbad_unavailable_not_found_in_ned(simbad_clients, ned):
     ],
 )
 def test_ned_unavailable_not_found_in_simbad(simbad_clients, ned, error):
-    cds, _ = simbad_clients
+    cds, *_ = simbad_clients
     cds.query_object.return_value = EMPTY_SIMBAD_RESULT
     ned.query_object.side_effect = error
 
@@ -271,24 +321,26 @@ def test_simbad_client_setup_requests_time_out(sent_requests):
     with pytest.raises(CatalogueUnavailableError):
         lookup_in_simbad("M83")
 
-    assert {urlsplit(url).hostname for url, _ in sent_requests} == set(SIMBAD_SERVERS)
+    assert {urlsplit(url).hostname for url, _ in sent_requests} == set(
+        get_settings().simbad_servers
+    )
     assert all(timeout == CATALOGUE_TIMEOUT_S for _, timeout in sent_requests)
 
 
 # Skip the requests made while setting up the client so only the lookup's query is sent
 @mock.patch.object(SimbadClass, "hardlimit", 10000)
 @mock.patch.object(SimbadClass, "add_votable_fields")
-def test_simbad_query_times_out(mock_add_votable_fields, sent_requests):
+@pytest.mark.parametrize("server", DEFAULT_SIMBAD_SERVERS)
+def test_simbad_query_times_out(mock_add_votable_fields, server, sent_requests):
     # Call the uncached function so the client isn't kept for other tests
-    client = _simbad_client.__wrapped__("simbad.harvard.edu")
+    client = _simbad_client.__wrapped__(server)
 
     with pytest.raises((DALAccessError, requests.RequestException)):
         client.query_object("M83")
 
     mock_add_votable_fields.assert_called_once_with("velocity")
-    assert sent_requests == [
-        ("https://simbad.harvard.edu/simbad/sim-tap/sync", CATALOGUE_TIMEOUT_S)
-    ]
+    # Each client queries its own server, including mirrors astroquery doesn't list
+    assert sent_requests == [(f"https://{server}/simbad/sim-tap/sync", CATALOGUE_TIMEOUT_S)]
 
 
 def test_timeout_adapter_only_sets_missing_timeout():

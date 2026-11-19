@@ -15,6 +15,10 @@ DEFAULT_AUDIENCES = (
     "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b",
 )
 
+# SIMBAD is hosted by CDS, with mirrors at Harvard and IDIA that are tried in turn
+# if CDS is unavailable
+DEFAULT_SIMBAD_SERVERS = ("simbad.cds.unistra.fr", "simbad.harvard.edu", "simbad.idia.ac.za")
+
 # Default expiry for S3 presigned URLs
 PRESIGNED_URL_EXPIRY_TIME = 60
 
@@ -91,8 +95,13 @@ class Settings(BaseSettings):
     # the OSD's tmdata at the installed ska-ost-osd release.
     osd_tmdata: Annotated[Tuple[str, ...], NoDecode] = Field(default=(), alias="OSD_TMDATA")
 
-    @field_validator("osd_tmdata", mode="before")
-    def _parse_osd_tmdata(cls, value: object) -> object:
+    # The SIMBAD servers to look up coordinates in, comma separated, in the order tried
+    simbad_servers: Annotated[Tuple[str, ...], NoDecode] = Field(
+        default=DEFAULT_SIMBAD_SERVERS, alias="SIMBAD_SERVERS"
+    )
+
+    @field_validator("osd_tmdata", "simbad_servers", mode="before")
+    def _parse_comma_separated(cls, value: object) -> object:
         return _comma_separated(value)
 
     # Sub-models
