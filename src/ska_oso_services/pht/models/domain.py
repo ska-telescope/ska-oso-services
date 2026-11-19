@@ -7,6 +7,7 @@ from typing import Optional
 
 from pydantic import EmailStr, Field
 from ska_oso_pdm.proposal import ProposalAccess, ProposalPermissions, ProposalRole
+from ska_ost_osd.osd.views import pht as osd_pht
 
 from ska_oso_services.common.model import AppModel
 
@@ -83,3 +84,32 @@ class PanelCreate(AppModel):
     name: str
     reviewers: list
     proposals: list
+
+
+class Mid(AppModel):
+    """Mid's basic capabilities, and the capabilities a cycle offers, under the policy's name."""
+
+    basic_capabilities: osd_pht.BasicCapabilitiesMid
+    AA2: osd_pht.AA2_MID | None = None
+
+
+class Low(AppModel):
+    """Low's basic capabilities, and the capabilities a cycle offers, under the policy's name."""
+
+    basic_capabilities: osd_pht.BasicCapabilitiesLow
+    AA2: osd_pht.AA2_LOW | None = None
+    AA2_SV: osd_pht.AA2_LOW | None = None
+
+
+class Capabilities(AppModel):
+    """The telescopes a cycle offers; None for one it does not."""
+
+    mid: Mid | None = None
+    low: Low | None = None
+
+
+class OsdDataModel(AppModel):
+    """The OSD data the PHT UI reads for one cycle: the cycle and what it offers."""
+
+    observatory_policy: osd_pht.ObservatoryPolicy
+    capabilities: Capabilities

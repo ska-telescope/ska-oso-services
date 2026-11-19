@@ -1,6 +1,6 @@
-from ska_ost_osd.osd.models.capabilities import LowBasicCapabilities
-from ska_ost_osd.osd.views.odt import Configuration
+from ska_ost_osd.osd.views.odt import LowFrequencyBand
 
+from ska_oso_services.common.osdmapper import Configuration
 from ska_oso_services.odt.api.configuration import configuration_get
 
 
@@ -15,7 +15,7 @@ def test_configuration_get():
     response = configuration_get()
 
     assert isinstance(response, Configuration)
-    assert response.ska_low.frequency_band == LowBasicCapabilities(
+    assert response.ska_low.frequency_band == LowFrequencyBand(
         min_frequency_hz=50e6,
         max_frequency_hz=350e6,
         min_coarse_channel=64,

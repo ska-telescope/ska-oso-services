@@ -5,7 +5,7 @@ from astropy.units import Quantity
 from ska_oso_pdm import CoordinateKind, Target, TelescopeType
 from ska_ost_osd.osd.common.constant import Telescope
 
-from ska_oso_services.common.osdmapper import osd_repository
+from ska_oso_services.common.osdmapper import get_capabilities
 from ska_oso_services.common.static.constants import (
     LOW_LOCATION,
     MID_LOCATION,
@@ -105,13 +105,9 @@ def validate_single_target_pst_beams(
         if the target has more tied array pulsar timing beams than supported
         by the array assembly
     """
-    allowed_number_pst_beams = (
-        osd_repository()
-        .get_capability_set(
-            Telescope(target_context.telescope), target_context.array_assembly.value
-        )
-        .number_pst_beams
-    )
+    allowed_number_pst_beams = get_capabilities(
+        Telescope(target_context.telescope), target_context.array_assembly.value
+    ).observing_modes.pst.max_beams
 
     number_pst_beams = len(target_context.primary_entity.tied_array_beams.pst_beams)
 
