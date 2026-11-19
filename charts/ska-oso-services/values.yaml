@@ -53,6 +53,14 @@ rest:
     - "test:pht"
     - "test:odt"
     - "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b"
+  # The SIMBAD servers target coordinates are looked up in, tried in order until one
+  # can be reached. IDIA's mirror in South Africa is first for now, as the CDS server
+  # is unavailable. If empty, the application's default is used: CDS, then the
+  # Harvard and IDIA mirrors.
+  simbadServers:
+    - "simbad.idia.ac.za"
+    - "simbad.cds.unistra.fr"
+    - "simbad.harvard.edu"
   logLevel: INFO
   enabled: true
   engineeringApiEnabled: true
