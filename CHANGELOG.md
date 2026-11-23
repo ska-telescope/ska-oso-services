@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* [BUGFIX] Update ska-db-oda chart to 20.0.1 which exposes the `adoptExisting` fix on the `PGDBInstance`
 
 17.2.0
 ******

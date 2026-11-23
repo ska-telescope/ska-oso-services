@@ -2266,15 +2266,15 @@ dependencies = [
     { name = "joserfc" },
     { name = "starlette-context" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-aaa-authhelpers/2.0.2/ska_aaa_authhelpers-2.0.2.tar.gz", hash = "sha256:944d48686069b6c7d88e749b633e474e7c053bd38881dd25cd8f6eb754ecc275" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-aaa-authhelpers/2.0.2/ska_aaa_authhelpers-2.0.2.tar.gz", hash = "sha256:944d48686069b6c7d88e749b633e474e7c053bd38881dd25cd8f6eb754ecc275", size = 0, upload-time = "2026-08-13T10:48:05.938Z" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-aaa-authhelpers/2.0.2/ska_aaa_authhelpers-2.0.2-py3-none-any.whl", hash = "sha256:0fa390123622fadd82598775e70b5439d54854a32d2e9f9c2adcd6999720510f" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-aaa-authhelpers/2.0.2/ska_aaa_authhelpers-2.0.2-py3-none-any.whl", hash = "sha256:0fa390123622fadd82598775e70b5439d54854a32d2e9f9c2adcd6999720510f", size = 0, upload-time = "2026-08-13T10:48:05.798Z" },
 ]
 
 [[package]]
 name = "ska-db-oda"
-version = "20.0.0+dev.ce6a88e35"
-source = { registry = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" }
+version = "20.0.1"
+source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
 dependencies = [
     { name = "fire" },
     { name = "pydantic" },
@@ -2286,9 +2286,9 @@ dependencies = [
     { name = "ska-ser-skuid" },
     { name = "sqlalchemy", extra = ["postgresql-psycopg"] },
 ]
-sdist = { url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/files/66b268b67d57013c871d55b57f2f9db743765410145b21112de546055cdb3010/ska_db_oda-20.0.0+dev.ce6a88e35.tar.gz", hash = "sha256:66b268b67d57013c871d55b57f2f9db743765410145b21112de546055cdb3010" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/20.0.1/ska_db_oda-20.0.1.tar.gz", hash = "sha256:b0b8dda843a541cff8f68f71467e3f10d17f63d360832fe7f313032f65d0cd91", size = 127805, upload-time = "2026-11-19T12:47:44.559Z" }
 wheels = [
-    { url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/files/a415113f72db17795570987fb10050615a170eee1823193de6770a6188e99a30/ska_db_oda-20.0.0+dev.ce6a88e35-py3-none-any.whl", hash = "sha256:a415113f72db17795570987fb10050615a170eee1823193de6770a6188e99a30" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-db-oda/20.0.1/ska_db_oda-20.0.1-py3-none-any.whl", hash = "sha256:dd7708cfd011a1a109f74340b898ce3665446bb5985c93f2046e798e7d29153e", size = 46209, upload-time = "2026-11-19T12:47:44.174Z" },
 ]
 
 [[package]]
@@ -2301,9 +2301,9 @@ dependencies = [
     { name = "pydantic", extra = ["email"] },
     { name = "ska-ser-skuid" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.3.0/ska_oso_pdm-28.3.0.tar.gz", hash = "sha256:52939ee4b0a29f930283a5e700bd3ae0cdc033535139cf616231fbc20f555bd4" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.3.0/ska_oso_pdm-28.3.0.tar.gz", hash = "sha256:52939ee4b0a29f930283a5e700bd3ae0cdc033535139cf616231fbc20f555bd4", size = 0, upload-time = "2026-09-24T15:41:29.698Z" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.3.0/ska_oso_pdm-28.3.0-py3-none-any.whl", hash = "sha256:8fb8f65201f1927012a78e3d4c134031d2ca401810d2633f2de6b5d6ff8cb378" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-oso-pdm/28.3.0/ska_oso_pdm-28.3.0-py3-none-any.whl", hash = "sha256:8fb8f65201f1927012a78e3d4c134031d2ca401810d2633f2de6b5d6ff8cb378", size = 0, upload-time = "2026-09-24T15:41:29.927Z" },
 ]
 
 [[package]]
@@ -2368,7 +2368,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.15,<3.0" },
     { name = "python-dateutil", specifier = ">=2.9,<3.0" },
     { name = "ska-aaa-authhelpers", specifier = ">=2.0.2,<3.0.0" },
-    { name = "ska-db-oda", specifier = ">=20.0.0,<21.0.0", index = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple" },
+    { name = "ska-db-oda", specifier = ">=20.0.0,<21.0.0" },
     { name = "ska-ost-osd", specifier = ">=7.0.0,<8.0.0" },
     { name = "ska-ser-logging", specifier = ">=0.4.3,<0.5.0" },
     { name = "ska-ser-skuid", specifier = ">=6.0.0,<7.0.0" },
@@ -2408,9 +2408,9 @@ dependencies = [
     { name = "ska-ser-logging" },
     { name = "ska-telmodel-client" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/7.0.0/ska_ost_osd-7.0.0.tar.gz", hash = "sha256:0c56e88f0f392d725b6aadd7c3e27d0102b8d541ba5fe80c37e4a32d77024915" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/7.0.0/ska_ost_osd-7.0.0.tar.gz", hash = "sha256:0c56e88f0f392d725b6aadd7c3e27d0102b8d541ba5fe80c37e4a32d77024915", size = 74918, upload-time = "2026-09-18T16:05:50.153Z" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/7.0.0/ska_ost_osd-7.0.0-py3-none-any.whl", hash = "sha256:ea05a99f3f0a4b5c870a862160c1bc43d4f9d091c50f2d01ddf4ab6731df12b4" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ost-osd/7.0.0/ska_ost_osd-7.0.0-py3-none-any.whl", hash = "sha256:ea05a99f3f0a4b5c870a862160c1bc43d4f9d091c50f2d01ddf4ab6731df12b4", size = 55334, upload-time = "2026-09-18T16:05:49.993Z" },
 ]
 
 [[package]]
@@ -2423,18 +2423,18 @@ dependencies = [
     { name = "requests" },
     { name = "schema" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-schemas/1.42.0/ska_schemas-1.42.0.tar.gz", hash = "sha256:08a06164eaaf8fb9a7f8033fc3dc9c1ffe0271b5ee295a5c5ac2b25ee9f071be" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-schemas/1.42.0/ska_schemas-1.42.0.tar.gz", hash = "sha256:08a06164eaaf8fb9a7f8033fc3dc9c1ffe0271b5ee295a5c5ac2b25ee9f071be", size = 0, upload-time = "2026-09-21T11:12:51.248Z" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-schemas/1.42.0/ska_schemas-1.42.0-py3-none-any.whl", hash = "sha256:a83f22ec982a3a1e22868ccf1b998acb72251509c1454e1478a821ebfe72e79c" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-schemas/1.42.0/ska_schemas-1.42.0-py3-none-any.whl", hash = "sha256:a83f22ec982a3a1e22868ccf1b998acb72251509c1454e1478a821ebfe72e79c", size = 0, upload-time = "2026-09-21T11:12:51.075Z" },
 ]
 
 [[package]]
 name = "ska-ser-logging"
 version = "0.4.3.post0"
 source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple" }
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-logging/0.4.3.post0/ska_ser_logging-0.4.3.post0.tar.gz", hash = "sha256:bdd0c68dd855c6a916005765fb1956d47e0ff8d1d97289fe4de1e27d9a20b0ba" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-logging/0.4.3.post0/ska_ser_logging-0.4.3.post0.tar.gz", hash = "sha256:bdd0c68dd855c6a916005765fb1956d47e0ff8d1d97289fe4de1e27d9a20b0ba", size = 0, upload-time = "2026-07-08T14:30:07.232Z" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-logging/0.4.3.post0/ska_ser_logging-0.4.3.post0-py3-none-any.whl", hash = "sha256:f431db276655c847a9e75d1f9b04bd4f7e8d8b2e92cda0556d8c1eb517e4847f" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-logging/0.4.3.post0/ska_ser_logging-0.4.3.post0-py3-none-any.whl", hash = "sha256:f431db276655c847a9e75d1f9b04bd4f7e8d8b2e92cda0556d8c1eb517e4847f", size = 0, upload-time = "2026-07-08T14:30:06.791Z" },
 ]
 
 [[package]]
@@ -2444,9 +2444,9 @@ source = { registry = "https://artefact.skao.int/repository/pypi-internal/simple
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/6.0.0/ska_ser_skuid-6.0.0.tar.gz", hash = "sha256:5806b2e296db627070a409127a95b4e28a0df6ea60676843f7f1d4ff04897e15" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/6.0.0/ska_ser_skuid-6.0.0.tar.gz", hash = "sha256:5806b2e296db627070a409127a95b4e28a0df6ea60676843f7f1d4ff04897e15", size = 0, upload-time = "2026-07-08T14:33:42.396Z" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/6.0.0/ska_ser_skuid-6.0.0-py3-none-any.whl", hash = "sha256:7c394bb9d6fba3687883822554c63ffd6710459ba10f6b95b88661eaaef2b125" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-skuid/6.0.0/ska_ser_skuid-6.0.0-py3-none-any.whl", hash = "sha256:7c394bb9d6fba3687883822554c63ffd6710459ba10f6b95b88661eaaef2b125", size = 0, upload-time = "2026-07-08T14:33:41.937Z" },
 ]
 
 [[package]]
@@ -2457,9 +2457,9 @@ dependencies = [
     { name = "sphinx" },
     { name = "sphinx-rtd-theme" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-sphinx-theme/0.2.1/ska_ser_sphinx_theme-0.2.1.tar.gz", hash = "sha256:7a9eb46b00ce5fbc04ac8e7de563d5133ab61cda8717997f4d604767e98d2c4f" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-sphinx-theme/0.2.1/ska_ser_sphinx_theme-0.2.1.tar.gz", hash = "sha256:7a9eb46b00ce5fbc04ac8e7de563d5133ab61cda8717997f4d604767e98d2c4f", size = 0, upload-time = "2026-07-08T14:34:11.016Z" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-sphinx-theme/0.2.1/ska_ser_sphinx_theme-0.2.1-py3-none-any.whl", hash = "sha256:70fd0ab1678b0bad28bb7f9600a0f8d08a072b0d1179771cde06dac2f8992df8" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-sphinx-theme/0.2.1/ska_ser_sphinx_theme-0.2.1-py3-none-any.whl", hash = "sha256:70fd0ab1678b0bad28bb7f9600a0f8d08a072b0d1179771cde06dac2f8992df8", size = 0, upload-time = "2026-07-08T14:34:10.54Z" },
 ]
 
 [[package]]
@@ -2475,9 +2475,9 @@ dependencies = [
     { name = "requests" },
     { name = "xsdata", extra = ["cli"] },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-xray/0.8.0/ska_ser_xray-0.8.0.tar.gz", hash = "sha256:005793440653647bdd66bcd29620bd537aeee8ae2347aefe5461fff4f8854292" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-xray/0.8.0/ska_ser_xray-0.8.0.tar.gz", hash = "sha256:005793440653647bdd66bcd29620bd537aeee8ae2347aefe5461fff4f8854292", size = 0, upload-time = "2026-07-08T14:34:46.102Z" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-xray/0.8.0/ska_ser_xray-0.8.0-py3-none-any.whl", hash = "sha256:1c02bd2ec06083ea3cef8878b6f327c689b549f21aa3e8337120b3cd59433d58" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-ser-xray/0.8.0/ska_ser_xray-0.8.0-py3-none-any.whl", hash = "sha256:1c02bd2ec06083ea3cef8878b6f327c689b549f21aa3e8337120b3cd59433d58", size = 0, upload-time = "2026-07-08T14:34:45.634Z" },
 ]
 
 [[package]]
@@ -2496,9 +2496,9 @@ dependencies = [
     { name = "tomli" },
     { name = "toolz" },
 ]
-sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-telmodel-client/1.31.0/ska_telmodel_client-1.31.0.tar.gz", hash = "sha256:4d948bb45458cc49205cf8899e7f955368ef317b33d8b72a3eb1e8f9ae115657" }
+sdist = { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-telmodel-client/1.31.0/ska_telmodel_client-1.31.0.tar.gz", hash = "sha256:4d948bb45458cc49205cf8899e7f955368ef317b33d8b72a3eb1e8f9ae115657", size = 0, upload-time = "2026-10-19T13:37:24.866Z" }
 wheels = [
-    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-telmodel-client/1.31.0/ska_telmodel_client-1.31.0-py3-none-any.whl", hash = "sha256:154386cb9ab1835a9e096f5ab0b81ef954066c7d5d11a582298e70853027b310" },
+    { url = "https://artefact.skao.int/repository/pypi-internal/packages/ska-telmodel-client/1.31.0/ska_telmodel_client-1.31.0-py3-none-any.whl", hash = "sha256:154386cb9ab1835a9e096f5ab0b81ef954066c7d5d11a582298e70853027b310", size = 0, upload-time = "2026-10-19T13:37:24.738Z" },
 ]
 
 [[package]]
