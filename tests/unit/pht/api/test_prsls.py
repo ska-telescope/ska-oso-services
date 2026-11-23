@@ -133,7 +133,7 @@ class TestOSD:
         # The capabilities are served under the name of the policy the cycle offers
         assert response.json()["capabilities"]["mid"] is None
         low = response.json()["capabilities"]["low"]
-        assert low["AA2"] is None
+        assert low.keys() == {"basic_capabilities", "AA2_SV"}
         assert low["AA2_SV"]["number_beams"] == 1
 
     @mock.patch(f"{PRSL_MODULE}.osd_data")

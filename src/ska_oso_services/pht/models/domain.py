@@ -5,7 +5,7 @@ Model specific for the pht
 from enum import StrEnum
 from typing import Optional
 
-from pydantic import EmailStr, Field
+from pydantic import ConfigDict, EmailStr, Field
 from ska_oso_pdm.proposal import ProposalAccess, ProposalPermissions, ProposalRole
 from ska_ost_osd.osd.views import pht as osd_pht
 
