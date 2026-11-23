@@ -89,16 +89,19 @@ class PanelCreate(AppModel):
 class Mid(AppModel):
     """Mid's basic capabilities, and the capabilities a cycle offers, under the policy's name."""
 
+    model_config = ConfigDict(extra="allow")
+
     basic_capabilities: osd_pht.BasicCapabilitiesMid
-    AA2: osd_pht.AA2_MID | None = None
+    __pydantic_extra__: dict[str, osd_pht.AA2_MID]
 
 
 class Low(AppModel):
     """Low's basic capabilities, and the capabilities a cycle offers, under the policy's name."""
 
+    model_config = ConfigDict(extra="allow")
+
     basic_capabilities: osd_pht.BasicCapabilitiesLow
-    AA2: osd_pht.AA2_LOW | None = None
-    AA2_SV: osd_pht.AA2_LOW | None = None
+    __pydantic_extra__: dict[str, osd_pht.AA2_LOW]
 
 
 class Capabilities(AppModel):
