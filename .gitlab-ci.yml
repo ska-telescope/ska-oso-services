@@ -60,6 +60,11 @@ info-integration:
   script:
     - *info_script
 
+deploy-integration:
+  rules:
+  - if: '$CI_COMMIT_REF_NAME != "main"'
+    when: manual
+
 deploy-dev-environment:
   <<: *dev_env
   needs:
