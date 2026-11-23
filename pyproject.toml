@@ -130,6 +130,6 @@ priority = "explicit"
 name = "gitlab-ska-ser-xray"
 url = "https://gitlab.com/api/v4/projects/39434823/packages/pypi/simple"
 priority = "explicit"
-
-[tool.uv.sources]
-ska-db-oda = { index = "gitlab-ska-db-oda" }
+#
+#[tool.uv.sources]
+#ska-db-oda = { index = "gitlab-ska-db-oda" }
