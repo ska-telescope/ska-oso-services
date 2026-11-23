@@ -3,5 +3,3 @@ global:
 
 ska-db-oda-umbrella:
   enabled: true
-  postgres:
-    adoptExisting: true
