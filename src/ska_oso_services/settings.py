@@ -15,8 +15,22 @@ DEFAULT_AUDIENCES = (
     "api://e4d6bb9b-cdd0-46c4-b30a-d045091b501b",
 )
 
+# SIMBAD is hosted by CDS, with mirrors at Harvard and IDIA that are tried in turn
+# if CDS is unavailable
+DEFAULT_SIMBAD_SERVERS = ("simbad.cds.unistra.fr", "simbad.harvard.edu", "simbad.idia.ac.za")
+
+# The OSD's tmdata on its main branch, as published to the CAR
+DEFAULT_OSD_TMDATA = ("car:ost/ska-ost-osd?main#tmdata",)
+
 # Default expiry for S3 presigned URLs
 PRESIGNED_URL_EXPIRY_TIME = 60
+
+
+def _comma_separated(value: object) -> object:
+    """Splits an environment variable's comma-separated values into a tuple."""
+    if isinstance(value, str):
+        return tuple(part.strip() for part in value.split(",") if part.strip())
+    return value
 
 
 class ODAConfig(BaseSettings):
@@ -45,9 +59,7 @@ class AuthConfig(BaseSettings):
 
     @field_validator("audience", mode="before")
     def _parse_audience(cls, value: object) -> object:
-        if isinstance(value, str):
-            return tuple(part.strip() for part in value.split(",") if part.strip())
-        return value
+        return _comma_separated(value)
 
 
 class EmailConfig(BaseSettings):
@@ -82,6 +94,20 @@ class Settings(BaseSettings):
     api_path_prefix: str = Field(default="", alias="API_PATH_PREFIX")
     engineering_api_enabled: bool = Field(default=True, alias="ENGINEERING_API_ENABLED")
     sdp_script_tmdata: str | None = Field(default=None, alias="SDP_SCRIPT_TMDATA")
+    # The TMData sources for the OSD, comma separated. At least one is required:
+    # given none, TMData reads its own default sources, which don't hold the OSD.
+    osd_tmdata: Annotated[Tuple[str, ...], NoDecode] = Field(
+        default=DEFAULT_OSD_TMDATA, min_length=1, alias="OSD_TMDATA"
+    )
+
+    # The SIMBAD servers to look up coordinates in, comma separated, in the order tried
+    simbad_servers: Annotated[Tuple[str, ...], NoDecode] = Field(
+        default=DEFAULT_SIMBAD_SERVERS, alias="SIMBAD_SERVERS"
+    )
+
+    @field_validator("osd_tmdata", "simbad_servers", mode="before")
+    def _parse_comma_separated(cls, value: object) -> object:
+        return _comma_separated(value)
 
     # Sub-models
     oda: ODAConfig = Field(default_factory=ODAConfig)

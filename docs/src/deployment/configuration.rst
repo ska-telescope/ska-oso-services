@@ -77,3 +77,16 @@ The ODA connection is configured these environment variables and corresponding H
      - Required
      - Pulled from Vault - see :doc:`secret_management`
      -
+   * - OSD_TMDATA
+     - Comma-separated TMData sources the OSD data is read from, e.g. a commit published to the CAR:
+       ``car:ost/ska-ost-osd?~<commit SHA>#tmdata``. It is read once on startup, so a change, or new
+       data published for OSD main, needs a restart.
+     - Optional - default: ``car:ost/ska-ost-osd?main#tmdata``, OSD main as published to the CAR
+     - ``global.oso.osd_tmdata`` (a list)
+     - Optional - default: ``[]``, so the application default is used
+   * - SIMBAD_SERVERS
+     - Comma-separated SIMBAD servers that target coordinates are looked up in, tried in order until one can be reached.
+       Any SIMBAD mirror that serves TAP at ``/simbad/sim-tap`` can be used.
+     - Optional - default: ``simbad.cds.unistra.fr,simbad.harvard.edu,simbad.idia.ac.za``
+     - ``rest.simbadServers`` (a list)
+     - Optional - default: IDIA's mirror first, then CDS and Harvard, while the CDS server is unavailable

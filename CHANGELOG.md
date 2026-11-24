@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Updated to ska-ost-osd 8.0.0, using its repository and views in place of osdmapper's own models.
+* Adds SIMBAD's IDIA mirror (`simbad.idia.ac.za`) for coordinate lookups, tried after the CDS server and Harvard mirror by default
+* Adds the `rest.simbadServers` Helm value (environment variable `SIMBAD_SERVERS`) to set the SIMBAD servers and the order they are tried in.
+* Adds the `global.oso.osd_tmdata` Helm value (environment variable `OSD_TMDATA`) to read the OSD's tmdata from other TMData sources
+* [BREAKING] `GET /prsls/osd/{cycle_id}` now takes the cycle's ID rather than its number 
+* `GET /visibility` and `render_svg` now default `min_elevation_deg` to the array's minimum elevation in the OSD, currently 15° for Mid and 45° for Low, instead of 20° for both
 
 17.2.2
 ******

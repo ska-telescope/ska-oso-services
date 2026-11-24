@@ -30,6 +30,7 @@ from ska_oso_pdm.sb_definition.csp.lowcbf import Correlation
 from ska_oso_pdm.sb_definition.csp.midcbf import CorrelationSPWConfiguration, ReceiverBand, Subband
 from ska_oso_pdm.sb_definition.mccs.mccs_allocation import Aperture, SubarrayBeamConfiguration
 from ska_oso_pdm.sb_definition.procedures import GitScript
+from ska_ost_osd.osd.common.constant import Telescope
 
 from ska_oso_services.common.calibrator_strategy import (
     CalibrationWhen,
@@ -37,9 +38,9 @@ from ska_oso_services.common.calibrator_strategy import (
 )
 from ska_oso_services.common.calibrators import find_appropriate_calibrators
 from ska_oso_services.common.osdmapper import (
+    get_capabilities,
     get_default_pdm_target_spfrx,
     get_defaults_pdm_csp_spfrx,
-    get_subarray_specific_parameter_from_osd,
 )
 from ska_oso_services.common.sdpmapper import get_script_versions
 from ska_oso_services.common.static.constants import low_station_channel_width, mid_channel_width
@@ -370,9 +371,7 @@ def _scan_time_ms_from_science_programme(
 
 
 def _dish_allocation(subarray: SubArrayMID, scan_sequence: list[ScanDefinition]) -> DishAllocation:
-    dish_ids = get_subarray_specific_parameter_from_osd(
-        TelescopeType.SKA_MID, subarray, "receptors"
-    )
+    dish_ids = get_capabilities(Telescope.SKA_MID, subarray.value).receptors.receptor_ids
 
     return DishAllocation(
         dish_allocation_id=_sbd_internal_id(DishAllocation),
@@ -383,9 +382,7 @@ def _dish_allocation(subarray: SubArrayMID, scan_sequence: list[ScanDefinition])
 
 
 def _mccs_allocation(subarray: SubArrayLOW, scan_sequence: list[ScanDefinition]) -> MCCSAllocation:
-    station_ids = get_subarray_specific_parameter_from_osd(
-        TelescopeType.SKA_LOW, subarray, "receptors"
-    )
+    station_ids = get_capabilities(Telescope.SKA_LOW, subarray.value).receptors.receptor_ids
 
     apertures = [
         Aperture(station_id=station_id, weighting_key="uniform", substation_id=1)

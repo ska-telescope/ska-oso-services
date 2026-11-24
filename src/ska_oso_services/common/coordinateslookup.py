@@ -25,15 +25,13 @@ from ska_oso_pdm import (
 )
 
 from ska_oso_services.common.error_handling import CatalogLookupError, NotFoundError
+from ska_oso_services.settings import get_settings
 
 LOGGER = logging.getLogger(__name__)
 
 # Seconds to wait for any single catalogue request. Without this an unresponsive
 # server (e.g. during a CDS outage) can block a lookup for several minutes.
 CATALOGUE_TIMEOUT_S = 3
-
-# SIMBAD is hosted by CDS, with a mirror at Harvard that is tried if CDS is unavailable
-SIMBAD_SERVERS = ("simbad.cds.unistra.fr", "simbad.harvard.edu")
 
 # NED reports an unknown object as an error rather than as an empty result
 NED_NOT_FOUND_MESSAGE = "not currently recognized by the NED name interpreter"
@@ -165,7 +163,9 @@ def get_catalogue_lookup(catalogue: Catalogue) -> CatalogueLookup:
 
 
 def lookup_in_simbad(object_name: str) -> CatalogueResult | None:
-    for server in SIMBAD_SERVERS:
+    # The servers set by SIMBAD_SERVERS, tried in order until one can be queried
+    servers = get_settings().simbad_servers
+    for server in servers:
         LOGGER.debug("Looking up %s in SIMBAD at %s", object_name, server)
         try:
             result_table_simbad = _simbad_client(server).query_object(object_name)
@@ -173,7 +173,7 @@ def lookup_in_simbad(object_name: str) -> CatalogueResult | None:
         except (DALAccessError, requests.RequestException) as err:
             LOGGER.warning("SIMBAD server %s could not be queried: %s", server, err)
     else:
-        raise CatalogueUnavailableError(f"No SIMBAD server could be reached: {SIMBAD_SERVERS}")
+        raise CatalogueUnavailableError(f"No SIMBAD server could be reached: {servers}")
 
     if len(result_table_simbad) == 0:
         return None
@@ -258,7 +258,9 @@ def _simbad_client(server: str) -> SimbadClass:
     per server, leaving a single request per lookup.
     """
     simbad = SimbadClass()
-    simbad.server = server
+    # astroquery's server setter only accepts the CDS and Harvard servers, so the
+    # server its TAP URL is built from is set directly to allow other mirrors, e.g. IDIA's
+    simbad._server = server
     # astroquery doesn't set an HTTP timeout on SIMBAD's TAP requests, and setting
     # SimbadClass.timeout makes a request to the server, so add one to its session.
     simbad._session.mount("https://", _TimeoutHTTPAdapter())

@@ -21,6 +21,7 @@ from ska_oso_pdm import ICRSCoordinates, SubArrayLOW, Target, TelescopeType
 from ska_oso_pdm.builders.utils import target_id
 from ska_oso_pdm.project import ObservingBlock, Project
 from ska_oso_pdm.sb_definition import SBDefinition
+from ska_ost_osd.osd.common.constant import Telescope
 from ska_ser_skuid import EntityType, mint_skuid
 
 from ska_oso_services.common.auth import Permissions, Scope
@@ -31,7 +32,12 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
-from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
+from ska_oso_services.common.osdmapper import get_capabilities
+from ska_oso_services.common.static.constants import (
+    low_available_coarse_channels,
+    low_max_coarse_channel,
+    low_min_coarse_channel,
+)
 from ska_oso_services.odt.api.sbds import validate_and_raise_exception
 from ska_oso_services.odt.service.basic_commissioning_sbd_generator import (
     generate_basic_commissioning_sbd,
@@ -128,7 +134,9 @@ class CalibratorSweepInputs(BaseModel):
         ),
     )
     coarse_channel_start: int = 206
-    coarse_channel_bandwidth: int = 96
+    coarse_channel_bandwidth: int = Field(
+        default_factory=lambda: low_available_coarse_channels(SubArrayLOW.AA1_ALL.value)
+    )
     mode: CommissioningObservingMode = Field(
         default=CommissioningObservingMode.VIS,
         description="Should be 'VIS' or 'PST', to indicate whether a PST beam "
@@ -136,8 +144,8 @@ class CalibratorSweepInputs(BaseModel):
         "(and which catalogue to pick targets from).",
     )
     stations: list[int] = Field(
-        default_factory=lambda: get_subarray_specific_parameter_from_osd(
-            TelescopeType.SKA_LOW, SubArrayLOW.AA1_ALL, "receptors"
+        default_factory=lambda: (
+            get_capabilities(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value).receptors.receptor_ids
         ),
         description="List of station IDs to set in the SBDefinition. "
         "Will default to the AA1 stations if not given.",
@@ -164,8 +172,10 @@ class BasicCommissioningInputs(BaseModel):
         description="Declination of the target if not using the target_name "
         "for a catalogue lookup",
     )
-    coarse_channel_start: int = 64
-    coarse_channel_bandwidth: int = 96
+    coarse_channel_start: int = Field(default_factory=low_min_coarse_channel)
+    coarse_channel_bandwidth: int = Field(
+        default_factory=lambda: low_available_coarse_channels(SubArrayLOW.AA1_ALL.value)
+    )
 
     mode: CommissioningObservingMode = Field(
         default=CommissioningObservingMode.VIS,
@@ -174,8 +184,8 @@ class BasicCommissioningInputs(BaseModel):
     )
 
     stations: list[int] = Field(
-        default_factory=lambda: get_subarray_specific_parameter_from_osd(
-            TelescopeType.SKA_LOW, SubArrayLOW.AA1_ALL, "receptors"
+        default_factory=lambda: (
+            get_capabilities(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value).receptors.receptor_ids
         ),
         description="List of station IDs to set in the SBDefinition. "
         "Will default to the AA1 stations if not given.",
@@ -201,17 +211,23 @@ class FrequencySweepInputs(BaseModel):
         "for a catalogue lookup",
     )
     target_dwell_min: float = 5
-    coarse_channel_start: int = 64
-    coarse_channel_end: int = 448
-    coarse_channel_bandwidth: int = 96
+    coarse_channel_start: int = Field(default_factory=low_min_coarse_channel)
+    coarse_channel_end: int = Field(
+        default_factory=lambda: low_max_coarse_channel() + 1,
+        description="The coarse channel after the last one to sweep. "
+        "Defaults to one past SKA-Low's highest coarse channel.",
+    )
+    coarse_channel_bandwidth: int = Field(
+        default_factory=lambda: low_available_coarse_channels(SubArrayLOW.AA1_ALL.value)
+    )
     mode: CommissioningObservingMode = Field(
         default=CommissioningObservingMode.VIS,
         description="Should be 'VIS' or 'PST', to indicate whether a "
         "PST beam should be added to the observation",
     )
     stations: list[int] = Field(
-        default_factory=lambda: get_subarray_specific_parameter_from_osd(
-            TelescopeType.SKA_LOW, SubArrayLOW.AA1_ALL, "receptors"
+        default_factory=lambda: (
+            get_capabilities(Telescope.SKA_LOW, SubArrayLOW.AA1_ALL.value).receptors.receptor_ids
         ),
         description="List of station IDs to set in the SBDefinition. "
         "Will default to the AA1 stations if not given.",

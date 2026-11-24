@@ -15,13 +15,11 @@ from ska_ser_logging import configure_logging
 from ska_oso_services import engineering, odt, pht
 from ska_oso_services.common import api
 from ska_oso_services.common.error_handling import (
-    OSDError,
     dangerous_internal_server_handler,
     oda_error_handler,
     oda_integrity_error_handler,
     oda_not_found_handler,
     oda_unique_constraint_handler,
-    osd_error_handler,
     pydantic_validation_error_handler,
 )
 from ska_oso_services.settings import get_settings
@@ -85,7 +83,6 @@ def create_app(production=None) -> FastAPI:
     fastapi_app.exception_handler(ODAError)(oda_error_handler)
     fastapi_app.exception_handler(ValidationError)(pydantic_validation_error_handler)
     fastapi_app.exception_handler(UniqueConstraintViolation)(oda_unique_constraint_handler)
-    fastapi_app.exception_handler(OSDError)(osd_error_handler)
 
     if not production:
         fastapi_app.exception_handler(Exception)(dangerous_internal_server_handler)

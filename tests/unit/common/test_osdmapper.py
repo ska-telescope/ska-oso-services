@@ -2,115 +2,78 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
-from ska_oso_pdm import SubArrayLOW, SubArrayMID, TelescopeType
+from pydantic import ValidationError
 from ska_oso_pdm._shared.spfrx import PeriodicNoiseDiodeConfig, PseudoRandomNoiseDiodeConfig
-from ska_oso_pdm.sb_definition.csp.midcbf import Band5bSubband as pdm_Band5bSubband
-from ska_oso_pdm.sb_definition.csp.midcbf import ReceiverBand
-
-from ska_oso_services.common.osdmapper import (
-    Band5bSubband,
+from ska_ost_osd.osd.common.constant import Telescope
+from ska_ost_osd.osd.exceptions import ArrayAssemblyNotFoundError
+from ska_ost_osd.osd.views.odt import (
     Constraints,
     LowCBFMetrics,
     LowQualityAttributeMetrics,
-    MidFrequencyBand,
     SPFRxParameters,
+)
+
+import ska_oso_services.settings as settings_module
+from ska_oso_services.common.osdmapper import (
+    SUBARRAYS,
+    array_assembly_and_policy,
     configuration_from_osd,
+    get_capabilities,
     get_default_pdm_target_spfrx,
-    get_low_basic_capability_parameter_from_osd,
-    get_mid_frequency_band_data_from_osd,
-    get_subarray_specific_parameter_from_osd,
-    get_telescope_observing_constraint,
+    osd_repository,
 )
+from ska_oso_services.settings import Settings, get_settings
+
+OSDMAPPER_MODULE = "ska_oso_services.common.osdmapper"
 
 
-def test_get_basic_low_capabilities_function_passes_for_valid_parameter():
-    value = get_low_basic_capability_parameter_from_osd("coarse_channel_width_hz")
-    assert value is not None
+def test_osd_tmdata_defaults_to_osd_main_in_the_car(monkeypatch):
+    # conftest.py pins the tests' OSD_TMDATA, so unset it to see the default
+    monkeypatch.delenv("OSD_TMDATA", raising=False)
+
+    assert Settings().osd_tmdata == ("car:ost/ska-ost-osd?main#tmdata",)
 
 
-def test_get_basic_low_capabilities_function_fails_for_invalid_parameter():
-    with pytest.raises(ValueError):
-        get_low_basic_capability_parameter_from_osd("invalid_parameter")
+def test_osd_tmdata_is_read_from_the_osd_tmdata_environment_variable(monkeypatch):
+    # As the Helm chart sets it, from a list joined with commas
+    monkeypatch.setenv("OSD_TMDATA", "file:///tmdata, car:ost/ska-ost-osd?main#tmdata")
+
+    assert Settings().osd_tmdata == ("file:///tmdata", "car:ost/ska-ost-osd?main#tmdata")
 
 
-def test_get_mid_frequency_band_data_from_osd_passes_for_valid_band():
-    value = get_mid_frequency_band_data_from_osd(ReceiverBand.BAND_1)
-    assert type(value) is MidFrequencyBand
-    assert value.rx_id == "Band_1"
+@pytest.mark.parametrize("value", ["", " , "])
+def test_osd_tmdata_must_name_a_source(monkeypatch, value):
+    # Given no sources, TMData would read its own defaults, which don't hold the OSD
+    monkeypatch.setenv("OSD_TMDATA", value)
+
+    with pytest.raises(ValidationError):
+        Settings()
 
 
-def test_get_mid_frequency_band_data_from_osd_passes_for_band5b():
-    value = get_mid_frequency_band_data_from_osd(
-        ReceiverBand.BAND_5B, pdm_Band5bSubband.BAND5B_SUBBAND2
-    )
-    assert type(value) is Band5bSubband
-    assert value.sub_band == 2
+def test_osd_repository_reads_the_osd_tmdata_sources():
+    sources = ("file:///tmdata", "car:ost/ska-ost-osd?main#tmdata")
+    settings = get_settings().model_copy(update={"osd_tmdata": sources})
+    # osd_repository() is cached, so clear it before and after to read these sources
+    # without leaving the mock for the other tests
+    osd_repository.cache_clear()
+    try:
+        with (
+            patch.object(settings_module, "SETTINGS", settings),
+            patch(f"{OSDMAPPER_MODULE}.TMData") as tmdata,
+            patch(f"{OSDMAPPER_MODULE}.TMDataRepository") as repository,
+        ):
+            assert osd_repository() is repository.return_value
+    finally:
+        osd_repository.cache_clear()
 
-
-def test_get_subarray_specific_parameters_fails_for_invalid_telescope():
-    with pytest.raises(ValueError):
-        get_subarray_specific_parameter_from_osd(
-            TelescopeType.MEERKAT, SubArrayMID.AA1_ALL, "blah"
-        )
-
-
-def test_get_subarray_specific_parameter_passes_with_mid_subarray_value():
-    value = get_subarray_specific_parameter_from_osd(
-        TelescopeType.SKA_MID, SubArrayMID.AA1_ALL, "number_pst_beams"
-    )
-    assert value is not None
-
-
-def test_get_subarray_specific_parameter_fails_with_invalid_mid_subarray_value():
-    with pytest.raises(ValueError):
-        get_subarray_specific_parameter_from_osd(
-            TelescopeType.SKA_MID, SubArrayMID.AA4_SKA_ONLY, "number_pst_beams"
-        )
-
-
-@pytest.mark.parametrize(
-    "parameter",
-    ["not a parameter", "model_dump", "model_fields", "model_config"],
-)
-def test_get_subarray_specific_parameter_fails_for_invalid_parameter(parameter):
-    with pytest.raises(ValueError):
-        get_subarray_specific_parameter_from_osd(
-            TelescopeType.SKA_LOW, SubArrayLOW.AA2_ALL, parameter
-        )
-
-
-def test_get_subarray_specific_parameter_passes_for_valid_inputs():
-    value = get_subarray_specific_parameter_from_osd(
-        TelescopeType.SKA_LOW, SubArrayLOW.AA2_ALL, "number_pst_beams"
-    )
-    assert value == 4
+    tmdata.assert_called_once_with(sources, update=True)
+    repository.assert_called_once_with(tmdata.return_value)
 
 
 def test_configuration_from_osd_returns_constraints():
     value = configuration_from_osd()
     assert type(value.ska_low.constraints) is Constraints
     assert type(value.ska_mid.constraints) is Constraints
-
-
-def test_get_telescope_observing_constraint_returns_constraints():
-    value = get_telescope_observing_constraint(
-        TelescopeType.SKA_MID, "jupiter_avoidance_angle_deg"
-    )
-    assert value == 10.0
-
-
-def test_get_telescope_observing_constraint_returns_constraints_for_low():
-    value = get_telescope_observing_constraint(TelescopeType.SKA_LOW, "sun_avoidance_angle_deg")
-    assert value == 30.0
-
-
-@pytest.mark.parametrize(
-    "parameter",
-    ["not_a_parameter", "model_dump", "model_fields", "model_config"],
-)
-def test_get_telescope_observing_constraint_fails_for_invalid_parameter(parameter):
-    with pytest.raises(ValueError):
-        get_telescope_observing_constraint(TelescopeType.SKA_LOW, parameter)
 
 
 def test_configuration_from_osd_returns_low_cbf_metrics():
@@ -128,12 +91,50 @@ def test_configuration_from_osd_returns_mid_spfrx_defaults():
     assert type(value.ska_mid.spfrx_defaults) is SPFRxParameters
 
 
-def _mock_default_noise_diode_mode(mock_config, mode):
-    target_spfrx = configuration_from_osd().ska_mid.spfrx_defaults.target_spfrx
+@pytest.mark.parametrize("telescope", [Telescope.SKA_MID, Telescope.SKA_LOW])
+def test_configuration_from_osd_lists_the_odt_subarrays_by_name(telescope):
+    value = configuration_from_osd()
+    subarrays = (
+        value.ska_mid.subarrays if telescope == Telescope.SKA_MID else value.ska_low.subarrays
+    )
+
+    # Each subarray is named after its policy, or else its array assembly
+    expected_names = [policy or array_assembly for array_assembly, policy in SUBARRAYS[telescope]]
+    assert [subarray.name for subarray in subarrays] == expected_names
+
+
+@pytest.mark.parametrize(
+    "telescope,name,expected",
+    [
+        pytest.param(Telescope.SKA_LOW, "AA1", ("AA1", None), id="low array assembly"),
+        pytest.param(Telescope.SKA_LOW, "AA2_SV", ("AA2", "AA2_SV"), id="low policy"),
+        pytest.param(Telescope.SKA_MID, "AA2", ("AA2", None), id="mid array assembly"),
+    ],
+)
+def test_array_assembly_and_policy(telescope, name, expected):
+    assert array_assembly_and_policy(telescope, name) == expected
+
+
+def test_get_capabilities_applies_the_policy_for_aa2_sv():
+    capabilities = get_capabilities(Telescope.SKA_LOW, "AA2_SV")
+
+    assert capabilities.array_assembly == "AA2"
+    assert capabilities.policy == "AA2_SV"
+
+
+def test_get_capabilities_raises_for_an_unknown_array_assembly():
+    with pytest.raises(ArrayAssemblyNotFoundError):
+        get_capabilities(Telescope.SKA_LOW, "AA9")
+
+
+def _repository_with_default_noise_diode_mode(mode):
+    target_spfrx = osd_repository().get_defaults(Telescope.SKA_MID).spfrx_defaults.target_spfrx
     modified = target_spfrx.model_copy(update={"default_noise_diode_mode": mode})
 
-    mock_config.return_value = SimpleNamespace(
-        ska_mid=SimpleNamespace(spfrx_defaults=SimpleNamespace(target_spfrx=modified))
+    return SimpleNamespace(
+        get_defaults=lambda telescope: SimpleNamespace(
+            spfrx_defaults=SimpleNamespace(target_spfrx=modified)
+        )
     )
 
 
@@ -145,18 +146,18 @@ def _mock_default_noise_diode_mode(mock_config, mode):
         pytest.param("pseudo_random", PseudoRandomNoiseDiodeConfig, id="pseudo_random"),
     ],
 )
-@patch("ska_oso_services.common.osdmapper.configuration_from_osd")
-def test_default_noise_diode_mode_sets_expected_diode(mock_config, mode, expected_type):
-    _mock_default_noise_diode_mode(mock_config, mode)
+def test_default_noise_diode_mode_sets_expected_diode(mode, expected_type):
+    repository = _repository_with_default_noise_diode_mode(mode)
 
-    result = get_default_pdm_target_spfrx()
+    with patch("ska_oso_services.common.osdmapper.osd_repository", return_value=repository):
+        result = get_default_pdm_target_spfrx()
 
     assert type(result.noise_diode) is expected_type
 
 
-@patch("ska_oso_services.common.osdmapper.configuration_from_osd")
-def test_an_invalid_default_causes_a_value_error(mock_config):
-    _mock_default_noise_diode_mode(mock_config, "blah")
+def test_an_invalid_default_causes_a_value_error():
+    repository = _repository_with_default_noise_diode_mode("blah")
 
-    with pytest.raises(ValueError):
-        get_default_pdm_target_spfrx()
+    with patch("ska_oso_services.common.osdmapper.osd_repository", return_value=repository):
+        with pytest.raises(ValueError):
+            get_default_pdm_target_spfrx()

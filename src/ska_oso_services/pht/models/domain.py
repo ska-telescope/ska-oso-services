@@ -5,8 +5,9 @@ Model specific for the pht
 from enum import StrEnum
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import ConfigDict, EmailStr, Field
 from ska_oso_pdm.proposal import ProposalAccess, ProposalPermissions, ProposalRole
+from ska_ost_osd.osd.views import pht as osd_pht
 
 from ska_oso_services.common.model import AppModel
 
@@ -85,104 +86,33 @@ class PanelCreate(AppModel):
     proposals: list
 
 
-class CycleInformation(BaseModel):
-    cycle_id: str
-    proposal_open: str
-    proposal_close: str
+class Mid(AppModel):
+    """Mid's basic capabilities, and the capabilities a cycle offers, under the policy's name."""
+
+    model_config = ConfigDict(extra="allow")
+
+    basic_capabilities: osd_pht.BasicCapabilitiesMid
+    __pydantic_extra__: dict[str, osd_pht.AA2_MID]
 
 
-class CyclePolicies(BaseModel):
-    normal_max_hours: int
-    max_targets: Optional[int] = None
-    max_observation_setups: Optional[int] = None
-    max_data_products: Optional[int] = None
+class Low(AppModel):
+    """Low's basic capabilities, and the capabilities a cycle offers, under the policy's name."""
+
+    model_config = ConfigDict(extra="allow")
+
+    basic_capabilities: osd_pht.BasicCapabilitiesLow
+    __pydantic_extra__: dict[str, osd_pht.AA2_LOW]
 
 
-class TelescopeCapabilities(BaseModel):
-    Mid: Optional[str] = None
-    Low: Optional[str] = None
+class Capabilities(AppModel):
+    """The telescopes a cycle offers; None for one it does not."""
+
+    mid: Mid | None = None
+    low: Low | None = None
 
 
-class ObservatoryPolicy(BaseModel):
-    cycle_number: int
-    cycle_id: Optional[str] = None
-    type: Optional[str] = None
-    cycle_description: str
-    cycle_information: CycleInformation
-    cycle_policies: CyclePolicies
-    telescope_capabilities: TelescopeCapabilities
+class OsdDataModel(AppModel):
+    """The OSD data the PHT UI reads for one cycle: the cycle and what it offers."""
 
-
-class ReceiverInformation(BaseModel):
-    rx_id: str
-    min_frequency_hz: int
-    max_frequency_hz: int
-    sub_bands: list[dict] | None = None
-
-
-class BasicCapabilitiesMid(BaseModel):
-    dish_elevation_limit_deg: int
-    receiver_information: list[ReceiverInformation]
-
-
-class AA2_MID(BaseModel):
-    allowed_channel_count_range_max: list[int]
-    allowed_channel_count_range_min: list[int]
-    allowed_channel_width_values: list[int]
-    available_receivers: list[str]
-    number_ska_dishes: int
-    number_meerkat_dishes: int
-    number_meerkatplus_dishes: int
-    max_baseline_km: int
-    available_bandwidth_hz: int
-    number_channels: int | None = None
-    cbf_modes: list[str]
-    number_zoom_windows: int
-    number_zoom_channels: int
-    number_pss_beams: int
-    number_pst_beams: int
-    ps_beam_bandwidth_hz: int
-    number_fsps: int
-
-
-class Mid(BaseModel):
-    basic_capabilities: BasicCapabilitiesMid
-    AA2: AA2_MID
-
-
-class BasicCapabilitiesLow(BaseModel):
-    min_frequency_hz: int
-    max_frequency_hz: int
-
-
-class AA2_LOW(BaseModel):
-    number_stations: int
-    number_substations: int
-    number_beams: int
-    max_baseline_km: int
-    available_bandwidth_hz: int
-    channel_width_hz: Optional[float] = None
-    cbf_modes: list[str]
-    number_zoom_windows: int
-    number_zoom_channels: int
-    number_pss_beams: int
-    number_pst_beams: int
-    number_vlbi_beams: int
-    ps_beam_bandwidth_hz: int
-    number_fsps: int
-
-
-class Low(BaseModel):
-    basic_capabilities: BasicCapabilitiesLow
-    AA2: Optional[AA2_LOW] = None
-    AA2_SV: Optional[AA2_LOW] = None
-
-
-class Capabilities(BaseModel):
-    mid: Optional[Mid] = None
-    low: Optional[Low] = None
-
-
-class OsdDataModel(BaseModel):
-    observatory_policy: ObservatoryPolicy
+    observatory_policy: osd_pht.ObservatoryPolicy
     capabilities: Capabilities

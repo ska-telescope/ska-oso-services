@@ -6,8 +6,9 @@ import astropy.units as u
 from ska_oso_pdm import PointingKind, ValidationArrayAssembly
 from ska_oso_pdm.sb_definition import MCCSAllocation, ScanDefinition
 from ska_oso_pdm.sb_definition.mccs.mccs_allocation import SubarrayBeamConfiguration
+from ska_ost_osd.osd.common.constant import Telescope
 
-from ska_oso_services.common.osdmapper import get_subarray_specific_parameter_from_osd
+from ska_oso_services.common.osdmapper import get_capabilities
 from ska_oso_services.validation.csp import calculate_continuum_spw_bandwidth
 from ska_oso_services.validation.model import (
     ValidationContext,
@@ -53,9 +54,9 @@ def validate_number_subarray_beams(
     """
     number_subarray_beams = len(mccs_context.primary_entity.subarray_beams)
 
-    allowed_subarray_beams = get_subarray_specific_parameter_from_osd(
-        mccs_context.telescope, mccs_context.array_assembly, "number_subarray_beams"
-    )
+    allowed_subarray_beams = get_capabilities(
+        Telescope.SKA_LOW, mccs_context.array_assembly.value
+    ).sps.subarray_beams.max_subarray_beams
     if number_subarray_beams > allowed_subarray_beams:
         return [
             ValidationIssue(
@@ -81,9 +82,9 @@ def validate_number_substations(
     """
     mccs_allocation = mccs_context.primary_entity
 
-    allowed_number_of_substations = get_subarray_specific_parameter_from_osd(
-        mccs_context.telescope, mccs_context.array_assembly, "number_substations"
-    )
+    allowed_number_of_substations = get_capabilities(
+        Telescope.SKA_LOW, mccs_context.array_assembly.value
+    ).sps.subarray_beams.max_substations_per_subarray_beam
 
     validation_issues = []
     for subarray_beam in mccs_allocation.subarray_beams:
@@ -129,9 +130,9 @@ def validate_number_of_pst_beams_per_scan(
     """
     check_relevant_context_contains(["targets"], mccs_context)
 
-    allowed_number_pst_beams = get_subarray_specific_parameter_from_osd(
-        mccs_context.telescope, mccs_context.array_assembly, "number_pst_beams"
-    )
+    allowed_number_pst_beams = get_capabilities(
+        Telescope.SKA_LOW, mccs_context.array_assembly.value
+    ).observing_modes.pst.max_beams
 
     mccs_allocation = mccs_context.primary_entity
     targets = mccs_context.relevant_context["targets"]
@@ -303,9 +304,9 @@ def validate_station_bandwidth(
     mccs_allocation = mccs_context.primary_entity
 
     available_bandwidth = (
-        get_subarray_specific_parameter_from_osd(
-            mccs_context.telescope, mccs_context.array_assembly, "available_bandwidth_hz"
-        )
+        get_capabilities(
+            Telescope.SKA_LOW, mccs_context.array_assembly.value
+        ).available_bandwidth_hz
         * u.Hz
     )
 

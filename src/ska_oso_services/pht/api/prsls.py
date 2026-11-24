@@ -1,4 +1,3 @@
-import copy
 import logging
 from http import HTTPStatus
 from typing import Annotated
@@ -13,6 +12,7 @@ from ska_oso_pdm.proposal import Proposal, ProposalAccess, ProposalPermissions, 
 from ska_oso_pdm.proposal.investigator import Investigator
 from ska_oso_pdm.proposal.proposal import ProposalStatus
 from ska_oso_pdm.proposal_management.review import PanelReview
+from ska_ost_osd.osd.exceptions import OSDQueryError
 from ska_ser_skuid import EntityType, mint_skuid
 from sqlalchemy import select
 from starlette.status import HTTP_400_BAD_REQUEST
@@ -25,11 +25,12 @@ from ska_oso_services.common.error_handling import (
     NotFoundError,
     UnprocessableEntityError,
 )
-from ska_oso_services.common.osdmapper import get_osd_cycles, get_osd_data
+from ska_oso_services.common.osdmapper import osd_repository
 from ska_oso_services.pht.models.domain import OsdDataModel, PrslRole
 from ska_oso_services.pht.models.schemas import EmailRequest
 from ska_oso_services.pht.service import validation
 from ska_oso_services.pht.service.email_service import send_email_async
+from ska_oso_services.pht.service.osd_cycles import osd_data
 from ska_oso_services.pht.service.proposal_service import (
     assert_user_has_permission_for_proposal,
     get_panel_prsl_ids,
@@ -62,7 +63,7 @@ router = APIRouter(prefix="/prsls", tags=["PPT API - Proposal Preparation"])
 )
 def get_all_osd_cycles() -> list[OsdDataModel]:
     """
-    This queries the OSD data for all available cycles.
+    This queries the OSD data for all available cycles, in order of cycle ID.
 
     This data is made available for the PHT UI.
 
@@ -71,35 +72,20 @@ def get_all_osd_cycles() -> list[OsdDataModel]:
 
     """
     logger.debug("GET OSD data for all cycles")
-    cycle_list = get_osd_cycles()
-
-    if isinstance(cycle_list, tuple) and len(cycle_list) == 2:
-        err, _ = cycle_list
-        if isinstance(err, dict):
-            detail = err.get("detail") or err.get("message") or str(err)
-        elif isinstance(err, Exception):
-            detail = str(err) or err.__class__.__name__
-        else:
-            detail = str(err)
-        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=detail)
-
-    cycle_data = []
-
-    for cycle in cycle_list.get("cycles", []):
-        logger.debug("Cycle: %s", cycle)
-        data = get_osd_data(cycle_id=cycle, source="car")
-        cycle_data.append(copy.deepcopy(data))
-
-    return cycle_data
+    try:
+        osd = osd_repository()
+        return [osd_data(osd, cycle_id) for cycle_id in osd.get_cycle_ids()]
+    except OSDQueryError as error:
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
 
 @router.get(
-    "/osd/{cycle}",
+    "/osd/{cycle_id}",
     summary="Retrieve OSD data for a given cycle",
 )
-def get_osd_by_cycle(cycle: int) -> OsdDataModel:
+def get_osd_by_cycle(cycle_id: str) -> OsdDataModel:
     """
-    This queries the OSD data by cycle id.
+    This queries the OSD data by cycle ID, e.g. TEST_SKAO_2027_Low_AA2_SV.
 
     This data is made available for the PHT UI.
 
@@ -107,15 +93,11 @@ def get_osd_by_cycle(cycle: int) -> OsdDataModel:
         OsdDataModel: The OSD data validated against the defined schema.
 
     """
-    # TODO: We may need to consider moving this to common
-    logger.debug("GET OSD data cycle: %s", cycle)
-    data = get_osd_data(cycle_id=cycle, source="car")
-    if type(data) is tuple and len(data) == 2:
-        # Error happened at OSD
-        detail = data[0]["detail"]
-        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=detail)
-
-    return data
+    logger.debug("GET OSD data cycle: %s", cycle_id)
+    try:
+        return osd_data(osd_repository(), cycle_id)
+    except OSDQueryError as error:
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
 
 @router.post("/create", summary="Create a new proposal")

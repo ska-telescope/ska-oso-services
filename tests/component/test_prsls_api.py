@@ -24,12 +24,12 @@ def test_get_osd_data_fail(authrequests):
 
 
 def test_get_osd_data_success(authrequests):
-    cycle = 1
-    response = authrequests.get(f"{PHT_URL}/prsls/osd/{cycle}")
+    cycle_id = "TEST_SKAO_2027_Low_AA2_SV"
+    response = authrequests.get(f"{PHT_URL}/prsls/osd/{cycle_id}")
 
     res = response.json()
     assert res["observatory_policy"]["cycle_number"] == 1
-    assert res["observatory_policy"]["cycle_information"]["cycle_id"] == "TEST_SKAO_2027_1"
+    assert res["observatory_policy"]["cycle_information"]["cycle_id"] == cycle_id
 
 
 def test_get_osd_cycles_success(authrequests):

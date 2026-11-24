@@ -2,8 +2,13 @@ from datetime import UTC, datetime
 from unittest import mock
 
 import numpy as np
+import pytest
 
 from ska_oso_services.common import visibility
+from ska_oso_services.common.static.constants import (
+    low_minimum_elevation,
+    mid_minimum_elevation,
+)
 from ska_oso_services.common.visibility import ATEAM_SOURCES
 
 
@@ -100,20 +105,26 @@ class TestVisibilityRenderSvg:
         assert "Elevation limit: 45" in svg_text
         assert "Elevation limit: 20" not in svg_text
 
+    @pytest.mark.parametrize(
+        "site_key, minimum_elevation",
+        [("LOW", low_minimum_elevation), ("MID", mid_minimum_elevation)],
+    )
     @mock.patch("ska_oso_services.common.visibility.datetime")
-    def test_render_svg_min_elevation_is_optional(self, mock_datetime):
+    def test_render_svg_defaults_to_the_osd_min_elevation(
+        self, mock_datetime, site_key, minimum_elevation
+    ):
         fixed_now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = fixed_now
 
         svg_bytes = visibility.render_svg(
             ra="10h00m00s",
             dec="-30d00m00s",
-            site_key="LOW",
+            site_key=site_key,
             step_s=3600,
             show_ateam=False,
         )
 
-        expected = f"Elevation limit: {visibility.DEFAULT_MIN_ELEVATION_DEG:g}"
+        expected = f"Elevation limit: {minimum_elevation().degree:g}°"
         assert expected in svg_bytes.decode("utf-8")
 
     @mock.patch("ska_oso_services.common.visibility.datetime")
