@@ -4,7 +4,6 @@ configuration needed for the application.
 """
 
 from functools import cache
-from importlib.metadata import version
 
 from ska_oso_pdm._shared.spfrx import (
     NoiseDiodeMode,
@@ -29,10 +28,6 @@ from ska_oso_services.settings import get_settings
 # two - PDM already models "no noise diode" as `noise_diode=None` rather than
 # a third mode - so "off" is handled separately below.
 NOISE_DIODE_MODE_OFF = "off"
-
-# Unless OSD_TMDATA says otherwise, the tmdata is read at the same release as
-# the installed ska-ost-osd, so the library's models match the files they read.
-OSD_VERSION = version("ska-ost-osd")
 
 # (array assembly, policy) for each subarray the ODT serves, in the order it
 # lists them. A subarray is named after its policy, or else its array assembly.
@@ -73,28 +68,15 @@ class Configuration(AppModel):
     ska_low: LowConfiguration
 
 
-def osd_tmdata_sources() -> list[str]:
-    """
-    The TMData sources the OSD's tmdata is read from: those in OSD_TMDATA, which
-    the Helm chart sets from global.oso.osd_tmdata, or else the tmdata at the
-    installed ska-ost-osd release.
-
-    CAR doesn't hold the tmdata for ska-ost-osd 8.0.0, so by default it is read
-    from GitLab at the release's tag. Once CAR does, the default can be
-    f"car:ost/ska-ost-osd?{OSD_VERSION}".
-    """
-    return list(get_settings().osd_tmdata) or [
-        f"gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?{OSD_VERSION}#tmdata"
-    ]
-
-
 @cache
 def osd_repository() -> TMDataRepository:
     """
-    The OSD repository, reading the OSD's tmdata from osd_tmdata_sources().
-    It is read once per process, so a change to OSD_TMDATA needs a restart.
+    The OSD repository, reading the OSD's tmdata from the sources in OSD_TMDATA,
+    which the Helm chart sets from global.oso.osd_tmdata, by default OSD main in
+    the CAR. It is read once per process, so a change to OSD_TMDATA, or to the
+    data published for OSD main, needs a restart.
     """
-    return TMDataRepository(TMData(osd_tmdata_sources(), update=True))
+    return TMDataRepository(TMData(get_settings().osd_tmdata, update=True))
 
 
 def array_assembly_and_policy(telescope: Telescope, name: str) -> tuple[str, str | None]:

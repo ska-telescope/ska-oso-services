@@ -19,6 +19,9 @@ DEFAULT_AUDIENCES = (
 # if CDS is unavailable
 DEFAULT_SIMBAD_SERVERS = ("simbad.cds.unistra.fr", "simbad.harvard.edu", "simbad.idia.ac.za")
 
+# The OSD's tmdata on its main branch, as published to the CAR
+DEFAULT_OSD_TMDATA = ("car:ost/ska-ost-osd?main#tmdata",)
+
 # Default expiry for S3 presigned URLs
 PRESIGNED_URL_EXPIRY_TIME = 60
 
@@ -91,9 +94,11 @@ class Settings(BaseSettings):
     api_path_prefix: str = Field(default="", alias="API_PATH_PREFIX")
     engineering_api_enabled: bool = Field(default=True, alias="ENGINEERING_API_ENABLED")
     sdp_script_tmdata: str | None = Field(default=None, alias="SDP_SCRIPT_TMDATA")
-    # The TMData sources for the OSD, comma separated. If empty, osdmapper reads
-    # the OSD's tmdata at the installed ska-ost-osd release.
-    osd_tmdata: Annotated[Tuple[str, ...], NoDecode] = Field(default=(), alias="OSD_TMDATA")
+    # The TMData sources for the OSD, comma separated. At least one is required:
+    # given none, TMData reads its own default sources, which don't hold the OSD.
+    osd_tmdata: Annotated[Tuple[str, ...], NoDecode] = Field(
+        default=DEFAULT_OSD_TMDATA, min_length=1, alias="OSD_TMDATA"
+    )
 
     # The SIMBAD servers to look up coordinates in, comma separated, in the order tried
     simbad_servers: Annotated[Tuple[str, ...], NoDecode] = Field(

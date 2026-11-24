@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+from pydantic import ValidationError
 from ska_oso_pdm._shared.spfrx import PeriodicNoiseDiodeConfig, PseudoRandomNoiseDiodeConfig
 from ska_ost_osd.osd.common.constant import Telescope
 from ska_ost_osd.osd.exceptions import ArrayAssemblyNotFoundError
@@ -14,39 +15,59 @@ from ska_ost_osd.osd.views.odt import (
 
 import ska_oso_services.settings as settings_module
 from ska_oso_services.common.osdmapper import (
-    OSD_VERSION,
     SUBARRAYS,
     array_assembly_and_policy,
     configuration_from_osd,
     get_capabilities,
     get_default_pdm_target_spfrx,
     osd_repository,
-    osd_tmdata_sources,
 )
 from ska_oso_services.settings import Settings, get_settings
 
-
-def test_osd_tmdata_sources_default_to_the_installed_osd_release():
-    with patch.object(
-        settings_module, "SETTINGS", get_settings().model_copy(update={"osd_tmdata": ()})
-    ):
-        assert osd_tmdata_sources() == [
-            f"gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?{OSD_VERSION}#tmdata"
-        ]
+OSDMAPPER_MODULE = "ska_oso_services.common.osdmapper"
 
 
-def test_osd_tmdata_sources_are_read_from_the_osd_tmdata_environment_variable(monkeypatch):
+def test_osd_tmdata_defaults_to_osd_main_in_the_car(monkeypatch):
+    # conftest.py pins the tests' OSD_TMDATA, so unset it to see the default
+    monkeypatch.delenv("OSD_TMDATA", raising=False)
+
+    assert Settings().osd_tmdata == ("car:ost/ska-ost-osd?main#tmdata",)
+
+
+def test_osd_tmdata_is_read_from_the_osd_tmdata_environment_variable(monkeypatch):
     # As the Helm chart sets it, from a list joined with commas
-    monkeypatch.setenv(
-        "OSD_TMDATA",
-        "file:///tmdata, gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?main#tmdata",
-    )
+    monkeypatch.setenv("OSD_TMDATA", "file:///tmdata, car:ost/ska-ost-osd?main#tmdata")
 
-    with patch.object(settings_module, "SETTINGS", Settings()):
-        assert osd_tmdata_sources() == [
-            "file:///tmdata",
-            "gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?main#tmdata",
-        ]
+    assert Settings().osd_tmdata == ("file:///tmdata", "car:ost/ska-ost-osd?main#tmdata")
+
+
+@pytest.mark.parametrize("value", ["", " , "])
+def test_osd_tmdata_must_name_a_source(monkeypatch, value):
+    # Given no sources, TMData would read its own defaults, which don't hold the OSD
+    monkeypatch.setenv("OSD_TMDATA", value)
+
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+def test_osd_repository_reads_the_osd_tmdata_sources():
+    sources = ("file:///tmdata", "car:ost/ska-ost-osd?main#tmdata")
+    settings = get_settings().model_copy(update={"osd_tmdata": sources})
+    # osd_repository() is cached, so clear it before and after to read these sources
+    # without leaving the mock for the other tests
+    osd_repository.cache_clear()
+    try:
+        with (
+            patch.object(settings_module, "SETTINGS", settings),
+            patch(f"{OSDMAPPER_MODULE}.TMData") as tmdata,
+            patch(f"{OSDMAPPER_MODULE}.TMDataRepository") as repository,
+        ):
+            assert osd_repository() is repository.return_value
+    finally:
+        osd_repository.cache_clear()
+
+    tmdata.assert_called_once_with(sources, update=True)
+    repository.assert_called_once_with(tmdata.return_value)
 
 
 def test_configuration_from_osd_returns_constraints():

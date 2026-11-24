@@ -11,8 +11,8 @@ global:
     # retrieve compatible script version and script parameter information
     sdp_tmdata: "car://gitlab.com/ska-telescope/sdp/ska-sdp-script?master#tmdata"
     # The TMData sources for the OSD data used by oso-services. If empty, oso-services reads
-    # the OSD's tmdata at its installed ska-ost-osd release, so only set this to serve
-    # different OSD data, e.g. ["gitlab://gitlab.com/ska-telescope/ost/ska-ost-osd?main#tmdata"]
+    # OSD main from the CAR ("car:ost/ska-ost-osd?main#tmdata"). Set this to pin a commit
+    # published to the CAR, e.g. ["car:ost/ska-ost-osd?~<commit SHA>#tmdata"]
     osd_tmdata: []
   oda:
     # These global values are used by the ska-db-oda rest server deployment to connect to the postgres instance

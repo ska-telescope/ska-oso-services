@@ -1,6 +1,6 @@
 """
-These read the OSD's tmdata at the installed ska-ost-osd release, as the
-other OSD tests do, so they check the PHT's cycles against the real data.
+These read the OSD's tmdata at the commit conftest.py pins, as the other OSD
+tests do, so they check the PHT's cycles against the real data.
 """
 
 import pytest
