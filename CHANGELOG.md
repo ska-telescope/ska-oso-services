@@ -4,8 +4,8 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-Unreleased
-**********
+18.0.0
+******
 * Updated to ska-ost-osd 8.0.0, using its repository and views in place of osdmapper's own models.
 * Adds SIMBAD's IDIA mirror (`simbad.idia.ac.za`) for coordinate lookups, tried after the CDS server and Harvard mirror by default
 * Adds the `rest.simbadServers` Helm value (environment variable `SIMBAD_SERVERS`) to set the SIMBAD servers and the order they are tried in.
